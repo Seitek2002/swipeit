@@ -122,7 +122,27 @@ export type SwipeResponse = {
 };
 
 export type WishlistResponse = {
+  // Подсказка после повода: забронированные желания (DESIGN.md §8.3, P1).
+  givenHintIds: string[];
   items: WishlistItem[];
   likeCount: number;
   meta: WishlistMeta;
+  // null — владелец скрыл счётчик («Не показывать мне даже это»).
+  reservationCount: null | number;
 };
+
+// Вишлист глазами гостя: по ссылке (снимок) или друга из списка (T11).
+export type GuestWishlist = Pick<ExternalWishlist, "items" | "meta" | "owner">;
+
+// Брони: владельцу — только количество (сюрприз), гостю — что занято.
+export type ReservationsView =
+  | { count: number; role: "owner" }
+  | {
+      items: Array<{
+        closed: boolean;
+        id: string;
+        itemKey: string;
+        mine: boolean;
+      }>;
+      role: "guest";
+    };

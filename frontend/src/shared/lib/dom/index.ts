@@ -9,3 +9,12 @@ export { useFocusTrap } from "./useFocusTrap";
 export { useMounted } from "./useMounted";
 export { getScrollLockCount, useScrollLock } from "./useScrollLock";
 export { useTapHaptics } from "./useTapHaptics";
+export {
+  absoluteUrl,
+  canNativeShare,
+  copyText,
+  type SharePayload,
+  shareNative,
+  telegramUrl,
+  whatsappUrl,
+} from "./share-targets";

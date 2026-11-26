@@ -11,6 +11,7 @@ import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, notFound } from "../errors";
 import { parseInput, requireUser } from "./common";
+import { ownerReservationInfo } from "./guest";
 import { countSelfLikes } from "./swipes";
 
 const listOf = (db: Db, userId: string) => (db.wishlistItems[userId] ??= []);
@@ -29,8 +30,8 @@ const changed = (
   scope: Array<"reservations" | "wishlist">,
 ) => ctx.realtime.publish({ type: "db:changed", scope, by: ctx.userId ?? "" });
 
-// GET /wishlist — свой вишлист с мета-данными. Подсказка «Возможно, тебе
-// подарили это» и счётчик броней добавятся в T09.
+// GET /wishlist — свой вишлист с мета-данными, счётчиком броней и
+// подсказкой «Возможно, тебе подарили это».
 export const getMyWishlist: Handler = async (ctx) => {
   const db = await ctx.db.read();
   const user = requireUser(ctx, db);
@@ -41,6 +42,7 @@ export const getMyWishlist: Handler = async (ctx) => {
       hideReservationCount: false,
     },
     likeCount: countSelfLikes(db, user.id),
+    ...ownerReservationInfo(db, user.id, ctx.clock.now()),
   };
   return response;
 };

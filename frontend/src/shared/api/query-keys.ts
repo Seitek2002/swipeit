@@ -29,6 +29,14 @@ export const catalogKeys = {
 export const wishlistKeys = {
   all: ["wishlist"] as const,
   mine: () => [...wishlistKeys.all, "mine"] as const,
+  user: (userId: string) => [...wishlistKeys.all, "user", userId] as const,
+  external: (encoded: string) =>
+    [...wishlistKeys.all, "external", encoded] as const,
+};
+
+export const reservationKeys = {
+  all: ["reservations"] as const,
+  forOwner: (ownerId: string) => [...reservationKeys.all, ownerId] as const,
 };
 
 export const demoKeys = {
@@ -46,7 +54,7 @@ export const SCOPE_KEYS: Record<
   users: [userKeys.all, friendKeys.all],
   swipes: [catalogKeys.all],
   wishlist: [wishlistKeys.all],
-  reservations: [],
+  reservations: [reservationKeys.all, wishlistKeys.all],
   plans: [],
   santa: [],
   settings: [demoKeys.all],

@@ -1,10 +1,14 @@
 import { getTransport } from "../transport";
 import type {
   CustomWish,
+  ExternalWishlist,
+  GuestWishlist,
+  Occasion,
   SwipeContext,
   SwipeDecision,
   SwipeResponse,
   WishlistItem,
+  WishlistMeta,
   WishlistResponse,
 } from "./types";
 
@@ -73,4 +77,31 @@ export const restoreWishlistItem = (
     "POST",
     `${itemPath(id)}/restore`,
     options,
+  );
+
+export const updateWishlistMeta = (patch: {
+  hideReservationCount?: boolean;
+  message?: string;
+  occasion?: null | Occasion;
+}): Promise<WishlistMeta> =>
+  getTransport().request<WishlistMeta>("PATCH", "/wishlist/meta", patch);
+
+// Относительный путь /w/?d=… — адрес сайта добавляет клиент.
+export const shareWishlist = (): Promise<{ url: string }> =>
+  getTransport().request<{ url: string }>("POST", "/wishlist/share");
+
+export const dismissGivenHint = (): Promise<{ ok: true }> =>
+  getTransport().request("POST", "/wishlist/given-hint/dismiss");
+
+export const importExternalWishlist = (
+  encoded: string,
+): Promise<ExternalWishlist> =>
+  getTransport().request<ExternalWishlist>("POST", "/external-wishlists", {
+    encoded,
+  });
+
+export const getUserWishlist = (userId: string): Promise<GuestWishlist> =>
+  getTransport().request<GuestWishlist>(
+    "GET",
+    `/users/${encodeURIComponent(userId)}/wishlist`,
   );

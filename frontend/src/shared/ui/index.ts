@@ -18,6 +18,7 @@ export { ProgressDots } from "./progress-dots";
 export { QrCode } from "./qr-code";
 export { BUDGET_MAX, type BudgetRange, RangeSlider } from "./range-slider";
 export { Screen, ScreenBody } from "./screen";
+export { ShareActions } from "./share-actions";
 export { type SegmentOption, SegmentedControl } from "./segmented-control";
 export { Skeleton } from "./skeleton";
 export { Spinner } from "./spinner";

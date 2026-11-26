@@ -2,6 +2,16 @@ import type { Handler } from "./context";
 import { validation } from "./errors";
 import { getCount, getFeed, getProduct } from "./handlers/catalog";
 import { getSettings, resetDemo, updateSettings } from "./handlers/demo";
+import {
+  createReservation,
+  deleteReservation,
+  dismissGivenHint,
+  getReservations,
+  getUserWishlist,
+  importExternalWishlist,
+  shareWishlist,
+  updateMeta,
+} from "./handlers/guest";
 import { createSwipe, restartSwipes, undoSwipe } from "./handlers/swipes";
 import {
   createUser,
@@ -57,6 +67,26 @@ export const ROUTE_TABLE: Route[] = [
     method: "POST",
     pattern: "/wishlist/items/:id/restore",
     handler: restoreItem,
+  },
+  { method: "PATCH", pattern: "/wishlist/meta", handler: updateMeta },
+  { method: "POST", pattern: "/wishlist/share", handler: shareWishlist },
+  {
+    method: "POST",
+    pattern: "/wishlist/given-hint/dismiss",
+    handler: dismissGivenHint,
+  },
+  { method: "GET", pattern: "/users/:id/wishlist", handler: getUserWishlist },
+  {
+    method: "POST",
+    pattern: "/external-wishlists",
+    handler: importExternalWishlist,
+  },
+  { method: "GET", pattern: "/reservations", handler: getReservations },
+  { method: "POST", pattern: "/reservations", handler: createReservation },
+  {
+    method: "DELETE",
+    pattern: "/reservations/:id",
+    handler: deleteReservation,
   },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },
   { method: "GET", pattern: "/demo/settings", handler: getSettings },

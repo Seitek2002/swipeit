@@ -5,8 +5,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFeedPage } from "@/entities/product";
 import { useFriends, useLoginDemo, useMe, useUpdateMe } from "@/entities/user";
 
-import { EMPTY_FILTERS, resetDemo } from "@/shared/api";
+import { EMPTY_FILTERS, resetDemo, updateDemoSettings } from "@/shared/api";
+import { clock } from "@/shared/lib/clock";
 import { formatPrice } from "@/shared/lib/format";
+import { useDemoSettingsStore } from "@/shared/store";
 import { Avatar, Button, Spinner, toast } from "@/shared/ui";
 
 // Проверка слоя данных (T04): текущий пользователь, друзья и первая порция
@@ -18,6 +20,16 @@ export const DataSection = () => {
   const feed = useFeedPage(EMPTY_FILTERS);
   const loginDemo = useLoginDemo();
   const updateMe = useUpdateMe();
+  // Перемотка часов демо — временно здесь, пока нет демо-панели (T12).
+  const offset = useDemoSettingsStore((state) => state.settings.clockOffsetMs);
+  const shiftClock = (deltaMs: number) =>
+    updateDemoSettings({ clockOffsetMs: deltaMs === 0 ? 0 : offset + deltaMs })
+      .then(() => queryClient.invalidateQueries())
+      .then(() =>
+        toast(`Часы демо: ${new Date(clock.now()).toLocaleDateString("ru")}`, {
+          tone: "info",
+        }),
+      );
   const reset = useMutation({
     mutationFn: resetDemo,
     onSuccess: () => {
@@ -59,6 +71,14 @@ export const DataSection = () => {
         >
           Сменить имя
         </Button>
+        <Button variant="secondary" onClick={() => void shiftClock(86_400_000)}>
+          Перемотать на 1 день
+        </Button>
+        {offset !== 0 && (
+          <Button variant="ghost" onClick={() => void shiftClock(0)}>
+            Вернуть часы
+          </Button>
+        )}
       </div>
 
       <div data-testid="me" className="text-body">

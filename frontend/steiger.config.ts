@@ -26,4 +26,13 @@ export default defineConfig([
       "fsd/insignificant-slice": "off",
     },
   },
+  {
+    // Временно, до T11: гостевой вишлист пока только на странице ссылки
+    // /w/. Вторым потребителем станет профиль друга (/friends/profile/,
+    // TASKS T11: «те же компоненты, что в T09») — тогда исключение убрать.
+    files: ["./src/widgets/guest-wishlist/**"],
+    rules: {
+      "fsd/insignificant-slice": "off",
+    },
+  },
 ]);

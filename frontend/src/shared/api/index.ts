@@ -35,6 +35,7 @@ export {
   demoKeys,
   friendKeys,
   SCOPE_KEYS,
+  reservationKeys,
   userKeys,
   wishlistKeys,
 } from "./query-keys";
@@ -72,13 +73,25 @@ export {
   undeleteWishlistItem,
   undoSwipe,
   updateWishlistItem,
+  dismissGivenHint,
+  getUserWishlist,
+  importExternalWishlist,
+  shareWishlist,
+  updateWishlistMeta,
 } from "./wishlist/requests";
+export {
+  createReservation,
+  deleteReservation,
+  getReservations,
+} from "./reservations/requests";
 export {
   type CustomWish,
   type ExternalWishlist,
+  type GuestWishlist,
   type Occasion,
   type ProductSwipe,
   type Reservation,
+  type ReservationsView,
   type SwipeContext,
   type SwipeDecision,
   type SwipeResponse,

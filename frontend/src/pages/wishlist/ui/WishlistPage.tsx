@@ -22,6 +22,7 @@ import {
   useRestoreItem,
   useUpdateItem,
 } from "@/features/wishlist-edit";
+import { WishlistShareSheet } from "@/features/wishlist-share";
 
 import type { Product } from "@/entities/product";
 import { useFriends } from "@/entities/user";
@@ -39,10 +40,10 @@ import {
   SegmentedControl,
   Skeleton,
   buttonClassName,
-  toast,
 } from "@/shared/ui";
 
-import { WishRow } from "./WishRow";
+import { GivenHintBanner, ReservationNote } from "./OwnerNotices";
+import { WishRow, useItemDisplay } from "./WishRow";
 
 const UNLOCK_LIKES = 5;
 
@@ -68,6 +69,9 @@ export const WishlistPage = () => {
   const [tab, setTab] = useState<Tab>("want");
   const [sheet, setSheet] = useState<null | Sheet>(null);
   const [customOpen, setCustomOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  // «Да, подарили» из подсказки после повода — та же шторка, что в меню.
+  const [hintItem, setHintItem] = useState<null | WishlistItem>(null);
   // Порядок во время перетаскивания — локально; с «сервера» — когда не тащим.
   const [dragOrder, setDragOrder] = useState<{
     normal: string[];
@@ -111,10 +115,7 @@ export const WishlistPage = () => {
     else commitOrder(topIds, group);
   };
 
-  const handleShare = () => {
-    // Шторка отправки — в T09.
-    toast("Отправка вишлиста появится совсем скоро", { tone: "info" });
-  };
+  const handleShare = () => setShareOpen(true);
 
   const handleAction = (action: ItemAction, item: WishlistItem) => {
     const current = sheet;
@@ -226,6 +227,13 @@ export const WishlistPage = () => {
           />
         )}
 
+        {data && tab === "want" && active.length > 0 && (
+          <ReservationNote data={data} />
+        )}
+        {data && tab === "want" && (
+          <GivenHintBanner data={data} onGiven={setHintItem} />
+        )}
+
         {data && tab === "want" && (
           <div className="flex flex-col gap-2.5 px-5 pt-4">
             {active.length === 0 ? (
@@ -325,6 +333,34 @@ export const WishlistPage = () => {
         onClose={() => setSheet(null)}
       />
       <CustomWishSheet open={customOpen} onClose={() => setCustomOpen(false)} />
+      <WishlistShareSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        wishlist={data}
+      />
+      {hintItem && (
+        <HintGivenSheet
+          key={hintItem.id}
+          item={hintItem}
+          genderOf={genderOf}
+          onClose={() => setHintItem(null)}
+        />
+      )}
     </Screen>
   );
+};
+
+// Шторка «Тебе это подарили?» для желания из подсказки после повода: данные
+// для мини-бирки собираются так же, как в списке.
+const HintGivenSheet = ({
+  item,
+  genderOf,
+  onClose,
+}: {
+  genderOf: (userId?: string) => "female" | "male" | undefined;
+  item: WishlistItem;
+  onClose: () => void;
+}) => {
+  const { display } = useItemDisplay(item, genderOf);
+  return <GivenSheet item={item} display={display} onClose={onClose} />;
 };
