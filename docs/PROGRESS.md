@@ -1,8 +1,37 @@
 # Прогресс разработки
 
-> Сейчас: T02b — GitHub и GitHub Pages
+> Сейчас: T03 — UI-кит
 
 Заполняет Исполнитель после каждой задачи из [TASKS.md](TASKS.md). Новые блоки — сверху.
+
+**Демо:** https://seitek2002.github.io/swipeit/ · репозиторий: https://github.com/Seitek2002/swipeit
+
+## T02b — GitHub и GitHub Pages — ✅ сдано
+Готово, когда:
+- ✅ https://seitek2002.github.io/swipeit/ открывается: бархат, шрифты Cormorant и Onest, таб-бар. Все 18 адресов (корень + 17 маршрутов T02) отдают 200 по прямой ссылке; F5 на `/swipeit/wishlist/` открывает тот же экран, не 404.
+- ✅ 404 на файлы нет (проверено по `performance.getEntriesByType("resource")` на сайте).
+- ✅ Превью ссылки: `og:title`, `og:description`, `og:url`, `og:image` (абсолютный `https://seitek2002.github.io/swipeit/og.png`, 200, image/png), `twitter:card=summary_large_image` — в исходнике страницы.
+- ✅ Push в `main` → сайт обновился сам: второй push (обновление экшенов + этот отчёт) пересобрал сайт, buildId на странице сменился.
+
+Что сделано:
+- `shared/lib/base-path.ts` — `withBasePath()` + тесты (своих путей к файлам в коде пока нет; каталог, манифест и шеринг пойдут через него).
+- `public/.nojekyll`, `public/og.png` 1200×630 — генерирует `scripts/og-image.mjs` (HTML с токенами и шрифтами DESIGN.md → PNG через headless Chrome): бант, wordmark, фраза онбординга, три бирки на нитках как на онбординге в reference.html.
+- OG- и Twitter-метатеги в корневом layout, адрес сайта — `shared/config/site.ts`.
+- `.github/workflows/deploy.yml`: Node 22, кэш npm, `npm ci → catalog:sync → check → build` с `NEXT_PUBLIC_BASE_PATH=/swipeit` → `upload-pages-artifact` → `deploy-pages`.
+- Корневой `README.md`: что это, ссылка на демо, запуск, пометка про фото и цены с маркетплейсов. Скриншоты добавлю, когда появятся настоящие экраны.
+- Проверка на секреты: `git ls-files` и поиск по содержимому — ничего лишнего.
+- `gh repo create Seitek2002/swipeit --public`, push, Pages из Actions, homepage в описании репозитория.
+
+Решения без PM:
+- Экшены подняты до актуальных мажорных версий (checkout v7, setup-node v7, configure-pages v6, upload-pages-artifact v5, deploy-pages v5): на v4/v5 GitHub предупреждал, что они на устаревшем Node 20.
+- Превью всегда ведёт на публичный адрес (`SITE_URL`), даже при сборке без basePath: превью строят серверы мессенджеров, ноутбук в локальной сети им не виден.
+- `passWithNoTests` из `vitest.config.ts` убран — появились первые тесты.
+- В Git Bash на Windows `NEXT_PUBLIC_BASE_PATH=/swipeit` превращается в путь Windows; для локальной проверки сборки под Pages нужен `MSYS_NO_PATHCONV=1` (в CI это не нужно).
+
+Нужна проверка владельцем на телефоне: как выглядит превью ссылки в Telegram и WhatsApp (кэш мессенджера может держать старое превью).
+Вопросы к PM: —
+Скриншоты: docs/progress/T02b/
+Коммит: см. `git log` («T02b: …»), деплой: ✅
 
 ## T02 — Токены, шрифты, оболочка приложения — ✅ сдано
 Готово, когда:
