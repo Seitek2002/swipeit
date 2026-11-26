@@ -2171,5 +2171,1218 @@
       }
     ],
     "popularity": 0.5
+  },
+  {
+    "id": "p_0041",
+    "title": "Шёлковая наволочка L'Ricci 50 × 70 см",
+    "description": "Наволочка 50 × 70 см: одна сторона из натурального шёлка, другая — из эвкалиптового волокна. Застёгивается клапаном на запах.\n\nНа гладком шёлке волосы меньше путаются за ночь.",
+    "category": "home",
+    "interests": [
+      "home",
+      "beauty",
+      "wellness"
+    ],
+    "audience": "all",
+    "priceMin": 3110,
+    "priceMax": 3110,
+    "images": [
+      {
+        "src": "/catalog/products/p_0041/1.webp",
+        "alt": "Шёлковые наволочки L'Ricci разных цветов",
+        "sourceUrl": "https://basket-15.wbcontent.net/vol2338/part233879/233879882/images/big/8.webp"
+      },
+      {
+        "src": "/catalog/products/p_0041/2.webp",
+        "alt": "Сложенная шёлковая наволочка",
+        "sourceUrl": "https://basket-15.wbcontent.net/vol2338/part233879/233879882/images/big/6.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/233879882/detail.aspx",
+        "price": 3110,
+        "originalPrice": 3112,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0042",
+    "title": "Женский кошелёк Pursell из натуральной кожи",
+    "description": "Вместительный кошелёк из натуральной кожи 19 × 10 × 3 см: 13 отделений для карт, 2 для купюр и одно для монет.",
+    "category": "fashion",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 2200,
+    "priceMax": 2200,
+    "images": [
+      {
+        "src": "/catalog/products/p_0042/1.webp",
+        "alt": "Красный кожаный кошелёк Pursell",
+        "sourceUrl": "https://basket-04.wbcontent.net/vol713/part71305/71305817/images/big/7.webp"
+      },
+      {
+        "src": "/catalog/products/p_0042/2.webp",
+        "alt": "Кошелёк Pursell в руке",
+        "sourceUrl": "https://basket-04.wbcontent.net/vol713/part71305/71305817/images/big/3.webp"
+      },
+      {
+        "src": "/catalog/products/p_0042/3.webp",
+        "alt": "Застёжка кошелька Pursell крупно",
+        "sourceUrl": "https://basket-04.wbcontent.net/vol713/part71305/71305817/images/big/8.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/71305817/detail.aspx",
+        "price": 2200,
+        "originalPrice": 2199,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0043",
+    "title": "Мужской кожаный портфель Guarneri",
+    "description": "Коричневый портфель из натуральной кожи с ручками и съёмным ремнём через плечо — для документов и ноутбука.",
+    "category": "fashion",
+    "interests": [
+      "fashion",
+      "travel"
+    ],
+    "audience": "male",
+    "priceMin": 5190,
+    "priceMax": 5190,
+    "images": [
+      {
+        "src": "/catalog/products/p_0043/1.webp",
+        "alt": "Кожаный портфель Guarneri",
+        "sourceUrl": "https://basket-20.wbcontent.net/vol3421/part342141/342141416/images/big/2.webp"
+      },
+      {
+        "src": "/catalog/products/p_0043/2.webp",
+        "alt": "Портфель Guarneri с ремнём",
+        "sourceUrl": "https://basket-20.wbcontent.net/vol3421/part342141/342141416/images/big/1.webp"
+      },
+      {
+        "src": "/catalog/products/p_0043/3.webp",
+        "alt": "Портфель Guarneri сбоку",
+        "sourceUrl": "https://basket-20.wbcontent.net/vol3421/part342141/342141416/images/big/7.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/342141416/detail.aspx",
+        "price": 5190,
+        "originalPrice": 5191,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0044",
+    "title": "Колонка JBL Flip 7",
+    "description": "Портативная колонка JBL новой модели Flip 7 — компактная, её легко взять с собой на природу или в гости.",
+    "category": "tech",
+    "interests": [
+      "music",
+      "gadgets",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 9800,
+    "priceMax": 9800,
+    "images": [
+      {
+        "src": "/catalog/products/p_0044/1.webp",
+        "alt": "Колонка JBL Flip 7, белая",
+        "sourceUrl": "https://basket-27.wbcontent.net/vol4917/part491793/491793101/images/big/3.webp"
+      },
+      {
+        "src": "/catalog/products/p_0044/2.webp",
+        "alt": "JBL Flip 7 вертикально",
+        "sourceUrl": "https://basket-27.wbcontent.net/vol4917/part491793/491793101/images/big/8.webp"
+      },
+      {
+        "src": "/catalog/products/p_0044/3.webp",
+        "alt": "JBL Flip 7 спереди",
+        "sourceUrl": "https://basket-27.wbcontent.net/vol4917/part491793/491793101/images/big/7.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/491793101/detail.aspx",
+        "price": 9800,
+        "originalPrice": 9800,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.75
+  },
+  {
+    "id": "p_0045",
+    "title": "Пазл Trefl «Дама с веером», 1000 деталей",
+    "description": "Пазл на 1000 деталей по картине Густава Климта «Дама с веером». Собранная картина — 68,3 × 48 см.",
+    "category": "hobby",
+    "interests": [
+      "art",
+      "home"
+    ],
+    "audience": "all",
+    "priceMin": 1880,
+    "priceMax": 1880,
+    "images": [
+      {
+        "src": "/catalog/products/p_0045/1.webp",
+        "alt": "Картина Климта «Дама с веером» на пазле",
+        "sourceUrl": "https://basket-18.wbcontent.net/vol3014/part301446/301446646/images/big/4.webp"
+      },
+      {
+        "src": "/catalog/products/p_0045/2.webp",
+        "alt": "Коробка пазла Trefl",
+        "sourceUrl": "https://basket-18.wbcontent.net/vol3014/part301446/301446646/images/big/3.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/301446646/detail.aspx",
+        "price": 1880,
+        "originalPrice": 1883,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0046",
+    "title": "Электробритва Xiaomi Mijia S101",
+    "description": "Компактная роторная электробритва Xiaomi Mijia с тремя плавающими головками и защитой от воды IPX7.\n\nНа AliExpress — рейтинг 4.9.",
+    "category": "beauty",
+    "interests": [
+      "gadgets"
+    ],
+    "audience": "male",
+    "priceMin": 3470,
+    "priceMax": 3470,
+    "images": [
+      {
+        "src": "/catalog/products/p_0046/1.webp",
+        "alt": "Электробритва Xiaomi Mijia S101, чёрная",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sb8338992db1b4c6a9e9f291ebf092afcF.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0046/2.webp",
+        "alt": "Две электробритвы Mijia S101",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S4a67dd7ae2fd42419fdd6060a6f5dd73R.png"
+      },
+      {
+        "src": "/catalog/products/p_0046/3.webp",
+        "alt": "Электробритва Mijia S101, белая",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Se170837b0aef4e9a8c678d2578f61a470.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005012214746027.html",
+        "price": 3470,
+        "originalPrice": 3472.82,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0047",
+    "title": "Бизиборд-сумка BizyKoady",
+    "description": "Развивающая доска Монтессори в виде сумки с застёжками, шнурками и пуговицами — малыш тренирует мелкую моторику.\n\nНа AliExpress — рейтинг 4.9 и почти тысяча отзывов.",
+    "category": "kids",
+    "interests": [
+      "art"
+    ],
+    "audience": "all",
+    "priceMin": 1250,
+    "priceMax": 1250,
+    "images": [
+      {
+        "src": "/catalog/products/p_0047/1.webp",
+        "alt": "Бизиборд BizyKoady, синий",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sfff4dcb66913432b9054ae98586466d2G.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0047/2.webp",
+        "alt": "Бизиборд BizyKoady, розовый",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S116ae135fcbc4ce0b7be0676a4b9979fP.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0047/3.webp",
+        "alt": "Бизиборд BizyKoady, разворот",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S064538426bb647749abaca410eeda546x.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005009397578486.html",
+        "price": 1250,
+        "originalPrice": 1252.38,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0048",
+    "title": "Конструктор Mould King: двигатель V8 с мотором",
+    "description": "Сборная модель двигателя V8 (набор 10171) с электромотором: после сборки поршни двигаются.\n\nНа AliExpress — рейтинг 4.8 и тысячи покупок.",
+    "category": "hobby",
+    "interests": [
+      "cars",
+      "art",
+      "gadgets"
+    ],
+    "audience": "all",
+    "priceMin": 5090,
+    "priceMax": 5090,
+    "images": [
+      {
+        "src": "/catalog/products/p_0048/1.webp",
+        "alt": "Собранный двигатель V8 Mould King",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Scdd6f5617a464d138deace2b1bc604c3y.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0048/2.webp",
+        "alt": "Модель двигателя V8 сбоку",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sa5a334065a524cd8969e30875e6284b39.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0048/3.webp",
+        "alt": "Коробка конструктора Mould King",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S06caae441427438b9a06e08e239ddee4J.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005009123798508.html",
+        "price": 5090,
+        "originalPrice": 5087.98,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0049",
+    "title": "Аромадиффузор Homefish с эффектом пламени",
+    "description": "Ультразвуковой увлажнитель-аромадиффузор: пар с подсветкой выглядит как языки пламени, 7 цветов подсветки.\n\nНа AliExpress — рейтинг 4.7 и больше 6 тысяч отзывов.",
+    "category": "home",
+    "interests": [
+      "home",
+      "wellness"
+    ],
+    "audience": "all",
+    "priceMin": 2950,
+    "priceMax": 2950,
+    "images": [
+      {
+        "src": "/catalog/products/p_0049/1.webp",
+        "alt": "Аромадиффузор Homefish с подсветкой пламени",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S9e0db42d43c74d85a01508cab6c1ab8dB.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0049/2.webp",
+        "alt": "Аромадиффузор с синим пламенем",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sceddfa68ed5d446e9b15dc89be7309b7N.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0049/3.webp",
+        "alt": "Аромадиффузор Homefish, белый",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S8fbdb4ab17f64076a7dc9ebae85f6fc6w.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005009396957421.html",
+        "price": 2950,
+        "originalPrice": 2946.79,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0050",
+    "title": "Геймпад 8BitDo Ultimate 2C",
+    "description": "Беспроводной геймпад 8BitDo для ПК и смартфонов в мятном цвете.\n\nНа AliExpress — рейтинг 4.9 и больше 6 тысяч отзывов.",
+    "category": "games",
+    "interests": [
+      "gaming"
+    ],
+    "audience": "all",
+    "priceMin": 2020,
+    "priceMax": 2020,
+    "images": [
+      {
+        "src": "/catalog/products/p_0050/1.webp",
+        "alt": "Геймпад 8BitDo Ultimate 2C",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S3ff511c2483044eda1eae9be82daba56y.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0050/2.webp",
+        "alt": "Геймпад 8BitDo в руках",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S2202774a02df44e9b079e2978c22cb1fM.png"
+      },
+      {
+        "src": "/catalog/products/p_0050/3.webp",
+        "alt": "Кнопки геймпада 8BitDo крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Seab63a9d025c47089b6501bcc2fea773U.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005005470604431.html",
+        "price": 2020,
+        "originalPrice": 2020.03,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0051",
+    "title": "Шерстяной шарф Solidlove",
+    "description": "Тёплый зимний шарф из шерсти с бахромой. Есть много однотонных цветов.\n\nНа AliExpress — рейтинг 4.9 и больше 3 тысяч отзывов.",
+    "category": "fashion",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 1490,
+    "priceMax": 1490,
+    "images": [
+      {
+        "src": "/catalog/products/p_0051/1.webp",
+        "alt": "Шерстяной шарф Solidlove, бежевый",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Ha224305296c94e47860458b865a44bffI.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0051/2.webp",
+        "alt": "Шарфы Solidlove разных цветов",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S18729ad923a04778a3d824c6bf3437b5e.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0051/3.webp",
+        "alt": "Бахрома шарфа крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/H516f735661fc41f68c71acfbf42afc76E.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/32844666968.html",
+        "price": 1490,
+        "originalPrice": 1486.45,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0052",
+    "title": "Наушники Edifier X2s",
+    "description": "Лёгкие беспроводные наушники-вкладыши с Bluetooth 5.3. Работают до 6,5 часа, с кейсом — до 19,5 часа.",
+    "category": "tech",
+    "interests": [
+      "music",
+      "gadgets"
+    ],
+    "audience": "all",
+    "priceMin": 1750,
+    "priceMax": 1750,
+    "images": [
+      {
+        "src": "/catalog/products/p_0052/1.webp",
+        "alt": "Наушники Edifier X2s в кейсе",
+        "sourceUrl": "https://www.kivano.kg/images/product/138007/full/1719576753_62516200.png"
+      },
+      {
+        "src": "/catalog/products/p_0052/2.webp",
+        "alt": "Наушники Edifier X2s",
+        "sourceUrl": "https://www.kivano.kg/images/product/138007/171957674779590_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0052/3.webp",
+        "alt": "Кейс Edifier X2s",
+        "sourceUrl": "https://www.kivano.kg/images/product/138007/171957674652969_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/besprovodnye-naushniki-edifier-x2s-pink",
+        "price": 1750,
+        "originalPrice": 1754,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0053",
+    "title": "Наушники Edifier W320TN с шумоподавлением",
+    "description": "Беспроводные наушники с активным шумоподавлением и Bluetooth 5.3. До 5,5 часа работы, с кейсом — до 22 часов.",
+    "category": "tech",
+    "interests": [
+      "music",
+      "gadgets",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 4910,
+    "priceMax": 4910,
+    "images": [
+      {
+        "src": "/catalog/products/p_0053/1.webp",
+        "alt": "Наушники Edifier W320TN в кейсе",
+        "sourceUrl": "https://www.kivano.kg/images/product/138013/full/1719578994_41644400.png"
+      },
+      {
+        "src": "/catalog/products/p_0053/2.webp",
+        "alt": "Наушники Edifier W320TN",
+        "sourceUrl": "https://www.kivano.kg/images/product/138013/171957897825474_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0053/3.webp",
+        "alt": "Кейс Edifier W320TN",
+        "sourceUrl": "https://www.kivano.kg/images/product/138013/171957897740067_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/besprovodnye-naushniki-edifier-w320tn-ivory",
+        "price": 4910,
+        "originalPrice": 4914,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0054",
+    "title": "Электронная книга PocketBook 634 Verse Pro",
+    "description": "Ридер с 6-дюймовым экраном E Ink Carta высокого разрешения, 16 ГБ памяти, Wi-Fi и Bluetooth — можно слушать аудиокниги в наушниках.",
+    "category": "tech",
+    "interests": [
+      "reading",
+      "gadgets",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 20290,
+    "priceMax": 20290,
+    "images": [
+      {
+        "src": "/catalog/products/p_0054/1.webp",
+        "alt": "PocketBook 634 Verse Pro",
+        "sourceUrl": "https://www.kivano.kg/images/product/134633/full/1710493284_55715900.png"
+      },
+      {
+        "src": "/catalog/products/p_0054/2.webp",
+        "alt": "PocketBook 634 Verse Pro, красный, вид сзади",
+        "variantOptionId": "red",
+        "sourceUrl": "https://www.kivano.kg/images/product/134633/171049326739657_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0054/3.webp",
+        "alt": "PocketBook 634 Verse Pro, синий, вид сзади",
+        "variantOptionId": "azure",
+        "sourceUrl": "https://www.kivano.kg/images/product/134635/171049356086880_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0054/4.webp",
+        "alt": "PocketBook 634 Verse Pro сбоку",
+        "variantOptionId": "red",
+        "sourceUrl": "https://www.kivano.kg/images/product/134633/171049326744274_full.png"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "red",
+            "label": "Красный",
+            "hex": "#A8323A"
+          },
+          {
+            "id": "azure",
+            "label": "Синий",
+            "hex": "#22344F"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/elektronnaya-kniga-pocketbook-634-verse-pro-red",
+        "price": 20290,
+        "originalPrice": 20290,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0055",
+    "title": "Колонка JBL Go Essential",
+    "description": "Маленькая портативная колонка JBL: помещается в карман, работает до 5 часов по Bluetooth.",
+    "category": "tech",
+    "interests": [
+      "music",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 3330,
+    "priceMax": 3330,
+    "images": [
+      {
+        "src": "/catalog/products/p_0055/1.webp",
+        "alt": "Колонка JBL Go Essential, синяя",
+        "sourceUrl": "https://www.kivano.kg/images/product/138526/full/1721295628_03948100.png"
+      },
+      {
+        "src": "/catalog/products/p_0055/2.webp",
+        "alt": "JBL Go Essential сбоку",
+        "sourceUrl": "https://www.kivano.kg/images/product/138526/172129560360280_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0055/3.webp",
+        "alt": "JBL Go Essential сзади",
+        "sourceUrl": "https://www.kivano.kg/images/product/138526/172129560426475_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/portativnaya-akustika-jbl-go-essential-blue",
+        "price": 3330,
+        "originalPrice": 3334,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0056",
+    "title": "Колонка Skullcandy Terrain",
+    "description": "Прочная беспроводная колонка мощностью 20 Вт с Bluetooth 5.3. Работает до 14 часов — хватит на день на природе.",
+    "category": "tech",
+    "interests": [
+      "music",
+      "mountains",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 8080,
+    "priceMax": 8080,
+    "images": [
+      {
+        "src": "/catalog/products/p_0056/1.webp",
+        "alt": "Колонка Skullcandy Terrain, чёрная",
+        "sourceUrl": "https://www.kivano.kg/images/product/144369/full/1738130407_49724600.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0056/2.webp",
+        "alt": "Колонка Skullcandy Terrain, красная",
+        "sourceUrl": "https://www.kivano.kg/images/product/144369/173813040468132_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0056/3.webp",
+        "alt": "Колонка Skullcandy Terrain, синяя",
+        "sourceUrl": "https://www.kivano.kg/images/product/144369/17381304056034_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/portativnaya-kolonka-skullcandy-terrain",
+        "price": 8080,
+        "originalPrice": 8080,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0057",
+    "title": "Клавиатура Razer DeathStalker V2",
+    "description": "Низкопрофильная оптомеханическая клавиатура Razer на 105 клавиш с переключателями Red и подсветкой.",
+    "category": "tech",
+    "interests": [
+      "gaming",
+      "gadgets"
+    ],
+    "audience": "all",
+    "priceMin": 19220,
+    "priceMax": 19220,
+    "images": [
+      {
+        "src": "/catalog/products/p_0057/1.webp",
+        "alt": "Клавиатура Razer DeathStalker V2",
+        "sourceUrl": "https://www.kivano.kg/images/product/121366/full/1684745159_22859800.png"
+      },
+      {
+        "src": "/catalog/products/p_0057/2.webp",
+        "alt": "Подсветка Razer DeathStalker V2",
+        "sourceUrl": "https://www.kivano.kg/images/product/121366/168474515637207_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0057/3.webp",
+        "alt": "Razer DeathStalker V2 сбоку",
+        "sourceUrl": "https://www.kivano.kg/images/product/121366/168474515690223_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/klaviatura-razer-deathstalker-v2-red-switch",
+        "price": 19220,
+        "originalPrice": 19220,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0058",
+    "title": "Клавиатура HyperX Alloy Origins",
+    "description": "Механическая клавиатура HyperX на 104 клавиши с подсветкой, встроенной памятью и съёмным кабелем.",
+    "category": "tech",
+    "interests": [
+      "gaming",
+      "gadgets"
+    ],
+    "audience": "all",
+    "priceMin": 10130,
+    "priceMax": 10130,
+    "images": [
+      {
+        "src": "/catalog/products/p_0058/1.webp",
+        "alt": "Клавиатура HyperX Alloy Origins",
+        "sourceUrl": "https://www.kivano.kg/images/product/90647/full/1617337246_77594000.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0058/2.webp",
+        "alt": "Подсветка HyperX Alloy Origins",
+        "sourceUrl": "https://www.kivano.kg/images/product/90647/161733724425738_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0058/3.webp",
+        "alt": "HyperX Alloy Origins под углом",
+        "sourceUrl": "https://www.kivano.kg/images/product/90647/161733724513082_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/klaviatura-kingston-hyperx-alloy-origins-hx-kb6blx-ru",
+        "price": 10130,
+        "originalPrice": 10130,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0059",
+    "title": "Гарнитура HyperX Cloud III",
+    "description": "Игровая гарнитура HyperX со съёмным микрофоном и кабелем 1,2 м.",
+    "category": "games",
+    "interests": [
+      "gaming",
+      "music"
+    ],
+    "audience": "all",
+    "priceMin": 9230,
+    "priceMax": 9230,
+    "images": [
+      {
+        "src": "/catalog/products/p_0059/1.webp",
+        "alt": "Гарнитура HyperX Cloud III",
+        "sourceUrl": "https://www.kivano.kg/images/product/125705/full/1693560534_46623200.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0059/2.webp",
+        "alt": "HyperX Cloud III без микрофона",
+        "sourceUrl": "https://www.kivano.kg/images/product/125705/169356053342473_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0059/3.webp",
+        "alt": "Амбушюры HyperX Cloud III",
+        "sourceUrl": "https://www.kivano.kg/images/product/125705/169356053351007_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/naushniki-hp-hyperx-cloud-iii-progame-black-red",
+        "price": 9230,
+        "originalPrice": 9230,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0060",
+    "title": "Игровая гарнитура Sony Inzone H9",
+    "description": "Игровая гарнитура Sony весом 330 г с микрофоном на штанге.",
+    "category": "games",
+    "interests": [
+      "gaming",
+      "music"
+    ],
+    "audience": "all",
+    "priceMin": 18800,
+    "priceMax": 18800,
+    "images": [
+      {
+        "src": "/catalog/products/p_0060/1.webp",
+        "alt": "Гарнитура Sony Inzone H9",
+        "sourceUrl": "https://www.kivano.kg/images/product/130328/full/1701921063_26051700.png"
+      },
+      {
+        "src": "/catalog/products/p_0060/2.webp",
+        "alt": "Sony Inzone H9 с микрофоном",
+        "sourceUrl": "https://www.kivano.kg/images/product/130328/170192105691363_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0060/3.webp",
+        "alt": "Sony Inzone H9 спереди",
+        "sourceUrl": "https://www.kivano.kg/images/product/130328/170192105786090_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/naushniki-sony-inzone-h9",
+        "price": 18800,
+        "originalPrice": 18800,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0061",
+    "title": "Микрофон Razer Seiren Mini",
+    "description": "Компактный конденсаторный микрофон для стримов, подкастов и созвонов, цвет Quartz.",
+    "category": "hobby",
+    "interests": [
+      "music",
+      "gaming"
+    ],
+    "audience": "all",
+    "priceMin": 4460,
+    "priceMax": 4460,
+    "images": [
+      {
+        "src": "/catalog/products/p_0061/1.webp",
+        "alt": "Микрофон Razer Seiren Mini, розовый",
+        "sourceUrl": "https://www.kivano.kg/images/product/88586/full/1612431270_82190500.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0061/2.webp",
+        "alt": "Razer Seiren Mini сбоку",
+        "sourceUrl": "https://www.kivano.kg/images/product/88586/161243126719627_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/mikrofon-razer-seiren-mini-quartz-rozovyy",
+        "price": 4460,
+        "originalPrice": 4460,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0062",
+    "title": "Чайник Gorenje K17TRB с дисплеем",
+    "description": "Электрочайник на 1,7 л мощностью 2200 Вт с цифровым дисплеем. Крышка открывается кнопкой, есть автоотключение.",
+    "category": "kitchen",
+    "interests": [
+      "coffee",
+      "home"
+    ],
+    "audience": "all",
+    "priceMin": 5160,
+    "priceMax": 5160,
+    "images": [
+      {
+        "src": "/catalog/products/p_0062/1.webp",
+        "alt": "Чайник Gorenje K17TRB",
+        "sourceUrl": "https://www.kivano.kg/images/product/143631/full/1736503077_85257100.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0062/2.webp",
+        "alt": "Чайник Gorenje на подставке",
+        "sourceUrl": "https://www.kivano.kg/images/product/143631/17365030759584_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0062/3.webp",
+        "alt": "Дисплей чайника Gorenje",
+        "sourceUrl": "https://www.kivano.kg/images/product/143631/173650307681373_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/elektrochaynik-gorenje-k17trb",
+        "price": 5160,
+        "originalPrice": 5160,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0063",
+    "title": "Чайник Tefal KI583C10",
+    "description": "Электрочайник из нержавеющей стали в медном цвете, 1,5 л, с двойными стенками и съёмным фильтром.",
+    "category": "kitchen",
+    "interests": [
+      "coffee",
+      "home"
+    ],
+    "audience": "all",
+    "priceMin": 9180,
+    "priceMax": 9180,
+    "images": [
+      {
+        "src": "/catalog/products/p_0063/1.webp",
+        "alt": "Чайник Tefal KI583C10, медный",
+        "sourceUrl": "https://www.kivano.kg/images/product/144437/full/1738235440_96194000.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0063/2.webp",
+        "alt": "Чайник Tefal с открытой крышкой",
+        "sourceUrl": "https://www.kivano.kg/images/product/144437/173823543954958_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/elektrochaynik-tefal-ki583c10",
+        "price": 9180,
+        "originalPrice": 9180,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0064",
+    "title": "Кофемолка Bosch TSM6A013B",
+    "description": "Электрическая кофемолка Bosch на 75 г зёрен, мощность 180 Вт.",
+    "category": "kitchen",
+    "interests": [
+      "coffee"
+    ],
+    "audience": "all",
+    "priceMin": 4290,
+    "priceMax": 4290,
+    "images": [
+      {
+        "src": "/catalog/products/p_0064/1.webp",
+        "alt": "Кофемолка Bosch TSM6A013B",
+        "sourceUrl": "https://www.kivano.kg/images/product/152224/full/1750444662_70175800.png"
+      },
+      {
+        "src": "/catalog/products/p_0064/2.webp",
+        "alt": "Нож кофемолки Bosch",
+        "sourceUrl": "https://www.kivano.kg/images/product/152224/175044465033281_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0064/3.webp",
+        "alt": "Кофемолка Bosch сбоку",
+        "sourceUrl": "https://www.kivano.kg/images/product/152224/175044465066387_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/kofemolka-elektricheskaya-bosch-tsm6a013b-chernyy",
+        "price": 4290,
+        "originalPrice": 4290,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0065",
+    "title": "Капучинатор De'Longhi Alicia",
+    "description": "Вспениватель молока на 250 мл с подогревом — молочная пенка для капучино и латте дома.",
+    "category": "kitchen",
+    "interests": [
+      "coffee"
+    ],
+    "audience": "all",
+    "priceMin": 11680,
+    "priceMax": 11680,
+    "images": [
+      {
+        "src": "/catalog/products/p_0065/1.webp",
+        "alt": "Капучинатор De'Longhi Alicia",
+        "sourceUrl": "https://www.kivano.kg/images/product/120909/full/1683620221_90105800.jpeg"
+      },
+      {
+        "src": "/catalog/products/p_0065/2.webp",
+        "alt": "De'Longhi Alicia сбоку",
+        "sourceUrl": "https://www.kivano.kg/images/product/120909/168362022191685_full.jpeg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/vspenivatel-moloka-delonghi-alicia-emf2-belyy",
+        "price": 11680,
+        "originalPrice": 11680,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0066",
+    "title": "Френч-пресс Rondell, 1 л",
+    "description": "Френч-пресс на литр из термостойкого стекла и нержавеющей стали — для чая и кофе на компанию.",
+    "category": "kitchen",
+    "interests": [
+      "coffee",
+      "home"
+    ],
+    "audience": "all",
+    "priceMin": 2490,
+    "priceMax": 2490,
+    "images": [
+      {
+        "src": "/catalog/products/p_0066/1.webp",
+        "alt": "Френч-пресс Rondell",
+        "sourceUrl": "https://www.kivano.kg/images/product/127762/169684621794368_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0066/2.webp",
+        "alt": "Френч-пресс Rondell с чаем",
+        "sourceUrl": "https://www.kivano.kg/images/product/127762/full/1696846228_83451800.jpeg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/french-press-rondell-rds-840",
+        "price": 2490,
+        "originalPrice": 2490,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.35
+  },
+  {
+    "id": "p_0067",
+    "title": "Фен Rowenta Pro Expert CV8820",
+    "description": "Фен мощностью 2100 Вт: 3 режима нагрева и 2 скорости, в комплекте насадки.",
+    "category": "beauty",
+    "interests": [
+      "beauty"
+    ],
+    "audience": "all",
+    "priceMin": 4980,
+    "priceMax": 4980,
+    "images": [
+      {
+        "src": "/catalog/products/p_0067/1.webp",
+        "alt": "Фен Rowenta Pro Expert",
+        "sourceUrl": "https://www.kivano.kg/images/product/117898/full/1677494835_31216400.png"
+      },
+      {
+        "src": "/catalog/products/p_0067/2.webp",
+        "alt": "Фен Rowenta с диффузором",
+        "sourceUrl": "https://www.kivano.kg/images/product/117898/167749482939403_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0067/3.webp",
+        "alt": "Фен Rowenta сбоку",
+        "sourceUrl": "https://www.kivano.kg/images/product/117898/167749482922132_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/fen-rowenta-pro-expert-cv8820f0",
+        "price": 4980,
+        "originalPrice": 4980,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0068",
+    "title": "Триммер для бороды Rowenta TN3841",
+    "description": "Триммер для бороды с титановыми лезвиями: 39 установок длины от 0,5 до 20 мм, в комплекте насадки и чехол.",
+    "category": "beauty",
+    "interests": [
+      "beauty"
+    ],
+    "audience": "male",
+    "priceMin": 5350,
+    "priceMax": 5350,
+    "images": [
+      {
+        "src": "/catalog/products/p_0068/1.webp",
+        "alt": "Триммер Rowenta TN3841 с насадками",
+        "sourceUrl": "https://www.kivano.kg/images/product/110621/full/1662459774_24683800.png"
+      },
+      {
+        "src": "/catalog/products/p_0068/2.webp",
+        "alt": "Триммер Rowenta TN3841",
+        "sourceUrl": "https://www.kivano.kg/images/product/110621/166245976516280_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0068/3.webp",
+        "alt": "Лезвие триммера крупно",
+        "sourceUrl": "https://www.kivano.kg/images/product/110621/166245976552539_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/trimmer-rowenta-tn3841f4",
+        "price": 5350,
+        "originalPrice": 5350,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0069",
+    "title": "Машинка для стрижки Rowenta TN5243",
+    "description": "Машинка для стрижки с самозатачивающимися лезвиями, работает от сети и от аккумулятора. В комплекте насадки и футляр.",
+    "category": "beauty",
+    "interests": [
+      "beauty"
+    ],
+    "audience": "male",
+    "priceMin": 7670,
+    "priceMax": 7670,
+    "images": [
+      {
+        "src": "/catalog/products/p_0069/1.webp",
+        "alt": "Машинка Rowenta TN5243",
+        "sourceUrl": "https://www.kivano.kg/images/product/110241/full/1661491027_16753400.png"
+      },
+      {
+        "src": "/catalog/products/p_0069/2.webp",
+        "alt": "Машинка Rowenta с насадками и футляром",
+        "sourceUrl": "https://www.kivano.kg/images/product/110241/166149102499906_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/mashinka-dlya-strizhki-rowenta-tn-5243",
+        "price": 7670,
+        "originalPrice": 7670,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0070",
+    "title": "Увлажнитель воздуха Beurer LB 45",
+    "description": "Ультразвуковой увлажнитель с баком на 4 л для комнаты до 30 м². Можно добавлять аромамасла.",
+    "category": "home",
+    "interests": [
+      "home",
+      "wellness"
+    ],
+    "audience": "all",
+    "priceMin": 8080,
+    "priceMax": 8080,
+    "images": [
+      {
+        "src": "/catalog/products/p_0070/1.webp",
+        "alt": "Увлажнитель Beurer LB 45",
+        "sourceUrl": "https://www.kivano.kg/images/product/97364/full/1631011680_92489700.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0070/2.webp",
+        "alt": "Наполнение бака Beurer LB 45",
+        "sourceUrl": "https://www.kivano.kg/images/product/97364/163101168028376_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/uvlazhnitel-vozdukha-beurer-lb-45",
+        "price": 8080,
+        "originalPrice": 8080,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
   }
 ]

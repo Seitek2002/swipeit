@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { formatRemaining, remainingVerb } from "@/shared/lib/dates";
+import { formatRemaining, remainingVerb } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 
 type Props = {

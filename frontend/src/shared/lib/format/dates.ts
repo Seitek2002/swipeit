@@ -33,6 +33,43 @@ export const formatRemaining = (ms: number): string => {
   return `${Math.floor(totalSeconds / 60)}:${pad(totalSeconds % 60)}`;
 };
 
+const startOfDay = (timestamp: number) => {
+  const date = new Date(timestamp);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+// День рождения хранится как "MM-DD" (год не спрашиваем). Сколько дней до
+// ближайшего: 0 — сегодня. 29 февраля в невисокосный год Date переносит на
+// 1 марта — для демо это нормально.
+export const daysUntilBirthday = (birthday: string, now: number): number => {
+  const [month = 1, day = 1] = birthday.split("-").map(Number);
+  const today = startOfDay(now);
+  let target = new Date(today.getFullYear(), month - 1, day);
+  if (target < today)
+    target = new Date(today.getFullYear() + 1, month - 1, day);
+  // round, а не floor: при переходе на летнее время в сутках 23 или 25 часов.
+  return Math.round((target.getTime() - today.getTime()) / DAY);
+};
+
+// Дата ближайшего дня рождения "YYYY-MM-DD" — для повода вишлиста.
+export const nextBirthdayDate = (birthday: string, now: number): string => {
+  const date = startOfDay(now + daysUntilBirthday(birthday, now) * DAY + HOUR);
+  return toDateKey(date.getTime());
+};
+
+// "MM-DD" через N дней от now — для сида: «у Нурай ДР через 5 дней».
+export const birthdayInDays = (days: number, now: number): string => {
+  const date = new Date(now + days * DAY);
+  return `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+// "YYYY-MM-DD" по местному времени.
+export const toDateKey = (timestamp: number): string => {
+  const date = new Date(timestamp);
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
 // «Осталось» / «Остался» / «Осталась» — по первому числу отсчёта.
 export const remainingVerb = (ms: number): string => {
   if (ms < HOUR) return "Осталось";

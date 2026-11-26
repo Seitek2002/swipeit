@@ -5,7 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 import { hasTabBar } from "@/shared/config";
-import { useMounted } from "@/shared/lib/useMounted";
+import { useMounted } from "@/shared/lib/dom";
 import { Brand, QrCode } from "@/shared/ui";
 
 type Props = {

@@ -2,7 +2,7 @@
 
 import { type KeyboardEvent, type PointerEvent, useRef, useState } from "react";
 
-import { formatBudget, formatNumber } from "@/shared/lib/format-price";
+import { formatBudget, formatNumber } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 
 import {

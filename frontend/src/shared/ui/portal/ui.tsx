@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-import { useMounted } from "@/shared/lib/useMounted";
+import { useMounted } from "@/shared/lib/dom";
 
 // Шторки, диалоги и тосты рендерятся в #overlay-root внутри рамки приложения
 // (widgets/app-shell): на десктопе они остаются внутри «телефона», а не

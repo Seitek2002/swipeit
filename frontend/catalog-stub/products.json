@@ -1,0 +1,1252 @@
+[
+  {
+    "id": "p_0001",
+    "title": "Наушники Sony WH-CH720N",
+    "description": "Лёгкие полноразмерные наушники Sony с активным шумоподавлением. Весят около 190 граммов, поэтому не давят даже за долгий день.\n\nДержат до 35 часов с включённым шумодавом и быстро заряжаются через USB-C. В приложении есть эквалайзер.",
+    "category": "tech",
+    "interests": ["music", "gadgets", "travel"],
+    "audience": "all",
+    "priceMin": 9510,
+    "priceMax": 10040,
+    "images": [
+      {
+        "src": "/catalog/products/p_0001/1.svg",
+        "alt": "Наушники Sony WH-CH720N, чёрные",
+        "variantOptionId": "black"
+      },
+      {
+        "src": "/catalog/products/p_0001/2.svg",
+        "alt": "Наушники Sony WH-CH720N, белые",
+        "variantOptionId": "white"
+      },
+      {
+        "src": "/catalog/products/p_0001/3.svg",
+        "alt": "Наушники Sony WH-CH720N, синие",
+        "variantOptionId": "blue"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1E1E1E"
+          },
+          {
+            "id": "white",
+            "label": "Белый",
+            "hex": "#ECEAE4"
+          },
+          {
+            "id": "blue",
+            "label": "Синий",
+            "hex": "#3D5A86"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9D%D0%B0%D1%83%D1%88%D0%BD%D0%B8%D0%BA%D0%B8%20Sony%20WH-CH720N",
+        "price": 9510,
+        "originalPrice": 8990,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9D%D0%B0%D1%83%D1%88%D0%BD%D0%B8%D0%BA%D0%B8%20Sony%20WH-CH720N",
+        "price": 9820,
+        "originalPrice": 9290,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "yandex_market",
+        "url": "https://market.yandex.ru/search?text=%D0%9D%D0%B0%D1%83%D1%88%D0%BD%D0%B8%D0%BA%D0%B8%20Sony%20WH-CH720N",
+        "price": 10040,
+        "originalPrice": 9490,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.86
+  },
+  {
+    "id": "p_0002",
+    "title": "Набор тканевых масок Medi-Peel, 10 шт.",
+    "description": "Десять тканевых масок корейского бренда Medi-Peel с пептидами и коллагеном. Каждая маска в отдельной упаковке, их удобно брать в поездки.\n\nХороший небольшой подарок к празднику или дополнение к основному.",
+    "category": "beauty",
+    "interests": ["beauty", "wellness"],
+    "audience": "female",
+    "priceMin": 840,
+    "priceMax": 900,
+    "images": [
+      {
+        "src": "/catalog/products/p_0002/1.svg",
+        "alt": "Набор тканевых масок Medi-Peel в коробке"
+      },
+      {
+        "src": "/catalog/products/p_0002/2.svg",
+        "alt": "Тканевая маска Medi-Peel крупным планом"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9D%D0%B0%D0%B1%D0%BE%D1%80%20%D1%82%D0%BA%D0%B0%D0%BD%D0%B5%D0%B2%D1%8B%D1%85%20%D0%BC%D0%B0%D1%81%D0%BE%D0%BA%20Medi-Peel%2C%2010%20%D1%88%D1%82.",
+        "price": 840,
+        "originalPrice": 790,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9D%D0%B0%D0%B1%D0%BE%D1%80%20%D1%82%D0%BA%D0%B0%D0%BD%D0%B5%D0%B2%D1%8B%D1%85%20%D0%BC%D0%B0%D1%81%D0%BE%D0%BA%20Medi-Peel%2C%2010%20%D1%88%D1%82.",
+        "price": 900,
+        "originalPrice": 850,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.62
+  },
+  {
+    "id": "p_0003",
+    "title": "Аромадиффузор с подсветкой, 300 мл",
+    "description": "Ультразвуковой диффузор-увлажнитель с корпусом под дерево и мягкой подсветкой семи цветов. В бак помещается 300 мл воды — хватает на целую ночь.\n\nМожно добавить пару капель эфирного масла, и комната будет пахнуть лавандой или апельсином. Диффузор сам отключается, когда вода заканчивается.",
+    "category": "home",
+    "interests": ["home", "wellness"],
+    "audience": "all",
+    "priceMin": 1570,
+    "priceMax": 1630,
+    "images": [
+      {
+        "src": "/catalog/products/p_0003/1.svg",
+        "alt": "Аромадиффузор, светлое дерево",
+        "variantOptionId": "light_wood"
+      },
+      {
+        "src": "/catalog/products/p_0003/2.svg",
+        "alt": "Аромадиффузор, тёмное дерево",
+        "variantOptionId": "dark_wood"
+      },
+      {
+        "src": "/catalog/products/p_0003/3.svg",
+        "alt": "Аромадиффузор с подсветкой на тумбочке"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "light_wood",
+            "label": "Светлое дерево",
+            "hex": "#CFAE84"
+          },
+          {
+            "id": "dark_wood",
+            "label": "Тёмное дерево",
+            "hex": "#6E4B30"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/wholesale?SearchText=wood%20grain%20aroma%20diffuser%20300ml",
+        "price": 1630,
+        "originalPrice": 18.6,
+        "originalCurrency": "USD",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "temu",
+        "url": "https://www.temu.com/search_result.html?search_key=wood%20grain%20aroma%20diffuser%20300ml",
+        "price": 1570,
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.58
+  },
+  {
+    "id": "p_0004",
+    "title": "Экшн-камера DJI Osmo Action 4",
+    "description": "Экшн-камера с большой матрицей 1/1,3 дюйма: снимает 4K до 120 кадров в секунду и хорошо держит картинку в сумерках.\n\nВыдерживает погружение до 18 метров без бокса и работает на морозе до −20 °C. Подходит для гор, сноуборда и Иссык-Куля.",
+    "category": "tech",
+    "interests": ["photo", "travel", "mountains", "gadgets"],
+    "audience": "all",
+    "priceMin": 33140,
+    "priceMax": 34890,
+    "images": [
+      {
+        "src": "/catalog/products/p_0004/1.svg",
+        "alt": "Экшн-камера DJI Osmo Action 4"
+      },
+      {
+        "src": "/catalog/products/p_0004/2.svg",
+        "alt": "DJI Osmo Action 4 на креплении для шлема"
+      },
+      {
+        "src": "/catalog/products/p_0004/3.svg",
+        "alt": "DJI Osmo Action 4, экран сзади"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%AD%D0%BA%D1%88%D0%BD-%D0%BA%D0%B0%D0%BC%D0%B5%D1%80%D0%B0%20DJI%20Osmo%20Action%204",
+        "price": 34890,
+        "originalPrice": 32990,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/wholesale?SearchText=DJI%20Osmo%20Action%204",
+        "price": 33140,
+        "originalPrice": 379,
+        "originalCurrency": "USD",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.74
+  },
+  {
+    "id": "p_0005",
+    "title": "Бритва Philips OneBlade Pro 360",
+    "description": "Гибрид триммера и бритвы: лезвие с плавающей головкой бреет, подравнивает и оформляет контур бороды.\n\nВ комплекте насадка-гребень с 14 настройками длины. Работает от аккумулятора до 90 минут, её можно мыть под краном.",
+    "category": "beauty",
+    "interests": ["beauty", "gadgets"],
+    "audience": "male",
+    "priceMin": 5810,
+    "priceMax": 6120,
+    "images": [
+      {
+        "src": "/catalog/products/p_0005/1.svg",
+        "alt": "Бритва Philips OneBlade Pro 360"
+      },
+      {
+        "src": "/catalog/products/p_0005/2.svg",
+        "alt": "Бритва OneBlade с насадкой-гребнем"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%91%D1%80%D0%B8%D1%82%D0%B2%D0%B0%20Philips%20OneBlade%20Pro%20360",
+        "price": 5810,
+        "originalPrice": 5490,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%91%D1%80%D0%B8%D1%82%D0%B2%D0%B0%20Philips%20OneBlade%20Pro%20360",
+        "price": 6120,
+        "originalPrice": 5790,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "yandex_market",
+        "url": "https://market.yandex.ru/search?text=%D0%91%D1%80%D0%B8%D1%82%D0%B2%D0%B0%20Philips%20OneBlade%20Pro%20360",
+        "price": 6020,
+        "originalPrice": 5690,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.7
+  },
+  {
+    "id": "p_0006",
+    "title": "Сумка-багет из экокожи",
+    "description": "Небольшая сумка-багет из мягкой экокожи на коротком ремне, который можно заменить длинным. Внутри помещаются телефон, кошелёк и ключи.\n\nЗастёгивается на магнитную кнопку, есть внутренний карман на молнии.",
+    "category": "fashion",
+    "interests": ["fashion"],
+    "audience": "female",
+    "priceMin": 1680,
+    "priceMax": 2320,
+    "images": [
+      {
+        "src": "/catalog/products/p_0006/1.svg",
+        "alt": "Сумка-багет, чёрная",
+        "variantOptionId": "black"
+      },
+      {
+        "src": "/catalog/products/p_0006/2.svg",
+        "alt": "Сумка-багет, молочная",
+        "variantOptionId": "milk"
+      },
+      {
+        "src": "/catalog/products/p_0006/3.svg",
+        "alt": "Сумка-багет, шоколадная",
+        "variantOptionId": "chocolate"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1F1B1C"
+          },
+          {
+            "id": "milk",
+            "label": "Молочный",
+            "hex": "#EFE6D6"
+          },
+          {
+            "id": "chocolate",
+            "label": "Шоколадный",
+            "hex": "#5A3A2A"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%A1%D1%83%D0%BC%D0%BA%D0%B0-%D0%B1%D0%B0%D0%B3%D0%B5%D1%82%20%D0%B8%D0%B7%20%D1%8D%D0%BA%D0%BE%D0%BA%D0%BE%D0%B6%D0%B8",
+        "price": 2320,
+        "originalPrice": 2190,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "pinduoduo",
+        "url": "https://mobile.yangkeduo.com/search_result.html?search_key=baguette%20shoulder%20bag%20faux%20leather",
+        "price": 1680,
+        "originalPrice": 128,
+        "originalCurrency": "CNY",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0007",
+    "title": "Настольная игра «Каркассон»",
+    "description": "Классическая настольная игра о строительстве средневековых городов, дорог и монастырей из квадратных тайлов. Правила объясняются за пять минут.\n\nИграют от двух до пяти человек, партия длится около 40 минут. Подходит и для семьи, и для компании друзей.",
+    "category": "games",
+    "interests": ["boardgames"],
+    "audience": "all",
+    "priceMin": 2100,
+    "priceMax": 2210,
+    "images": [
+      {
+        "src": "/catalog/products/p_0007/1.svg",
+        "alt": "Коробка настольной игры «Каркассон»"
+      },
+      {
+        "src": "/catalog/products/p_0007/2.svg",
+        "alt": "Тайлы «Каркассона» на столе"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9D%D0%B0%D1%81%D1%82%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F%20%D0%B8%D0%B3%D1%80%D0%B0%20%C2%AB%D0%9A%D0%B0%D1%80%D0%BA%D0%B0%D1%81%D1%81%D0%BE%D0%BD%C2%BB",
+        "price": 2100,
+        "originalPrice": 1990,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9D%D0%B0%D1%81%D1%82%D0%BE%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F%20%D0%B8%D0%B3%D1%80%D0%B0%20%C2%AB%D0%9A%D0%B0%D1%80%D0%BA%D0%B0%D1%81%D1%81%D0%BE%D0%BD%C2%BB",
+        "price": 2210,
+        "originalPrice": 2090,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.72
+  },
+  {
+    "id": "p_0008",
+    "title": "Леггинсы для йоги с высокой посадкой",
+    "description": "Леггинсы с высокой посадкой из плотной ткани, которая не просвечивает при наклонах. Широкий пояс не скатывается во время тренировки.\n\nПодходят для йоги, пилатеса и зала, сбоку есть карман для телефона.",
+    "category": "sport",
+    "interests": ["fitness", "fashion"],
+    "audience": "female",
+    "priceMin": 1790,
+    "priceMax": 1890,
+    "images": [
+      {
+        "src": "/catalog/products/p_0008/1.svg",
+        "alt": "Леггинсы для йоги, вид спереди"
+      },
+      {
+        "src": "/catalog/products/p_0008/2.svg",
+        "alt": "Леггинсы для йоги, карман сбоку"
+      }
+    ],
+    "variants": [
+      {
+        "id": "size",
+        "kind": "size",
+        "label": "Размер",
+        "options": [
+          {
+            "id": "xs",
+            "label": "XS"
+          },
+          {
+            "id": "s",
+            "label": "S"
+          },
+          {
+            "id": "m",
+            "label": "M"
+          },
+          {
+            "id": "l",
+            "label": "L"
+          },
+          {
+            "id": "xl",
+            "label": "XL"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9B%D0%B5%D0%B3%D0%B3%D0%B8%D0%BD%D1%81%D1%8B%20%D0%B4%D0%BB%D1%8F%20%D0%B9%D0%BE%D0%B3%D0%B8%20%D1%81%20%D0%B2%D1%8B%D1%81%D0%BE%D0%BA%D0%BE%D0%B9%20%D0%BF%D0%BE%D1%81%D0%B0%D0%B4%D0%BA%D0%BE%D0%B9",
+        "price": 1790,
+        "originalPrice": 1690,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9B%D0%B5%D0%B3%D0%B3%D0%B8%D0%BD%D1%81%D1%8B%20%D0%B4%D0%BB%D1%8F%20%D0%B9%D0%BE%D0%B3%D0%B8%20%D1%81%20%D0%B2%D1%8B%D1%81%D0%BE%D0%BA%D0%BE%D0%B9%20%D0%BF%D0%BE%D1%81%D0%B0%D0%B4%D0%BA%D0%BE%D0%B9",
+        "price": 1890,
+        "originalPrice": 1790,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0009",
+    "title": "Часы Casio G-Shock GA-2100",
+    "description": "Часы Casio G-Shock с тонким восьмигранным корпусом из карбона. Защищены от ударов и выдерживают погружение до 200 метров.\n\nСтрелки и цифровой экран, будильник, секундомер и подсветка. Батарейки хватает примерно на три года.",
+    "category": "jewelry",
+    "interests": ["fashion", "gadgets"],
+    "audience": "male",
+    "priceMin": 8660,
+    "priceMax": 10040,
+    "images": [
+      {
+        "src": "/catalog/products/p_0009/1.svg",
+        "alt": "Часы Casio G-Shock GA-2100, чёрные",
+        "variantOptionId": "black"
+      },
+      {
+        "src": "/catalog/products/p_0009/2.svg",
+        "alt": "Часы Casio G-Shock GA-2100, оливковые",
+        "variantOptionId": "olive"
+      },
+      {
+        "src": "/catalog/products/p_0009/3.svg",
+        "alt": "Часы G-Shock на руке"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1A1A1A"
+          },
+          {
+            "id": "olive",
+            "label": "Оливковый",
+            "hex": "#5C6B47"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "amazon",
+        "url": "https://www.amazon.com/s?k=Casio%20G-Shock%20GA-2100",
+        "price": 8660,
+        "originalPrice": 99,
+        "originalCurrency": "USD",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%A7%D0%B0%D1%81%D1%8B%20Casio%20G-Shock%20GA-2100",
+        "price": 10040,
+        "originalPrice": 9490,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.78
+  },
+  {
+    "id": "p_0010",
+    "title": "Френч-пресс Bodum Chambord, 1 л",
+    "description": "Классический френч-пресс Bodum из жаропрочного стекла в хромированной рамке. Вмещает литр — это четыре большие кружки кофе или чая.\n\nФильтр из трёх слоёв металлической сетки, всё легко разбирается и моется.",
+    "category": "kitchen",
+    "interests": ["coffee", "home"],
+    "audience": "all",
+    "priceMin": 3940,
+    "priceMax": 4220,
+    "images": [
+      {
+        "src": "/catalog/products/p_0010/1.svg",
+        "alt": "Френч-пресс Bodum Chambord, 1 л"
+      },
+      {
+        "src": "/catalog/products/p_0010/2.svg",
+        "alt": "Френч-пресс Bodum с заваренным кофе"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%A4%D1%80%D0%B5%D0%BD%D1%87-%D0%BF%D1%80%D0%B5%D1%81%D1%81%20Bodum%20Chambord%2C%201%20%D0%BB",
+        "price": 4220,
+        "originalPrice": 3990,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "amazon",
+        "url": "https://www.amazon.com/s?k=Bodum%20Chambord%20french%20press%201l",
+        "price": 3940,
+        "originalPrice": 45,
+        "originalCurrency": "USD",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0011",
+    "title": "Плед из микрофлиса, 150 × 200 см",
+    "description": "Мягкий плед из микрофлиса размером 150 на 200 сантиметров: под ним можно устроиться вдвоём на диване.\n\nНе линяет и не скатывается после стирки в машинке, быстро сохнет.",
+    "category": "home",
+    "interests": ["home", "wellness"],
+    "audience": "all",
+    "priceMin": 940,
+    "priceMax": 970,
+    "images": [
+      {
+        "src": "/catalog/products/p_0011/1.svg",
+        "alt": "Плед из микрофлиса, молочный",
+        "variantOptionId": "milk"
+      },
+      {
+        "src": "/catalog/products/p_0011/2.svg",
+        "alt": "Плед из микрофлиса, пудровый",
+        "variantOptionId": "powder"
+      },
+      {
+        "src": "/catalog/products/p_0011/3.svg",
+        "alt": "Плед из микрофлиса, графитовый",
+        "variantOptionId": "graphite"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "milk",
+            "label": "Молочный",
+            "hex": "#EFE6D8"
+          },
+          {
+            "id": "powder",
+            "label": "Пудровый",
+            "hex": "#D9A9A8"
+          },
+          {
+            "id": "graphite",
+            "label": "Графитовый",
+            "hex": "#4A4A50"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9F%D0%BB%D0%B5%D0%B4%20%D0%B8%D0%B7%20%D0%BC%D0%B8%D0%BA%D1%80%D0%BE%D1%84%D0%BB%D0%B8%D1%81%D0%B0%2C%20150%20%C3%97%20200%20%D1%81%D0%BC",
+        "price": 940,
+        "originalPrice": 890,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9F%D0%BB%D0%B5%D0%B4%20%D0%B8%D0%B7%20%D0%BC%D0%B8%D0%BA%D1%80%D0%BE%D1%84%D0%BB%D0%B8%D1%81%D0%B0%2C%20150%20%C3%97%20200%20%D1%81%D0%BC",
+        "price": 970,
+        "originalPrice": 920,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.64
+  },
+  {
+    "id": "p_0012",
+    "title": "Набор для ухода за бородой",
+    "description": "Набор для ухода за бородой в подарочной коробке: масло, бальзам, деревянная расчёска и щётка из натуральной щетины.\n\nМасло смягчает волоски и убирает зуд, бальзам помогает держать форму в течение дня.",
+    "category": "beauty",
+    "interests": ["beauty"],
+    "audience": "male",
+    "priceMin": 1360,
+    "priceMax": 1470,
+    "images": [
+      {
+        "src": "/catalog/products/p_0012/1.svg",
+        "alt": "Набор для ухода за бородой в коробке"
+      },
+      {
+        "src": "/catalog/products/p_0012/2.svg",
+        "alt": "Масло и бальзам для бороды"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9D%D0%B0%D0%B1%D0%BE%D1%80%20%D0%B4%D0%BB%D1%8F%20%D1%83%D1%85%D0%BE%D0%B4%D0%B0%20%D0%B7%D0%B0%20%D0%B1%D0%BE%D1%80%D0%BE%D0%B4%D0%BE%D0%B9",
+        "price": 1360,
+        "originalPrice": 1290,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9D%D0%B0%D0%B1%D0%BE%D1%80%20%D0%B4%D0%BB%D1%8F%20%D1%83%D1%85%D0%BE%D0%B4%D0%B0%20%D0%B7%D0%B0%20%D0%B1%D0%BE%D1%80%D0%BE%D0%B4%D0%BE%D0%B9",
+        "price": 1470,
+        "originalPrice": 1390,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0013",
+    "title": "Книга «Мастер и Маргарита», иллюстрированное издание",
+    "description": "Роман Михаила Булгакова в твёрдой обложке с иллюстрациями на плотной бумаге. Хороший вариант и для полки, и для того, чтобы перечитать.\n\nВ издании около 500 страниц, есть тканевая закладка.",
+    "category": "books",
+    "interests": ["reading"],
+    "audience": "all",
+    "priceMin": 1580,
+    "priceMax": 1640,
+    "images": [
+      {
+        "src": "/catalog/products/p_0013/1.svg",
+        "alt": "Книга «Мастер и Маргарита», обложка"
+      },
+      {
+        "src": "/catalog/products/p_0013/2.svg",
+        "alt": "Разворот книги с иллюстрацией"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9A%D0%BD%D0%B8%D0%B3%D0%B0%20%C2%AB%D0%9C%D0%B0%D1%81%D1%82%D0%B5%D1%80%20%D0%B8%20%D0%9C%D0%B0%D1%80%D0%B3%D0%B0%D1%80%D0%B8%D1%82%D0%B0%C2%BB%2C%20%D0%B8%D0%BB%D0%BB%D1%8E%D1%81%D1%82%D1%80%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D0%BE%D0%B5%20%D0%B8%D0%B7%D0%B4%D0%B0%D0%BD%D0%B8%D0%B5",
+        "price": 1580,
+        "originalPrice": 1490,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9A%D0%BD%D0%B8%D0%B3%D0%B0%20%C2%AB%D0%9C%D0%B0%D1%81%D1%82%D0%B5%D1%80%20%D0%B8%20%D0%9C%D0%B0%D1%80%D0%B3%D0%B0%D1%80%D0%B8%D1%82%D0%B0%C2%BB%2C%20%D0%B8%D0%BB%D0%BB%D1%8E%D1%81%D1%82%D1%80%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D0%BE%D0%B5%20%D0%B8%D0%B7%D0%B4%D0%B0%D0%BD%D0%B8%D0%B5",
+        "price": 1640,
+        "originalPrice": 1550,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.57
+  },
+  {
+    "id": "p_0014",
+    "title": "Видеорегистратор 70mai Dash Cam M300",
+    "description": "Компактный видеорегистратор, который почти не заметен за зеркалом. Снимает в разрешении 2K и управляется со смартфона через приложение.\n\nЕсть режим парковки и запись при ударе, ролики сохраняются на карту памяти до 128 ГБ.",
+    "category": "auto",
+    "interests": ["cars", "gadgets"],
+    "audience": "all",
+    "priceMin": 3490,
+    "priceMax": 3580,
+    "images": [
+      {
+        "src": "/catalog/products/p_0014/1.svg",
+        "alt": "Видеорегистратор 70mai M300"
+      },
+      {
+        "src": "/catalog/products/p_0014/2.svg",
+        "alt": "Видеорегистратор на лобовом стекле"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/wholesale?SearchText=70mai%20Dash%20Cam%20M300",
+        "price": 3490,
+        "originalPrice": 39.9,
+        "originalCurrency": "USD",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%92%D0%B8%D0%B4%D0%B5%D0%BE%D1%80%D0%B5%D0%B3%D0%B8%D1%81%D1%82%D1%80%D0%B0%D1%82%D0%BE%D1%80%2070mai%20Dash%20Cam%20M300",
+        "price": 3580,
+        "originalPrice": 3390,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.52
+  },
+  {
+    "id": "p_0015",
+    "title": "Мужские шорты для бега 2 в 1",
+    "description": "Мужские шорты для бега 2 в 1: лёгкие внешние шорты и облегающие тайтсы внутри, чтобы ничего не натирало.\n\nТкань быстро сохнет, есть карман для телефона и светоотражающие детали.",
+    "category": "sport",
+    "interests": ["fitness"],
+    "audience": "male",
+    "priceMin": 920,
+    "priceMax": 940,
+    "images": [
+      {
+        "src": "/catalog/products/p_0015/1.svg",
+        "alt": "Шорты для бега 2 в 1, вид спереди"
+      },
+      {
+        "src": "/catalog/products/p_0015/2.svg",
+        "alt": "Шорты для бега, карман для телефона"
+      }
+    ],
+    "variants": [
+      {
+        "id": "size",
+        "kind": "size",
+        "label": "Размер",
+        "options": [
+          {
+            "id": "s",
+            "label": "S"
+          },
+          {
+            "id": "m",
+            "label": "M"
+          },
+          {
+            "id": "l",
+            "label": "L"
+          },
+          {
+            "id": "xl",
+            "label": "XL"
+          },
+          {
+            "id": "xxl",
+            "label": "XXL"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9C%D1%83%D0%B6%D1%81%D0%BA%D0%B8%D0%B5%20%D1%88%D0%BE%D1%80%D1%82%D1%8B%20%D0%B4%D0%BB%D1%8F%20%D0%B1%D0%B5%D0%B3%D0%B0%202%20%D0%B2%201",
+        "price": 940,
+        "originalPrice": 890,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "temu",
+        "url": "https://www.temu.com/search_result.html?search_key=men%20running%20shorts%202%20in%201",
+        "price": 920,
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0016",
+    "title": "Укулеле Kala KA-C, концертная",
+    "description": "Концертная укулеле Kala из красного дерева с тёплым мягким звуком. Концертный размер чуть больше сопрано, взрослым на нём играть удобнее.\n\nПервые аккорды можно выучить за вечер — хороший подарок тому, кто давно хотел начать играть.",
+    "category": "hobby",
+    "interests": ["music", "art"],
+    "audience": "all",
+    "priceMin": 8400,
+    "priceMax": 8980,
+    "images": [
+      {
+        "src": "/catalog/products/p_0016/1.svg",
+        "alt": "Укулеле Kala KA-C"
+      },
+      {
+        "src": "/catalog/products/p_0016/2.svg",
+        "alt": "Укулеле Kala, головка грифа"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%A3%D0%BA%D1%83%D0%BB%D0%B5%D0%BB%D0%B5%20Kala%20KA-C%2C%20%D0%BA%D0%BE%D0%BD%D1%86%D0%B5%D1%80%D1%82%D0%BD%D0%B0%D1%8F",
+        "price": 8980,
+        "originalPrice": 8490,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "amazon",
+        "url": "https://www.amazon.com/s?k=Kala%20KA-C%20concert%20ukulele",
+        "price": 8400,
+        "originalPrice": 96,
+        "originalCurrency": "USD",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.48
+  },
+  {
+    "id": "p_0017",
+    "title": "Кольцо из серебра 925 с жемчугом",
+    "description": "Тонкое кольцо из серебра 925 с пресноводной жемчужиной. Покрыто родием, поэтому не темнеет.\n\nСмотрится аккуратно и подходит к повседневной одежде. Приходит в подарочной коробочке.",
+    "category": "jewelry",
+    "interests": ["fashion"],
+    "audience": "female",
+    "priceMin": 3160,
+    "priceMax": 3370,
+    "images": [
+      {
+        "src": "/catalog/products/p_0017/1.svg",
+        "alt": "Кольцо из серебра с жемчугом"
+      },
+      {
+        "src": "/catalog/products/p_0017/2.svg",
+        "alt": "Кольцо с жемчугом на руке"
+      }
+    ],
+    "variants": [
+      {
+        "id": "size",
+        "kind": "size",
+        "label": "Размер",
+        "options": [
+          {
+            "id": "16",
+            "label": "16"
+          },
+          {
+            "id": "16_5",
+            "label": "16,5"
+          },
+          {
+            "id": "17",
+            "label": "17"
+          },
+          {
+            "id": "17_5",
+            "label": "17,5"
+          },
+          {
+            "id": "18",
+            "label": "18"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9A%D0%BE%D0%BB%D1%8C%D1%86%D0%BE%20%D0%B8%D0%B7%20%D1%81%D0%B5%D1%80%D0%B5%D0%B1%D1%80%D0%B0%20925%20%D1%81%20%D0%B6%D0%B5%D0%BC%D1%87%D1%83%D0%B3%D0%BE%D0%BC",
+        "price": 3160,
+        "originalPrice": 2990,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9A%D0%BE%D0%BB%D1%8C%D1%86%D0%BE%20%D0%B8%D0%B7%20%D1%81%D0%B5%D1%80%D0%B5%D0%B1%D1%80%D0%B0%20925%20%D1%81%20%D0%B6%D0%B5%D0%BC%D1%87%D1%83%D0%B3%D0%BE%D0%BC",
+        "price": 3370,
+        "originalPrice": 3190,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0018",
+    "title": "Мужская рубашка из вельвета, оверсайз",
+    "description": "Свободная мужская рубашка из мягкого хлопкового вельвета. Её можно носить и застёгнутой, и нараспашку поверх футболки.\n\nДва нагрудных кармана, ткань почти не мнётся после стирки.",
+    "category": "fashion",
+    "interests": ["fashion"],
+    "audience": "male",
+    "priceMin": 2630,
+    "priceMax": 2840,
+    "images": [
+      {
+        "src": "/catalog/products/p_0018/1.svg",
+        "alt": "Мужская рубашка из вельвета"
+      },
+      {
+        "src": "/catalog/products/p_0018/2.svg",
+        "alt": "Вельвет рубашки крупным планом"
+      }
+    ],
+    "variants": [
+      {
+        "id": "size",
+        "kind": "size",
+        "label": "Размер",
+        "options": [
+          {
+            "id": "s",
+            "label": "S"
+          },
+          {
+            "id": "m",
+            "label": "M"
+          },
+          {
+            "id": "l",
+            "label": "L"
+          },
+          {
+            "id": "xl",
+            "label": "XL"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9C%D1%83%D0%B6%D1%81%D0%BA%D0%B0%D1%8F%20%D1%80%D1%83%D0%B1%D0%B0%D1%88%D0%BA%D0%B0%20%D0%B8%D0%B7%20%D0%B2%D0%B5%D0%BB%D1%8C%D0%B2%D0%B5%D1%82%D0%B0%2C%20%D0%BE%D0%B2%D0%B5%D1%80%D1%81%D0%B0%D0%B9%D0%B7",
+        "price": 2630,
+        "originalPrice": 2490,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9C%D1%83%D0%B6%D1%81%D0%BA%D0%B0%D1%8F%20%D1%80%D1%83%D0%B1%D0%B0%D1%88%D0%BA%D0%B0%20%D0%B8%D0%B7%20%D0%B2%D0%B5%D0%BB%D1%8C%D0%B2%D0%B5%D1%82%D0%B0%2C%20%D0%BE%D0%B2%D0%B5%D1%80%D1%81%D0%B0%D0%B9%D0%B7",
+        "price": 2840,
+        "originalPrice": 2690,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.44
+  },
+  {
+    "id": "p_0019",
+    "title": "Конструктор LEGO Creator 3 в 1 «Средневековый дракон»",
+    "description": "Набор LEGO Creator 3 в 1: из одних и тех же деталей собираются три разные модели, главная — средневековый дракон с подвижными крыльями.\n\nПодходит детям от девяти лет и взрослым, которые любят собирать по вечерам.",
+    "category": "kids",
+    "interests": ["art", "home"],
+    "audience": "all",
+    "priceMin": 7780,
+    "priceMax": 8450,
+    "images": [
+      {
+        "src": "/catalog/products/p_0019/1.svg",
+        "alt": "Конструктор LEGO «Средневековый дракон»"
+      },
+      {
+        "src": "/catalog/products/p_0019/2.svg",
+        "alt": "Коробка конструктора LEGO Creator"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9A%D0%BE%D0%BD%D1%81%D1%82%D1%80%D1%83%D0%BA%D1%82%D0%BE%D1%80%20LEGO%20Creator%203%20%D0%B2%201%20%C2%AB%D0%A1%D1%80%D0%B5%D0%B4%D0%BD%D0%B5%D0%B2%D0%B5%D0%BA%D0%BE%D0%B2%D1%8B%D0%B9%20%D0%B4%D1%80%D0%B0%D0%BA%D0%BE%D0%BD%C2%BB",
+        "price": 8450,
+        "originalPrice": 7990,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "amazon",
+        "url": "https://www.amazon.com/s?k=LEGO%20Creator%203%20in%201%20Medieval%20Dragon",
+        "price": 7780,
+        "originalPrice": 89,
+        "originalCurrency": "USD",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.66
+  },
+  {
+    "id": "p_0020",
+    "title": "Мужской комплект термобелья",
+    "description": "Мужской комплект термобелья из лонгслива и штанов. Ткань с добавлением шерсти мериноса греет и отводит влагу, поэтому в нём не жарко на подъёме.\n\nПодходит для лыж, походов в горы и прогулок в мороз.",
+    "category": "outdoor",
+    "interests": ["mountains", "fitness", "travel"],
+    "audience": "male",
+    "priceMin": 3690,
+    "priceMax": 3900,
+    "images": [
+      {
+        "src": "/catalog/products/p_0020/1.svg",
+        "alt": "Комплект термобелья, лонгслив и штаны"
+      },
+      {
+        "src": "/catalog/products/p_0020/2.svg",
+        "alt": "Термобельё, ткань крупным планом"
+      }
+    ],
+    "variants": [
+      {
+        "id": "size",
+        "kind": "size",
+        "label": "Размер",
+        "options": [
+          {
+            "id": "s",
+            "label": "S"
+          },
+          {
+            "id": "m",
+            "label": "M"
+          },
+          {
+            "id": "l",
+            "label": "L"
+          },
+          {
+            "id": "xl",
+            "label": "XL"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9C%D1%83%D0%B6%D1%81%D0%BA%D0%BE%D0%B9%20%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%82%20%D1%82%D0%B5%D1%80%D0%BC%D0%BE%D0%B1%D0%B5%D0%BB%D1%8C%D1%8F",
+        "price": 3690,
+        "originalPrice": 3490,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9C%D1%83%D0%B6%D1%81%D0%BA%D0%BE%D0%B9%20%D0%BA%D0%BE%D0%BC%D0%BF%D0%BB%D0%B5%D0%BA%D1%82%20%D1%82%D0%B5%D1%80%D0%BC%D0%BE%D0%B1%D0%B5%D0%BB%D1%8C%D1%8F",
+        "price": 3900,
+        "originalPrice": 3690,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0021",
+    "title": "Фен-стайлер Dreame AirStyle Pro",
+    "description": "Фен-стайлер Dreame с пятью насадками для сушки, завивки, разглаживания и объёма. Мощный мотор сушит волосы быстрее обычного фена.\n\nСледит за температурой, чтобы не пересушивать волосы. В комплекте кейс для хранения.",
+    "category": "beauty",
+    "interests": ["beauty", "gadgets"],
+    "audience": "female",
+    "priceMin": 17400,
+    "priceMax": 18500,
+    "images": [
+      {
+        "src": "/catalog/products/p_0021/1.svg",
+        "alt": "Фен-стайлер Dreame AirStyle Pro"
+      },
+      {
+        "src": "/catalog/products/p_0021/2.svg",
+        "alt": "Насадки фена-стайлера Dreame"
+      },
+      {
+        "src": "/catalog/products/p_0021/3.svg",
+        "alt": "Фен-стайлер Dreame в кейсе"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%A4%D0%B5%D0%BD-%D1%81%D1%82%D0%B0%D0%B9%D0%BB%D0%B5%D1%80%20Dreame%20AirStyle%20Pro",
+        "price": 17970,
+        "originalPrice": 16990,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "yandex_market",
+        "url": "https://market.yandex.ru/search?text=%D0%A4%D0%B5%D0%BD-%D1%81%D1%82%D0%B0%D0%B9%D0%BB%D0%B5%D1%80%20Dreame%20AirStyle%20Pro",
+        "price": 18500,
+        "originalPrice": 17490,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/wholesale?SearchText=Dreame%20AirStyle%20Pro",
+        "price": 17400,
+        "originalPrice": 199,
+        "originalCurrency": "USD",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.82
+  },
+  {
+    "id": "p_0022",
+    "title": "Игрушка-головоломка для собак Nina Ottosson",
+    "description": "Игрушка-головоломка для собак: в отсеки прячут лакомство, а собака учится сдвигать крышки носом и лапой.\n\nПомогает занять питомца, когда он дома один, и замедляет поедание корма. Её можно мыть в посудомоечной машине.",
+    "category": "pets",
+    "interests": ["pets"],
+    "audience": "all",
+    "priceMin": 860,
+    "priceMax": 870,
+    "images": [
+      {
+        "src": "/catalog/products/p_0022/1.svg",
+        "alt": "Игрушка-головоломка для собак"
+      },
+      {
+        "src": "/catalog/products/p_0022/2.svg",
+        "alt": "Собака играет с головоломкой"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%98%D0%B3%D1%80%D1%83%D1%88%D0%BA%D0%B0-%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BE%D0%BB%D0%BE%D0%BC%D0%BA%D0%B0%20%D0%B4%D0%BB%D1%8F%20%D1%81%D0%BE%D0%B1%D0%B0%D0%BA%20Nina%20Ottosson",
+        "price": 870,
+        "originalPrice": 820,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/wholesale?SearchText=Nina%20Ottosson%20dog%20puzzle",
+        "price": 860,
+        "originalPrice": 9.8,
+        "originalCurrency": "USD",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.46
+  },
+  {
+    "id": "p_0023",
+    "title": "Механическая клавиатура Aula F75",
+    "description": "Механическая клавиатура в компактном формате 75%: стрелки и функциональный ряд на месте, а места на столе она занимает меньше.\n\nРаботает по проводу, Bluetooth и через радиоприёмник, переключатели меняются без пайки. Есть подсветка и ручка громкости.",
+    "category": "tech",
+    "interests": ["gaming", "gadgets"],
+    "audience": "all",
+    "priceMin": 3930,
+    "priceMax": 4540,
+    "images": [
+      {
+        "src": "/catalog/products/p_0023/1.svg",
+        "alt": "Клавиатура Aula F75"
+      },
+      {
+        "src": "/catalog/products/p_0023/2.svg",
+        "alt": "Клавиатура Aula F75 на столе"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/wholesale?SearchText=Aula%20F75%20mechanical%20keyboard",
+        "price": 3940,
+        "originalPrice": 45,
+        "originalCurrency": "USD",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "pinduoduo",
+        "url": "https://mobile.yangkeduo.com/search_result.html?search_key=Aula%20F75%20mechanical%20keyboard",
+        "price": 3930,
+        "originalPrice": 299,
+        "originalCurrency": "CNY",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "ozon",
+        "url": "https://www.ozon.ru/search/?text=%D0%9C%D0%B5%D1%85%D0%B0%D0%BD%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F%20%D0%BA%D0%BB%D0%B0%D0%B2%D0%B8%D0%B0%D1%82%D1%83%D1%80%D0%B0%20Aula%20F75",
+        "price": 4540,
+        "originalPrice": 4290,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.63
+  },
+  {
+    "id": "p_0024",
+    "title": "Набор шёлковых резинок для волос, 3 шт.",
+    "description": "Три резинки для волос из натурального шёлка. Они не заламывают волосы и не тянут их, когда снимаешь.\n\nПриходят в маленьком мешочке — можно дарить как есть.",
+    "category": "fashion",
+    "interests": ["fashion", "beauty"],
+    "audience": "female",
+    "priceMin": 640,
+    "priceMax": 730,
+    "images": [
+      {
+        "src": "/catalog/products/p_0024/1.svg",
+        "alt": "Шёлковые резинки для волос"
+      },
+      {
+        "src": "/catalog/products/p_0024/2.svg",
+        "alt": "Шёлковая резинка на запястье"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.ru/catalog/0/search.aspx?search=%D0%9D%D0%B0%D0%B1%D0%BE%D1%80%20%D1%88%D1%91%D0%BB%D0%BA%D0%BE%D0%B2%D1%8B%D1%85%20%D1%80%D0%B5%D0%B7%D0%B8%D0%BD%D0%BE%D0%BA%20%D0%B4%D0%BB%D1%8F%20%D0%B2%D0%BE%D0%BB%D0%BE%D1%81%2C%203%20%D1%88%D1%82.",
+        "price": 730,
+        "originalPrice": 690,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      },
+      {
+        "marketplace": "temu",
+        "url": "https://www.temu.com/search_result.html?search_key=silk%20scrunchies%20set%20of%203",
+        "price": 640,
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.53
+  }
+]

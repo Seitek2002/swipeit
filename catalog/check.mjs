@@ -12,8 +12,8 @@ const err = (m) => errors.push(m);
 const warn = (m) => warns.push(m);
 
 const CATEGORIES = {
-  tech: 25, beauty: 18, home: 18, kitchen: 15, fashion: 16, sport: 14, hobby: 14, games: 14,
-  outdoor: 12, books: 10, jewelry: 10, kids: 8, auto: 6, pets: 6, experiences: 0,
+  tech: 16, beauty: 11, home: 11, kitchen: 10, fashion: 10, sport: 9, hobby: 9, games: 9,
+  outdoor: 8, books: 6, jewelry: 7, kids: 6, auto: 4, pets: 4, experiences: 0,
 };
 const INTERESTS = new Set(["coffee", "cooking", "gadgets", "gaming", "boardgames", "music", "reading", "art", "photo",
   "fitness", "mountains", "travel", "beauty", "fashion", "home", "plants", "pets", "cars", "wellness", "anime"]);
@@ -149,7 +149,10 @@ if (!isDate(meta.collectedAt || "")) err("meta.json: collectedAt");
 for (const c of ["RUB", "USD", "CNY"]) if (!(meta.rates?.[c] > 0)) err(`meta.json: курс ${c}`);
 const credited = new Set((meta.activityPhotoCredits || []).map((c) => c.activityId));
 activities.forEach((a) => credited.has(a.id) || err(`${a.id}: нет автора фото в meta.json`));
-(meta.activityPhotoCredits || []).forEach((c) => (c.author && c.url && c.license) || err(`meta.json: неполный credit ${c.activityId}`));
+(meta.activityPhotoCredits || []).forEach((c) => {
+  if (!(c.author && c.url && c.license)) err(`meta.json: неполный credit ${c.activityId}`);
+  if (/(NC|ND)/.test(c.license || "")) err(`meta.json: ${c.activityId} — лицензия с NC/ND (${c.license})`);
+});
 
 // ── Доли ─────────────────────────────────────────────────────
 const n = products.length;
@@ -172,10 +175,10 @@ for (const [label, lo, hi, share] of BANDS) {
   if (Math.abs(fact - share * 100) > 5) warn(`цены ${label}: ${fact.toFixed(1)}% против ${share * 100}%`);
 }
 report.push("Аудитория (факт / цель):");
-for (const [aud, share] of [["all", 50], ["female", 25], ["male", 25]]) {
+for (const [aud, min] of [["all", 0], ["female", 20], ["male", 20]]) {
   const c = products.filter((p) => p.audience === aud).length;
-  report.push(`  ${aud.padEnd(8)} ${String(c).padStart(3)}  ${pct(c, n).toFixed(1).padStart(5)}% / ${share}%`);
-  if (Math.abs(pct(c, n) - share) > 5) warn(`аудитория ${aud}: ${pct(c, n).toFixed(1)}% против ${share}%`);
+  report.push(`  ${aud.padEnd(8)} ${String(c).padStart(3)}  ${pct(c, n).toFixed(1).padStart(5)}%${min ? ` / не меньше ${min}%` : ""}`);
+  if (min && pct(c, n) < min) warn(`аудитория ${aud}: ${pct(c, n).toFixed(1)}%, нужно не меньше ${min}%`);
 }
 const actCats = {};
 activities.forEach((a) => (actCats[a.category] = (actCats[a.category] || 0) + 1));

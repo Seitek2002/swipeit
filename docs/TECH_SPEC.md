@@ -238,6 +238,22 @@ interface Activity {
   createdBy?: string;
 }
 
+// public/catalog/meta.json
+interface CatalogMeta {
+  collectedAt: string;
+  rates: { source: string; date: string; RUB: number; USD: number; CNY: number };
+  activityPhotoCredits: PhotoCredit[];
+}
+interface PhotoCredit {
+  activityId: string;
+  author: string;
+  url: string;                   // страница файла на Wikimedia Commons
+  license: string;               // «CC BY-SA 4.0», «CC0», «Public domain»
+  licenseUrl?: string;           // нет у CC0 и Public domain
+  source: string;                // «Wikimedia Commons»
+  file?: string;
+}
+
 // ── Пользователи ──────────────────────────────────────────────
 type AvatarColor = "plum" | "mandarin" | "mint" | "champagne" | "rose" | "pomegranate" | "graphite" | "olive";
 
@@ -450,6 +466,7 @@ export function getTransport(mode: ApiMode): Transport; // выбирается 
 | `GET /catalog/feed?filters&limit=10&context` | Следующая порция ленты (алгоритм ниже) |
 | `GET /catalog/count?filters` | Счётчик для кнопки «Показать N подарков» |
 | `GET /catalog/products/:id` | Товар |
+| `GET /catalog/meta` | `meta.json`: курсы и авторы фото занятий (для страницы «Авторы фото») |
 | `POST /swipes` | Свайп `{ productId, decision, context }`. `like` и `superlike` в контексте `self` добавляют товар в вишлист. На 5-м таком лайке ставится `shareUnlockedAt`, ответ содержит `shareJustUnlocked: true` (по нему клиент запускает анимацию банта) |
 | `POST /swipes/undo` | Отменить последний свайп в контексте (и убрать товар из вишлиста, если он туда попал) |
 | `GET /wishlist`, `GET /users/:id/wishlist` | Свой или чужой вишлист с мета-данными. Чужой — только `active` желания. Свой — с полем `givenHints`: забронированные желания, если дата повода прошла и подсказка не скрыта |
@@ -683,6 +700,7 @@ lan/
 | `/santa/join/?id=` | Вступить | нет |
 | `/friends/`, `/friends/profile/?id=` | Друзья | да |
 | `/profile/` | Профиль | да |
+| `/credits/` | Авторы фото | нет |
 | `/kit/` | Витрина компонентов (только `NODE_ENV=development`) | нет |
 
 ---

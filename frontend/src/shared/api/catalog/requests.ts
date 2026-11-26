@@ -1,0 +1,44 @@
+import { getTransport } from "../transport";
+import type { FeedResponse, Product, ProductFilters } from "./types";
+
+type FeedParams = {
+  // "self" или "pick:<requestId>".
+  context: string;
+  // id карточек, которые уже лежат в колоде, но ещё не свайпнуты.
+  exclude?: string[];
+  filters: ProductFilters;
+  limit?: number;
+};
+
+export const getFeed = ({
+  filters,
+  context,
+  limit,
+  exclude,
+}: FeedParams): Promise<FeedResponse> =>
+  getTransport().request<FeedResponse>("GET", "/catalog/feed", undefined, {
+    filters: JSON.stringify(filters),
+    context,
+    limit,
+    exclude: exclude?.length ? exclude.join(",") : undefined,
+  });
+
+export const getCatalogCount = ({
+  filters,
+  context,
+}: Pick<FeedParams, "context" | "filters">): Promise<{ count: number }> =>
+  getTransport().request<{ count: number }>(
+    "GET",
+    "/catalog/count",
+    undefined,
+    {
+      filters: JSON.stringify(filters),
+      context,
+    },
+  );
+
+export const getProduct = (id: string): Promise<Product> =>
+  getTransport().request<Product>(
+    "GET",
+    `/catalog/products/${encodeURIComponent(id)}`,
+  );

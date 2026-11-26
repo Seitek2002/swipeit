@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFC6A7"/><stop offset="1" stop-color="#F6E1E7"/></linearGradient></defs>
+<rect width="1280" height="800" fill="url(#g)"/>
+<text text-anchor="middle" font-family="Cormorant Garamond, Georgia, serif" font-style="italic" font-weight="600" font-size="64" fill="#2A1024"><tspan x="640" y="371">Квест-комната</tspan></text>
+<rect x="622" y="403" width="36" height="2" rx="1" fill="#7A5A6E" opacity="0.45"/>
+<text x="640" y="457" text-anchor="middle" font-family="Manrope, Arial, sans-serif" font-size="28" letter-spacing="0.5" fill="#7A5A6E">Повеселиться</text>
+</svg>

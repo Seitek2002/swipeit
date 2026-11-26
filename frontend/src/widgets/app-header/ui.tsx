@@ -7,8 +7,11 @@ import { useRouter } from "next/navigation";
 
 import { ChevronLeft } from "lucide-react";
 
+import { useMe } from "@/entities/user";
+
 import { ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
+import { Avatar } from "@/shared/ui";
 
 type Props = {
   actions?: ReactNode;
@@ -22,7 +25,7 @@ type Props = {
 
 // Шапка экрана (DESIGN.md §7 AppHeader): 56px, прозрачная. Слева заголовок
 // title-1 или «назад» + заголовок, справа до двух действий и аватар-вход в
-// профиль. Аватар пока заглушка — настоящий появится вместе с профилем (T05).
+// профиль. Пока профиля нет — нейтральный кружок со знаком вопроса.
 export const AppHeader = ({
   title,
   showBack = false,
@@ -32,6 +35,7 @@ export const AppHeader = ({
   className,
 }: Props) => {
   const router = useRouter();
+  const { data: me } = useMe();
 
   const handleBack = () => {
     if (backHref) router.push(backHref);
@@ -65,9 +69,13 @@ export const AppHeader = ({
             aria-label="Профиль"
             className="grid size-11 place-items-center rounded-full"
           >
-            <span className="bg-avatar-plum text-ink grid size-9 place-items-center rounded-full text-[15px] font-semibold">
-              ?
-            </span>
+            {me ? (
+              <Avatar name={me.name} color={me.avatarColor} decorative />
+            ) : (
+              <span className="bg-avatar-plum text-ink grid size-9 place-items-center rounded-full text-[15px] font-semibold">
+                ?
+              </span>
+            )}
           </Link>
         )}
       </div>

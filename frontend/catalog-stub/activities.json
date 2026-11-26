@@ -1,0 +1,249 @@
+[
+  {
+    "id": "a_001",
+    "title": "Горные лыжи в Чункурчаке",
+    "description": "Ближайший к городу горнолыжный курорт с подъёмниками и прокатом у трассы. Есть пологие склоны для новичков и инструкторы.",
+    "category": "active",
+    "tags": ["outdoor", "weekend", "big_group"],
+    "pricePerPersonMin": 2000,
+    "pricePerPersonMax": 5000,
+    "durationMin": 240,
+    "durationMax": 480,
+    "seasons": ["winter"],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "place": "Чункурчак",
+    "distanceNote": "40 минут от города",
+    "image": {
+      "src": "/catalog/activities/a_001.svg",
+      "alt": "Склон с подъёмником в горах"
+    }
+  },
+  {
+    "id": "a_002",
+    "title": "Каток под открытым небом",
+    "description": "Вечерний каток с музыкой и прокатом коньков. Можно прийти на час после работы и выпить горячий чай у бортика.",
+    "category": "active",
+    "tags": ["outdoor", "evening", "cheap", "date", "kids_ok"],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 600,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": ["winter"],
+    "groupSize": {
+      "min": 2,
+      "max": 10
+    },
+    "image": {
+      "src": "/catalog/activities/a_002.svg",
+      "alt": "Вечерний каток с огнями"
+    }
+  },
+  {
+    "id": "a_003",
+    "title": "Кино",
+    "description": "Новый фильм в большом зале и попкорн. Договориться просто, подходит почти всем.",
+    "category": "chill",
+    "tags": ["indoor", "evening", "cheap", "date"],
+    "pricePerPersonMin": 350,
+    "pricePerPersonMax": 600,
+    "durationMin": 120,
+    "durationMax": 180,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 10
+    },
+    "image": {
+      "src": "/catalog/activities/a_003.svg",
+      "alt": "Зал кинотеатра с экраном"
+    }
+  },
+  {
+    "id": "a_004",
+    "title": "Антикафе с настолками",
+    "description": "Платишь за время, а чай, печенье и сотня настольных игр уже включены. Ведущий поможет разобраться с правилами.",
+    "category": "chill",
+    "tags": ["indoor", "evening", "cheap", "big_group"],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 600,
+    "durationMin": 120,
+    "durationMax": 240,
+    "seasons": [],
+    "groupSize": {
+      "min": 3,
+      "max": 12
+    },
+    "image": {
+      "src": "/catalog/activities/a_004.svg",
+      "alt": "Настольные игры на столе в антикафе"
+    }
+  },
+  {
+    "id": "a_005",
+    "title": "Караоке",
+    "description": "Отдельная комната на компанию, микрофоны и тысячи песен на русском, кыргызском и английском.",
+    "category": "chill",
+    "tags": ["indoor", "evening", "big_group"],
+    "pricePerPersonMin": 700,
+    "pricePerPersonMax": 1500,
+    "durationMin": 120,
+    "durationMax": 240,
+    "seasons": [],
+    "groupSize": {
+      "min": 4,
+      "max": 15
+    },
+    "image": {
+      "src": "/catalog/activities/a_005.svg",
+      "alt": "Микрофоны в караоке-комнате"
+    }
+  },
+  {
+    "id": "a_006",
+    "title": "Бранч в кафе",
+    "description": "Неспешный завтрак в выходной ближе к полудню: сырники, яйца бенедикт и хороший кофе.",
+    "category": "food",
+    "tags": ["indoor", "weekend", "date"],
+    "pricePerPersonMin": 700,
+    "pricePerPersonMax": 1500,
+    "durationMin": 90,
+    "durationMax": 150,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 8
+    },
+    "image": {
+      "src": "/catalog/activities/a_006.svg",
+      "alt": "Завтрак и кофе на столе в кафе"
+    }
+  },
+  {
+    "id": "a_007",
+    "title": "Театр оперы и балета",
+    "description": "Балет или опера в главном театре страны. Билеты на балкон стоят как поход в кино, а в партер лучше брать заранее.",
+    "category": "culture",
+    "tags": ["indoor", "evening", "date"],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 2500,
+    "durationMin": 150,
+    "durationMax": 210,
+    "seasons": ["autumn", "winter", "spring"],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "place": "Театр имени Малдыбаева",
+    "image": {
+      "src": "/catalog/activities/a_007.svg",
+      "alt": "Сцена и зал театра оперы и балета"
+    }
+  },
+  {
+    "id": "a_008",
+    "title": "Прогулка в Ала-Арче",
+    "description": "Национальный парк в горах рядом с городом: тропы вдоль реки, вид на ледники и пикник на свежем воздухе.",
+    "category": "nature",
+    "tags": ["outdoor", "weekend", "cheap", "kids_ok", "big_group"],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 800,
+    "durationMin": 240,
+    "durationMax": 480,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "place": "Ала-Арча",
+    "distanceNote": "40 минут от города",
+    "image": {
+      "src": "/catalog/activities/a_008.svg",
+      "alt": "Горное ущелье с рекой и елями"
+    }
+  },
+  {
+    "id": "a_009",
+    "title": "Хаммам",
+    "description": "Турецкая баня с тёплым мраморным лежаком, пилингом и чаем после. Хорошо, чтобы согреться зимой.",
+    "category": "selfcare",
+    "tags": ["indoor", "weekend", "date"],
+    "pricePerPersonMin": 1500,
+    "pricePerPersonMax": 3500,
+    "durationMin": 120,
+    "durationMax": 180,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 6
+    },
+    "image": {
+      "src": "/catalog/activities/a_009.svg",
+      "alt": "Мраморный зал хаммама"
+    }
+  },
+  {
+    "id": "a_010",
+    "title": "Квест-комната",
+    "description": "Час, чтобы выбраться из запертой комнаты, разгадывая загадки. Нужна командная работа и немного смелости.",
+    "category": "party",
+    "tags": ["indoor", "evening", "kids_ok"],
+    "pricePerPersonMin": 800,
+    "pricePerPersonMax": 1500,
+    "durationMin": 60,
+    "durationMax": 90,
+    "seasons": [],
+    "groupSize": {
+      "min": 3,
+      "max": 6
+    },
+    "image": {
+      "src": "/catalog/activities/a_010.svg",
+      "alt": "Загадочная комната квеста"
+    }
+  },
+  {
+    "id": "a_011",
+    "title": "Боулинг",
+    "description": "Пара дорожек на компанию, кафе рядом и музыка. Играть может любой, даже если ни разу не пробовал.",
+    "category": "active",
+    "tags": ["indoor", "evening", "big_group", "kids_ok"],
+    "pricePerPersonMin": 500,
+    "pricePerPersonMax": 1200,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 12
+    },
+    "image": {
+      "src": "/catalog/activities/a_011.svg",
+      "alt": "Дорожка для боулинга с кеглями"
+    }
+  },
+  {
+    "id": "a_012",
+    "title": "Конная прогулка",
+    "description": "Прогулка верхом по горному ущелью с инструктором. Лошади спокойные, опыт не нужен.",
+    "category": "nature",
+    "tags": ["outdoor", "weekend", "date"],
+    "pricePerPersonMin": 1500,
+    "pricePerPersonMax": 3000,
+    "durationMin": 60,
+    "durationMax": 180,
+    "seasons": ["spring", "summer", "autumn"],
+    "groupSize": {
+      "min": 1,
+      "max": 8
+    },
+    "place": "Ущелье Кашка-Суу",
+    "distanceNote": "50 минут от города",
+    "image": {
+      "src": "/catalog/activities/a_012.svg",
+      "alt": "Лошади на горной тропе"
+    }
+  }
+]

@@ -24,6 +24,72 @@ const eslintConfig = defineConfig([
       "perfectionist/sort-union-types": ["warn", { type: "alphabetical" }],
     },
   },
+  {
+    // Изоморфность мок-сервера (TECH_SPEC §6): те же обработчики работают в
+    // браузере и в Node-сервере режима «Локальная сеть» (T12b). Браузерные
+    // API, React и слои выше shared — только в adapters/browser/.
+    files: ["src/shared/api/mock-server/**/*.ts"],
+    ignores: ["src/shared/api/mock-server/adapters/browser/**"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        ...[
+          "window",
+          "document",
+          "localStorage",
+          "sessionStorage",
+          "navigator",
+          "BroadcastChannel",
+          "fetch",
+          "location",
+          "indexedDB",
+          "XMLHttpRequest",
+          "WebSocket",
+        ].map((name) => ({
+          name,
+          message:
+            "Мок-сервер изоморфный: браузерные API — только в adapters/browser/ (TECH_SPEC §6).",
+        })),
+      ],
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "react",
+                "react-dom",
+                "react/*",
+                "react-dom/*",
+                "next",
+                "next/*",
+                "zustand",
+                "zustand/*",
+                "@/app/*",
+                "@/pages/*",
+                "@/widgets/*",
+                "@/features/*",
+                "@/entities/*",
+                "@/shared/ui",
+                "@/shared/ui/*",
+                "@/shared/store",
+                "@/shared/store/*",
+                "@/shared/lib/clock",
+              ],
+              message:
+                "Мок-сервер изоморфный: без React, сторов и браузерных модулей — их передают адаптеры (TECH_SPEC §6).",
+            },
+            {
+              // Типы шины (realtime/types) можно, реализации — нет.
+              regex: "^@/shared/lib/realtime(/index|/local)?$",
+              message:
+                "Мок-сервер получает шину через ctx.realtime, а не импортом (TECH_SPEC §6).",
+            },
+          ],
+        },
+      ],
+    },
+  },
   globalIgnores([
     ".next/**",
     "out/**",

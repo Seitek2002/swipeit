@@ -11,8 +11,8 @@ import {
   useReducedMotion,
 } from "motion/react";
 
-import { useFocusTrap } from "@/shared/lib/useFocusTrap";
-import { useScrollLock } from "@/shared/lib/useScrollLock";
+import { useFocusTrap } from "@/shared/lib/dom";
+import { useScrollLock } from "@/shared/lib/dom";
 import { cn } from "@/shared/lib/utils";
 
 import { OverlayPortal } from "../portal";

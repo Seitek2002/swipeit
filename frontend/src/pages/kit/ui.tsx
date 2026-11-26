@@ -7,7 +7,7 @@ import { Plus, Share2, SlidersHorizontal } from "lucide-react";
 import { AppHeader } from "@/widgets/app-header";
 
 import { AVATAR_COLORS } from "@/shared/config";
-import { getScrollLockCount } from "@/shared/lib/useScrollLock";
+import { getScrollLockCount } from "@/shared/lib/dom";
 import {
   Avatar,
   AvatarStack,
@@ -32,6 +32,8 @@ import {
   TextField,
   toast,
 } from "@/shared/ui";
+
+import { DataSection } from "./data-section";
 
 const PEOPLE = [
   { id: "1", name: "Айгерим", color: "mandarin" as const },
@@ -89,6 +91,10 @@ export const KitPage = () => {
     <Screen>
       <AppHeader title="Витрина" showAvatar={false} />
       <ScreenBody className="px-5 pt-2">
+        <Section title="Данные">
+          <DataSection />
+        </Section>
+
         <Section title="Типографика">
           <p className="text-display">Решено: кино</p>
           <p className="text-title-1">Мой вишлист</p>
