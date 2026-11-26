@@ -1,0 +1,1904 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SwipeIt — дизайн-референс</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   ТОКЕНЫ — 1:1 из docs/DESIGN.md, раздел 2. Новых цветов нет.
+   ============================================================ */
+:root {
+  --color-velvet: #2a1024;
+  --color-velvet-2: #3a1832;
+  --color-velvet-3: #4a2241;
+  --color-line: rgb(255 241 243 / 0.12);
+  --color-paper: #fff1f3;
+  --color-paper-2: #f6e1e7;
+  --color-ink: #2a1024;
+  --color-ink-soft: #7a5a6e;
+  --color-rose: #cba8bc;
+  --color-mandarin: #ff8a3d;
+  --color-mandarin-ink: #b8460e;
+  --color-mint: #8fe3c6;
+  --color-champagne: #ffd27a;
+  --color-pomegranate: #ff5c7a;
+
+  --font-display: "Cormorant Garamond", "Times New Roman", serif;
+  --font-sans: "Onest", system-ui, sans-serif;
+
+  --radius-chip: 999px;
+  --radius-field: 14px;
+  --radius-paper: 22px;
+  --radius-sheet: 28px;
+
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-quick: cubic-bezier(0.4, 0, 1, 1);
+
+  --shadow-paper: 0 1px 0 rgb(255 255 255 / 0.6) inset, 0 18px 40px -12px rgb(10 0 8 / 0.55), 0 4px 10px rgb(10 0 8 / 0.25);
+  --shadow-lift: 0 1px 0 rgb(255 255 255 / 0.6) inset, 0 30px 60px -10px rgb(10 0 8 / 0.65);
+  --sheen: radial-gradient(120% 60% at 50% -10%, rgb(255 138 61 / 0.10), transparent 60%);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --color-avatar-plum: #e3c4da;
+  --color-avatar-mandarin: #ffc49c;
+  --color-avatar-mint: #bfefdd;
+  --color-avatar-champagne: #ffe3a8;
+  --color-avatar-rose: #f2c9d6;
+  --color-avatar-pomegranate: #ffb3c1;
+  --color-avatar-graphite: #cfc8d2;
+  --color-avatar-olive: #d8dfb4;
+  /* в макете телефона safe-area задана числом; в приложении это env(safe-area-inset-bottom) */
+  --safe-b: 34px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: color-mix(in srgb, var(--color-velvet) 72%, rgb(10 0 8)); color: var(--color-paper); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+body { min-height: 100vh; background: var(--sheen); overflow-x: hidden; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; }
+input { font: inherit; }
+:focus-visible { outline: 2px solid var(--color-mandarin); outline-offset: 2px; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Типографика (раздел 3) ---------- */
+.t-display { font: 600 40px/44px var(--font-display); letter-spacing: -0.01em; }
+.t-title1 { font: 600 32px/36px var(--font-display); letter-spacing: -0.01em; }
+.t-title2 { font: 600 26px/30px var(--font-display); }
+.t-title3 { font: italic 500 22px/28px var(--font-display); }
+.t-body-lg { font: 400 17px/26px var(--font-sans); }
+.t-body { font: 400 15px/22px var(--font-sans); }
+.t-label { font: 600 15px/20px var(--font-sans); }
+.price { font: 600 17px/22px var(--font-sans); font-variant-numeric: tabular-nums; }
+.t-caption { font: 500 13px/18px var(--font-sans); }
+.t-micro { font: 600 11px/14px var(--font-sans); }
+.rose { color: var(--color-rose); }
+.ink-soft { color: var(--color-ink-soft); }
+
+/* ============================================================
+   СТРАНИЦА РЕФЕРЕНСА (вне телефонов)
+   ============================================================ */
+.page-head { max-width: 1180px; margin: 0 auto; padding: 56px 24px 8px; }
+.page-head .brand { margin-bottom: 20px; }
+.page-head h1 { font: 600 48px/52px var(--font-display); letter-spacing: -0.01em; max-width: 18ch; }
+.page-head p { color: var(--color-rose); max-width: 62ch; margin-top: 12px; }
+.page-head code { font: 500 14px/1 var(--font-sans); color: var(--color-paper); background: var(--color-velvet-2); padding: 3px 8px; border-radius: 8px; }
+
+.tokens { max-width: 1180px; margin: 0 auto; padding: 32px 24px 8px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px; }
+.tokens h2 { font: 600 26px/30px var(--font-display); margin-bottom: 16px; }
+.swatches-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.sw { background: var(--color-velvet-2); border: 1px solid var(--color-line); border-radius: 14px; padding: 8px; }
+.sw i { display: block; height: 44px; border-radius: 9px; border: 1px solid var(--color-line); }
+.sw b { display: block; font: 600 13px/18px var(--font-sans); margin-top: 8px; }
+.sw span { display: block; font: 500 12px/16px var(--font-sans); color: var(--color-rose); }
+.type-spec { display: grid; gap: 12px; }
+.type-spec div { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; align-items: baseline; border-bottom: 1px solid var(--color-line); padding-bottom: 10px; }
+.type-spec span:first-child { font: 500 12px/16px var(--font-sans); color: var(--color-rose); }
+
+.gallery { max-width: 1400px; margin: 0 auto; padding: 40px 16px 120px; display: flex; flex-wrap: wrap; justify-content: center; gap: 64px 44px; }
+.shot { width: min(390px, calc(100vw - 32px)); }
+.shot figcaption { margin-top: 22px; padding: 0 6px; }
+.shot figcaption b { display: block; font: 600 22px/28px var(--font-display); }
+.shot figcaption p { color: var(--color-rose); font: 500 13px/18px var(--font-sans); margin-top: 4px; }
+.shot-ctrl { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.shot-ctrl button { height: 36px; padding: 0 14px; border-radius: 14px; background: var(--color-velvet-2); border: 1px solid var(--color-line); font: 500 13px/1 var(--font-sans); color: var(--color-rose); }
+.shot-ctrl button[aria-pressed="true"] { background: var(--color-paper); color: var(--color-ink); border-color: transparent; }
+
+/* ============================================================
+   ТЕЛЕФОН
+   ============================================================ */
+.phone {
+  position: relative; width: 100%; height: 844px; border-radius: 44px; overflow: hidden; isolation: isolate;
+  background: var(--color-velvet);
+  box-shadow: 0 0 0 1px var(--color-line), 0 0 0 9px rgb(10 0 8), 0 0 0 10px var(--color-line), 0 50px 90px -30px rgb(10 0 8 / 0.8);
+  user-select: none; -webkit-user-select: none;
+}
+.phone::before { content: ""; position: absolute; inset: 0; background: var(--sheen); z-index: 0; pointer-events: none; }
+.phone::after { content: ""; position: absolute; inset: 0; background-image: var(--grain); opacity: 0.05; mix-blend-mode: overlay; z-index: 0; pointer-events: none; }
+.statusbar { position: absolute; top: 0; left: 0; right: 0; height: 50px; z-index: 95; display: flex; align-items: center; justify-content: space-between; padding: 4px 26px 0 34px; pointer-events: none; }
+.sb-time { font: 600 15px/1 var(--font-sans); }
+.sb-icons { display: flex; gap: 6px; align-items: center; }
+.island { position: absolute; left: 50%; top: 11px; width: 122px; height: 35px; margin-left: -61px; border-radius: 20px; background: rgb(10 0 8); }
+.home-ind { position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: rgb(255 241 243 / 0.5); z-index: 96; pointer-events: none; }
+.screen { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; padding-top: 50px; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ---------- AppHeader ---------- */
+.appbar { height: 56px; flex: none; display: flex; align-items: center; gap: 4px; padding: 0 16px 0 20px; }
+.appbar.with-back { padding-left: 8px; }
+.appbar h1 { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.appbar-actions { display: flex; align-items: center; gap: 4px; }
+
+/* ---------- Кнопки ---------- */
+.btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; border-radius: var(--radius-chip); font: 600 15px/20px var(--font-sans); transition: transform 120ms ease, opacity 200ms var(--ease-out-soft); white-space: nowrap; }
+.btn:active { transform: scale(0.96); }
+.btn[disabled] { opacity: 0.4; box-shadow: none; pointer-events: none; }
+.btn-lg { height: 56px; width: 100%; }
+.btn-sm { height: 36px; padding: 0 14px; border-radius: var(--radius-field); }
+.btn-sm::before { content: ""; position: absolute; inset: -4px; }
+.btn-primary { background: var(--color-mandarin); color: var(--color-ink); box-shadow: 0 10px 24px -10px rgb(255 138 61 / 0.6); }
+.btn-secondary { background: var(--color-velvet-3); color: var(--color-paper); }
+.btn-ghost { color: var(--color-rose); }
+.btn-ghost-ink { color: var(--color-ink-soft); }
+.btn-danger { color: var(--color-pomegranate); }
+.btn-paper { background: var(--color-paper); color: var(--color-ink); }
+.icon-btn { position: relative; width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 50%; color: var(--color-paper); transition: transform 120ms ease, background 200ms; }
+.icon-btn:active { transform: scale(0.94); }
+.icon-btn.on-paper { color: var(--color-ink-soft); }
+.badge { position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--color-paper); color: var(--color-ink); font: 600 11px/18px var(--font-sans); text-align: center; font-style: normal; }
+.dot { position: absolute; top: 2px; right: -2px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-mandarin); box-shadow: 0 0 0 2px var(--color-velvet-2); }
+
+/* ---------- Чипы ---------- */
+.chip { position: relative; height: 36px; flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border-radius: var(--radius-chip); background: var(--color-velvet-3); color: var(--color-paper); font: 500 14px/1 var(--font-sans); transition: background 200ms var(--ease-out-soft), color 200ms; white-space: nowrap; }
+.chip::before { content: ""; position: absolute; inset: -4px 0; }
+.chip .i { color: var(--color-rose); }
+.chip[aria-pressed="true"] { background: var(--color-paper); color: var(--color-ink); }
+.chip[aria-pressed="true"] .i { color: var(--color-ink); }
+.chip .ck { display: none; }
+.chip[aria-pressed="true"] .ck { display: inline-block; }
+.chip-x { padding-right: 8px; }
+.chips-row { flex: none; display: flex; gap: 8px; overflow-x: auto; padding: 8px 20px 4px; scrollbar-width: none; }
+.chips-row::-webkit-scrollbar { display: none; }
+.chip-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.store { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: var(--radius-chip); background: var(--color-paper-2); color: var(--color-ink-soft); font: 500 13px/18px var(--font-sans); white-space: nowrap; }
+
+/* ---------- Аватары ---------- */
+.avatar { --size: 36px; width: var(--size); height: var(--size); flex: none; border-radius: 50%; display: inline-grid; place-items: center; color: var(--color-ink); font: 600 calc(var(--size) * 0.42)/1 var(--font-sans); background: var(--av); }
+/* DESIGN.md §7 Avatar: токены --color-avatar-<name> */
+.av-1 { --av: var(--color-avatar-mandarin); }
+.av-2 { --av: var(--color-avatar-mint); }
+.av-3 { --av: var(--color-avatar-champagne); }
+.av-4 { --av: var(--color-avatar-rose); }
+.av-5 { --av: var(--color-avatar-pomegranate); }
+.av-6 { --av: var(--color-avatar-plum); }
+.av-7 { --av: var(--color-avatar-olive); }
+.av-8 { --av: var(--color-avatar-graphite); }
+.avstack { display: flex; }
+.avstack > * { box-shadow: 0 0 0 2px var(--bg-ring, var(--color-velvet)); }
+.avstack > * + * { margin-left: -8px; }
+
+/* ---------- TabBar ---------- */
+.tabbar { position: absolute; left: 12px; right: 12px; bottom: max(12px, calc(var(--safe-b) - 14px)); height: 64px; z-index: 40; display: grid; grid-template-columns: repeat(4, 1fr); border-radius: var(--radius-chip); background: color-mix(in srgb, var(--color-velvet-2) 84%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.2); backdrop-filter: blur(16px) saturate(1.2); border: 1px solid var(--color-line); box-shadow: 0 16px 40px -16px rgb(10 0 8 / 0.7); }
+.tab { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--color-rose); }
+.tab-ic { position: relative; display: grid; place-items: center; }
+.tab-l { font: 600 11px/14px var(--font-sans); }
+.tab.active { color: var(--color-paper); }
+.tab .badge { top: -7px; right: -13px; box-shadow: 0 0 0 2px var(--color-velvet-2); }
+.tab.active::after { content: ""; position: absolute; bottom: 5px; width: 4px; height: 4px; border-radius: 50%; background: var(--color-mandarin); }
+
+/* ---------- Toast ---------- */
+.toast { position: absolute; top: 112px; left: 50%; z-index: 120; display: flex; align-items: center; gap: 8px; max-width: calc(100% - 40px); padding: 11px 16px; border-radius: var(--radius-field); background: var(--color-paper); color: var(--color-ink); font: 500 14px/20px var(--font-sans); box-shadow: var(--shadow-paper); opacity: 0; transform: translate(-50%, -10px); transition: opacity 200ms var(--ease-out-soft), transform 200ms var(--ease-out-soft); pointer-events: none; white-space: nowrap; }
+.toast .i { color: var(--color-mandarin-ink); flex: none; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- BottomSheet ---------- */
+.sheet-backdrop { position: absolute; inset: 0; z-index: 70; background: rgb(10 0 8 / 0.55); opacity: 0; transition: opacity 340ms var(--ease-out-soft); }
+.sheet-backdrop.open { opacity: 1; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 71; max-height: 90%; display: flex; flex-direction: column; background: var(--color-velvet-2); border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; box-shadow: 0 -24px 60px -12px rgb(10 0 8 / 0.7), 0 -1px 0 var(--color-line); transform: translateY(100%); transition: transform 340ms var(--ease-out-soft); }
+.sheet.open { transform: translateY(0); }
+.sheet.closing { transition: transform 220ms var(--ease-in-quick); }
+.sheet-full { height: 90%; }
+.sheet-handle { flex: none; display: flex; justify-content: center; padding: 10px 0 8px; touch-action: none; cursor: grab; }
+.sheet-handle span { width: 36px; height: 4px; border-radius: 2px; background: rgb(255 241 243 / 0.28); }
+.sheet-head { flex: none; display: flex; align-items: center; gap: 12px; padding: 2px 20px 14px; touch-action: none; }
+.sheet-head h2 { flex: 1; }
+.sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px 16px; scrollbar-width: none; }
+.sheet-body::-webkit-scrollbar { display: none; }
+.sheet-foot { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 12px 20px calc(var(--safe-b) + 6px); border-top: 1px solid var(--color-line); }
+.sheet-foot:empty { display: none; }
+.foot-row { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+.reopen { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 60; }
+
+/* ---------- ConfirmDialog ---------- */
+.cd-wrap { position: absolute; inset: 0; z-index: 110; display: grid; place-items: center; padding: 24px; background: rgb(10 0 8 / 0.55); opacity: 0; transition: opacity 200ms var(--ease-out-soft); }
+.cd-wrap.open { opacity: 1; }
+.cd { width: 100%; max-width: 320px; background: var(--color-paper); color: var(--color-ink); border-radius: var(--radius-paper); padding: 24px 20px 16px; box-shadow: var(--shadow-paper); transform: scale(0.96); transition: transform 240ms var(--ease-out-soft); }
+.cd-wrap.open .cd { transform: scale(1); }
+.cd p { color: var(--color-ink-soft); margin-top: 8px; }
+.cd-actions { display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; margin-top: 20px; }
+
+/* ---------- Бумага: общий шум ---------- */
+.paper { position: relative; background: var(--color-paper); color: var(--color-ink); }
+.paper::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grain); opacity: 0.035; mix-blend-mode: multiply; pointer-events: none; }
+
+/* ---------- Фото-заглушки ---------- */
+.photo { position: relative; overflow: hidden; display: grid; place-items: center; }
+.photo .ill { width: 64%; height: 82%; display: grid; place-items: center; transition: transform 300ms var(--ease-out-soft); }
+.photo svg.illus { width: 100%; height: 100%; overflow: visible; }
+svg.illus { stroke: var(--color-ink); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.bars { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; gap: 4px; z-index: 2; }
+.bars i { flex: 1; height: 3px; border-radius: 2px; background: rgb(42 16 36 / 0.18); }
+.bars i.on { background: var(--color-ink); }
+
+/* ============================================================
+   GIFT TAG (бирка)
+   ============================================================ */
+.deck { position: relative; flex: 1; min-height: 0; margin: 0 20px; }
+.deck-card { position: absolute; top: var(--top, 34px); left: 50%; width: var(--cw, 300px); height: var(--ch, 420px); margin-left: calc(var(--cw, 300px) / -2); transform-origin: 50% 100%; touch-action: none; will-change: transform; filter: drop-shadow(0 18px 20px rgb(10 0 8 / 0.42)) drop-shadow(0 4px 6px rgb(10 0 8 / 0.25)); }
+.deck-card.is-dragging { filter: drop-shadow(0 30px 34px rgb(10 0 8 / 0.55)) drop-shadow(0 6px 8px rgb(10 0 8 / 0.25)); cursor: grabbing; }
+.deck-card.is-top { cursor: grab; }
+.tag-string { position: absolute; left: 50%; top: -34px; width: 40px; height: 56px; margin-left: -20px; pointer-events: none; display: none; }
+.is-top .tag-string { display: block; }
+.tag-string path { fill: none; stroke: var(--color-rose); stroke-width: 1.6; stroke-linecap: round; }
+.tag {
+  height: 100%; display: flex; flex-direction: column; padding: 34px 10px 12px; border-radius: var(--radius-paper);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.6) inset;
+  -webkit-mask: radial-gradient(circle 7px at 50% 17px, #0000 96%, #000 100%);
+          mask: radial-gradient(circle 7px at 50% 17px, #0000 96%, #000 100%);
+}
+.tag::before { content: ""; position: absolute; left: 50%; top: 17px; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; border: 3px solid var(--color-paper-2); pointer-events: none; }
+.tag-photo { flex: 1; min-height: 0; border-radius: 16px; overflow: hidden; }
+.photo.fill { position: absolute; inset: 0; }
+.wl-photo .photo { position: absolute; inset: 0; border-radius: 12px; }
+.tag-body { flex: none; padding: 12px 6px 0; }
+.tag-title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tag-body .price { margin-top: 6px; }
+.tag-meta { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.tag-info { margin-left: auto; width: 44px; height: 44px; margin-right: -8px; margin-top: -8px; margin-bottom: -8px; display: grid; place-items: center; color: var(--color-ink-soft); border-radius: 50%; }
+.tag-dots { display: flex; gap: 6px; position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 2; padding: 5px 8px; border-radius: 999px; background: rgb(255 241 243 / 0.7); }
+.tag-dots i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(42 16 36 / 0.25); }
+.stamp { position: absolute; z-index: 5; padding: 6px 12px 5px; border-radius: 10px; font: 700 24px/1 var(--font-sans); letter-spacing: 0.06em; color: var(--color-ink); opacity: 0; pointer-events: none; box-shadow: inset 0 0 0 2px rgb(42 16 36 / 0.85), 0 6px 16px -6px rgb(10 0 8 / 0.4); }
+.stamp-yes { top: 58px; left: 22px; background: var(--color-mint); transform: rotate(-12deg); }
+.stamp-no { top: 58px; right: 22px; background: var(--color-rose); transform: rotate(12deg); }
+.stamp-super { left: 50%; bottom: 46%; background: var(--color-champagne); transform: translateX(-50%) rotate(-4deg); }
+
+.swipe-actions { flex: none; height: 84px; display: flex; align-items: center; justify-content: center; gap: 18px; padding-bottom: 4px; }
+.sab { position: relative; display: grid; place-items: center; border-radius: 50%; transform: scale(calc(1 + var(--p, 0) * 0.1)); transition: transform 120ms ease, opacity 200ms, box-shadow 200ms; }
+.sab:active { transform: scale(0.94); }
+.sab[disabled] { opacity: 0.35; pointer-events: none; }
+.sab-undo { width: 40px; height: 40px; background: var(--color-velvet-2); color: var(--color-rose); }
+.sab-undo::before { content: ""; position: absolute; inset: -2px; }
+.sab-no { width: 56px; height: 56px; background: var(--color-velvet-2); color: var(--color-rose); box-shadow: 0 0 0 calc(var(--p, 0) * 3px) var(--color-rose); }
+.sab-sup { width: 48px; height: 48px; background: var(--color-velvet-2); color: var(--color-champagne); box-shadow: 0 0 0 calc(var(--p, 0) * 3px) var(--color-champagne); }
+.sab-yes { width: 64px; height: 64px; background: var(--color-mandarin); color: var(--color-ink); box-shadow: 0 12px 28px -10px rgb(255 138 61 / 0.7), 0 0 0 calc(var(--p, 0) * 3px) var(--color-mint); }
+.sab-yes .i { fill: var(--color-ink); }
+.tabbar-space { flex: none; height: 92px; }
+
+/* ---------- WishRibbon ---------- */
+.ribbon-row { position: relative; flex: none; height: 30px; display: flex; align-items: center; gap: 10px; padding: 0 20px; }
+.segs { display: flex; gap: 4px; width: 80px; flex: none; }
+.segs i { flex: 1; height: 6px; border-radius: 3px; background: var(--color-velvet-3); overflow: hidden; position: relative; }
+.segs i::after { content: ""; position: absolute; inset: 0; background: var(--color-mandarin); transform: scaleX(0); transform-origin: left; transition: transform 320ms var(--ease-out-soft); }
+.segs i.on::after { transform: scaleX(1); }
+.ribbon-row .t-caption { color: var(--color-rose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bow-stage { position: absolute; inset: -18px 0 -18px; display: grid; place-items: center; pointer-events: none; }
+.bow { width: 64px; height: 44px; overflow: visible; }
+.bow path, .bow circle { stroke: var(--color-mandarin); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; fill: var(--color-mandarin); }
+.bow .bow-tail { fill: none; stroke-width: 4; }
+.bow .bow-fold { fill: none; stroke: var(--color-mandarin-ink); stroke-width: 1.6; }
+.bow.draw path, .bow.draw circle { stroke-dasharray: 1; stroke-dashoffset: 1; fill-opacity: 0; animation: draw 600ms var(--ease-out-soft) forwards, fillin 260ms 420ms forwards; }
+.bow.draw { animation: bow-sway 1.2s ease-in-out 640ms 2 alternate; transform-origin: 50% 40%; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes fillin { to { fill-opacity: 1; } }
+@keyframes bow-sway { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+.send-chip { height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px 0 8px; border-radius: var(--radius-chip); background: var(--color-velvet-2); border: 1px solid var(--color-line); font: 600 13px/1 var(--font-sans); color: var(--color-paper); }
+.send-chip svg { width: 26px; height: 18px; }
+
+/* ---------- EmptyState ---------- */
+.empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 24px; gap: 14px; }
+.empty-obj { width: 120px; height: 150px; border: 2px solid var(--color-rose); border-radius: 18px; position: relative; opacity: 0.8; }
+.empty-obj::before { content: ""; position: absolute; left: 50%; top: 14px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; border: 2px solid var(--color-rose); }
+.empty-obj.ticket-obj { width: 150px; height: 110px; }
+.empty-obj.ticket-obj::before { top: 50%; left: -9px; margin: -9px 0 0; width: 16px; height: 16px; background: var(--color-velvet); border-color: var(--color-rose); }
+.empty .btns { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 260px; margin-top: 6px; }
+
+/* ============================================================
+   ОНБОРДИНГ
+   ============================================================ */
+.onb { padding-bottom: calc(var(--safe-b) + 8px); }
+.onb-hang { position: relative; flex: none; height: 380px; }
+.hang { position: absolute; top: -20px; left: var(--x); width: 120px; transform-origin: 50% 0; transform: rotate(var(--rot)); animation: hang-sway var(--dur, 6s) ease-in-out infinite alternate; animation-delay: var(--delay, 0s); filter: drop-shadow(0 16px 18px rgb(10 0 8 / 0.42)); }
+.hang-string { display: block; width: 1.6px; height: var(--len); margin: 0 auto; background: var(--color-rose); }
+.mini-tag { height: 150px; margin-top: -14px; border-radius: 18px; padding: 28px 8px 8px; display: flex; -webkit-mask: radial-gradient(circle 6px at 50% 14px, #0000 96%, #000 100%); mask: radial-gradient(circle 6px at 50% 14px, #0000 96%, #000 100%); box-shadow: 0 1px 0 rgb(255 255 255 / 0.6) inset; }
+.mini-tag::before { content: ""; position: absolute; left: 50%; top: 14px; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 2.5px solid var(--color-paper-2); }
+.mini-tag .photo { flex: 1; border-radius: 12px; }
+@keyframes hang-sway { from { transform: rotate(calc(var(--rot) - 2.2deg)); } to { transform: rotate(calc(var(--rot) + 2.2deg)); } }
+.onb-copy { flex: 1; padding: 0 24px; display: flex; flex-direction: column; justify-content: flex-end; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand .bow { width: 46px; height: 32px; }
+.wordmark { font: italic 600 34px/1 var(--font-display); letter-spacing: -0.01em; }
+.onb-copy h1 { margin-top: 22px; max-width: 17ch; }
+.onb-sub { color: var(--color-rose); margin-top: 10px; }
+.onb-actions { flex: none; padding: 28px 20px 0; display: flex; flex-direction: column; gap: 4px; }
+
+/* ============================================================
+   ШТОРКИ: «Подробнее», «Фильтры»
+   ============================================================ */
+.gal { position: relative; aspect-ratio: 4 / 3.3; border-radius: 16px; overflow: hidden; }
+.gal .photo { position: absolute; inset: 0; }
+.gal-nav { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 3; }
+.gal-nav.prev { left: 0; } .gal-nav.next { right: 0; }
+.det-title { margin-top: 18px; }
+.det-price { margin-top: 6px; }
+.det-desc { color: var(--color-rose); margin-top: 12px; }
+.det-group { margin-top: 22px; }
+.det-label { color: var(--color-rose); margin-bottom: 10px; }
+.det-label b { color: var(--color-paper); font-weight: 600; }
+.swatches { display: flex; gap: 4px; }
+.swatch { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; }
+.swatch i { width: 32px; height: 32px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(42 16 36 / 0.25); transition: box-shadow 200ms var(--ease-out-soft); }
+.swatch[aria-pressed="true"] i { box-shadow: inset 0 0 0 1px rgb(42 16 36 / 0.25), 0 0 0 2px var(--color-velvet-2), 0 0 0 4px var(--color-paper); }
+.store-rows { border-top: 1px solid var(--color-line); }
+.store-row { display: flex; align-items: center; gap: 10px; min-height: 52px; border-bottom: 1px solid var(--color-line); }
+.store-row span:first-child { flex: 1; font: 500 15px/20px var(--font-sans); }
+.store-row .price { font-size: 15px; }
+.store-row .i { color: var(--color-rose); }
+.fine { color: var(--color-rose); margin-top: 10px; }
+
+.flt-group + .flt-group { margin-top: 26px; }
+.flt-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+.flt-group > .t-label { margin-bottom: 12px; }
+.rs { position: relative; height: 44px; touch-action: none; cursor: pointer; }
+.rs-track { position: absolute; left: 14px; right: 14px; top: 50%; height: 6px; margin-top: -3px; border-radius: 3px; background: var(--color-velvet-3); }
+.rs-fill { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--color-mandarin); }
+.rs-tick { position: absolute; top: 50%; width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px; border-radius: 50%; background: rgb(255 241 243 / 0.35); }
+.rs-thumb { position: absolute; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; display: grid; place-items: center; border-radius: 50%; touch-action: none; }
+.rs-thumb::after { content: ""; width: 28px; height: 28px; border-radius: 50%; background: var(--color-paper); box-shadow: 0 4px 10px rgb(10 0 8 / 0.45); transition: transform 120ms; }
+.rs-thumb:active::after, .rs-thumb.dragging::after { transform: scale(1.1); }
+.rs-ends { display: flex; justify-content: space-between; color: var(--color-rose); padding: 0 2px; }
+
+/* ============================================================
+   ВИШЛИСТ
+   ============================================================ */
+.subhead { padding: 0 20px; color: var(--color-paper); }
+.seg { display: flex; padding: 4px; border-radius: var(--radius-chip); background: var(--color-velvet-2); margin: 16px 20px 0; }
+.seg button { flex: 1; height: 36px; border-radius: var(--radius-chip); color: var(--color-rose); font: 600 15px/20px var(--font-sans); transition: background 200ms var(--ease-out-soft), color 200ms; }
+.seg button[aria-pressed="true"] { background: var(--color-velvet-3); color: var(--color-paper); }
+.booked-note { display: flex; align-items: center; gap: 8px; margin: 14px 20px 0; color: var(--color-rose); }
+.booked-note .grow { flex: 1; }
+.wl { padding: 14px 20px 190px; display: flex; flex-direction: column; gap: 10px; }
+.wl-item { display: flex; align-items: center; gap: 12px; padding: 10px 4px 10px 8px; border-radius: 18px; box-shadow: var(--shadow-paper); }
+.wl-grip { color: var(--color-ink-soft); opacity: 0.7; display: grid; place-items: center; cursor: grab; }
+.wl-photo { position: relative; width: 60px; height: 60px; flex: none; border-radius: 12px; }
+.wl-photo .ill { width: 74%; height: 74%; }
+.wl-star { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--color-velvet); color: var(--color-champagne); z-index: 3; }
+.wl-star .i { fill: var(--color-champagne); }
+.wl-text { flex: 1; min-width: 0; }
+.wl-title { font: 600 15px/20px var(--font-sans); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wl-price { font-size: 15px; line-height: 20px; margin-top: 2px; }
+.wl-var { color: var(--color-ink-soft); margin-top: 1px; }
+.wl-item.gifted .wl-photo, .wl-item.gifted .dim { opacity: 0.7; }
+.wl-item.gifted { padding-left: 12px; }
+.wl-back { margin: 4px 0 0 -14px; }
+.gifted-hint { margin: 14px 20px 0; color: var(--color-rose); }
+.gift-banner { margin: 14px 20px 0; padding: 14px 6px 10px 16px; border-radius: var(--radius-paper); box-shadow: var(--shadow-paper); }
+.gb-head { display: flex; align-items: flex-start; gap: 4px; }
+.gb-head > div { flex: 1; padding-top: 2px; }
+.gb-head .t-caption { margin-top: 2px; }
+.gb-head .icon-btn { margin-top: -10px; }
+.gb-list { margin-top: 10px; padding-right: 10px; display: flex; flex-direction: column; gap: 8px; }
+.gb-item { display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: 14px; background: var(--color-paper-2); }
+.gb-photo { width: 44px; height: 44px; border-radius: 10px; }
+.gb-photo .photo { border-radius: 10px; }
+.gb-item .btn-sm { padding: 0 12px; }
+.gb-title { flex: 1; min-width: 0; font: 600 14px/18px var(--font-sans); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.wl-add { display: flex; align-items: center; justify-content: center; gap: 8px; height: 56px; border-radius: 18px; border: 1.5px dashed rgb(255 241 243 / 0.28); color: var(--color-rose); font: 600 15px/20px var(--font-sans); }
+.sticky-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; padding: 28px 20px calc(var(--safe-b) + 70px); background: linear-gradient(to top, var(--color-velvet) 62%, rgb(42 16 36 / 0)); pointer-events: none; }
+.sticky-foot > * { pointer-events: auto; }
+.sticky-foot.no-tab { padding-bottom: calc(var(--safe-b) + 6px); }
+.act-list { display: flex; flex-direction: column; }
+.act-list button { display: flex; align-items: center; gap: 14px; height: 52px; padding: 0 4px; font: 500 16px/22px var(--font-sans); border-bottom: 1px solid var(--color-line); text-align: left; }
+.act-list button:last-child { border-bottom: 0; }
+.act-list .i { color: var(--color-rose); }
+.act-list .danger, .act-list .danger .i { color: var(--color-pomegranate); }
+
+/* ============================================================
+   ГОСТЕВОЙ ВИШЛИСТ
+   ============================================================ */
+.guest-top { flex: none; height: 52px; display: flex; align-items: center; padding: 0 20px; }
+.guest-top .brand .bow { width: 30px; height: 21px; }
+.guest-top .wordmark { font-size: 24px; }
+.owner { padding: 10px 20px 4px; }
+.owner h1 { margin-top: 14px; }
+.owner .t-title3 { color: var(--color-rose); margin-top: 2px; }
+.owner-msg { margin-top: 12px; padding: 12px 14px; border-radius: 14px 14px 14px 4px; background: var(--color-velvet-2); color: var(--color-paper); }
+.g-list { padding: 18px 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.g-card { border-radius: var(--radius-paper); padding: 30px 12px 14px; box-shadow: var(--shadow-paper); -webkit-mask: radial-gradient(circle 6px at 50% 15px, #0000 96%, #000 100%); mask: radial-gradient(circle 6px at 50% 15px, #0000 96%, #000 100%); transition: opacity 240ms var(--ease-out-soft); }
+.g-wrap { filter: drop-shadow(0 16px 18px rgb(10 0 8 / 0.4)); }
+.g-card::before { content: ""; position: absolute; left: 50%; top: 15px; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 2.5px solid var(--color-paper-2); }
+.g-card .photo { aspect-ratio: 16 / 10; border-radius: 14px; }
+.g-card .photo .ill { height: 86%; }
+.g-body { padding: 12px 4px 0; }
+.g-var { color: var(--color-ink-soft); margin-top: 6px; }
+.g-note { font: italic 500 22px/28px var(--font-display); color: var(--color-ink); margin-top: 10px; padding-left: 12px; border-left: 2px solid var(--color-paper-2); }
+.g-stores { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+.g-act { margin-top: 14px; }
+.g-act .btn { width: 100%; }
+.g-state { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 0 6px 0 14px; border-radius: var(--radius-field); background: var(--color-paper-2); font: 600 15px/20px var(--font-sans); }
+.g-state .lbl { display: flex; align-items: center; gap: 8px; }
+.g-state .lbl .i { color: var(--color-ink); }
+.g-card.is-taken { opacity: 0.62; }
+.g-taken { min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: var(--radius-field); border: 1.5px dashed rgb(122 90 110 / 0.45); color: var(--color-ink-soft); font: 600 15px/20px var(--font-sans); }
+.g-foot { padding: 4px 20px calc(var(--safe-b) + 12px); text-align: center; }
+.g-foot p { color: var(--color-rose); margin-top: 10px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field input { height: 52px; padding: 0 16px; border-radius: var(--radius-field); background: var(--color-velvet-3); border: 1.5px solid transparent; color: var(--color-paper); outline: none; font: 400 17px/22px var(--font-sans); }
+.field input::placeholder { color: rgb(203 168 188 / 0.6); }
+.field input:focus-visible { border-color: var(--color-mandarin); }
+.field.err input { border-color: var(--color-pomegranate); }
+.field-err { color: var(--color-pomegranate); display: none; }
+.field.err .field-err { display: block; }
+
+/* ============================================================
+   БИЛЕТИК (Че делать будем?)
+   ============================================================ */
+.plan-head { flex: none; height: 56px; display: flex; align-items: center; gap: 8px; padding: 0 16px 0 8px; }
+.plan-head .mid { flex: 1; min-width: 0; }
+.live { display: flex; align-items: center; gap: 6px; color: var(--color-rose); }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-mint); box-shadow: 0 0 0 4px rgb(143 227 198 / 0.18); }
+.mcount { height: 32px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: var(--radius-chip); background: var(--color-velvet-2); border: 1px solid var(--color-line); font: 600 13px/1 var(--font-sans); white-space: nowrap; transition: background 200ms; }
+.mcount.bump { background: color-mix(in srgb, var(--color-mint) 22%, var(--color-velvet-2)); }
+.parts { flex: none; display: flex; align-items: center; gap: 12px; padding: 4px 20px 10px; }
+.ring-av { position: relative; width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--color-velvet); }
+.ring-av + .ring-av { margin-left: -10px; }
+.ring-av svg { position: absolute; inset: 0; width: 46px; height: 46px; transform: rotate(-90deg); }
+.ring-av circle { fill: none; stroke-width: 2.4; }
+.ring-av .trk { stroke: var(--color-line); }
+.ring-av .prg { stroke: var(--color-paper); stroke-dasharray: 1; stroke-linecap: round; transition: stroke-dashoffset 420ms var(--ease-out-soft); }
+.ring-av .online { position: absolute; right: 1px; bottom: 1px; width: 11px; height: 11px; border-radius: 50%; background: var(--color-mint); box-shadow: 0 0 0 2.5px var(--color-velvet); }
+.parts-status { color: var(--color-rose); min-width: 0; }
+.ticket { --ph: calc((var(--cw) - 20px) * 0.625); --perf: calc(19px + var(--ph)); height: 100%; display: flex; flex-direction: column; padding: 10px; border-radius: var(--radius-paper); box-shadow: 0 1px 0 rgb(255 255 255 / 0.6) inset;
+  -webkit-mask: radial-gradient(circle 11px at 0 var(--perf), #0000 96%, #000 100%) 0 0 / 51% 100% no-repeat, radial-gradient(circle 11px at 100% var(--perf), #0000 96%, #000 100%) 100% 0 / 51% 100% no-repeat;
+          mask: radial-gradient(circle 11px at 0 var(--perf), #0000 96%, #000 100%) 0 0 / 51% 100% no-repeat, radial-gradient(circle 11px at 100% var(--perf), #0000 96%, #000 100%) 100% 0 / 51% 100% no-repeat; }
+.tk-photo { height: var(--ph); flex: none; border-radius: 16px; }
+.tk-photo .ill { width: 78%; height: 86%; }
+.tk-perf { flex: none; height: 18px; position: relative; }
+.tk-perf::before { content: ""; position: absolute; left: 18px; right: 18px; top: 50%; border-top: 2px dashed rgb(122 90 110 / 0.4); }
+.tk-body { flex: 1; min-height: 0; padding: 4px 6px 0; display: flex; flex-direction: column; }
+.tk-body .t-title2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tk-body .price { margin-top: 6px; }
+.per { font-weight: 500; color: var(--color-ink-soft); font-size: 15px; }
+.tk-meta { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--color-ink-soft); font: 500 13px/18px var(--font-sans); }
+.tk-meta .i { flex: none; }
+.tk-meta span + .i { margin-left: 8px; }
+.tk-tags { display: flex; gap: 6px; margin-top: auto; padding-top: 10px; flex-wrap: wrap; }
+.ticket .stamp-yes, .ticket .stamp-no { top: 34px; }
+
+/* Совпадение */
+.match { position: absolute; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 20px; background: rgb(10 0 8 / 0.62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transition: opacity 260ms var(--ease-out-soft); cursor: pointer; }
+.match.in { opacity: 1; }
+.match-glow { position: absolute; left: 50%; top: 52%; width: 420px; height: 420px; margin: -210px 0 0 -210px; border-radius: 50%; background: radial-gradient(circle, rgb(143 227 198 / 0.42), rgb(143 227 198 / 0) 62%); transform: scale(0.6); transition: transform 700ms var(--ease-out-soft); pointer-events: none; }
+.match.in .match-glow { transform: scale(1); }
+.match-title { position: relative; transform: translateY(10px); opacity: 0; transition: transform 500ms var(--ease-out-soft) 120ms, opacity 400ms 120ms; }
+.match-sub { position: relative; color: var(--color-paper); margin-top: 8px; max-width: 28ch; opacity: 0; transition: opacity 400ms 220ms; }
+.match.in .match-title, .match.in .match-sub { transform: none; opacity: 1; }
+/* билетик в потоке, а не absolute: высота сцены = высоте билетика, подпись всегда ниже него */
+.match-stage { position: relative; width: 100%; margin-top: 18px; display: flex; justify-content: center; }
+.match-ticket { position: relative; width: 220px; transform: translateY(80px) scale(0.85); opacity: 0; transition: transform 600ms var(--ease-out-soft) 80ms, opacity 300ms 80ms; filter: drop-shadow(0 20px 26px rgb(10 0 8 / 0.5)); }
+.match.in .match-ticket { transform: none; opacity: 1; }
+.match-ticket .ticket { --cw: 220px; height: auto; }
+.match-ticket .tk-body { padding-bottom: 6px; }
+.match-ticket .t-title2 { font-size: 22px; line-height: 26px; }
+.m-av { position: absolute; top: 50%; left: 50%; margin: -24px 0 0 -24px; opacity: 0; transition: transform 600ms var(--ease-out-soft) 260ms, opacity 300ms 260ms; }
+.m-av .avatar { box-shadow: 0 0 0 3px var(--color-velvet); }
+.match.in .m-av { opacity: 1; }
+.match.in .m-av.a1 { transform: translate(-138px, -54px) rotate(-10deg); }
+.match.in .m-av.a2 { transform: translate(-150px, 30px) rotate(-4deg); }
+.match.in .m-av.a3 { transform: translate(138px, -54px) rotate(10deg); }
+.match.in .m-av.a4 { transform: translate(150px, 30px) rotate(4deg); }
+.match-hint { position: relative; color: var(--color-rose); margin-top: 18px; }
+
+/* Результаты */
+.res { padding: 4px 20px 200px; }
+.res .t-caption { color: var(--color-rose); margin-top: 6px; }
+.res-sub { margin: 26px 0 10px; color: var(--color-paper); }
+.res-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.mt-wrap { filter: drop-shadow(0 12px 14px rgb(10 0 8 / 0.38)); }
+.mt { --px: 96px; display: flex; align-items: stretch; gap: 0; min-height: 96px; border-radius: 18px; padding: 8px;
+  -webkit-mask: radial-gradient(circle 9px at var(--px) 0, #0000 96%, #000 100%) 0 0 / 100% 51% no-repeat, radial-gradient(circle 9px at var(--px) 100%, #0000 96%, #000 100%) 0 100% / 100% 51% no-repeat;
+          mask: radial-gradient(circle 9px at var(--px) 0, #0000 96%, #000 100%) 0 0 / 100% 51% no-repeat, radial-gradient(circle 9px at var(--px) 100%, #0000 96%, #000 100%) 0 100% / 100% 51% no-repeat; }
+.mt-photo { width: 80px; flex: none; border-radius: 12px; }
+.mt-photo .ill { width: 86%; height: 80%; }
+.mt-perf { width: 16px; flex: none; position: relative; }
+.mt-perf::before { content: ""; position: absolute; top: 12px; bottom: 12px; left: 50%; border-left: 2px dashed rgb(122 90 110 / 0.4); }
+.mt-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 2px 6px 2px 0; }
+.mt-title { font: 600 22px/26px var(--font-display); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mt-votes { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: var(--color-ink-soft); font: 500 13px/18px var(--font-sans); }
+.mt-votes .avstack { --bg-ring: var(--color-paper); }
+.mt-votes .avatar { --size: 22px !important; }
+.mt.almost { opacity: 0.85; }
+.res-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; flex-direction: column; gap: 8px; padding: 28px 20px calc(var(--safe-b) + 6px); background: linear-gradient(to top, var(--color-velvet) 70%, rgb(42 16 36 / 0)); }
+
+/* Барабан */
+.reel { position: relative; height: 228px; overflow: hidden; border-radius: 18px; background: var(--color-velvet); -webkit-mask: linear-gradient(to bottom, transparent, #000 26%, #000 74%, transparent); mask: linear-gradient(to bottom, transparent, #000 26%, #000 74%, transparent); }
+.reel-strip { position: absolute; left: 0; right: 0; top: 0; will-change: transform; }
+.reel-item { height: 76px; padding: 8px 14px; }
+.reel-item > div { height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 14px 0 8px; border-radius: 14px; }
+.reel-item .mt-photo { width: 52px; height: 44px; border-radius: 10px; }
+.reel-item b { font: 600 22px/26px var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reel-frame { position: absolute; left: 6px; right: 6px; top: 76px; height: 76px; border-radius: 18px; box-shadow: inset 0 0 0 2px var(--color-mandarin); z-index: 2; pointer-events: none; transition: box-shadow 300ms; }
+.reel.won .reel-frame { box-shadow: inset 0 0 0 2px var(--color-mint), 0 0 30px rgb(143 227 198 / 0.35); }
+.reel-cap { text-align: center; color: var(--color-rose); margin-top: 14px; }
+.result { text-align: left; padding: 6px 0 4px; animation: fade-up 450ms var(--ease-out-soft) both; }
+.result .t-caption { color: var(--color-rose); }
+.result .t-display { margin-top: 6px; }
+.result .when { margin-top: 12px; display: flex; align-items: center; gap: 8px; color: var(--color-paper); }
+.result .avstack { margin-top: 16px; --bg-ring: var(--color-velvet-2); }
+@keyframes fade-up { from { opacity: 0; transform: translateY(10px); } }
+
+/* ============================================================
+   САНТА
+   ============================================================ */
+.game { padding: 0 20px; }
+.game .t-caption { color: var(--color-rose); margin-top: 4px; }
+.env-zone { position: relative; height: 238px; transition: height 600ms var(--ease-out-soft); }
+.env-zone[data-state="opened"] { height: 342px; }
+.env { position: absolute; left: 50%; bottom: 18px; width: 300px; height: 196px; margin-left: -150px; perspective: 900px; }
+.env-back { position: absolute; inset: 0; border-radius: 12px; background: var(--color-paper-2); box-shadow: var(--shadow-paper); }
+.env-letter { position: absolute; left: 14px; right: 14px; top: 12px; height: 174px; z-index: 2; border-radius: 10px; padding: 18px 16px; text-align: center; box-shadow: 0 2px 8px rgb(10 0 8 / 0.12); transition: transform 700ms var(--ease-out-soft) 360ms; }
+.env-letter .t-caption { color: var(--color-ink-soft); }
+.env-letter .t-display { font-style: italic; margin-top: 4px; }
+.env-letter .meta { color: var(--color-ink-soft); margin-top: 6px; }
+.env-front { position: absolute; inset: 0; z-index: 3; border-radius: 12px; filter: drop-shadow(0 -2px 3px rgb(10 0 8 / 0.10)); pointer-events: none; }
+.env-front > div { position: absolute; inset: 0; border-radius: 12px; clip-path: polygon(0 26%, 50% 64%, 100% 26%, 100% 100%, 0 100%); }
+.env-front svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.env-front svg path { stroke: rgb(122 90 110 / 0.28); stroke-width: 1.4; fill: none; }
+.env-flap { position: absolute; left: 0; right: 0; top: 0; height: 64%; z-index: 4; transform-origin: 50% 0; transition: transform 460ms var(--ease-out-soft), z-index 0s 230ms; filter: drop-shadow(0 3px 4px rgb(10 0 8 / 0.2)); pointer-events: none; }
+.env-flap > div { position: absolute; inset: 0; border-radius: 12px 12px 0 0; clip-path: polygon(0 0, 100% 0, 50% 100%); background: linear-gradient(to bottom, var(--color-paper), var(--color-paper-2)); }
+.env-seal { position: absolute; left: 50%; top: 64%; z-index: 5; width: 100px; height: 100px; margin: -56px 0 0 -50px; display: grid; place-items: center; border-radius: 50%; touch-action: none; }
+.seal-ring { position: absolute; inset: 0; transform: rotate(-90deg); pointer-events: none; }
+.seal-ring circle { fill: none; stroke-width: 4; }
+.seal-ring .trk { stroke: rgb(184 70 14 / 0.16); }
+.seal-ring .prg { stroke: var(--color-mandarin-ink); stroke-dasharray: 1; stroke-dashoffset: 1; stroke-linecap: round; }
+.env[data-state="sealed"] .seal-ring, .env[data-state="opened"] .seal-ring { opacity: 0; }
+.wax { position: absolute; left: 14px; top: 14px; width: 72px; height: 72px; pointer-events: none; }
+.wax > i { position: absolute; inset: 0; border-radius: 47% 53% 51% 49% / 52% 47% 53% 48%; display: grid; place-items: center; font: italic 700 38px/1 var(--font-display); transition: transform 420ms var(--ease-out-soft), opacity 360ms; }
+.wax > i.l { clip-path: polygon(0 0, 54% 0, 44% 38%, 56% 62%, 46% 100%, 0 100%); }
+.wax > i.r { clip-path: polygon(54% 0, 100% 0, 100% 100%, 46% 100%, 56% 62%, 44% 38%); }
+.env[data-state="sealed"] .wax > i { background: radial-gradient(circle at 35% 30%, var(--color-velvet-3), var(--color-velvet) 100%); color: var(--color-rose); box-shadow: inset 0 0 0 5px rgb(255 241 243 / 0.06), 0 4px 10px rgb(10 0 8 / 0.35); }
+.env[data-state="ready"] .wax > i, .env[data-state="opened"] .wax > i { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--color-mandarin) 62%, var(--color-paper)) 0, var(--color-mandarin) 40%, var(--color-mandarin-ink) 100%); color: var(--color-mandarin-ink); text-shadow: 0 1px 0 rgb(255 241 243 / 0.35); box-shadow: inset 0 0 0 5px rgb(184 70 14 / 0.35), 0 4px 10px rgb(10 0 8 / 0.35); }
+.env[data-state="ready"] .wax { animation: seal-breathe 2.4s ease-in-out infinite; }
+@keyframes seal-breathe { 50% { transform: scale(1.04); } }
+.env[data-state="opened"] .wax > i.l { transform: translate(-22px, 26px) rotate(-26deg); opacity: 0; }
+.env[data-state="opened"] .wax > i.r { transform: translate(22px, 30px) rotate(24deg); opacity: 0; }
+.env[data-state="opened"] .env-flap { transform: rotateX(180deg); z-index: 1; }
+.env[data-state="opened"] .env-letter { transform: translateY(-122px); }
+.env[data-state="opened"] .env-seal { pointer-events: none; }
+.santa-under { padding: 0 20px; text-align: center; min-height: 112px; }
+.santa-under .t-caption { color: var(--color-rose); }
+.santa-under .t-title3 { color: var(--color-paper); }
+.santa-under .btn-lg { margin-top: 14px; }
+.parts-list { padding: 18px 20px 120px; }
+.parts-list h3 { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.parts-list h3 span { color: var(--color-rose); font-weight: 500; }
+.p-row { display: flex; align-items: center; gap: 12px; min-height: 56px; border-bottom: 1px solid var(--color-line); }
+.p-row:last-child { border-bottom: 0; }
+.p-row .name { flex: 1; font: 500 15px/20px var(--font-sans); }
+.p-st { display: inline-flex; align-items: center; gap: 6px; font: 500 13px/18px var(--font-sans); }
+.p-st.ok { color: var(--color-mint); }
+.p-st.no { color: var(--color-rose); }
+.bought { display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: var(--color-velvet-2); color: var(--color-rose); }
+
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
+  .hang { animation: none; }
+}
+
+@media (max-width: 860px) {
+  .tokens { grid-template-columns: 1fr; }
+  .page-head h1 { font-size: 40px; line-height: 44px; }
+}
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <div class="brand" data-brand></div>
+  <h1>Дизайн-референс ключевых экранов</h1>
+  <p>Эталон для Исполнителя и для согласования стиля. Источник правды — <code>docs/DESIGN.md</code>: если здесь что-то расходится с документом, прав документ. Колоды можно тянуть мышью или пальцем; клавиши ← → ↑ и Z работают в колоде, над которой курсор.</p>
+</header>
+
+<section class="tokens" aria-label="Токены">
+  <div>
+    <h2>Палитра «Бархат»</h2>
+    <div class="swatches-grid" data-swatches></div>
+  </div>
+  <div>
+    <h2>Шкала шрифтов</h2>
+    <div class="type-spec">
+      <div><span>display</span><span class="t-display">Решено: кино</span></div>
+      <div><span>title-1</span><span class="t-title1">Мой вишлист</span></div>
+      <div><span>title-2</span><span class="t-title2">Аромасвеча «Инжир и кедр»</span></div>
+      <div><span>title-3</span><span class="t-title3">на день рождения, 14 марта</span></div>
+      <div><span>body</span><span class="t-body">Друзья увидят — и угадают с подарком.</span></div>
+      <div><span>price</span><span class="price" data-price-sample></span></div>
+      <div><span>caption</span><span class="t-caption rose">Ещё 3 — и вишлист можно отправить</span></div>
+    </div>
+  </div>
+</section>
+
+<main class="gallery">
+  <figure class="shot"><div class="phone" data-screen="onboarding"></div>
+    <figcaption><b>8.1 Онбординг, шаг 1</b><p>Бирки висят на нитках и чуть покачиваются — единственное фоновое движение в приложении.</p></figcaption></figure>
+
+  <figure class="shot" id="shot-gifts"><div class="phone" data-screen="deck"></div>
+    <figcaption><b>8.2 Подарки — колода бирок</b><p>Тяни карточку или жми кнопки. Пять «Хочу» — бант и шторка «Вишлист готов». Тап по фото листает фото, по тексту — «Подробнее».</p>
+      <div class="shot-ctrl"><button type="button" data-reset-deck>Начать сначала</button></div></figcaption></figure>
+
+  <figure class="shot"><div class="phone" data-screen="detail"></div>
+    <figcaption><b>8.2 Шторка «Подробнее»</b><p>Тап по половинам фото листает галерею. Выбор цвета меняет фото. Шторка закрывается свайпом вниз, тапом по фону и Escape.</p></figcaption></figure>
+
+  <figure class="shot"><div class="phone" data-screen="filters"></div>
+    <figcaption><b>8.2 Шторка фильтров</b><p>Логарифмический бюджет с «магнитами» на 1, 3, 5, 10, 20 и 50 тысячах. Счётчик на кнопке живой.</p></figcaption></figure>
+
+  <figure class="shot" id="shot-wish"><div class="phone" data-screen="wishlist"></div>
+    <figcaption><b>8.3 Мой вишлист</b><p>«Очень хочу» — первые в списке, со звездой. Меню ⋮: «Мне это подарили», выше и ниже, удалить. Кто что забронировал, владелец не видит, только счётчик.</p>
+      <div class="shot-ctrl" role="group" aria-label="Вкладка вишлиста"><button type="button" data-wltab="want">Хочу</button><button type="button" data-wltab="gifted">Подарили</button></div></figcaption></figure>
+
+  <figure class="shot"><div class="phone" data-screen="guest"></div>
+    <figcaption><b>8.5 Чужой вишлист по ссылке</b><p>Гость без профиля: первая бронь спрашивает имя. Одна карточка уже занята кем-то другим.</p></figcaption></figure>
+
+  <figure class="shot" id="shot-plans"><div class="phone" data-screen="plan"></div>
+    <figcaption><b>8.7 Че делать будем? — свайп</b><p>Боты листают параллельно (кольца вокруг аватаров). «Хочу» на кино, антикафе или каток — совпадение.</p>
+      <div class="shot-ctrl"><button type="button" data-reset-plan>Начать сначала</button></div></figcaption></figure>
+
+  <figure class="shot"><div class="phone" data-screen="results"></div>
+    <figcaption><b>8.7 Результаты и барабан</b><p>Результат выбирается через crypto.getRandomValues до анимации; барабан только показывает его.</p></figcaption></figure>
+
+  <figure class="shot" id="shot-santa"><div class="phone" data-screen="santa"></div>
+    <figcaption><b>8.8 Тайный Санта — конверт</b><p>Проведи жеребьёвку, затем удерживай печать 0.8 секунды.</p>
+      <div class="shot-ctrl" role="group" aria-label="Состояние конверта"><button type="button" data-st="sealed">Запечатан</button><button type="button" data-st="ready">Готов</button><button type="button" data-st="opened">Открыт</button></div></figcaption></figure>
+</main>
+
+<script>
+(() => {
+'use strict';
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+const reduceMQ = matchMedia('(prefers-reduced-motion: reduce)');
+let reduce = reduceMQ.matches;
+reduceMQ.addEventListener && reduceMQ.addEventListener('change', e => { reduce = e.matches; });
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const NBSP = ' ', NNBSP = ' ';
+const fmt = n => Math.round(n).toLocaleString('ru-RU').replace(/\s/g, NBSP);
+const price = (min, max) => (max == null || min === max) ? `${fmt(min)}${NBSP}сом` : `${fmt(min)}${NNBSP}–${NNBSP}${fmt(max)}${NBSP}сом`;
+function plural(n, f) { const a = n % 10, b = n % 100; if (a === 1 && b !== 11) return f[0]; if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return f[1]; return f[2]; }
+const haptic = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* нет вибро */ } };
+let uidN = 0; const uid = p => `${p}-${++uidN}`;
+function randInt(n) { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+
+function spring2({ from, to, v = [0, 0], k = 320, c = 30, onUpdate, onDone, maxMs = 4000 }) {
+  const x = from.slice(), vel = v.slice(); let last = 0, raf = 0, stopped = false, t0 = 0;
+  const step = now => {
+    if (stopped) return;
+    if (!last) { last = now; t0 = now; }
+    const dt = Math.min(0.032, (now - last) / 1000); last = now;
+    const n = 4, h = dt / n;
+    for (let s = 0; s < n; s++) for (let i = 0; i < 2; i++) { const a = -k * (x[i] - to[i]) - c * vel[i]; vel[i] += a * h; x[i] += vel[i] * h; }
+    onUpdate(x[0], x[1], vel);
+    if (stopped) return;
+    const rest = Math.abs(x[0] - to[0]) < 0.4 && Math.abs(x[1] - to[1]) < 0.4 && Math.abs(vel[0]) < 12 && Math.abs(vel[1]) < 12;
+    if (rest || now - t0 > maxMs) { onUpdate(to[0], to[1], [0, 0]); if (onDone) onDone(); return; }
+    raf = requestAnimationFrame(step);
+  };
+  raf = requestAnimationFrame(step);
+  return { stop() { stopped = true; cancelAnimationFrame(raf); } };
+}
+function tween({ from, to, dur, ease = t => t, onUpdate, onDone }) {
+  let raf = 0, stopped = false, t0 = 0;
+  const f = now => { if (stopped) return; if (!t0) t0 = now; const t = clamp((now - t0) / dur, 0, 1); onUpdate(from + (to - from) * ease(t), t); if (t < 1) raf = requestAnimationFrame(f); else if (onDone) onDone(); };
+  raf = requestAnimationFrame(f);
+  return { stop() { stopped = true; cancelAnimationFrame(raf); } };
+}
+
+/* ---------- Иконки (пути lucide, stroke 1.75) ---------- */
+const ICONS = {
+  gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>',
+  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>',
+  mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>',
+  sliders: '<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  left: '<path d="m15 18-6-6 6-6"/>',
+  lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  grip: '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>',
+  more: '<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  pin: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+  ext: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+  up: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+  down: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+  shuffle: '<path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/>',
+  calplus: '<path d="M8 2v4"/><path d="M16 2v4"/><path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/><path d="M3 10h18"/><path d="M16 19h6"/><path d="M19 16v6"/>',
+  send: '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  bell: '<path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>',
+  pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>',
+  party: '<path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/>',
+  palette: '<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>'
+};
+const icon = (n, s = 20, cls = '') => `<svg class="i ${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
+
+/* ---------- Заглушки фото: тонированная бумага + контурный предмет ---------- */
+const mix = (c, p, base = 'var(--color-paper)') => `color-mix(in srgb, var(--color-${c}) ${p}%, ${base})`;
+const TINT = {
+  mint: `linear-gradient(165deg, ${mix('mint', 55)} 0%, var(--color-paper-2) 100%)`,
+  champagne: `linear-gradient(165deg, ${mix('champagne', 62)} 0%, var(--color-paper-2) 100%)`,
+  rose: `linear-gradient(165deg, ${mix('rose', 62)} 0%, var(--color-paper-2) 100%)`,
+  mandarin: `linear-gradient(165deg, ${mix('mandarin', 36)} 0%, var(--color-paper-2) 100%)`,
+  plum: `linear-gradient(165deg, ${mix('velvet-3', 26)} 0%, var(--color-paper-2) 100%)`
+};
+const FILL = { paper: 'var(--color-paper)', paper2: 'var(--color-paper-2)', mint: mix('mint', 72), champagne: mix('champagne', 78), rose: mix('rose', 75), mandarin: mix('mandarin', 62) };
+const f = c => `style="fill:${c}"`;
+const NOSTROKE = 'stroke:none';
+const floor = (cx, cy, rx) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="5" style="fill:rgb(42 16 36 / .09);${NOSTROKE}"/>`;
+const wrapSvg = (body, vb = '0 0 160 160') => `<svg class="illus" viewBox="${vb}" aria-hidden="true">${body}</svg>`;
+
+const ILL = {
+  headphones: c => wrapSvg(`${floor(80, 140, 46)}
+    <path d="M38 98V82a42 42 0 0 1 84 0v16" style="stroke-width:11"/>
+    <path d="M38 98V82a42 42 0 0 1 84 0v16" style="stroke:${c};stroke-width:6.5"/>
+    <rect x="24" y="88" width="28" height="44" rx="13" ${f(c)}/><rect x="108" y="88" width="28" height="44" rx="13" ${f(c)}/>
+    <rect x="47" y="96" width="9" height="28" rx="4.5" ${f('var(--color-paper-2)')}/><rect x="104" y="96" width="9" height="28" rx="4.5" ${f('var(--color-paper-2)')}/>
+    <circle cx="124" cy="104" r="2.6" style="fill:var(--color-mandarin);${NOSTROKE}"/>`),
+  candle: c => wrapSvg(`${floor(80, 138, 40)}
+    <circle cx="80" cy="36" r="24" style="fill:rgb(255 138 61 / .14);${NOSTROKE}"/>
+    <path d="M50 70h60v52a12 12 0 0 1-12 12H62a12 12 0 0 1-12-12z" ${f(c)}/>
+    <rect x="47" y="62" width="66" height="11" rx="4" ${f('var(--color-paper-2)')}/>
+    <rect x="61" y="88" width="38" height="28" rx="4" ${f('var(--color-paper)')}/>
+    <path d="M69 98h22M73 106h14" style="stroke:var(--color-ink-soft);stroke-width:1.8"/>
+    <path d="M80 62v-9"/>
+    <path d="M80 52c-8-7-6-17 0-26 6 9 8 19 0 26z" style="fill:var(--color-mandarin);stroke-width:1.8"/>
+    <path d="M80 47c-3-3-2-7 0-10 2 3 3 7 0 10z" style="fill:var(--color-champagne);${NOSTROKE}"/>`),
+  mugs: c => wrapSvg(`${floor(80, 136, 50)}
+    <path d="M78 58h40v40a12 12 0 0 1-12 12H90a12 12 0 0 1-12-12z" ${f('var(--color-paper-2)')}/>
+    <path d="M118 68h5a9 9 0 0 1 0 18h-5"/>
+    <path d="M38 74h46v42a13 13 0 0 1-13 13H51a13 13 0 0 1-13-13z" ${f(c)}/>
+    <path d="M84 84h6a10 10 0 0 1 0 20h-6"/>
+    <path d="M38 92h46" style="stroke:var(--color-mandarin);stroke-width:3"/>
+    <path d="M52 64c-5-6 5-9 0-16M64 64c-5-6 5-9 0-16" style="stroke:var(--color-ink-soft);stroke-width:2"/>`),
+  backpack: c => wrapSvg(`${floor(80, 140, 42)}
+    <path d="M70 40a10 9 0 0 1 20 0" style="stroke-width:3.5"/>
+    <path d="M48 66a32 32 0 0 1 64 0v58a12 12 0 0 1-12 12H60a12 12 0 0 1-12-12z" ${f(c)}/>
+    <path d="M48 80q32 14 64 0"/>
+    <rect x="60" y="96" width="40" height="30" rx="8" ${f('var(--color-paper)')}/>
+    <path d="M64 104h32"/>
+    <circle cx="94" cy="104" r="3" style="fill:var(--color-mandarin);${NOSTROKE}"/>
+    <path d="M54 92v32M106 92v32" style="stroke:var(--color-ink-soft);stroke-width:1.8"/>`),
+  camera: c => wrapSvg(`${floor(80, 144, 46)}
+    <rect x="58" y="114" width="44" height="26" rx="2" ${f('var(--color-paper)')}/>
+    <rect x="63" y="118" width="34" height="16" rx="1" style="fill:${mix('champagne', 55)};${NOSTROKE}"/>
+    <rect x="98" y="40" width="16" height="8" rx="2" ${f('var(--color-paper-2)')}/>
+    <rect x="32" y="46" width="96" height="74" rx="17" ${f(c)}/>
+    <rect x="42" y="56" width="20" height="12" rx="3" ${f('var(--color-paper)')}/>
+    <rect x="104" y="56" width="14" height="10" rx="2.5" ${f('var(--color-paper-2)')}/>
+    <circle cx="80" cy="86" r="24" ${f('var(--color-paper)')}/>
+    <circle cx="80" cy="86" r="13" ${f('var(--color-ink-soft)')}/>
+    <circle cx="75" cy="81" r="3.5" style="fill:var(--color-paper);${NOSTROKE}"/>
+    <circle cx="116" cy="106" r="3" style="fill:var(--color-mandarin);${NOSTROKE}"/>`),
+  hoodie: c => wrapSvg(`${floor(80, 146, 50)}
+    <path d="M58 36q22 16 44 0l26 12 14 38-18 7-8-16v60a4 4 0 0 1-4 4H48a4 4 0 0 1-4-4V77l-8 16-18-7 14-38z" ${f(c)}/>
+    <path d="M62 38q18 24 36 0"/>
+    <path d="M74 52v18M86 52v18"/><circle cx="74" cy="72" r="2" style="fill:var(--color-ink);${NOSTROKE}"/><circle cx="86" cy="72" r="2" style="fill:var(--color-ink);${NOSTROKE}"/>
+    <path d="M60 112h40l4 20H56z"/>
+    <path d="M48 134h64" style="stroke:var(--color-ink-soft);stroke-width:1.8"/>`),
+  boardgame: c => wrapSvg(`${floor(80, 136, 52)}
+    <rect x="30" y="66" width="92" height="62" rx="7" ${f(c)}/>
+    <path d="M30 80h92"/>
+    <path d="M52 92h18v18H52zM70 92h18v18H70zM88 92h14v18H88z" style="stroke:var(--color-ink-soft);stroke-width:1.6;fill:var(--color-paper)"/>
+    <g transform="rotate(14 116 52)"><rect x="100" y="36" width="32" height="32" rx="7" ${f('var(--color-paper)')}/>
+    <circle cx="109" cy="45" r="2.6" style="fill:var(--color-ink);${NOSTROKE}"/><circle cx="116" cy="52" r="2.6" style="fill:var(--color-ink);${NOSTROKE}"/><circle cx="123" cy="59" r="2.6" style="fill:var(--color-ink);${NOSTROKE}"/></g>
+    <path d="M46 56a7 7 0 1 1 10 0l6 10H40z" style="fill:var(--color-mandarin)"/>`),
+  book: c => wrapSvg(`${floor(80, 136, 46)}
+    <path d="M42 120V50a8 8 0 0 1 8-8h66v70H52a10 10 0 0 0-10 8z" ${f(c)}/>
+    <path d="M42 120a10 10 0 0 1 10-8h64v16H52a10 10 0 0 1-10-8z" ${f('var(--color-paper)')}/>
+    <path d="M58 58h42M58 68h30" style="stroke:var(--color-ink-soft);stroke-width:1.8"/>
+    <path d="M96 42v30l7-6 7 6V42" style="fill:var(--color-mandarin)"/>`),
+  scarf: c => wrapSvg(`${floor(80, 140, 44)}
+    <path d="M34 54q46-22 92 0v16q-46-22-92 0z" ${f(c)}/>
+    <path d="M92 62v58l11-5 11 5V58" ${f(c)}/>
+    <path d="M60 46v12M76 42v12M108 46v12" style="stroke:var(--color-paper);stroke-width:2.4"/>
+    <path d="M95 120v8M103 117v9M111 120v8" style="stroke-width:2"/>`),
+  /* занятия — 16:10 */
+  ski: c => wrapSvg(`<circle cx="164" cy="30" r="13" style="fill:var(--color-mandarin)"/>
+    <path d="M0 22 200 64" style="stroke:var(--color-ink-soft);stroke-width:1.4"/>
+    <path d="M118 47v10" style="stroke-width:1.6"/><rect x="108" y="56" width="20" height="14" rx="4" ${f('var(--color-paper)')}/>
+    <path d="M-4 118 62 44l30 34 34-46 78 86z" ${f(c)}/>
+    <path d="M62 44 50 58l9-3 7 7 9-9zM126 32l-13 18 10-4 6 7 10-8z" style="fill:var(--color-paper)"/>
+    <path d="M40 118c20-14 36-22 58-26" style="stroke:var(--color-paper);stroke-width:3;stroke-dasharray:2 7"/>`, '0 0 200 125'),
+  cinema: c => wrapSvg(`${floor(100, 116, 58)}
+    <g transform="rotate(-10 52 70)"><path d="M22 52h56v14a6 6 0 0 0 0 12v14H22V78a6 6 0 0 0 0-12z" ${f('var(--color-paper)')}/><path d="M40 52v40" style="stroke-dasharray:3 4;stroke:var(--color-ink-soft);stroke-width:1.6"/></g>
+    <circle cx="108" cy="36" r="10" ${f('var(--color-paper)')}/><circle cx="124" cy="30" r="11" ${f('var(--color-champagne)')}/><circle cx="140" cy="36" r="10" ${f('var(--color-paper)')}/><circle cx="116" cy="26" r="8" ${f('var(--color-paper)')}/><circle cx="133" cy="22" r="8" ${f('var(--color-champagne)')}/>
+    <path d="M98 40h52l-8 72h-36z" ${f(c)}/>
+    <path d="M110 40l3 72M124 40v72M138 40l-3 72" style="stroke:var(--color-mandarin);stroke-width:5"/>
+    <path d="M98 40h52l-8 72h-36z"/>`, '0 0 200 125'),
+  pool: c => wrapSvg(`<path d="M-4 62q16-9 32 0t32 0 32 0 32 0 32 0 32 0 32 0v70H-4z" ${f(c)}/>
+    <path d="M-4 84q16-9 32 0t32 0 32 0 32 0 32 0 32 0 32 0" style="stroke:var(--color-paper);stroke-width:3"/>
+    <path d="M-4 104q16-9 32 0t32 0 32 0 32 0 32 0 32 0 32 0" style="stroke:var(--color-paper);stroke-width:3"/>
+    <path d="M132 76V30q0-12-12-12M156 76V30q0-12-12-12" style="stroke-width:4"/>
+    <path d="M132 40h24M132 56h24" style="stroke-width:3"/>
+    <circle cx="44" cy="30" r="12" style="fill:var(--color-champagne)"/>`, '0 0 200 125'),
+  antikafe: c => wrapSvg(`${floor(100, 114, 64)}
+    <g transform="rotate(-16 70 70)"><rect x="46" y="40" width="44" height="62" rx="6" ${f('var(--color-paper)')}/></g>
+    <g transform="rotate(6 98 68)"><rect x="76" y="36" width="44" height="62" rx="6" ${f(c)}/><path d="M98 54l7 12-7 12-7-12z" style="fill:var(--color-mandarin)"/></g>
+    <g transform="rotate(18 150 82)"><rect x="132" y="64" width="34" height="34" rx="8" ${f('var(--color-paper)')}/><circle cx="142" cy="74" r="3" style="fill:var(--color-ink);${NOSTROKE}"/><circle cx="156" cy="88" r="3" style="fill:var(--color-ink);${NOSTROKE}"/><circle cx="149" cy="81" r="3" style="fill:var(--color-ink);${NOSTROKE}"/></g>
+    <path d="M150 52c-4-5 4-8 0-13M160 52c-4-5 4-8 0-13" style="stroke:var(--color-ink-soft);stroke-width:2"/>`, '0 0 200 125'),
+  skating: c => wrapSvg(`${floor(100, 112, 60)}
+    <path d="M72 20h34v42c0 6 6 9 14 11l18 5c8 2 12 8 12 15v5H72z" ${f(c)}/>
+    <path d="M84 30h12M84 40h12M84 50h12" style="stroke:var(--color-ink-soft);stroke-width:1.8"/>
+    <path d="M76 98v8M144 98v8"/><path d="M62 108h96q6 0 8-6" style="stroke-width:3.5"/>
+    <path d="M40 34v14M33 41h14M35 36l10 10M45 36 35 46" style="stroke:var(--color-paper);stroke-width:2.2"/>
+    <path d="M164 26v10M159 31h10" style="stroke:var(--color-paper);stroke-width:2.2"/>`, '0 0 200 125'),
+  cafe: c => wrapSvg(`${floor(100, 112, 66)}
+    <ellipse cx="80" cy="96" rx="40" ry="9" ${f('var(--color-paper)')}/>
+    <path d="M56 54h48v26a16 16 0 0 1-16 16H72a16 16 0 0 1-16-16z" ${f(c)}/>
+    <path d="M104 62h6a9 9 0 0 1 0 18h-6"/>
+    <path d="M70 44c-4-5 4-8 0-13M82 44c-4-5 4-8 0-13" style="stroke:var(--color-ink-soft);stroke-width:2"/>
+    <path d="M128 92c4-22 24-30 44-22-10 2-16 8-18 16 8-4 16-2 20 2-12 0-26 4-46 4z" style="fill:var(--color-champagne)"/>`, '0 0 200 125')
+};
+
+/* ---------- Данные ---------- */
+const PEOPLE = {
+  me: { n: 'Тимур', i: 'Т', av: 6 }, azamat: { n: 'Азамат', i: 'А', av: 2 }, nurai: { n: 'Нурай', i: 'Н', av: 3 },
+  daniyar: { n: 'Данияр', i: 'Д', av: 4 }, meerim: { n: 'Мээрим', i: 'М', av: 5 }, aigerim: { n: 'Айгерим', i: 'А', av: 1 }
+};
+const avatar = (p, size = 36) => `<span class="avatar av-${p.av}" style="--size:${size}px" role="img" aria-label="${p.n}">${p.i}</span>`;
+
+const PRODUCTS = {
+  instax: { title: 'Камера мгновенной печати Instax Mini 12', min: 8900, max: 10400, illus: 'camera', tint: 'mint', fill: 'mint',
+    colors: [['мятная', 'mint', 'mint'], ['пудровая', 'rose', 'rose'], ['молочная', 'paper', 'champagne']],
+    stores: [['Wildberries', 8900], ['Ozon', 9350], ['AliExpress', 10400]],
+    desc: ['Печатает снимок размером с визитку за полторы минуты. Автоэкспозиция: кадры получаются даже вечером в кафе.', 'В комплекте ремешок и 10 кадров.'] },
+  headphones: { title: 'Наушники Soundcore Q20i с шумоподавлением', min: 4290, max: 5100, illus: 'headphones', tint: 'champagne', fill: 'paper',
+    colors: [['молочные', 'paper', 'champagne'], ['мятные', 'mint', 'mint'], ['пудровые', 'rose', 'rose']],
+    stores: [['Wildberries', 4290], ['Ozon', 4590], ['AliExpress', 5100]],
+    desc: ['Гасят шум маршрутки и офиса, держат до 40 часов. Складываются в чехол.'] },
+  candle: { title: 'Аромасвеча «Инжир и кедр», 200 г', min: 890, max: 1450, illus: 'candle', tint: 'rose', fill: 'champagne',
+    aromas: ['Инжир и кедр', 'Табак и ваниль', 'Хвоя'], stores: [['Wildberries', 890], ['Ozon', 1190], ['Pinduoduo', 1450]],
+    desc: ['Соевый воск, хлопковый фитиль, горит около 40 часов.'] },
+  mugs: { title: 'Набор керамических кружек ручной работы, 2 шт.', min: 1290, max: 1900, illus: 'mugs', tint: 'mandarin', fill: 'paper',
+    stores: [['Wildberries', 1290], ['Ozon', 1900]], desc: ['Глазурь «молоко с мандарином», 350 мл, можно в посудомойку.'] },
+  backpack: { title: 'Городской рюкзак Xiaomi, 20 л', min: 2190, max: 2890, illus: 'backpack', tint: 'plum', fill: 'mint',
+    colors: [['мятный', 'mint', 'plum'], ['молочный', 'paper', 'champagne']], stores: [['Ozon', 2190], ['AliExpress', 2890]],
+    desc: ['Отделение для ноутбука 15,6", ткань не промокает под снегом.'] },
+  hoodie: { title: 'Худи оверсайз из плотного футера', min: 2490, max: 3200, illus: 'hoodie', tint: 'champagne', fill: 'paper',
+    colors: [['молочный', 'paper', 'champagne'], ['шампань', 'champagne', 'rose'], ['пудровый', 'rose', 'mint']], sizes: ['S', 'M', 'L', 'XL'],
+    stores: [['Wildberries', 2490], ['Ozon', 2890], ['AliExpress', 3200]],
+    desc: ['Хлопок 80%, плотность 340 г. Свободный крой: если сомневаешься в размере, бери свой.', 'Капюшон на подкладке, карман-кенгуру.'] },
+  book: { title: 'Книга «Сто лет одиночества», подарочное издание', min: 990, max: 1390, illus: 'book', tint: 'rose', fill: 'champagne', stores: [['Wildberries', 990], ['Ozon', 1390]], desc: ['Твёрдая обложка, ляссе, иллюстрации.'] },
+  scarf: { title: 'Шарф из мериноса', min: 1890, max: 2600, illus: 'scarf', tint: 'mint', fill: 'mandarin', stores: [['Wildberries', 1890], ['Ozon', 2290], ['AliExpress', 2600]], desc: ['Тонкая шерсть, не колется.'] },
+  boardgame: { title: 'Настольная игра «Каркассон»', min: 2390, max: 2990, illus: 'boardgame', tint: 'mint', fill: 'champagne',
+    stores: [['Wildberries', 2390], ['Ozon', 2990]], desc: ['Для 2–5 игроков, партия на 35 минут.'] }
+};
+const DECK_ORDER = ['instax', 'headphones', 'candle', 'hoodie', 'mugs', 'backpack', 'boardgame'];
+
+const ACTS = {
+  ski: { title: 'Горные лыжи в Чункурчаке', min: 2500, max: 6000, dur: '4–6 ч', where: '40 мин от города', tags: ['на улице', 'активное'], illus: 'ski', tint: 'mint', fill: 'mint' },
+  cinema: { title: 'Кино в Bishkek Park', min: 450, max: 700, dur: '2–3 ч', where: 'в городе', tags: ['в помещении', 'спокойное'], illus: 'cinema', tint: 'rose', fill: 'paper' },
+  pool: { title: 'Бассейн и сауна', min: 800, max: 1500, dur: '2 ч', where: 'в городе', tags: ['в помещении', 'активное'], illus: 'pool', tint: 'champagne', fill: 'mint' },
+  antikafe: { title: 'Антикафе с настолками', min: 300, max: 600, dur: '3 ч', where: 'в центре', tags: ['в помещении', 'компанией'], illus: 'antikafe', tint: 'mandarin', fill: 'champagne' },
+  skating: { title: 'Каток под открытым небом', min: 400, max: 800, dur: '2 ч', where: 'в городе', tags: ['на улице', 'активное'], illus: 'skating', tint: 'plum', fill: 'rose' },
+  cafe: { title: 'Ужин в новом кафе', min: 1200, max: 2500, dur: '2–3 ч', where: 'в центре', tags: ['еда', 'спокойное'], illus: 'cafe', tint: 'champagne', fill: 'mandarin' }
+};
+const PLAN_ORDER = ['ski', 'cinema', 'pool', 'antikafe', 'skating', 'cafe'];
+const ALL_LIKE = new Set(['cinema', 'antikafe', 'skating']);
+
+/* фото товара: 3 «кадра» — общий, деталь, ракурс */
+const SHOTS = [{ s: 1, r: 0, x: 0, y: 0 }, { s: 1.7, r: 0, x: -6, y: 8 }, { s: 0.92, r: -9, x: 4, y: 0 }];
+function photoHTML(p, shot = 0, colorIdx = null, extra = '') {
+  const col = colorIdx != null && p.colors ? p.colors[colorIdx] : null;
+  const fillC = FILL[col ? col[1] : p.fill];
+  const tint = TINT[col ? col[2] : p.tint];
+  const s = SHOTS[shot % SHOTS.length];
+  return `<div class="photo ${extra}" style="background:${tint}"><div class="ill" style="transform:translate(${s.x}%, ${s.y}%) scale(${s.s}) rotate(${s.r}deg)">${ILL[p.illus](fillC)}</div></div>`;
+}
+const bars = (n, on) => `<div class="bars" aria-hidden="true">${Array.from({ length: n }, (_, i) => `<i class="${i === on ? 'on' : ''}"></i>`).join('')}</div>`;
+
+/* ---------- Общий хром телефона ---------- */
+const STATUS = `<div class="statusbar" aria-hidden="true"><span class="sb-time">9:41</span><span class="island"></span><span class="sb-icons">
+  <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+  <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0zM3.5 6.9a6.4 6.4 0 0 1 9 0l-1.4 1.4a4.4 4.4 0 0 0-6.2 0zM1.3 4.7a9.5 9.5 0 0 1 13.4 0l-1.4 1.4a7.5 7.5 0 0 0-10.6 0z"/></svg>
+  <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".45"/><rect x="2.5" y="2.5" width="17" height="8" rx="2" fill="currentColor"/><rect x="25" y="4.5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".45"/></svg>
+  </span></div><div class="home-ind" aria-hidden="true"></div>`;
+const TABS = [['gifts', 'Подарки', 'gift', 'shot-gifts'], ['wish', 'Вишлист', 'heart', 'shot-wish'], ['plans', 'Планы', 'ticket', 'shot-plans'], ['santa', 'Санта', 'mail', 'shot-santa']];
+function tabbar(active, { wish = 0, santaDot = false } = {}) {
+  return `<nav class="tabbar" aria-label="Разделы">${TABS.map(([k, l, ic, target]) => `<a href="#${target}" class="tab ${k === active ? 'active' : ''}" ${k === active ? 'aria-current="page"' : ''}>
+    <span class="tab-ic">${icon(ic, 22)}${k === 'wish' && wish ? `<b class="badge" data-wishbadge>${wish}</b>` : ''}${k === 'santa' && santaDot ? '<b class="dot" aria-label="Конверт готов"></b>' : ''}</span><span class="tab-l">${l}</span></a>`).join('')}</nav>`;
+}
+const BOW = (cls = '') => `<svg class="bow ${cls}" viewBox="0 0 64 44" aria-hidden="true">
+  <path pathLength="1" d="M32 20C24 5 5 2 5 14s19 11 27 6z"/><path pathLength="1" d="M32 20c8-15 27-18 27-6s-19 11-27 6z"/>
+  <path class="bow-tail" pathLength="1" d="M30 23c-4 8-8 13-14 19"/><path class="bow-tail" pathLength="1" d="M34 23c4 8 8 13 14 19"/>
+  <path class="bow-fold" pathLength="1" d="M30 19c-6-6-14-8-18-6M34 19c6-6 14-8 18-6"/>
+  <circle pathLength="1" cx="32" cy="20" r="5"/></svg>`;
+
+function toast(phone, text, ic = 'check') {
+  let t = $('.toast', phone);
+  if (!t) { t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); phone.appendChild(t); }
+  t.innerHTML = `${icon(ic, 18)}<span>${text}</span>`;
+  t.classList.remove('show'); void t.offsetWidth; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+/* ============================================================
+   BOTTOM SHEET (ручка, свайп вниз, фон, Escape, ловушка фокуса)
+   ============================================================ */
+function openSheet(phone, { title = '', labelId, headExtra = '', body = '', foot = '', full = false, onClose, onMount, focus = true }) {
+  const id = labelId || uid('sheet');
+  const back = document.createElement('div'); back.className = 'sheet-backdrop';
+  const sh = document.createElement('div'); sh.className = 'sheet' + (full ? ' sheet-full' : '');
+  sh.setAttribute('role', 'dialog'); sh.setAttribute('aria-modal', 'true'); sh.setAttribute('aria-labelledby', id);
+  sh.innerHTML = `<div class="sheet-handle" aria-hidden="true"><span></span></div>${title ? `<div class="sheet-head"><h2 class="t-title2" id="${id}">${title}</h2>${headExtra}</div>` : ''}<div class="sheet-body">${body}</div><div class="sheet-foot">${foot}</div>`;
+  const opener = document.activeElement;
+  phone.append(back, sh);
+  requestAnimationFrame(() => requestAnimationFrame(() => { back.classList.add('open'); sh.classList.add('open'); }));
+  const focusables = () => $$('button:not([disabled]), a[href], input, [tabindex="0"]', sh);
+  if (focus) setTimeout(() => { const el = focusables()[0]; if (el) el.focus({ preventScroll: true }); }, 60);
+  let closed = false;
+  const api = { sheet: sh, close, setFoot(html) { $('.sheet-foot', sh).innerHTML = html; }, setBody(html) { $('.sheet-body', sh).innerHTML = html; } };
+  function close() {
+    if (closed) return; closed = true;
+    sh.classList.add('closing'); sh.classList.remove('open'); back.classList.remove('open');
+    setTimeout(() => { back.remove(); sh.remove(); if (onClose) onClose(); if (opener && opener.focus && document.contains(opener) && phone.contains(opener)) opener.focus({ preventScroll: true }); }, reduce ? 10 : 230);
+  }
+  sh.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.stopPropagation(); close(); return; }
+    if (e.key === 'Tab') {
+      const fs = focusables(); if (!fs.length) return;
+      const first = fs[0], last = fs[fs.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+  back.addEventListener('click', close);
+  let dd = null;
+  const zones = [$('.sheet-handle', sh), $('.sheet-head', sh)].filter(Boolean);
+  zones.forEach(z => {
+    z.addEventListener('pointerdown', e => {
+      if (e.target.closest('button')) return;
+      dd = { id: e.pointerId, sy: e.clientY, y: 0, s: [{ y: e.clientY, t: performance.now() }] };
+      z.setPointerCapture(e.pointerId); sh.style.transition = 'none';
+    });
+    z.addEventListener('pointermove', e => {
+      if (!dd || e.pointerId !== dd.id) return;
+      dd.y = Math.max(0, e.clientY - dd.sy); sh.style.transform = `translateY(${dd.y}px)`;
+      back.style.opacity = String(1 - dd.y / sh.offsetHeight);
+      dd.s.push({ y: e.clientY, t: performance.now() }); if (dd.s.length > 6) dd.s.shift();
+    });
+    const up = e => {
+      if (!dd || e.pointerId !== dd.id) return;
+      const a = dd.s[0], b = dd.s[dd.s.length - 1]; const v = (b.y - a.y) / Math.max(1, b.t - a.t) * 1000;
+      const y = dd.y, H = sh.offsetHeight; dd = null;
+      sh.style.transition = ''; back.style.opacity = ''; sh.style.transform = '';
+      if (y > H * 0.25 || v > 500) close();
+    };
+    z.addEventListener('pointerup', up); z.addEventListener('pointercancel', up);
+  });
+  if (onMount) onMount(sh, api);
+  return api;
+}
+
+function confirmDialog(phone, { title, text, ok, onOk }) {
+  const tid = uid('cd'), did = uid('cdd');
+  const w = document.createElement('div'); w.className = 'cd-wrap';
+  w.innerHTML = `<div class="cd paper" role="alertdialog" aria-modal="true" aria-labelledby="${tid}" aria-describedby="${did}"><h2 class="t-title2" id="${tid}">${title}</h2><p class="t-body" id="${did}">${text}</p><div class="cd-actions"><button class="btn btn-ghost-ink" data-c>Отмена</button><button class="btn btn-primary" data-o>${ok}</button></div></div>`;
+  const opener = document.activeElement;
+  phone.appendChild(w); requestAnimationFrame(() => w.classList.add('open'));
+  setTimeout(() => $('[data-o]', w).focus({ preventScroll: true }), 40);
+  const close = () => { w.classList.remove('open'); setTimeout(() => { w.remove(); if (opener && phone.contains(opener)) opener.focus({ preventScroll: true }); }, 200); };
+  $('[data-c]', w).onclick = close;
+  $('[data-o]', w).onclick = () => { close(); onOk(); };
+  w.addEventListener('click', e => { if (e.target === w) close(); });
+  w.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+}
+
+/* ============================================================
+   КОЛОДА — общий движок для бирок и билетиков
+   ============================================================ */
+const decks = []; let activeDeck = null;
+function createDeck({ root, phone, items, render, allowUp = true, size, buttons = {}, onSwipe, onUndo, onEmpty, onTap, live }) {
+  let index = 0, top = null, drag = null, anim = null, busy = false, cx = 0, cy = 0, grabTop = true, cw = 300, ch = 420;
+  const history = [];
+  function layout() {
+    const W = root.clientWidth, H = root.clientHeight; if (!W || !H) return;
+    const r = size(W, H); cw = r.cw; ch = r.ch;
+    root.style.setProperty('--cw', cw + 'px'); root.style.setProperty('--ch', ch + 'px'); root.style.setProperty('--top', r.top + 'px');
+  }
+  new ResizeObserver(layout).observe(root); layout();
+
+  function depthStyle(c, d, p) {
+    if (d === 0) return;
+    const s = d === 1 ? 0.95 + 0.05 * p : 0.9 + 0.05 * p;
+    const y = d === 1 ? 12 - 12 * p : 24 - 12 * p;
+    c.style.transform = `translate3d(0, ${y}px, 0) scale(${s})`;
+    c.style.opacity = d === 1 ? '1' : String(p);
+  }
+  function mount() {
+    $$('.deck-card', root).forEach(n => n.remove());
+    const empty = $('.empty', root); if (empty) empty.remove();
+    const slice = items.slice(index, index + 3);
+    updateButtons();
+    if (!slice.length) { top = null; if (onEmpty) onEmpty(); return; }
+    for (let d = slice.length - 1; d >= 0; d--) {
+      const c = document.createElement('div'); c.className = 'deck-card'; c.dataset.depth = d; c.style.zIndex = String(10 - d);
+      c.innerHTML = render(slice[d]); if (d > 0) c.setAttribute('aria-hidden', 'true');
+      root.appendChild(c); depthStyle(c, d, 0);
+    }
+    top = $('.deck-card[data-depth="0"]', root); top.classList.add('is-top'); bind(top);
+  }
+  function setStamp(sel, v) { const el = top && $(sel, top); if (el) el.style.opacity = String(v); }
+  function apply(x, y) {
+    if (!top) return 0;
+    const r = reduce ? 0 : clamp(x / 20, -15, 15) * (grabTop ? 1 : -1);
+    top.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${r}deg)`;
+    let yes = 0, no = 0, sup = 0;
+    if (allowUp && -y > Math.abs(x)) sup = clamp(-y / 100, 0, 1); else { yes = clamp(x / 100, 0, 1); no = clamp(-x / 100, 0, 1); }
+    setStamp('.stamp-yes', yes); setStamp('.stamp-no', no); setStamp('.stamp-super', sup);
+    if (buttons.yes) buttons.yes.style.setProperty('--p', yes);
+    if (buttons.no) buttons.no.style.setProperty('--p', no);
+    if (buttons.sup) buttons.sup.style.setProperty('--p', sup);
+    const p = clamp(Math.max(Math.abs(x), allowUp ? -y : 0) / (cw * 0.35), 0, 1);
+    $$('.deck-card:not(.is-top)', root).forEach(c => depthStyle(c, +c.dataset.depth, p));
+    return p;
+  }
+  function velocity(s) {
+    const now = s[s.length - 1]; let a = s[0];
+    for (let i = s.length - 1; i >= 0; i--) { if (now.t - s[i].t > 100) break; a = s[i]; }
+    const dt = Math.max(1, now.t - a.t);
+    return { x: (now.x - a.x) / dt * 1000, y: (now.y - a.y) / dt * 1000 };
+  }
+  function bind(card) {
+    card.addEventListener('pointerdown', e => {
+      if (busy || e.button > 0) return;
+      activeDeck = api;
+      const rect = card.getBoundingClientRect();
+      grabTop = (e.clientY - rect.top) < rect.height / 2;
+      card.style.transformOrigin = grabTop ? '50% 100%' : '50% 0%';
+      if (anim) { anim.stop(); anim = null; }
+      drag = { id: e.pointerId, sx: e.clientX - cx, sy: e.clientY - cy, ox: e.clientX, oy: e.clientY, moved: false, crossed: false, target: e.target, rect, s: [{ x: e.clientX, y: e.clientY, t: performance.now() }] };
+      card.setPointerCapture(e.pointerId);
+      card.classList.add('is-dragging');
+    });
+    card.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.moved && Math.hypot(e.clientX - drag.ox, e.clientY - drag.oy) > 6) drag.moved = true;
+      if (!drag.moved) return;
+      cx = e.clientX - drag.sx; cy = e.clientY - drag.sy;
+      const p = apply(cx, cy);
+      if (p >= 1 && !drag.crossed) { drag.crossed = true; haptic(8); } else if (p < 1) drag.crossed = false;
+      drag.s.push({ x: e.clientX, y: e.clientY, t: performance.now() }); if (drag.s.length > 8) drag.s.shift();
+    });
+    const end = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      card.classList.remove('is-dragging');
+      const d = drag; drag = null;
+      if (!d.moved) { springBack(); if (onTap && e.type === 'pointerup') onTap(d, api); return; }
+      const v = velocity(d.s);
+      let dir = null;
+      if (allowUp && -cy > Math.abs(cx) && (-cy > ch * 0.25 || v.y < -600)) dir = 'up';
+      else if (cx > cw * 0.35 || (v.x > 600 && cx > 10)) dir = 'right';
+      else if (cx < -cw * 0.35 || (v.x < -600 && cx < -10)) dir = 'left';
+      if (dir) fly(dir, v); else springBack(v);
+    };
+    card.addEventListener('pointerup', end); card.addEventListener('pointercancel', end);
+  }
+  function springBack(v = { x: 0, y: 0 }) {
+    if (reduce) { cx = cy = 0; apply(0, 0); return; }
+    anim = spring2({ from: [cx, cy], to: [0, 0], v: [v.x, v.y], k: 320, c: 30, onUpdate: (x, y) => { cx = x; cy = y; apply(x, y); }, onDone: () => { anim = null; } });
+  }
+  function fly(dir, v) {
+    busy = true; haptic(15);
+    const outX = (root.clientWidth / 2 + cw) * 1.15, outY = ch * 1.6;
+    let done = false;
+    const finish = () => { if (done) return; done = true; if (anim) anim.stop(); anim = null; commit(dir); };
+    if (reduce) {
+      top.style.transition = 'transform 160ms ease, opacity 160ms ease';
+      const dx = dir === 'right' ? 40 : dir === 'left' ? -40 : 0, dy = dir === 'up' ? -40 : 0;
+      top.style.transform = `translate3d(${dx}px, ${dy}px, 0)`; top.style.opacity = '0';
+      setStamp(dir === 'right' ? '.stamp-yes' : dir === 'left' ? '.stamp-no' : '.stamp-super', 1);
+      setTimeout(finish, 170); return;
+    }
+    const to = dir === 'right' ? [outX, cy + v.y * 0.12] : dir === 'left' ? [-outX, cy + v.y * 0.12] : [cx + v.x * 0.12, -outY];
+    const vel = dir === 'right' ? [Math.max(v.x, 900), v.y] : dir === 'left' ? [Math.min(v.x, -900), v.y] : [v.x, Math.min(v.y, -900)];
+    anim = spring2({ from: [cx, cy], to, v: vel, k: 200, c: 26, onUpdate: (x, y) => { cx = x; cy = y; apply(x, y); if (Math.abs(x) > outX * 0.92 || y < -outY * 0.92) finish(); }, onDone: finish });
+  }
+  function commit(dir) {
+    const item = items[index]; history.push({ index, dir }); index++;
+    cx = cy = 0; busy = false;
+    ['yes', 'no', 'sup'].forEach(k => buttons[k] && buttons[k].style.setProperty('--p', 0));
+    mount();
+    if (onSwipe) onSwipe(item, dir, api);
+  }
+  function swipe(dir) {
+    if (busy || !top) return;
+    if (dir === 'up' && !allowUp) return;
+    activeDeck = api; grabTop = true; top.style.transformOrigin = '50% 100%';
+    if (reduce) { fly(dir, { x: 0, y: 0 }); return; }
+    busy = true;
+    const tx = dir === 'right' ? cw * 0.32 : dir === 'left' ? -cw * 0.32 : 0, ty = dir === 'up' ? -ch * 0.2 : -6;
+    anim = tween({ from: 0, to: 1, dur: 170, ease: t => 1 - (1 - t) * (1 - t), onUpdate: k => { cx = tx * k; cy = ty * k; apply(cx, cy); }, onDone: () => { busy = false; fly(dir, { x: dir === 'right' ? 1400 : dir === 'left' ? -1400 : 0, y: dir === 'up' ? -1400 : 0 }); } });
+  }
+  function undo() {
+    if (busy || !history.length) return;
+    const h = history.pop(); index = h.index; mount();
+    if (onUndo) onUndo(items[index], h.dir, api);
+    if (reduce || !top) return;
+    const outX = (root.clientWidth / 2 + cw) * 1.15;
+    const from = h.dir === 'right' ? [outX, -20] : h.dir === 'left' ? [-outX, -20] : [0, -(ch * 1.6)];
+    grabTop = true; top.style.transformOrigin = '50% 100%'; cx = from[0]; cy = from[1]; apply(cx, cy);
+    busy = true;
+    anim = spring2({ from, to: [0, 0], k: 320, c: 30, onUpdate: (x, y) => { cx = x; cy = y; apply(x, y); }, onDone: () => { busy = false; anim = null; } });
+  }
+  function updateButtons() { if (buttons.undo) buttons.undo.disabled = !history.length; }
+  function reset() { if (anim) anim.stop(); busy = false; index = 0; history.length = 0; cx = cy = 0; mount(); }
+  function current() { return items[index]; }
+  const api = { swipe, undo, reset, current, phone, root, get top() { return top; }, isBusy: () => busy };
+  if (buttons.undo) buttons.undo.onclick = () => { activeDeck = api; undo(); };
+  if (buttons.no) buttons.no.onclick = () => swipe('left');
+  if (buttons.yes) buttons.yes.onclick = () => swipe('right');
+  if (buttons.sup) buttons.sup.onclick = () => swipe('up');
+  phone.addEventListener('pointerenter', () => { activeDeck = api; });
+  phone.addEventListener('focusin', () => { activeDeck = api; });
+  decks.push(api); mount();
+  return api;
+}
+document.addEventListener('keydown', e => {
+  if (!activeDeck || e.altKey || e.ctrlKey || e.metaKey) return;
+  const ae = document.activeElement;
+  if (ae && (ae.matches('input, textarea, [role="slider"]') || ae.closest('[role="dialog"], [role="alertdialog"]'))) return;
+  if ($('.sheet', activeDeck.phone) || $('.match', activeDeck.phone)) return;
+  const k = e.key;
+  if (k === 'ArrowLeft') { e.preventDefault(); activeDeck.swipe('left'); }
+  else if (k === 'ArrowRight') { e.preventDefault(); activeDeck.swipe('right'); }
+  else if (k === 'ArrowUp') { e.preventDefault(); activeDeck.swipe('up'); }
+  else if (k === 'Backspace' || k === 'z' || k === 'Z' || k === 'я' || k === 'Я') { e.preventDefault(); activeDeck.undo(); }
+  else if ((k === 'Enter' || k === ' ') && !(ae && ae.matches('button, a'))) { const t = activeDeck.top; if (t && activeDeck.onInfo) { e.preventDefault(); activeDeck.onInfo(); } }
+});
+
+/* ============================================================
+   РЕНДЕР: бирка и билетик
+   ============================================================ */
+function tagHTML(id, shot = 0) {
+  const p = PRODUCTS[id];
+  return `<div class="tag-string" aria-hidden="true"><svg viewBox="0 0 40 56"><path d="M20 51C13 36 27 20 18 0"/></svg></div>
+  <article class="tag paper" role="group" aria-roledescription="карточка" aria-label="${p.title}, ${price(p.min, p.max)}">
+    <div class="tag-photo photo-host" data-zone="photo" style="position:relative">${photoHTML(p, shot, null, 'fill')}${bars(3, shot)}${p.colors ? `<div class="tag-dots" aria-hidden="true">${p.colors.map(cc => `<i style="background:${FILL[cc[1]]}"></i>`).join('')}</div>` : ''}</div>
+    <div class="tag-body" data-zone="body">
+      <h3 class="t-title2 tag-title">${p.title}</h3>
+      <p class="price">${price(p.min, p.max)}</p>
+      <div class="tag-meta">${p.stores.slice(0, 2).map(s => `<span class="store">${s[0]}</span>`).join('')}<button class="tag-info" data-info aria-label="Подробнее: ${p.title}">${icon('info', 20)}</button></div>
+    </div>
+    <span class="stamp stamp-yes" aria-hidden="true">ХОЧУ</span><span class="stamp stamp-no" aria-hidden="true">МИМО</span><span class="stamp stamp-super" aria-hidden="true">ОЧЕНЬ ХОЧУ</span>
+  </article>`;
+}
+function ticketHTML(id, withStamps = true) {
+  const a = ACTS[id];
+  return `<article class="ticket paper" role="group" aria-roledescription="карточка" aria-label="${a.title}, ${price(a.min, a.max)} на человека">
+    <div class="tk-photo photo" style="background:${TINT[a.tint]}"><div class="ill">${ILL[a.illus](FILL[a.fill])}</div></div>
+    <div class="tk-perf" aria-hidden="true"></div>
+    <div class="tk-body"><h3 class="t-title2">${a.title}</h3><p class="price">${price(a.min, a.max)} <span class="per">/ чел.</span></p>
+      <p class="tk-meta">${icon('clock', 16)}<span>${a.dur}</span>${icon('pin', 16)}<span>${a.where}</span></p>
+      <div class="tk-tags">${a.tags.map(t => `<span class="store">${t}</span>`).join('')}</div></div>
+    ${withStamps ? '<span class="stamp stamp-yes" aria-hidden="true">ХОЧУ</span><span class="stamp stamp-no" aria-hidden="true">МИМО</span>' : ''}
+  </article>`;
+}
+function updateTagPhoto(card, id, shot) {
+  const p = PRODUCTS[id]; const host = $('.photo-host', card); if (!host) return;
+  const ph = $('.photo', host); ph.outerHTML = photoHTML(p, shot, null, 'fill');
+  $$('.bars i', host).forEach((b, i) => b.classList.toggle('on', i === shot));
+}
+const tagSize = (W, H) => { const ch = Math.max(260, H - 34 - 16); const cw = Math.min(W, Math.round(ch * 0.74)); return { cw, ch, top: 34 }; };
+
+/* ============================================================
+   Шторка «Подробнее»
+   ============================================================ */
+function detailBody(id, st, labelId) {
+  const p = PRODUCTS[id];
+  const colorName = p.colors ? p.colors[st.color][0] : '';
+  return `<div class="gal" data-gal>${photoHTML(p, st.shot, p.colors ? st.color : null)}${bars(3, st.shot)}
+      <button class="gal-nav prev" data-prev aria-label="Предыдущее фото"></button><button class="gal-nav next" data-next aria-label="Следующее фото"></button></div>
+    <h2 class="t-title2 det-title" id="${labelId}">${p.title}</h2>
+    <p class="price det-price">${price(p.min, p.max)}</p>
+    ${p.desc.map(d => `<p class="t-body det-desc">${d}</p>`).join('')}
+    ${p.colors ? `<div class="det-group"><p class="t-caption det-label">Мне подойдёт: <b data-cname>${colorName}${p.sizes ? `, ${p.sizes[st.size]}` : ''}</b></p>
+      <div class="swatches" role="group" aria-label="Цвет">${p.colors.map((cc, i) => `<button class="swatch" data-color="${i}" aria-pressed="${i === st.color}" aria-label="${cc[0]}"><i style="background:${FILL[cc[1]]}"></i></button>`).join('')}</div></div>` : ''}
+    ${p.sizes ? `<div class="det-group"><p class="t-caption det-label">Размер</p><div class="chip-wrap" role="group" aria-label="Размер">${p.sizes.map((s, i) => `<button class="chip" data-size="${i}" aria-pressed="${i === st.size}">${icon('check', 16, 'ck')}${s}</button>`).join('')}</div></div>` : ''}
+    ${p.aromas ? `<div class="det-group"><p class="t-caption det-label">Аромат</p><div class="chip-wrap">${p.aromas.map((s, i) => `<button class="chip" data-aroma="${i}" aria-pressed="${i === 0}">${icon('check', 16, 'ck')}${s}</button>`).join('')}</div></div>` : ''}
+    <div class="det-group"><p class="t-caption det-label">Где купить</p>
+      <ul class="store-rows">${p.stores.map(([n, pr]) => `<li><a class="store-row" href="#" data-store><span>${n}</span><span class="price">${price(pr)}</span>${icon('ext', 18)}</a></li>`).join('')}</ul>
+      <p class="t-caption fine">Цены примерные, обновлены 26 ноября</p></div>`;
+}
+function bindDetail(sh, id, st, phone) {
+  const p = PRODUCTS[id];
+  const redrawGal = () => { const g = $('[data-gal]', sh); $('.photo', g).outerHTML = photoHTML(p, st.shot, p.colors ? st.color : null); $$('.bars i', g).forEach((b, i) => b.classList.toggle('on', i === st.shot)); };
+  const cname = () => { const el = $('[data-cname]', sh); if (el) el.textContent = `${p.colors[st.color][0]}${p.sizes ? `, ${p.sizes[st.size]}` : ''}`; };
+  sh.addEventListener('click', e => {
+    const t = e.target.closest('button, a'); if (!t) return;
+    if (t.matches('[data-prev]')) { st.shot = (st.shot + 2) % 3; redrawGal(); }
+    else if (t.matches('[data-next]')) { st.shot = (st.shot + 1) % 3; redrawGal(); }
+    else if (t.matches('[data-color]')) { st.color = +t.dataset.color; $$('[data-color]', sh).forEach(b => b.setAttribute('aria-pressed', String(b === t))); redrawGal(); cname(); }
+    else if (t.matches('[data-size]')) { st.size = +t.dataset.size; $$('[data-size]', sh).forEach(b => b.setAttribute('aria-pressed', String(b === t))); cname(); }
+    else if (t.matches('[data-aroma]')) { $$('[data-aroma]', sh).forEach(b => b.setAttribute('aria-pressed', String(b === t))); }
+    else if (t.matches('[data-store]')) { e.preventDefault(); toast(phone, 'В приложении откроется магазин', 'ext'); }
+  });
+}
+
+/* ============================================================
+   ЭКРАН 1 — Онбординг
+   ============================================================ */
+function hang(illus, tint, fill, { x, len, rot, dur, delay }) {
+  const p = { illus, tint, fill };
+  return `<div class="hang" style="--x:${x}; --len:${len}px; --rot:${rot}deg; --dur:${dur}s; --delay:${delay}s"><span class="hang-string"></span>
+    <div class="mini-tag paper">${photoHTML(p, 0)}</div></div>`;
+}
+function screenOnboarding(phone) {
+  phone.innerHTML = STATUS + `<div class="screen onb">
+    <div class="onb-hang" aria-hidden="true">
+      ${hang('candle', 'rose', 'champagne', { x: '7%', len: 150, rot: -8, dur: 6.4, delay: -1.2 })}
+      ${hang('headphones', 'champagne', 'paper', { x: 'calc(50% - 60px)', len: 205, rot: 2, dur: 7.2, delay: -3.4 })}
+      ${hang('camera', 'mint', 'mint', { x: 'calc(93% - 120px)', len: 128, rot: 9, dur: 5.8, delay: -0.4 })}
+    </div>
+    <div class="onb-copy">
+      <div class="brand">${BOW()}<span class="wordmark">swipeit</span></div>
+      <h1 class="t-title1">Свайпай подарки, которые хочешь сам.</h1>
+      <p class="t-body-lg onb-sub">Друзья увидят — и угадают с подарком.</p>
+    </div>
+    <div class="onb-actions"><button class="btn btn-primary btn-lg" data-start>Начать</button><button class="btn btn-ghost btn-lg" data-demo>Войти как демо-пользователь</button></div>
+  </div>`;
+  $('[data-start]', phone).onclick = () => toast(phone, 'Дальше — шаг «Как тебя зовут?»', 'info');
+  $('[data-demo]', phone).onclick = () => toast(phone, 'Вошли как Тимур, вишлист уже собран');
+}
+
+/* ============================================================
+   ЭКРАН 2 — Колода подарков
+   ============================================================ */
+function deckScreenHTML({ filtersCount = 2, ribbonOn = 0, wish = 0 } = {}) {
+  return STATUS + `<div class="screen">
+    <header class="appbar"><h1 class="t-title1">Подарки</h1><span class="appbar-actions"><span data-sendslot></span>
+      <button class="icon-btn" data-filters aria-label="Фильтры, активно: ${filtersCount}">${icon('sliders', 22)}<b class="badge">${filtersCount}</b></button>${avatar(PEOPLE.me, 36)}</span></header>
+    <div class="ribbon-row" data-ribbon>${ribbonHTML(ribbonOn)}</div>
+    <div class="chips-row" data-chips>${['до 5 000 сом', 'Техника', 'Дом и уют'].map(c => `<button class="chip chip-x" data-chip aria-label="Убрать фильтр: ${c.replace(/ /g, ' ')}">${c}${icon('x', 16)}</button>`).join('')}</div>
+    <div class="deck" data-deck></div>
+    <div class="swipe-actions">
+      <button class="sab sab-undo" data-b="undo" aria-label="Вернуть карточку">${icon('undo', 20)}</button>
+      <button class="sab sab-no" data-b="no" aria-label="Мимо">${icon('x', 26)}</button>
+      <button class="sab sab-sup" data-b="sup" aria-label="Очень хочу">${icon('star', 22)}</button>
+      <button class="sab sab-yes" data-b="yes" aria-label="Хочу">${icon('heart', 28)}</button>
+    </div>
+    <div class="tabbar-space"></div>
+    <p class="sr-only" aria-live="polite" data-live></p>
+  </div>` + tabbar('gifts', { wish, santaDot: true });
+}
+function ribbonHTML(on) {
+  const left = 5 - on;
+  return `<div class="segs" role="progressbar" aria-label="Желаний до отправки вишлиста" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${on}">${[0, 1, 2, 3, 4].map(i => `<i class="${i < on ? 'on' : ''}"></i>`).join('')}</div>
+    <span class="t-caption">${left > 0 ? `Ещё ${left} — и можно отправить` : 'Вишлист можно отправить'}</span>`;
+}
+function screenDeck(phone) {
+  phone.innerHTML = deckScreenHTML();
+  const live = $('[data-live]', phone);
+  const st = { likes: 0, unlocked: false, shots: {} };
+  const btn = k => $(`[data-b="${k}"]`, phone);
+  phone.addEventListener('click', e => { const c = e.target.closest('[data-chip]'); if (c) { c.remove(); toast(phone, 'Фильтр убран', 'x'); } if (e.target.closest('[data-filters]')) toast(phone, 'Шторка фильтров — соседний экран', 'sliders'); if (e.target.closest('.tab')) { /* якорь */ } });
+
+  function setRibbon(n) {
+    const row = $('[data-ribbon]', phone);
+    if (st.unlocked) { row.innerHTML = `<span class="t-caption">В вишлисте ${n} ${plural(n, ['желание', 'желания', 'желаний'])}</span>`; return; }
+    const segs = $$('.segs i', row); segs.forEach((s, i) => s.classList.toggle('on', i < n));
+    $('.segs', row).setAttribute('aria-valuenow', String(Math.min(n, 5)));
+    const left = 5 - n; $('.t-caption', row).textContent = left > 0 ? `Ещё ${left} — и можно отправить` : 'Вишлист можно отправить';
+  }
+  function setBadge(n) {
+    const ic = $('.tab:nth-child(2) .tab-ic', phone); let b = $('[data-wishbadge]', ic);
+    if (!b) { b = document.createElement('b'); b.className = 'badge'; b.dataset.wishbadge = ''; ic.appendChild(b); }
+    b.textContent = String(n);
+  }
+  function bowMoment() {
+    const row = $('[data-ribbon]', phone);
+    const stage = document.createElement('div'); stage.className = 'bow-stage'; stage.innerHTML = BOW(reduce ? '' : 'draw');
+    $('.segs', row).style.transition = 'opacity 200ms'; $('.segs', row).style.opacity = '0'; $('.t-caption', row).style.opacity = '0';
+    row.appendChild(stage); haptic(20);
+    setTimeout(() => {
+      st.unlocked = true;
+      const lid = uid('ready');
+      openSheet(phone, { labelId: lid, body: `<div style="text-align:center;padding:8px 4px 4px">${BOW()}<h2 class="t-title1" id="${lid}" style="margin-top:14px">Вишлист готов</h2><p class="t-body rose" style="margin-top:10px">${st.likes} ${plural(st.likes, ['желание', 'желания', 'желаний'])} уже в списке. Отправь его тем, кто будет дарить: они увидят, что ты хочешь, и не повторятся.</p></div>`,
+        foot: `<button class="btn btn-primary btn-lg" data-send>Отправить вишлист</button><button class="btn btn-ghost btn-lg" data-more>Ещё посвайпать</button>`,
+        onMount: (sh, api) => {
+          $('[data-send]', sh).onclick = () => { api.close(); setTimeout(() => toast(phone, 'Ссылка на вишлист скопирована', 'link'), 240); };
+          $('[data-more]', sh).onclick = () => api.close();
+        },
+        onClose: () => {
+          stage.remove(); setRibbon(st.likes);
+          $('[data-sendslot]', phone).innerHTML = `<button class="send-chip" data-sendchip aria-label="Отправить вишлист">${BOW()}Отправить</button>`;
+          $('[data-sendchip]', phone).onclick = () => toast(phone, 'Ссылка на вишлист скопирована', 'link');
+        } });
+    }, reduce ? 50 : 1150);
+  }
+  function openInfo(id, deck) {
+    const lid = uid('det'); const s = { shot: st.shots[id] || 0, color: 0, size: 1 };
+    openSheet(phone, { labelId: lid, full: true, body: detailBody(id, s, lid),
+      foot: `<div class="foot-row"><button class="btn btn-secondary btn-lg" data-fno>Мимо</button><button class="btn btn-primary btn-lg" data-fyes>Хочу</button></div>`,
+      onMount: (sh, api) => {
+        bindDetail(sh, id, s, phone);
+        $('[data-fno]', sh).onclick = () => { api.close(); setTimeout(() => deck.swipe('left'), 260); };
+        $('[data-fyes]', sh).onclick = () => { api.close(); setTimeout(() => deck.swipe('right'), 260); };
+      } });
+  }
+  const deck = createDeck({
+    root: $('[data-deck]', phone), phone, items: DECK_ORDER.slice(), allowUp: true, size: tagSize,
+    render: id => tagHTML(id, st.shots[id] || 0),
+    buttons: { undo: btn('undo'), no: btn('no'), sup: btn('sup'), yes: btn('yes') },
+    onSwipe: (id, dir) => {
+      const p = PRODUCTS[id];
+      if (dir === 'right' || dir === 'up') {
+        st.likes++; setBadge(st.likes); live.textContent = `${dir === 'up' ? 'Очень хочу' : 'Добавлено в вишлист'}: ${p.title}`;
+        if (!st.unlocked) { setRibbon(Math.min(st.likes, 5)); if (st.likes === 5) bowMoment(); } else setRibbon(st.likes);
+      } else live.textContent = `Пропущено: ${p.title}`;
+    },
+    onUndo: (id, dir) => {
+      if (dir === 'right' || dir === 'up') { st.likes = Math.max(0, st.likes - 1); setBadge(st.likes); if (!st.unlocked) setRibbon(st.likes); else setRibbon(st.likes); }
+      live.textContent = `Вернули: ${PRODUCTS[id].title}`;
+    },
+    onEmpty: () => {
+      const root = $('[data-deck]', phone);
+      const em = document.createElement('div'); em.className = 'empty';
+      em.innerHTML = `<div class="empty-obj" aria-hidden="true"></div><p class="t-title2">Ты посмотрел всё в этих фильтрах</p><div class="btns"><button class="btn btn-secondary" data-ef>Изменить фильтры</button><button class="btn btn-ghost" data-er>Начать заново</button></div>`;
+      root.appendChild(em);
+      $('[data-er]', em).onclick = () => deck.reset();
+      $('[data-ef]', em).onclick = () => toast(phone, 'Шторка фильтров — соседний экран', 'sliders');
+    },
+    onTap: (d, api) => {
+      const id = api.current(); if (!id) return;
+      if (d.target.closest('[data-info]') || d.target.closest('[data-zone="body"]')) { openInfo(id, api); return; }
+      const photo = d.target.closest('[data-zone="photo"]');
+      if (photo) {
+        const r = photo.getBoundingClientRect(); const rel = (d.ox - r.left) / r.width; const cur = st.shots[id] || 0;
+        if (rel < 1 / 3) st.shots[id] = (cur + 2) % 3; else if (rel > 2 / 3) st.shots[id] = (cur + 1) % 3; else return;
+        updateTagPhoto(api.top, id, st.shots[id]);
+      }
+    }
+  });
+  deck.onInfo = () => openInfo(deck.current(), deck);
+  phone.addEventListener('click', e => { const b = e.target.closest('[data-info]'); if (b && e.detail === 0) openInfo(deck.current(), deck); });
+  document.querySelector('[data-reset-deck]').onclick = () => {
+    st.likes = 0; st.unlocked = false; $('[data-sendslot]', phone).innerHTML = ''; $('[data-ribbon]', phone).innerHTML = ribbonHTML(0);
+    const b = $('[data-wishbadge]', phone); if (b) b.remove(); deck.reset();
+  };
+}
+
+/* ============================================================
+   ЭКРАН 3 — «Подробнее» поверх колоды
+   ============================================================ */
+function staticDeck(phone, ids) {
+  phone.innerHTML = deckScreenHTML({ ribbonOn: 2, wish: 2 });
+  return createDeck({ root: $('[data-deck]', phone), phone, items: ids, size: tagSize, render: id => tagHTML(id, 0),
+    buttons: { undo: $('[data-b="undo"]', phone), no: $('[data-b="no"]', phone), sup: $('[data-b="sup"]', phone), yes: $('[data-b="yes"]', phone) } });
+}
+function persistentSheet(phone, opener, label) {
+  const btnWrap = document.createElement('div');
+  btnWrap.innerHTML = `<button class="btn btn-paper reopen">${label}</button>`;
+  const b = btnWrap.firstChild;
+  const open = () => { b.remove(); opener(() => phone.appendChild(b)); };
+  b.onclick = open; open();
+}
+function screenDetail(phone) {
+  staticDeck(phone, ['hoodie', 'mugs', 'backpack']);
+  persistentSheet(phone, onClosed => {
+    const lid = uid('det'); const s = { shot: 0, color: 0, size: 1 };
+    openSheet(phone, { labelId: lid, full: true, focus: false, body: detailBody('hoodie', s, lid),
+      foot: `<div class="foot-row"><button class="btn btn-secondary btn-lg" data-fno>Мимо</button><button class="btn btn-primary btn-lg" data-fyes>Хочу</button></div>`,
+      onMount: (sh, api) => { bindDetail(sh, 'hoodie', s, phone); $('[data-fno]', sh).onclick = api.close; $('[data-fyes]', sh).onclick = () => { api.close(); setTimeout(() => toast(phone, 'Добавлено в вишлист'), 240); }; },
+      onClose: onClosed });
+  }, 'Открыть «Подробнее»');
+}
+
+/* ============================================================
+   ЭКРАН 4 — Фильтры (лог-слайдер)
+   ============================================================ */
+const BMAX = 100000, LMIN = Math.log(100), LMAX = Math.log(BMAX);
+const MAGNETS = [1000, 3000, 5000, 10000, 20000, 50000];
+const toPos = v => v <= 0 ? 0 : clamp((Math.log(Math.max(v, 100)) - LMIN) / (LMAX - LMIN), 0, 1);
+function niceVal(v) { if (v < 1000) return Math.round(v / 50) * 50; if (v < 10000) return Math.round(v / 100) * 100; return Math.round(v / 500) * 500; }
+function toVal(p) {
+  if (p <= 0.01) return 0; if (p >= 0.99) return BMAX;
+  for (const m of MAGNETS) if (Math.abs(p - toPos(m)) < 0.025) return m;
+  return niceVal(Math.exp(LMIN + p * (LMAX - LMIN)));
+}
+function budgetText(a, b) {
+  if (a <= 0 && b >= BMAX) return 'Любой бюджет';
+  if (a <= 0) return `до ${price(b)}`;
+  if (b >= BMAX) return `от ${price(a)}`;
+  return price(a, b);
+}
+const CATS = ['Техника', 'Красота', 'Дом и уют', 'Кухня и кофе', 'Спорт', 'Книги и хобби', 'Одежда', 'Украшения', 'Игры', 'Путешествия'];
+const STORES = ['Wildberries', 'Ozon', 'AliExpress', 'Pinduoduo', 'Amazon'];
+function screenFilters(phone) {
+  staticDeck(phone, ['headphones', 'instax', 'candle']);
+  persistentSheet(phone, onClosed => {
+    const st = { a: 0, b: 5000, cats: new Set(['Техника', 'Дом и уют']), stores: new Set() };
+    const raw = s => { const share = Math.pow(Math.max(0.02, toPos(s.b || 0) - toPos(s.a)), 0.9); const c = s.cats.size ? s.cats.size / CATS.length : 1; const so = s.stores.size ? 0.35 + 0.65 * (s.stores.size / STORES.length) : 1; return 312 * share * c * so; };
+    const K = 84 / raw(st);
+    const body = `<div class="flt-group"><div class="flt-head"><p class="t-label">Бюджет</p><p class="price" data-btext aria-live="polite"></p></div>
+        <div class="rs" data-rs><div class="rs-track">${MAGNETS.map(m => `<i class="rs-tick" style="left:${toPos(m) * 100}%"></i>`).join('')}<div class="rs-fill" data-fill></div></div>
+          <div class="rs-thumb" role="slider" tabindex="0" aria-label="Бюджет от" aria-valuemin="0" aria-valuemax="${BMAX}" data-th="a"></div>
+          <div class="rs-thumb" role="slider" tabindex="0" aria-label="Бюджет до" aria-valuemin="0" aria-valuemax="${BMAX}" data-th="b"></div></div>
+        <div class="rs-ends t-caption"><span>0</span><span>${fmt(BMAX)}+</span></div></div>
+      <div class="flt-group"><p class="t-label">Категории</p><div class="chip-wrap">${CATS.map(c => `<button class="chip" data-cat="${c}" aria-pressed="${st.cats.has(c)}">${icon('check', 16, 'ck')}${c}</button>`).join('')}</div></div>
+      <div class="flt-group"><p class="t-label">Магазины</p><div class="chip-wrap">${STORES.map(c => `<button class="chip" data-store="${c}" aria-pressed="false">${icon('check', 16, 'ck')}${c}</button>`).join('')}</div></div>`;
+    openSheet(phone, { title: 'Фильтры', full: true, focus: false, headExtra: `<button class="btn btn-ghost btn-sm" data-reset>Сбросить</button>`, body,
+      foot: `<button class="btn btn-primary btn-lg" data-count></button><button class="btn btn-secondary btn-lg" data-sendf>${icon('link', 20)}Отправить этот фильтр другу</button>`,
+      onClose: onClosed,
+      onMount: (sh, api) => {
+        const rs = $('[data-rs]', sh), track = $('.rs-track', sh), fill = $('[data-fill]', sh), ta = $('[data-th="a"]', sh), tb = $('[data-th="b"]', sh);
+        const posOf = k => k === 'a' ? toPos(st.a) : (st.b >= BMAX ? 1 : toPos(st.b));
+        function render() {
+          const pa = posOf('a'), pb = posOf('b');
+          const L = track.offsetLeft, Wt = track.offsetWidth;
+          ta.style.left = `${L + pa * Wt}px`; tb.style.left = `${L + pb * Wt}px`;
+          fill.style.left = `${pa * 100}%`; fill.style.width = `${(pb - pa) * 100}%`;
+          [[ta, st.a], [tb, st.b]].forEach(([t, v]) => { t.setAttribute('aria-valuenow', String(v)); t.setAttribute('aria-valuetext', v >= BMAX ? `${fmt(BMAX)} сом и больше` : `${fmt(v)} сом`); });
+          $('[data-btext]', sh).textContent = budgetText(st.a, st.b);
+          const n = Math.min(312, Math.round(raw(st) * K)); const cb = $('[data-count]', sh);
+          cb.textContent = n ? `Показать ${n} ${plural(n, ['подарок', 'подарка', 'подарков'])}` : 'Ничего не нашлось'; cb.disabled = !n;
+        }
+        function setPos(k, p) {
+          p = clamp(p, 0, 1); const v = toVal(p);
+          if (k === 'a') { const lim = st.b >= BMAX ? BMAX - 1000 : st.b - 100; st.a = clamp(v, 0, Math.max(0, lim)); }
+          else st.b = Math.max(v, st.a + 100);
+          render();
+        }
+        let dragK = null;
+        rs.addEventListener('pointerdown', e => {
+          const r = track.getBoundingClientRect(); const p = (e.clientX - r.left) / r.width;
+          dragK = Math.abs(p - posOf('a')) < Math.abs(p - posOf('b')) ? 'a' : 'b';
+          if (posOf('a') === posOf('b')) dragK = p < posOf('a') ? 'a' : 'b';
+          rs.setPointerCapture(e.pointerId); (dragK === 'a' ? ta : tb).classList.add('dragging'); (dragK === 'a' ? ta : tb).focus({ preventScroll: true }); setPos(dragK, p);
+        });
+        rs.addEventListener('pointermove', e => { if (!dragK) return; const r = track.getBoundingClientRect(); setPos(dragK, (e.clientX - r.left) / r.width); });
+        const up = () => { if (!dragK) return; (dragK === 'a' ? ta : tb).classList.remove('dragging'); dragK = null; };
+        rs.addEventListener('pointerup', up); rs.addEventListener('pointercancel', up);
+        [ta, tb].forEach(t => t.addEventListener('keydown', e => {
+          const k = t.dataset.th; const p = posOf(k); let np = null;
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') np = p + 0.03; else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') np = p - 0.03;
+          else if (e.key === 'PageUp') np = p + 0.12; else if (e.key === 'PageDown') np = p - 0.12; else if (e.key === 'Home') np = 0; else if (e.key === 'End') np = 1;
+          if (np != null) { e.preventDefault(); e.stopPropagation(); setPos(k, np); }
+        }));
+        sh.addEventListener('click', e => {
+          const c = e.target.closest('[data-cat], [data-store]');
+          if (c) { const set = c.dataset.cat ? st.cats : st.stores; const key = c.dataset.cat || c.dataset.store; if (set.has(key)) set.delete(key); else set.add(key); c.setAttribute('aria-pressed', String(set.has(key))); render(); }
+          if (e.target.closest('[data-reset]')) { st.a = 0; st.b = BMAX; st.cats.clear(); st.stores.clear(); $$('[data-cat], [data-store]', sh).forEach(b => b.setAttribute('aria-pressed', 'false')); render(); }
+          if (e.target.closest('[data-count]')) { api.close(); setTimeout(() => toast(phone, 'Фильтры применены', 'sliders'), 240); }
+          if (e.target.closest('[data-sendf]')) toast(phone, 'Ссылка на фильтр скопирована', 'link');
+        });
+        new ResizeObserver(render).observe(track);
+        requestAnimationFrame(render);
+      } });
+  }, 'Открыть фильтры');
+}
+
+/* ============================================================
+   ЭКРАН 5 — Мой вишлист: вкладки «Хочу» / «Подарили»
+   ============================================================ */
+function screenWishlist(phone) {
+  let list = [
+    { id: 'instax', sup: true, v: 'мятная' }, { id: 'headphones', sup: true, v: 'молочные' }, { id: 'candle', v: 'инжир и кедр' },
+    { id: 'hoodie', v: 'молочный, M' }, { id: 'backpack', v: 'мятный' }, { id: 'boardgame' }
+  ];
+  let gifted = [{ id: 'mugs', from: 'от Азамата, 14 марта' }, { id: 'book', from: 'от Нурай, 14 марта' }, { id: 'scarf', from: 'от мамы, 14 марта' }];
+  const booked = new Set(['candle', 'boardgame']);
+  let maybe = ['candle', 'boardgame'];
+  let tab = 'want', showBooked = true;
+  phone.innerHTML = STATUS + `<div class="screen">
+    <header class="appbar"><h1 class="t-title1">Мой вишлист</h1><span class="appbar-actions"><button class="icon-btn" data-share aria-label="Отправить вишлист">${icon('share', 22)}</button>${avatar(PEOPLE.me, 36)}</span></header>
+    <div class="scroll" data-scroll>
+      <p class="t-title3 subhead">на день рождения, 14 марта</p>
+      <div class="seg" role="group" aria-label="Список"><button data-f="want" aria-pressed="true"></button><button data-f="gifted" aria-pressed="false"></button></div>
+      <div data-top></div>
+      <ul class="wl" data-list></ul>
+    </div>
+    <div class="sticky-foot" data-foot><button class="btn btn-primary btn-lg" data-send>Отправить вишлист</button></div>
+  </div>` + tabbar('wish', { wish: list.length, santaDot: true });
+  const ul = $('[data-list]', phone);
+  const short = t => t.length > 34 ? t.slice(0, 32).trim() + '…' : t;
+  function rowWant(x) {
+    const p = PRODUCTS[x.id];
+    return `<li class="wl-item paper" data-id="${x.id}">
+      <span class="wl-grip" aria-hidden="true">${icon('grip', 18)}</span>
+      <div class="wl-photo">${photoHTML(p, 0)}${x.sup ? `<span class="wl-star" role="img" aria-label="Очень хочу">${icon('star', 13)}</span>` : ''}</div>
+      <div class="wl-text"><p class="wl-title">${p.title}</p><p class="price wl-price">${price(p.min, p.max)}</p>${x.v ? `<p class="t-caption wl-var">${x.v}</p>` : ''}</div>
+      <button class="icon-btn on-paper" data-more aria-label="Действия: ${p.title}">${icon('more', 20)}</button></li>`;
+  }
+  function rowGifted(x) {
+    const p = PRODUCTS[x.id];
+    return `<li class="wl-item paper gifted" data-id="${x.id}">
+      <div class="wl-photo">${photoHTML(p, 0)}</div>
+      <div class="wl-text"><p class="wl-title dim">${p.title}</p><p class="t-caption wl-var">${x.from}</p>
+        <button class="btn btn-ghost-ink btn-sm wl-back" data-back="${x.id}">${icon('undo', 16)}Вернуть в вишлист</button></div></li>`;
+  }
+  function render() {
+    const sorted = list.filter(x => x.sup).concat(list.filter(x => !x.sup));
+    $('[data-f="want"]', phone).textContent = `Хочу ${list.length}`;
+    $('[data-f="gifted"]', phone).textContent = `Подарили ${gifted.length}`;
+    const top = $('[data-top]', phone);
+    if (tab === 'want') {
+      const bn = list.filter(x => booked.has(x.id)).length;
+      const banner = maybe.length ? `<section class="gift-banner paper" aria-labelledby="gb-t">
+          <div class="gb-head"><div><p class="t-title3" id="gb-t">Прошёл твой день рождения.</p><p class="t-caption ink-soft">Возможно, тебе подарили это:</p></div>
+          <button class="icon-btn on-paper" data-gbclose aria-label="Скрыть подсказку">${icon('x', 18)}</button></div>
+          <ul class="gb-list">${maybe.map(id => `<li class="gb-item"><div class="wl-photo gb-photo">${photoHTML(PRODUCTS[id], 0)}</div><p class="gb-title">${PRODUCTS[id].title}</p><button class="btn btn-secondary btn-sm" data-yes="${id}">Да, подарили</button></li>`).join('')}</ul></section>` : '';
+      const note = !bn ? '' : showBooked
+        ? `<div class="booked-note t-caption">${icon('gift', 16)}<span class="grow">${bn} ${plural(bn, ['подарок', 'подарка', 'подарков'])} уже кто-то выбрал</span><button class="btn btn-ghost btn-sm" data-hideb>Скрыть</button></div>`
+        : `<div class="booked-note t-caption">${icon('lock', 16)}<span class="grow">Счётчик броней скрыт</span><button class="btn btn-ghost btn-sm" data-hideb>Показать</button></div>`;
+      top.innerHTML = banner + note;
+      ul.innerHTML = sorted.map(rowWant).join('') + `<li><button class="wl-add" data-add>${icon('plus', 20)}Своё желание</button></li>`;
+    } else {
+      top.innerHTML = `<p class="t-caption gifted-hint">Здесь то, что тебе уже подарили. Друзья по ссылке этих подарков не видят.</p>`;
+      ul.innerHTML = gifted.length ? gifted.map(rowGifted).join('') : `<li class="t-body rose" style="text-align:center;padding:40px 12px">Пока пусто. Когда тебе что-то подарят, отметь это в меню желания.</li>`;
+    }
+    $('[data-foot]', phone).hidden = tab !== 'want';
+    const badge = $('[data-wishbadge]', phone); if (badge) badge.textContent = String(list.length);
+    const send = $('[data-send]', phone); send.disabled = list.length < 5;
+    send.textContent = list.length < 5 ? `Ещё ${5 - list.length} ${plural(5 - list.length, ['желание', 'желания', 'желаний'])}` : 'Отправить вишлист';
+    $$('[data-wltab]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.wltab === tab)));
+  }
+  function setTab(t) { tab = t; $$('[data-f]', phone).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.f === t))); $('[data-scroll]', phone).scrollTop = 0; render(); }
+  function move(id, dir) {
+    const it = list.find(x => x.id === id); const group = list.filter(x => !!x.sup === !!it.sup);
+    const gi = group.indexOf(it), tj = gi + dir; if (tj < 0 || tj >= group.length) return false;
+    const other = group[tj]; const i1 = list.indexOf(it), i2 = list.indexOf(other); list[i1] = other; list[i2] = it; return true;
+  }
+  function markGifted(id, from) {
+    list = list.filter(x => x.id !== id); booked.delete(id); maybe = maybe.filter(m => m !== id);
+    gifted.unshift({ id, from }); render(); toast(phone, 'Перенесено в «Подарили»', 'party');
+  }
+  phone.addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.matches('[data-f]')) setTab(t.dataset.f);
+    else if (t.matches('[data-hideb]')) { showBooked = !showBooked; render(); }
+    else if (t.matches('[data-gbclose]')) { maybe = []; render(); }
+    else if (t.matches('[data-yes]')) markGifted(t.dataset.yes, 'по брони из вишлиста, 14 марта');
+    else if (t.matches('[data-back]')) { const id = t.dataset.back; gifted = gifted.filter(x => x.id !== id); list.push({ id }); render(); toast(phone, 'Вернули в вишлист', 'undo'); }
+    else if (t.matches('[data-add]')) toast(phone, 'Откроется шторка «Своё желание»', 'plus');
+    else if (t.matches('[data-send], [data-share]')) toast(phone, 'Откроется шторка «Отправить вишлист»', 'share');
+    else if (t.matches('[data-more]')) {
+      const id = t.closest('[data-id]').dataset.id; const p = PRODUCTS[id];
+      openSheet(phone, { title: short(p.title),
+        body: `<div class="act-list"><button data-a="variant">${icon('palette', 20)}Выбрать вариант</button><button data-a="note">${icon('pencil', 20)}Добавить заметку</button><button data-a="gifted">${icon('party', 20)}Мне это подарили</button><button data-a="up">${icon('up', 20)}Поднять выше</button><button data-a="down">${icon('down', 20)}Опустить ниже</button><button data-a="del" class="danger">${icon('trash', 20)}Убрать из вишлиста</button></div>`,
+        onMount: (sh, api) => sh.addEventListener('click', ev => {
+          const a = ev.target.closest('[data-a]'); if (!a) return; const k = a.dataset.a; api.close();
+          setTimeout(() => {
+            if (k === 'up' || k === 'down') { if (move(id, k === 'up' ? -1 : 1)) { render(); toast(phone, k === 'up' ? 'Поднято выше' : 'Опущено ниже', k); } else toast(phone, 'Дальше двигать некуда', 'info'); }
+            else if (k === 'gifted') markGifted(id, 'отмечено 26 ноября');
+            else if (k === 'del') { list = list.filter(x => x.id !== id); render(); toast(phone, 'Убрано из вишлиста', 'trash'); }
+            else toast(phone, k === 'variant' ? 'Откроется «Подробнее» с выбором варианта' : 'Откроется поле заметки', 'info');
+          }, 240);
+        }) });
+    }
+  });
+  $$('[data-wltab]').forEach(b => { b.onclick = () => setTab(b.dataset.wltab); });
+  render();
+}
+
+/* ============================================================
+   ЭКРАН 6 — Гостевой вишлист
+   ============================================================ */
+function screenGuest(phone) {
+  const items = [
+    { id: 'instax', v: 'мятная', note: 'Именно мятную, к ней уже есть чехол', state: 'free' },
+    { id: 'candle', v: 'инжир и кедр', state: 'free' },
+    { id: 'hoodie', v: 'молочный, M', state: 'taken' },
+    { id: 'mugs', state: 'free' }
+  ];
+  let guestName = '';
+  phone.innerHTML = STATUS + `<div class="screen"><div class="scroll">
+    <div class="guest-top"><div class="brand">${BOW()}<span class="wordmark">swipeit</span></div></div>
+    <div class="owner">${avatar(PEOPLE.aigerim, 56)}<h1 class="t-title1">Вишлист Айгерим</h1><p class="t-title3">на день рождения, 14 марта</p>
+      <p class="t-body owner-msg">Буду рада любому из списка. Главное — приходите в субботу!</p></div>
+    <ul class="g-list" data-g></ul>
+    <div class="g-foot"><button class="btn btn-secondary btn-lg" data-own>Собрать свой вишлист</button><p class="t-caption">Свайпай подарки, которые хочешь сам. Это бесплатно.</p></div>
+  </div></div>`;
+  const ul = $('[data-g]', phone);
+  function render() {
+    ul.innerHTML = items.map((x, i) => { const p = PRODUCTS[x.id]; return `<li class="g-wrap"><article class="g-card paper ${x.state === 'taken' ? 'is-taken' : ''}" aria-label="${p.title}">
+      ${photoHTML(p, 0, p.colors ? Math.max(0, p.colors.findIndex(c => x.v && x.v.startsWith(c[0]))) : null)}
+      <div class="g-body"><h3 class="t-title2">${p.title}</h3><p class="price" style="margin-top:6px">${price(p.min, p.max)}</p>
+        ${x.v ? `<p class="t-caption g-var">Вариант: ${x.v}</p>` : ''}
+        ${x.note ? `<p class="g-note">${x.note}</p>` : ''}
+        <div class="g-stores">${p.stores.map(s => `<span class="store">${s[0]}</span>`).join('')}</div>
+        <div class="g-act">${x.state === 'free' ? `<button class="btn btn-secondary" data-book="${i}">Забронирую я</button>`
+          : x.state === 'mine' ? `<div class="g-state"><span class="lbl">${icon('check', 18)}Ты выбрал этот подарок</span><button class="btn btn-ghost-ink btn-sm" data-unbook="${i}">Отменить</button></div>`
+          : `<div class="g-taken">${icon('lock', 18)}Кто-то уже выбрал</div>`}</div></div></article></li>`; }).join('');
+  }
+  function book(i) { items[i].state = 'mine'; render(); toast(phone, 'Подарок забронирован'); const b = $(`[data-unbook="${i}"]`, phone); if (b) b.focus({ preventScroll: true }); }
+  phone.addEventListener('click', e => {
+    const b = e.target.closest('[data-book]'); const u = e.target.closest('[data-unbook]');
+    if (b) {
+      const i = +b.dataset.book;
+      if (guestName) { book(i); return; }
+      openSheet(phone, { title: 'Как тебя зовут?',
+        body: `<p class="t-body rose" style="margin-bottom:16px">Имя нужно, чтобы бронь сохранилась за тобой. Айгерим его не увидит.</p><label class="field" data-field><span class="t-caption rose">Имя</span><input type="text" autocomplete="given-name" placeholder="Например, Данияр" data-name><span class="t-caption field-err">Напиши имя — так бронь сохранится за тобой.</span></label>`,
+        foot: `<button class="btn btn-primary btn-lg" data-ok>Забронировать</button>`,
+        onMount: (sh, api) => {
+          const submit = () => { const v = $('[data-name]', sh).value.trim(); if (!v) { $('[data-field]', sh).classList.add('err'); $('[data-name]', sh).focus(); return; } guestName = v; api.close(); setTimeout(() => book(i), 240); };
+          $('[data-ok]', sh).onclick = submit;
+          $('[data-name]', sh).addEventListener('keydown', ev => { if (ev.key === 'Enter') submit(); });
+          $('[data-name]', sh).addEventListener('input', () => $('[data-field]', sh).classList.remove('err'));
+        } });
+    }
+    if (u) { items[+u.dataset.unbook].state = 'free'; render(); toast(phone, 'Бронь отменена', 'undo'); }
+    if (e.target.closest('[data-own]')) toast(phone, 'Дальше — онбординг', 'gift');
+  });
+  render();
+}
+
+/* ============================================================
+   ЭКРАН 7 — Че делать будем? (свайп билетиков + боты)
+   ============================================================ */
+function ringAv(key, prog, online) {
+  return `<span class="ring-av" data-person="${key}"><svg viewBox="0 0 46 46" aria-hidden="true"><circle class="trk" cx="23" cy="23" r="21.5"/><circle class="prg" cx="23" cy="23" r="21.5" pathLength="1" style="stroke-dashoffset:${1 - prog}"/></svg>${avatar(PEOPLE[key], 36)}${online ? '<i class="online" aria-hidden="true"></i>' : ''}</span>`;
+}
+function screenPlan(phone) {
+  const total = PLAN_ORDER.length;
+  const prog = { me: 0, azamat: 1, nurai: 2, daniyar: 0 };
+  let matches = 0;
+  phone.innerHTML = STATUS + `<div class="screen">
+    <header class="plan-head"><button class="icon-btn" aria-label="Выйти" data-exit>${icon('x', 22)}</button>
+      <div class="mid"><p class="t-title3">Пятница вечером</p><p class="t-caption live"><i class="live-dot" aria-hidden="true"></i>Прямо сейчас</p></div>
+      <span class="mcount" data-mc aria-live="polite">Совпадений: 0</span></header>
+    <div class="parts"><div class="avstack" data-rings style="--bg-ring:transparent">${Object.keys(prog).map(k => ringAv(k, prog[k] / total, k !== 'daniyar')).join('')}</div>
+      <p class="t-caption parts-status" data-status>Азамат и Нурай листают вместе с тобой</p></div>
+    <div class="deck" data-deck></div>
+    <div class="swipe-actions">
+      <button class="sab sab-undo" data-b="undo" aria-label="Вернуть карточку">${icon('undo', 20)}</button>
+      <button class="sab sab-no" data-b="no" aria-label="Мимо">${icon('x', 26)}</button>
+      <button class="sab sab-yes" data-b="yes" aria-label="Хочу">${icon('heart', 28)}</button>
+    </div>
+    <div style="height:calc(var(--safe-b) + 4px);flex:none"></div>
+    <p class="sr-only" aria-live="polite" data-live></p>
+  </div>`;
+  const setRing = k => { const c = $(`[data-person="${k}"] .prg`, phone); if (c) c.style.strokeDashoffset = String(1 - prog[k] / total); };
+  const status = $('[data-status]', phone);
+  const bots = ['azamat', 'nurai', 'daniyar'];
+  let botTimer = 0;
+  function botTick() {
+    const left = bots.filter(k => prog[k] < total);
+    if (left.length) {
+      const k = left[randInt(left.length)]; prog[k]++; setRing(k);
+      if (k === 'daniyar' && prog[k] === 1) { const r = $('[data-person="daniyar"]', phone); r.insertAdjacentHTML('beforeend', '<i class="online" aria-hidden="true"></i>'); status.textContent = 'Данияр присоединился'; }
+      else if (prog[k] === total) status.textContent = `${PEOPLE[k].n} всё пролистал${k === 'nurai' ? 'а' : ''}`;
+    }
+    if (left.length) botTimer = setTimeout(botTick, 2200 + randInt(2400));
+  }
+  /* боты стартуют, когда экран попал в поле зрения — иначе успеют всё пролистать до того, как его увидят */
+  const io = new IntersectionObserver(es => { if (es[0].isIntersecting && !botTimer) { botTimer = setTimeout(botTick, 1200); io.disconnect(); } }, { threshold: 0.5 });
+  io.observe(phone);
+  function showMatch(id) {
+    const a = ACTS[id];
+    const ov = document.createElement('div'); ov.className = 'match'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-label', `Совпадение: ${a.title}`); ov.tabIndex = -1;
+    ov.innerHTML = `<div class="match-glow"></div><p class="t-display match-title">Совпадение!</p><p class="t-body match-sub">Все четверо хотят: ${a.title}</p>
+      <div class="match-stage"><span class="m-av a1">${avatar(PEOPLE.me, 48)}</span><span class="m-av a2">${avatar(PEOPLE.azamat, 48)}</span><span class="m-av a3">${avatar(PEOPLE.nurai, 48)}</span><span class="m-av a4">${avatar(PEOPLE.daniyar, 48)}</span>
+      <div class="match-ticket">${ticketHTML(id, false)}</div></div><p class="t-caption match-hint">Нажми, чтобы листать дальше</p>`;
+    phone.appendChild(ov); haptic(20);
+    requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('in')));
+    ov.focus({ preventScroll: true });
+    let closed = false; const close = () => { if (closed) return; closed = true; ov.classList.remove('in'); setTimeout(() => ov.remove(), 280); };
+    ov.addEventListener('click', close); ov.addEventListener('keydown', e => { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); close(); } });
+    setTimeout(close, 3200);
+  }
+  const live = $('[data-live]', phone);
+  const deck = createDeck({ root: $('[data-deck]', phone), phone, items: PLAN_ORDER.slice(), allowUp: false,
+    size: (W, H) => { const cw = Math.min(W, 340); const ch = Math.min(H - 16, Math.round((cw - 20) * 0.625 + 20 + 18 + 170)); return { cw, ch, top: Math.max(0, Math.round((H - 14 - ch) / 2)) }; },
+    render: id => ticketHTML(id),
+    buttons: { undo: $('[data-b="undo"]', phone), no: $('[data-b="no"]', phone), yes: $('[data-b="yes"]', phone) },
+    onSwipe: (id, dir) => {
+      prog.me++; setRing('me');
+      live.textContent = dir === 'right' ? `Хочу: ${ACTS[id].title}` : `Мимо: ${ACTS[id].title}`;
+      if (dir === 'right' && ALL_LIKE.has(id)) { matches++; const mc = $('[data-mc]', phone); mc.textContent = `Совпадений: ${matches}`; mc.classList.add('bump'); setTimeout(() => mc.classList.remove('bump'), 900); showMatch(id); }
+    },
+    onUndo: (id, dir) => { prog.me = Math.max(0, prog.me - 1); setRing('me'); if (dir === 'right' && ALL_LIKE.has(id)) { matches = Math.max(0, matches - 1); $('[data-mc]', phone).textContent = `Совпадений: ${matches}`; } },
+    onEmpty: () => {
+      const em = document.createElement('div'); em.className = 'empty';
+      em.innerHTML = `<div class="empty-obj ticket-obj" aria-hidden="true"></div><p class="t-title2">Ты всё пролистал</p><p class="t-body rose">Ждём остальных — результаты откроются, когда закончат все.</p><div class="btns"><a class="btn btn-secondary" href="#shot-results">К результатам</a></div>`;
+      $('[data-deck]', phone).appendChild(em);
+    } });
+  $('[data-exit]', phone).onclick = () => toast(phone, 'Выход из сессии — с подтверждением', 'info');
+  document.querySelector('[data-reset-plan]').onclick = () => {
+    Object.assign(prog, { me: 0, azamat: 1, nurai: 2, daniyar: 0 }); Object.keys(prog).forEach(setRing);
+    matches = 0; $('[data-mc]', phone).textContent = 'Совпадений: 0'; status.textContent = 'Азамат и Нурай листают вместе с тобой';
+    clearTimeout(botTimer); botTimer = setTimeout(botTick, 1200); deck.reset();
+  };
+}
+
+/* ============================================================
+   ЭКРАН 8 — Результаты + барабан
+   ============================================================ */
+function miniTicket(id, votes, voters, almost = false) {
+  const a = ACTS[id];
+  return `<li class="mt-wrap"><div class="mt paper ${almost ? 'almost' : ''}"><div class="mt-photo photo" style="background:${TINT[a.tint]}"><div class="ill">${ILL[a.illus](FILL[a.fill])}</div></div><div class="mt-perf" aria-hidden="true"></div>
+    <div class="mt-body"><p class="mt-title">${a.title}</p><p class="mt-votes"><span class="avstack">${voters.map(k => avatar(PEOPLE[k], 22)).join('')}</span>${votes}</p></div></div></li>`;
+}
+function screenResults(phone) {
+  const FULL = ['cinema', 'antikafe', 'skating'];
+  phone.parentElement.id = 'shot-results';
+  phone.innerHTML = STATUS + `<div class="screen">
+    <header class="appbar with-back"><button class="icon-btn" aria-label="Назад">${icon('left', 24)}</button><h1 class="t-title3">Пятница вечером</h1></header>
+    <div class="scroll"><div class="res">
+      <h2 class="t-title1">Совпало 3 из 24</h2><p class="t-caption">Правило «все за». Голосовали четыре человека.</p>
+      <ul class="res-list">${FULL.map(id => miniTicket(id, 'все 4 за', ['me', 'azamat', 'nurai', 'daniyar'])).join('')}</ul>
+      <h3 class="t-label res-sub">Почти совпало</h3>
+      <ul class="res-list" style="margin-top:0">${miniTicket('pool', '3 из 4 за', ['me', 'nurai', 'daniyar'], true)}</ul>
+    </div></div>
+    <div class="res-foot"><button class="btn btn-primary btn-lg" data-spin>${icon('shuffle', 20)}Крутить барабан</button><button class="btn btn-secondary btn-lg" data-vote>Выбрать самим</button></div>
+  </div>`;
+  $('[data-vote]', phone).onclick = () => toast(phone, 'Каждый отдаст один голос, организатор утвердит', 'info');
+  $('[data-spin]', phone).onclick = () => spin();
+  function spin() {
+    const n = FULL.length, R = 9, IH = 76;
+    const pick = randInt(n);
+    const strip = Array.from({ length: n * R }, (_, i) => FULL[i % n]);
+    const target = n * (R - 2) + pick;
+    openSheet(phone, { title: 'Крутим барабан', focus: false,
+      body: `<div class="reel" data-reel aria-hidden="true"><div class="reel-frame"></div><div class="reel-strip" data-strip>${strip.map(id => { const a = ACTS[id]; return `<div class="reel-item"><div class="paper"><span class="mt-photo photo" style="background:${TINT[a.tint]}"><span class="ill">${ILL[a.illus](FILL[a.fill])}</span></span><b>${a.title}</b></div></div>`; }).join('')}</div></div>
+        <p class="t-caption reel-cap" data-cap>Выбираем из трёх совпадений</p><p class="sr-only" aria-live="assertive" data-rlive></p>`,
+      onMount: (sh, api) => {
+        const st = $('[data-strip]', sh); const reel = $('[data-reel]', sh);
+        const start = IH, end = -(target * IH) + IH;
+        st.style.transform = `translateY(${start}px)`;
+        const result = () => {
+          reel.classList.add('won'); haptic(25);
+          const a = ACTS[FULL[pick]]; $('[data-rlive]', sh).textContent = `Выпало: ${a.title}`;
+          setTimeout(() => {
+            api.setBody(`<div class="result"><p class="t-caption">Барабан выбрал</p><p class="t-display" id="res-title">Решено: ${a.title}</p>
+              <p class="t-label when">${icon('calplus', 18)}Пятница, 28 ноября, 19:30</p><div class="avstack">${['me', 'azamat', 'nurai', 'daniyar'].map(k => avatar(PEOPLE[k], 36)).join('')}</div></div>`);
+            api.setFoot(`<button class="btn btn-primary btn-lg" data-chat>${icon('send', 20)}Отправить в чат</button><button class="btn btn-secondary btn-lg" data-ics>${icon('calplus', 20)}Добавить в календарь</button><button class="btn btn-ghost btn-lg" data-undo-decision>Отменить решение</button>`);
+            $('[data-ics]', sh).onclick = () => { downloadICS(a.title); toast(phone, 'Событие сохранено в календарь', 'calplus'); };
+            $('[data-chat]', sh).onclick = async () => { try { await navigator.clipboard.writeText(`Решено: ${a.title}, пятница 28 ноября, 19:30`); toast(phone, 'Текст скопирован — вставь в чат', 'link'); } catch (e) { toast(phone, 'В приложении откроется «Поделиться»', 'share'); } };
+            /* перекрутить после решения нельзя; организатор может только отменить решение и вернуться к совпадениям */
+            $('[data-undo-decision]', sh).onclick = () => { api.close(); setTimeout(() => toast(phone, 'Решение отменено', 'undo'), 240); };
+            $('[data-chat]', sh).focus({ preventScroll: true });
+          }, reduce ? 0 : 650);
+        };
+        if (reduce) { st.style.transform = `translateY(${end}px)`; result(); return; }
+        setTimeout(() => {
+          const omega = 2.3, zeta = 0.86; const k = omega * omega, c = 2 * zeta * omega;
+          let x = start, v = 0, last = 0, t0 = 0;
+          const step = now => {
+            if (!last) { last = now; t0 = now; }
+            const dt = Math.min(0.032, (now - last) / 1000); last = now;
+            for (let s = 0; s < 4; s++) { const a = -k * (x - end) - c * v; v += a * dt / 4; x += v * dt / 4; }
+            st.style.transform = `translateY(${x}px)`;
+            if ((Math.abs(x - end) < 0.5 && Math.abs(v) < 4) || now - t0 > 2600) { st.style.transform = `translateY(${end}px)`; result(); return; }
+            requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }, 320);
+      } });
+  }
+}
+function downloadICS(title) {
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SwipeIt//RU', 'BEGIN:VEVENT', `UID:${Date.now()}@swipeit.demo`, 'DTSTAMP:20261126T120000Z', 'DTSTART:20261128T193000', 'DTEND:20261128T220000', `SUMMARY:${title}`, 'DESCRIPTION:Решили в SwipeIt', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+  const a = document.createElement('a'); a.href = url; a.download = 'plan.ics'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+/* ============================================================
+   ЭКРАН 9 — Тайный Санта
+   ============================================================ */
+function screenSanta(phone) {
+  let state = 'sealed', bought = false;
+  const parts = [['me', true], ['azamat', true], ['nurai', true], ['daniyar', false], ['meerim', true], ['aigerim', false]];
+  phone.innerHTML = STATUS + `<div class="screen">
+    <header class="appbar"><h1 class="t-title1">Тайный Санта</h1><span class="appbar-actions">${avatar(PEOPLE.me, 36)}</span></header>
+    <div class="scroll">
+      <div class="game"><p class="t-title2">Новый год в офисе</p><p class="t-caption">Бюджет до ${price(2000)}. Обмен подарками 27 декабря.</p></div>
+      <div class="env-zone" data-envzone data-state="sealed"><div class="env" data-env data-state="sealed">
+        <div class="env-back"></div>
+        <div class="env-letter paper"><p class="t-caption">Ты Тайный Санта для</p><p class="t-display">Нурай</p><p class="t-caption meta">Её вишлист: 9 желаний, 6 в бюджете</p></div>
+        <div class="env-front"><div class="paper"></div><svg viewBox="0 0 300 196" preserveAspectRatio="none" aria-hidden="true"><path d="M0 196 150 118M300 196 150 118"/></svg></div>
+        <div class="env-flap"><div></div></div>
+        <button class="env-seal" data-seal aria-label="Печать конверта">
+          <svg class="seal-ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="trk" cx="50" cy="50" r="46"/><circle class="prg" cx="50" cy="50" r="46" pathLength="1" data-ring/></svg>
+          <span class="wax" aria-hidden="true"><i class="l">S</i><i class="r">S</i></span>
+        </button>
+      </div></div>
+      <div class="santa-under" data-under></div>
+      <div class="parts-list"><h3 class="t-label">Участники <span data-pc></span></h3><ul data-parts></ul><div data-boughtbox></div></div>
+    </div>
+  </div>` + tabbar('santa', { wish: 7, santaDot: false });
+  const env = $('[data-env]', phone), under = $('[data-under]', phone), ring = $('[data-ring]', phone);
+  function renderParts() {
+    $('[data-pc]', phone).textContent = `${parts.length}`;
+    $('[data-parts]', phone).innerHTML = parts.map(([k, ok]) => `<li class="p-row">${avatar(PEOPLE[k], 36)}<span class="name">${k === 'me' ? 'Ты' : PEOPLE[k].n}</span>${ok
+      ? `<span class="p-st ok">${icon('check', 16)}вишлист готов</span>`
+      : `<span class="p-st no">без вишлиста</span>`}</li>`).join('');
+    $('[data-boughtbox]', phone).innerHTML = state === 'sealed' ? '' : `<p class="bought t-caption">${icon('gift', 16)}Подарок купили: ${2 + (bought ? 1 : 0)} из ${parts.length}</p>`;
+  }
+  function renderUnder() {
+    if (state === 'sealed') under.innerHTML = `<p class="t-title3">Жеребьёвка 15 декабря</p><button class="btn btn-primary btn-lg" data-draw>Провести жеребьёвку</button><p class="t-caption" style="margin-top:10px">Ты организатор: можно провести раньше, когда все соберутся.</p>`;
+    else if (state === 'ready') under.innerHTML = `<p class="t-caption">Удерживай печать, чтобы открыть</p><button class="btn btn-ghost btn-lg" data-openalt style="margin-top:6px">Открыть письмо</button>`;
+    else under.innerHTML = `<button class="btn btn-primary btn-lg" data-wl>Смотреть вишлист</button>${bought
+      ? `<p class="t-caption" style="margin-top:12px;color:var(--color-mint)">${icon('check', 14)} Подарок куплен</p>`
+      : `<button class="btn btn-secondary btn-lg" data-bought style="margin-top:8px">Я купил подарок</button>`}`;
+    const tab = $('.tab:nth-child(4) .tab-ic', phone); const dot = $('.dot', tab);
+    if (state === 'ready' && !dot) tab.insertAdjacentHTML('beforeend', '<b class="dot" aria-label="Конверт готов"></b>'); else if (state !== 'ready' && dot) dot.remove();
+    $('[data-seal]', phone).setAttribute('aria-label', state === 'ready' ? 'Печать: удерживай, чтобы открыть письмо' : state === 'sealed' ? 'Печать: письмо откроется после жеребьёвки' : 'Печать сломана');
+    renderParts();
+  }
+  function setState(s) {
+    state = s; env.dataset.state = s; $('[data-envzone]', phone).dataset.state = s; ring.style.strokeDashoffset = '1'; renderUnder();
+    $$('[data-st]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.st === s)));
+  }
+  function openLetter() { if (state !== 'ready') return; haptic([10, 40, 20]); setState('opened'); toast(phone, 'Письмо открыто', 'mail'); }
+  /* удержание печати 0.8 с */
+  let hold = null;
+  function holdStart() {
+    if (state !== 'ready' || hold) return;
+    const t0 = performance.now();
+    hold = { raf: 0 };
+    const f = now => { const p = clamp((now - t0) / 800, 0, 1); ring.style.strokeDashoffset = String(1 - p); if (p >= 1) { hold = null; openLetter(); return; } hold.raf = requestAnimationFrame(f); };
+    hold.raf = requestAnimationFrame(f);
+  }
+  function holdEnd() {
+    if (!hold) return; cancelAnimationFrame(hold.raf); hold = null;
+    const from = 1 - parseFloat(ring.style.strokeDashoffset || '1');
+    tween({ from, to: 0, dur: 160, onUpdate: p => { ring.style.strokeDashoffset = String(1 - p); } });
+  }
+  const seal = $('[data-seal]', phone);
+  seal.addEventListener('pointerdown', e => { if (state === 'sealed') { toast(phone, 'Письмо откроется после жеребьёвки', 'lock'); return; } seal.setPointerCapture(e.pointerId); holdStart(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => seal.addEventListener(ev, holdEnd));
+  seal.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); if (state === 'sealed') toast(phone, 'Письмо откроется после жеребьёвки', 'lock'); else holdStart(); } });
+  seal.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') holdEnd(); });
+  seal.addEventListener('contextmenu', e => e.preventDefault());
+  phone.addEventListener('click', e => {
+    if (e.target.closest('[data-draw]')) confirmDialog(phone, { title: 'Провести жеребьёвку?', text: 'Поменять пары потом нельзя. Двое участников ещё без вишлиста.', ok: 'Провести', onOk: () => { setState('ready'); toast(phone, 'Жеребьёвка проведена', 'shuffle'); } });
+    if (e.target.closest('[data-openalt]')) openLetter();
+    if (e.target.closest('[data-wl]')) toast(phone, 'Вишлист Нурай: сначала то, что в бюджете', 'heart');
+    if (e.target.closest('[data-bought]')) { bought = true; renderUnder(); toast(phone, 'Отмечено: подарок куплен'); }
+  });
+  $$('[data-st]').forEach(b => b.onclick = () => { bought = false; setState(b.dataset.st); });
+  setState('sealed');
+}
+
+/* ============================================================
+   ЗАПУСК
+   ============================================================ */
+$('[data-brand]').innerHTML = `${BOW()}<span class="wordmark">swipeit</span>`;
+$('[data-price-sample]').textContent = price(2990, 3600);
+const SW = [['Бархат', '--color-velvet', '#2A1024'], ['Бархат-2', '--color-velvet-2', '#3A1832'], ['Бархат-3', '--color-velvet-3', '#4A2241'], ['Бумага', '--color-paper', '#FFF1F3'], ['Бумага-2', '--color-paper-2', '#F6E1E7'], ['Чернила-мягкие', '--color-ink-soft', '#7A5A6E'], ['Пыльная роза', '--color-rose', '#CBA8BC'], ['Мандарин', '--color-mandarin', '#FF8A3D'], ['Мандарин-чернила', '--color-mandarin-ink', '#B8460E'], ['Мята', '--color-mint', '#8FE3C6'], ['Шампань', '--color-champagne', '#FFD27A'], ['Гранат', '--color-pomegranate', '#FF5C7A']];
+$('[data-swatches]').innerHTML = SW.map(([n, v, h]) => `<div class="sw"><i style="background:var(${v})"></i><b>${n}</b><span>${h}</span></div>`).join('');
+const SCREENS = { onboarding: screenOnboarding, deck: screenDeck, detail: screenDetail, filters: screenFilters, wishlist: screenWishlist, guest: screenGuest, plan: screenPlan, results: screenResults, santa: screenSanta };
+$$('[data-screen]').forEach(ph => { try { SCREENS[ph.dataset.screen](ph); } catch (err) { console.error('Экран', ph.dataset.screen, err); } });
+$$('.tab').forEach(t => t.addEventListener('click', e => { e.preventDefault(); const el = document.querySelector(t.getAttribute('href')); if (el) el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); }));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# зависимости и сборка
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# окружение
+.env*.local
+
+# данные режима «Локальная сеть» (TECH_SPEC §5)
+frontend/.lan-data/
+
+# каталог копируется скриптом catalog:sync из ../catalog или catalog-stub
+frontend/public/catalog/
+
+# служебное
+.DS_Store
+npm-debug.log*
+coverage/
+.vercel
