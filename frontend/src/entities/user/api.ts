@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   type UpdateMeInput,
+  createUser,
   friendKeys,
   getFriends,
   getMe,
@@ -58,6 +59,20 @@ export const useUpdateMe = () => {
     onSuccess: (user) => {
       queryClient.setQueryData(userKeys.me(), user);
       void queryClient.invalidateQueries({ queryKey: friendKeys.all });
+    },
+  });
+};
+
+// Профиль из онбординга: новый пользователь сразу становится пользователем
+// вкладки (и «последним» на устройстве — после перезагрузки остаётся в системе).
+export const useCreateUser = () => {
+  const queryClient = useQueryClient();
+  const setActiveUser = useSessionStore((state) => state.setActiveUser);
+  return useMutation({
+    mutationFn: createUser,
+    onSuccess: (user) => {
+      setActiveUser(user.id);
+      queryClient.setQueryData(userKeys.me(), user);
     },
   });
 };

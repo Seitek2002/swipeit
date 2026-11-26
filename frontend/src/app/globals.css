@@ -253,3 +253,25 @@
     animation: skeleton-wave 1.4s ease-in-out infinite;
   }
 }
+
+/* Бирки онбординга покачиваются на нитках (reference.html, .hang). */
+@keyframes hang-sway {
+  from {
+    transform: rotate(calc(var(--rot) - 2.2deg));
+  }
+  to {
+    transform: rotate(calc(var(--rot) + 2.2deg));
+  }
+}
+
+.hang {
+  transform: rotate(var(--rot));
+  animation: hang-sway var(--dur, 6s) ease-in-out var(--delay, 0s) infinite
+    alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hang {
+    animation: none;
+  }
+}

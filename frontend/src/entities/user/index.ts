@@ -1,4 +1,10 @@
-export { useFriends, useLoginDemo, useMe, useUpdateMe } from "./api";
+export {
+  useCreateUser,
+  useFriends,
+  useLoginDemo,
+  useMe,
+  useUpdateMe,
+} from "./api";
 export type {
   AvatarColor,
   BotProfile,

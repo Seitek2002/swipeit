@@ -12,4 +12,12 @@ export default defineConfig([
       "fsd/insignificant-slice": "off",
     },
   },
+  {
+    // Временно, до T12: сброс демо сейчас вызывается только из профиля.
+    // Вторым потребителем станет демо-панель («Сбросить всё») — тогда убрать.
+    files: ["./src/features/demo-reset/**"],
+    rules: {
+      "fsd/insignificant-slice": "off",
+    },
+  },
 ]);

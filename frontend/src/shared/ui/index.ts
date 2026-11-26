@@ -21,6 +21,8 @@ export { Screen, ScreenBody } from "./screen";
 export { type SegmentOption, SegmentedControl } from "./segmented-control";
 export { Skeleton } from "./skeleton";
 export { Spinner } from "./spinner";
+export { Splash } from "./splash";
 export { type SwipeAction, SwipeActionButton } from "./swipe-action-button";
+export { Switch } from "./switch";
 export { TextArea, TextField } from "./text-field";
 export { toast, Toaster, type ToastTone } from "./toast";

@@ -61,3 +61,21 @@ export const getActiveTab = (pathname: null | string): null | TabId => {
   if (path.startsWith("/santa")) return "santa";
   return null;
 };
+
+// Экраны, которые открываются без профиля: онбординг, чужие ссылки (гость
+// без регистрации, DESIGN.md §8.5), приглашения (вход решают сами экраны) и
+// витрина. Остальные без профиля ведут в онбординг.
+const GUEST_PATHS = new Set([
+  "/",
+  "/onboarding",
+  "/w",
+  "/pick",
+  "/pick/answer",
+  "/plans/join",
+  "/santa/join",
+  "/kit",
+  "/credits",
+]);
+
+export const requiresProfile = (pathname: null | string): boolean =>
+  !GUEST_PATHS.has(normalize(pathname));

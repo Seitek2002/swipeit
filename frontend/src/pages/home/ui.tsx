@@ -4,16 +4,26 @@ import { useEffect } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { ROUTES } from "@/shared/config";
+import { useMe } from "@/entities/user";
 
-// Вход «/». Пока профиля нет (T05) — сразу в ленту подарков. В T05 сюда
-// добавится проверка: без профиля — в онбординг (TECH_SPEC §10).
+import { ROUTES } from "@/shared/config";
+import { useMounted } from "@/shared/lib/dom";
+import { useSessionStore } from "@/shared/store";
+import { Splash } from "@/shared/ui";
+
+// Вход «/» (TECH_SPEC §10): профиля нет — онбординг, есть — лента подарков.
+// Пока решаем — заставка с бантом.
 export const HomePage = () => {
   const router = useRouter();
+  const mounted = useMounted();
+  const userId = useSessionStore((state) => state.activeUserId);
+  const me = useMe();
 
   useEffect(() => {
-    router.replace(ROUTES.GIFTS);
-  }, [router]);
+    if (!mounted) return;
+    if (!userId) router.replace(ROUTES.ONBOARDING);
+    else if (me.data) router.replace(ROUTES.GIFTS);
+  }, [mounted, userId, me.data, router]);
 
-  return null;
+  return <Splash />;
 };

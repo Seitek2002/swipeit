@@ -90,7 +90,11 @@ export const Providers = ({ children }: { children: ReactNode }) => {
       <SessionCacheReset />
       {children}
       <Toaster />
-      <ReactQueryDevtools initialIsOpen={false} buttonPosition="top-right" />
+      {/* Кнопка devtools висит поверх экрана телефона и мешает проверять
+          вёрстку — включается только по NEXT_PUBLIC_RQ_DEVTOOLS=1. */}
+      {process.env.NEXT_PUBLIC_RQ_DEVTOOLS === "1" && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
     </QueryClientProvider>
   );
 };
