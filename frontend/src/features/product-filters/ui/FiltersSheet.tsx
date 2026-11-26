@@ -21,6 +21,8 @@ type Props = {
   filters: ProductFilters;
   onApply: (filters: ProductFilters) => void;
   onClose: () => void;
+  // «Отправить этот фильтр другу» (DESIGN.md §8.6) — с текущим черновиком.
+  onSendToFriend?: (filters: ProductFilters) => void;
   open: boolean;
 };
 
@@ -33,7 +35,13 @@ function toggle<T>(list: T[], value: T): T[] {
 // Шторка фильтров (DESIGN.md §8.2): бюджет, категории, магазины, живой
 // счётчик на кнопке, «Сбросить». Фильтры применяются кнопкой, а не на лету —
 // колода не перетасовывается, пока человек выбирает.
-export const FiltersSheet = ({ open, filters, onApply, onClose }: Props) => {
+export const FiltersSheet = ({
+  open,
+  filters,
+  onApply,
+  onClose,
+  onSendToFriend,
+}: Props) => {
   const [draft, setDraft] = useState(filters);
   // Открыли шторку заново — черновик из текущих фильтров.
   const [wasOpen, setWasOpen] = useState(open);
@@ -72,10 +80,10 @@ export const FiltersSheet = ({ open, filters, onApply, onClose }: Props) => {
               ? "В этих рамках подарков нет"
               : `Показать ${total ?? ""} ${plural(total ?? 0, ["подарок", "подарка", "подарков"])}`}
           </Button>
-          {/* «Выбери подарок сам» — в T10. */}
           <Button
             variant="ghost"
-            disabled
+            disabled={!onSendToFriend || total === 0}
+            onClick={() => onSendToFriend?.(draft)}
             icon={<Send aria-hidden size={18} strokeWidth={1.75} />}
           >
             Отправить этот фильтр другу

@@ -2,6 +2,7 @@ export { Avatar, AvatarStack, getInitial } from "./avatar";
 export { BottomSheet } from "./bottom-sheet";
 export { Bow } from "./bow";
 export { Brand } from "./brand";
+export { BrokenLink } from "./broken-link";
 export {
   Button,
   buttonClassName,

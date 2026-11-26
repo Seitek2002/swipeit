@@ -4,7 +4,13 @@ import {
 } from "lz-string";
 import { z } from "zod";
 
-import { AVATAR_COLORS } from "@/shared/config";
+import {
+  AVATAR_COLORS,
+  CATEGORY_IDS,
+  type CategoryId,
+  MARKETPLACE_IDS,
+  type MarketplaceId,
+} from "@/shared/config";
 
 // Кодек ссылок (TECH_SPEC §8): данные едут прямо в URL, поэтому ссылка
 // работает на другом устройстве без сервера. JSON → короткие ключи →
@@ -180,3 +186,175 @@ export const decodeWishlist = (
 // Ключ желания для броней — стабилен между устройствами (TECH_SPEC §5).
 export const sharedItemKey = (item: SharedWishlist["items"][number]) =>
   item.productId ?? `custom:${item.custom?.title ?? ""}`;
+
+// ── «Выбери подарок сам» ────────────────────────────────────────────────
+
+// Пол — для «Азамату», «Айгерим выбрала»; по «Показывать подарки» профиля.
+type Gender = "female" | "male";
+const GenderShort = z.enum(["f", "m"]);
+const toGender = (g?: "f" | "m"): Gender | undefined =>
+  g === "f" ? "female" : g === "m" ? "male" : undefined;
+const fromGender = (gender?: Gender) =>
+  gender === "female" ? "f" : gender === "male" ? "m" : undefined;
+
+const PickRequestShort = z.object({
+  i: z.string().min(1).max(40),
+  f: z.object({
+    n: z.string().min(1).max(40),
+    c: z.enum(AVATAR_COLORS),
+    u: z.string().max(40).optional(),
+    g: GenderShort.optional(),
+  }),
+  to: z.string().max(40).optional(),
+  fl: z.object({
+    b: z.tuple([z.number().nonnegative(), z.number().nonnegative().nullable()]),
+    // Неизвестная категория — ссылка от более новой версии: считаем битой.
+    c: z.array(z.enum(CATEGORY_IDS)).max(CATEGORY_IDS.length),
+    m: z.array(z.enum(MARKETPLACE_IDS)).max(MARKETPLACE_IDS.length),
+  }),
+  h: z.literal(1).optional(),
+  oc: OccasionShort.optional(),
+  ms: z.string().max(200).optional(),
+});
+
+export type SharedPickRequest = {
+  filters: {
+    budget: { max: null | number; min: number };
+    categories: CategoryId[];
+    marketplaces: MarketplaceId[];
+  };
+  from: {
+    avatarColor: (typeof AVATAR_COLORS)[number];
+    gender?: Gender;
+    name: string;
+    userId?: string;
+  };
+  hidePrices: boolean;
+  id: string;
+  message?: string;
+  occasion?: SharedWishlist["occasion"];
+  toName?: string;
+};
+
+export const encodePickRequest = (request: SharedPickRequest): string =>
+  encodeEnvelope("pk", {
+    i: request.id,
+    f: {
+      n: request.from.name,
+      c: request.from.avatarColor,
+      u: request.from.userId,
+      g: fromGender(request.from.gender),
+    },
+    to: request.toName || undefined,
+    fl: {
+      b: [request.filters.budget.min, request.filters.budget.max],
+      c: request.filters.categories,
+      m: request.filters.marketplaces,
+    },
+    h: request.hidePrices ? 1 : undefined,
+    oc: request.occasion
+      ? {
+          k: request.occasion.kind,
+          l: request.occasion.label,
+          d: request.occasion.date,
+        }
+      : undefined,
+    ms: request.message || undefined,
+  });
+
+export const decodePickRequest = (
+  encoded: null | string | undefined,
+): null | SharedPickRequest => {
+  const short = decodeEnvelope(encoded, "pk", PickRequestShort);
+  if (!short) return null;
+  return {
+    id: short.i,
+    from: {
+      name: short.f.n,
+      avatarColor: short.f.c,
+      userId: short.f.u,
+      gender: toGender(short.f.g),
+    },
+    toName: short.to,
+    filters: {
+      budget: { min: short.fl.b[0], max: short.fl.b[1] },
+      categories: short.fl.c,
+      marketplaces: short.fl.m,
+    },
+    hidePrices: short.h === 1,
+    occasion: short.oc
+      ? { kind: short.oc.k, label: short.oc.l, date: short.oc.d }
+      : undefined,
+    message: short.ms,
+  };
+};
+
+const PickAnswerShort = z.object({
+  r: z.string().min(1).max(40),
+  b: z.object({
+    n: z.string().min(1).max(40),
+    c: z.enum(AVATAR_COLORS),
+    g: GenderShort.optional(),
+  }),
+  p: z
+    .array(
+      z.object({
+        p: z.string().min(1).max(40),
+        t: z.literal(1).optional(),
+        v: z.record(z.string(), z.string()).optional(),
+      }),
+    )
+    .max(100),
+});
+
+export type SharedPickAnswer = {
+  by: {
+    avatarColor: (typeof AVATAR_COLORS)[number];
+    gender?: Gender;
+    name: string;
+  };
+  picks: Array<{
+    priority: "normal" | "top";
+    productId: string;
+    variantChoice?: Record<string, string>;
+  }>;
+  requestId: string;
+};
+
+export const encodePickAnswer = (answer: SharedPickAnswer): string =>
+  encodeEnvelope("pa", {
+    r: answer.requestId,
+    b: {
+      n: answer.by.name,
+      c: answer.by.avatarColor,
+      g: fromGender(answer.by.gender),
+    },
+    p: answer.picks.map((pick) => ({
+      p: pick.productId,
+      t: pick.priority === "top" ? 1 : undefined,
+      v:
+        pick.variantChoice && Object.keys(pick.variantChoice).length
+          ? pick.variantChoice
+          : undefined,
+    })),
+  });
+
+export const decodePickAnswer = (
+  encoded: null | string | undefined,
+): null | SharedPickAnswer => {
+  const short = decodeEnvelope(encoded, "pa", PickAnswerShort);
+  if (!short) return null;
+  return {
+    requestId: short.r,
+    by: {
+      name: short.b.n,
+      avatarColor: short.b.c,
+      gender: toGender(short.b.g),
+    },
+    picks: short.p.map((pick) => ({
+      productId: pick.p,
+      priority: pick.t ? "top" : "normal",
+      variantChoice: pick.v,
+    })),
+  };
+};

@@ -65,6 +65,7 @@ export const createSwipe: Handler = async (ctx, { body }) => {
       productId: input.productId,
       decision: input.decision,
       context: input.context,
+      variantChoice: input.variantChoice,
       at,
     });
 

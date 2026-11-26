@@ -91,3 +91,30 @@ export const useFilterCount = (
     enabled: enabled && Boolean(userId),
   });
 };
+
+const joinAnd = (items: string[]) =>
+  items.length <= 1
+    ? (items[0] ?? "")
+    : `${items.slice(0, -1).join(", ")} и ${items[items.length - 1]}`;
+
+// Условия ссылки-фильтра словами (DESIGN.md §8.6): «в категориях Техника и
+// Спорт, до 5 000 сом». При скрытых ценах бюджет не называем.
+export const describeFilters = (
+  filters: ProductFilters,
+  { hidePrices = false }: { hidePrices?: boolean } = {},
+): string => {
+  const parts: string[] = [];
+  const categories = filters.categories.map(
+    (category: CategoryId) => CATEGORY_LABELS[category],
+  );
+  if (categories.length === 1) parts.push(`в категории ${categories[0]}`);
+  if (categories.length > 1) parts.push(`в категориях ${joinAnd(categories)}`);
+  if (!hidePrices && !isDefaultBudget(filters)) {
+    parts.push(formatBudget(filters.budget.min, filters.budget.max));
+  }
+  const stores = filters.marketplaces.map(
+    (marketplace: MarketplaceId) => MARKETPLACE_LABELS[marketplace],
+  );
+  if (stores.length > 0) parts.push(`из магазинов ${joinAnd(stores)}`);
+  return parts.length > 0 ? parts.join(", ") : "любые подарки из каталога";
+};

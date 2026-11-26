@@ -28,12 +28,19 @@ export {
 } from "./demo/types";
 export { type ApiErrorCode, ApiError, isApiError } from "./mock-server/errors";
 export { type ApiMode, detectMode } from "./mode";
+export {
+  answerPickRequest,
+  createPickRequest,
+  getMyPicks,
+  importPickAnswer,
+} from "./pick/requests";
 export { type PickAnswer, type PickRequest } from "./pick/types";
 export { type PlanSession } from "./plans/types";
 export {
   catalogKeys,
   demoKeys,
   friendKeys,
+  pickKeys,
   SCOPE_KEYS,
   reservationKeys,
   userKeys,

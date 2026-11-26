@@ -10,10 +10,17 @@ const PersonSchema = z.object({
   avatarColor: z.enum(AVATAR_COLORS),
 });
 
+// Расширение TECH_SPEC §5: пол для «Отправить выбор Азамату» и «Айгерим
+// выбрала» — из «Показывать подарки: для неё / для него»; «всем» — без рода.
+const GenderSchema = z.enum(["female", "male"]);
+
 // «Выбери подарок сам» (TECH_SPEC §5).
 export const PickRequestSchema = z.object({
   id: z.string(),
-  from: PersonSchema.extend({ userId: z.string().optional() }),
+  from: PersonSchema.extend({
+    userId: z.string().optional(),
+    gender: GenderSchema.optional(),
+  }),
   toName: z.string().optional(),
   filters: ProductFiltersSchema,
   hidePrices: z.boolean(),
@@ -24,7 +31,7 @@ export const PickRequestSchema = z.object({
 
 export const PickAnswerSchema = z.object({
   requestId: z.string(),
-  by: PersonSchema,
+  by: PersonSchema.extend({ gender: GenderSchema.optional() }),
   picks: z.array(
     z.object({
       productId: z.string(),

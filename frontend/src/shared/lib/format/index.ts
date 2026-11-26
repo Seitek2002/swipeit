@@ -16,4 +16,4 @@ export {
   NNBSP,
 } from "./format-price";
 export { plural, pluralize } from "./plural";
-export { genitive } from "./names";
+export { dative, genitive } from "./names";

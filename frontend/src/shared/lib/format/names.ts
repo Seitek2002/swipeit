@@ -17,3 +17,18 @@ export const genitive = (name: string, gender?: "female" | "male"): string => {
   if (/[бвгджзклмнпрстфхцчшщ]$/i.test(last)) return `${trimmed}а`;
   return trimmed;
 };
+
+// Дательный падеж для «Отправить выбор Азамату» (DESIGN.md §8.6) — те же
+// правила: женские имена на согласную не склоняются, без пола — тоже.
+export const dative = (name: string, gender?: "female" | "male"): string => {
+  const trimmed = name.trim();
+  if (!trimmed) return trimmed;
+  const last = trimmed.slice(-1).toLowerCase();
+  const stem = trimmed.slice(0, -1);
+  if (/ия$/i.test(trimmed)) return `${stem}и`;
+  if (last === "а" || last === "я") return `${stem}е`;
+  if (gender !== "male") return trimmed;
+  if (last === "й" || last === "ь") return `${stem}ю`;
+  if (/[бвгджзклмнпрстфхцчшщ]$/i.test(last)) return `${trimmed}у`;
+  return trimmed;
+};

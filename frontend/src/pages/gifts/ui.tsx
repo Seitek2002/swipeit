@@ -7,12 +7,15 @@ import Link from "next/link";
 import { AppHeader } from "@/widgets/app-header";
 import { GiftDeck } from "@/widgets/gift-deck";
 
+import { PickRequestSheet } from "@/features/pick-request-create";
 import {
   ActiveFilterChips,
   FiltersButton,
   FiltersSheet,
+  describeFilters,
 } from "@/features/product-filters";
 
+import type { ProductFilters } from "@/entities/product";
 import { useWishlistSummary } from "@/entities/wishlist";
 
 import { ROUTES } from "@/shared/config";
@@ -38,6 +41,9 @@ export const GiftsPage = () => {
   const setFilters = useGiftFiltersStore((state) => state.setFilters);
   const summary = useWishlistSummary();
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Ссылка-фильтр уходит с тем черновиком, что сейчас в шторке фильтров.
+  const [pickFilters, setPickFilters] = useState<ProductFilters>(filters);
+  const [pickOpen, setPickOpen] = useState(false);
 
   return (
     <Screen>
@@ -68,6 +74,17 @@ export const GiftsPage = () => {
           setFilters(next);
           setFiltersOpen(false);
         }}
+        onSendToFriend={(draft) => {
+          setFiltersOpen(false);
+          setPickFilters(draft);
+          setPickOpen(true);
+        }}
+      />
+      <PickRequestSheet
+        open={pickOpen}
+        filters={pickFilters}
+        conditions={describeFilters(pickFilters)}
+        onClose={() => setPickOpen(false)}
       />
     </Screen>
   );

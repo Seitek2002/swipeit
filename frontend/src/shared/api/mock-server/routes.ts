@@ -12,6 +12,12 @@ import {
   shareWishlist,
   updateMeta,
 } from "./handlers/guest";
+import {
+  answerPickRequest,
+  createPickRequest,
+  getMyPicks,
+  importPickAnswer,
+} from "./handlers/pick";
 import { createSwipe, restartSwipes, undoSwipe } from "./handlers/swipes";
 import {
   createUser,
@@ -88,6 +94,14 @@ export const ROUTE_TABLE: Route[] = [
     pattern: "/reservations/:id",
     handler: deleteReservation,
   },
+  { method: "POST", pattern: "/pick-requests", handler: createPickRequest },
+  { method: "GET", pattern: "/pick-requests/:id/picks", handler: getMyPicks },
+  {
+    method: "POST",
+    pattern: "/pick-requests/:id/answer",
+    handler: answerPickRequest,
+  },
+  { method: "POST", pattern: "/pick-answers", handler: importPickAnswer },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },
   { method: "GET", pattern: "/demo/settings", handler: getSettings },
   { method: "PATCH", pattern: "/demo/settings", handler: updateSettings },

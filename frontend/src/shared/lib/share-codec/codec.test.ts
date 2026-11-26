@@ -86,3 +86,61 @@ describe("кодек вишлиста", () => {
     ).toBeNull();
   });
 });
+
+describe("кодек ссылки-фильтра и ответа", () => {
+  it("ссылка-фильтр: туда и обратно, скрытые цены", async () => {
+    const { decodePickRequest, encodePickRequest } = await import("./codec");
+    const request = {
+      id: "pk_1",
+      from: {
+        name: "Азамат",
+        avatarColor: "mint" as const,
+        userId: "u_azamat",
+      },
+      toName: "Айгерим",
+      filters: {
+        budget: { min: 0, max: 5000 },
+        categories: ["tech" as const, "sport" as const],
+        marketplaces: [],
+      },
+      hidePrices: true,
+      occasion: { kind: "birthday" as const, date: "2027-03-14" },
+      message: "Выбери что-нибудь",
+    };
+    expect(decodePickRequest(encodePickRequest(request))).toEqual(request);
+    expect(decodePickRequest("битая")).toBeNull();
+  });
+
+  it("ответ: туда и обратно, чужой тип — null", async () => {
+    const { decodePickAnswer, encodePickAnswer, encodePickRequest } =
+      await import("./codec");
+    const answer = {
+      requestId: "pk_1",
+      by: {
+        name: "Айгерим",
+        avatarColor: "mandarin" as const,
+        gender: "female" as const,
+      },
+      picks: [
+        {
+          productId: "p_0001",
+          priority: "top" as const,
+          variantChoice: { color: "black" },
+        },
+        { productId: "p_0002", priority: "normal" as const },
+      ],
+    };
+    expect(decodePickAnswer(encodePickAnswer(answer))).toEqual(answer);
+    const request = encodePickRequest({
+      id: "x",
+      from: { name: "А", avatarColor: "mint" },
+      filters: {
+        budget: { min: 0, max: null },
+        categories: [],
+        marketplaces: [],
+      },
+      hidePrices: false,
+    });
+    expect(decodePickAnswer(request)).toBeNull();
+  });
+});

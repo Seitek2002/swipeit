@@ -24,6 +24,7 @@ import {
   type SwipeDecision,
   createSwipe,
   getFeed,
+  pickKeys,
   restartSwipes,
   undoSwipe,
   wishlistKeys,
@@ -176,6 +177,12 @@ export const GiftDeck = ({
     });
   }, [queue]);
 
+  // Свой вишлист или счётчик выбора по ссылке-фильтру — что задел свайп.
+  const refreshAfterSwipe = () =>
+    void queryClient.invalidateQueries({
+      queryKey: context.kind === "self" ? wishlistKeys.all : pickKeys.all,
+    });
+
   const handleNeedMore = () => {
     if (status === "idle") void loadMore(queue);
   };
@@ -207,7 +214,7 @@ export const GiftDeck = ({
             setReadyOpen(true);
           }, BOW_DURATION_MS);
         }
-        void queryClient.invalidateQueries({ queryKey: wishlistKeys.all });
+        refreshAfterSwipe();
       },
       () => {
         // Колода уже другая (новые фильтры, «Начать заново») — не подбрасывать
@@ -234,7 +241,7 @@ export const GiftDeck = ({
     enqueue(() => undoSwipe(context)).then(
       (response) => {
         setLikes(response.likeCount);
-        void queryClient.invalidateQueries({ queryKey: wishlistKeys.all });
+        refreshAfterSwipe();
       },
       () => toast("Не получилось вернуть", { tone: "error" }),
     );

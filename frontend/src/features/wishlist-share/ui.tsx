@@ -6,30 +6,19 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useProduct } from "@/entities/product";
 import { useMe } from "@/entities/user";
-import type { Occasion, WishlistResponse } from "@/entities/wishlist";
+import {
+  OccasionFields,
+  type WishlistResponse,
+  occasionDraftOf,
+  occasionFromDraft,
+} from "@/entities/wishlist";
 
 import { shareWishlist, updateWishlistMeta, wishlistKeys } from "@/shared/api";
 import { withBasePath } from "@/shared/lib/base-path";
 import { absoluteUrl } from "@/shared/lib/dom";
 import { occasionLabel } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
-import {
-  Avatar,
-  BottomSheet,
-  Chip,
-  ShareActions,
-  TextArea,
-  TextField,
-} from "@/shared/ui";
-
-type Kind = Occasion["kind"];
-
-const KINDS: Array<{ kind: Kind; label: string }> = [
-  { kind: "birthday", label: "День рождения" },
-  { kind: "new_year", label: "Новый год" },
-  { kind: "just_because", label: "Просто так" },
-  { kind: "custom", label: "Свой вариант" },
-];
+import { Avatar, BottomSheet, ShareActions, TextArea } from "@/shared/ui";
 
 type Props = {
   onClose: () => void;
@@ -78,28 +67,18 @@ export const WishlistShareSheet = ({ open, onClose, wishlist }: Props) => {
   const queryClient = useQueryClient();
   const { data: me } = useMe();
   const meta = wishlist?.meta;
-  const [kind, setKind] = useState<Kind | null>(meta?.occasion?.kind ?? null);
-  const [label, setLabel] = useState(meta?.occasion?.label ?? "");
-  const [date, setDate] = useState(meta?.occasion?.date ?? "");
+  const [draft, setDraft] = useState(() => occasionDraftOf(meta?.occasion));
   const [message, setMessage] = useState(meta?.message ?? "");
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open) {
-      setKind(meta?.occasion?.kind ?? null);
-      setLabel(meta?.occasion?.label ?? "");
-      setDate(meta?.occasion?.date ?? "");
+      setDraft(occasionDraftOf(meta?.occasion));
       setMessage(meta?.message ?? "");
     }
   }
 
-  const occasion: null | Occasion = kind
-    ? {
-        kind,
-        label: kind === "custom" ? label.trim() || undefined : undefined,
-        date: date || undefined,
-      }
-    : null;
+  const occasion = occasionFromDraft(draft);
   const photos = (wishlist?.items ?? [])
     .filter(
       (item) => item.status === "active" && item.source.kind === "product",
@@ -166,37 +145,7 @@ export const WishlistShareSheet = ({ open, onClose, wishlist }: Props) => {
           )}
         </div>
 
-        <div>
-          <p className="text-caption text-rose mb-2">Повод</p>
-          <div role="group" aria-label="Повод" className="flex flex-wrap gap-2">
-            {KINDS.map((option) => (
-              <Chip
-                key={option.kind}
-                selected={kind === option.kind}
-                onClick={() =>
-                  setKind(kind === option.kind ? null : option.kind)
-                }
-              >
-                {option.label}
-              </Chip>
-            ))}
-          </div>
-        </div>
-        {kind === "custom" && (
-          <TextField
-            label="Какой повод"
-            placeholder="Например, на новоселье"
-            maxLength={60}
-            value={label}
-            onChange={(event) => setLabel(event.target.value)}
-          />
-        )}
-        <TextField
-          label="Дата, если есть"
-          type="date"
-          value={date}
-          onChange={(event) => setDate(event.target.value)}
-        />
+        <OccasionFields value={draft} onChange={setDraft} />
         <TextArea
           label="Сообщение"
           placeholder="Буду рада любому подарку из списка"

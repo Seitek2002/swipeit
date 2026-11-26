@@ -15,6 +15,9 @@ export const ProductSwipeSchema = z.object({
   productId: z.string(),
   decision: SwipeDecisionSchema,
   context: SwipeContextSchema,
+  // Вариант, выбранный в «Подробнее». Нужен ответу «Выбери подарок сам»:
+  // там выбор не попадает в вишлист, а хранится только в свайпе.
+  variantChoice: z.record(z.string(), z.string()).optional(),
   at: z.string(),
 });
 

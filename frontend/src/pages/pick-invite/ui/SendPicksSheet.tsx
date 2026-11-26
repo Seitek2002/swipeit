@@ -1,0 +1,45 @@
+"use client";
+
+import { answerPickRequest } from "@/shared/api";
+import { absoluteUrl } from "@/shared/lib/dom";
+import { dative, pluralize } from "@/shared/lib/format";
+import type { SharedPickRequest } from "@/shared/lib/share-codec";
+import { BottomSheet, ShareActions } from "@/shared/ui";
+
+type Props = {
+  count: number;
+  onClose: () => void;
+  open: boolean;
+  request: SharedPickRequest;
+};
+
+// Ссылка-ответ (DESIGN.md §8.6): собирается заново при каждой отправке — в
+// ней все «Хочу» на этот момент, можно свайпать дальше и отправить ещё раз.
+export const SendPicksSheet = ({ open, onClose, request, count }: Props) => {
+  const to = dative(request.from.name, request.from.gender);
+
+  const getPayload = async () => {
+    const { url } = await answerPickRequest(request.id);
+    return {
+      title: "Мой выбор подарков",
+      text: "Вот что мне понравилось из твоей подборки в SwipeIt",
+      url: absoluteUrl(url),
+    };
+  };
+
+  return (
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      title={`Отправить выбор ${to}`}
+      footer={
+        <ShareActions getPayload={getPayload} qrLabel="QR-код ссылки-ответа" />
+      }
+    >
+      <p className="text-body text-rose pb-2">
+        В ссылке — {pluralize(count, ["подарок", "подарка", "подарков"])} и
+        выбранные варианты. Можно свайпать дальше и отправить ссылку ещё раз.
+      </p>
+    </BottomSheet>
+  );
+};

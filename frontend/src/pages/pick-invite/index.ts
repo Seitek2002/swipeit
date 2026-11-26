@@ -1,1 +1,1 @@
-export { PickInvitePage } from "./ui";
+export { PickInvitePage } from "./ui/PickInvitePage";

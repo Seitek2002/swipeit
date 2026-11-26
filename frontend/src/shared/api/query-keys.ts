@@ -39,6 +39,12 @@ export const reservationKeys = {
   forOwner: (ownerId: string) => [...reservationKeys.all, ownerId] as const,
 };
 
+export const pickKeys = {
+  all: ["pick"] as const,
+  picks: (requestId: string) => [...pickKeys.all, "picks", requestId] as const,
+  answer: (encoded: string) => [...pickKeys.all, "answer", encoded] as const,
+};
+
 export const demoKeys = {
   all: ["demo"] as const,
   settings: () => [...demoKeys.all, "settings"] as const,
@@ -52,7 +58,7 @@ export const SCOPE_KEYS: Record<
   ReadonlyArray<readonly string[]>
 > = {
   users: [userKeys.all, friendKeys.all],
-  swipes: [catalogKeys.all],
+  swipes: [catalogKeys.all, pickKeys.all],
   wishlist: [wishlistKeys.all],
   reservations: [reservationKeys.all, wishlistKeys.all],
   plans: [],

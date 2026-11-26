@@ -16,29 +16,13 @@ import { ROUTES } from "@/shared/config";
 import { decodeWishlist } from "@/shared/lib/share-codec";
 import {
   Brand,
-  EmptyState,
+  BrokenLink,
   Screen,
   ScreenBody,
   Skeleton,
   Splash,
   buttonClassName,
 } from "@/shared/ui";
-
-// Битая или чужая ссылка — понятный экран, а не падение (TECH_SPEC §8).
-const BrokenLink = () => (
-  <EmptyState
-    className="h-full"
-    title="Ссылка повреждена. Попроси друга отправить её заново."
-    action={
-      <Link
-        href={ROUTES.HOME}
-        className={buttonClassName({ variant: "secondary" })}
-      >
-        Открыть SwipeIt
-      </Link>
-    }
-  />
-);
 
 const GuestContent = () => {
   const encoded = useSearchParams()?.get("d") ?? "";
