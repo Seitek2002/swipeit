@@ -1,0 +1,1 @@
+export { WishlistGuestPage } from "./ui";

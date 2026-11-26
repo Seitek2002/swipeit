@@ -1,0 +1,2175 @@
+[
+  {
+    "id": "p_0001",
+    "title": "Колонка Soundcore Select 4 Go",
+    "description": "Маленькая портативная колонка Anker Soundcore с ремешком: её удобно повесить на рюкзак или велосипед.\n\nЗащищена от воды и пыли по IP67 и работает до 20 часов на одном заряде.",
+    "category": "tech",
+    "interests": [
+      "music",
+      "gadgets",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 1440,
+    "priceMax": 1440,
+    "images": [
+      {
+        "src": "/catalog/products/p_0001/1.webp",
+        "alt": "Колонка Soundcore Select 4 Go, синяя",
+        "variantOptionId": "blue",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sfa7e78f346664fed8daaebf73ceb2517t.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0001/2.webp",
+        "alt": "Колонка Soundcore Select 4 Go, чёрная",
+        "variantOptionId": "black",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S04259fcdce4641dfb3df492103263f66o.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0001/3.webp",
+        "alt": "Колонка Soundcore Select 4 Go, болотная",
+        "variantOptionId": "green",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S4ccac8e9341c42d5a32486396093e294e.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0001/4.webp",
+        "alt": "Колонка Soundcore Select 4 Go, белая",
+        "variantOptionId": "white",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sf199427446304503acd6d03733c5a5438.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "blue",
+            "label": "Синий",
+            "hex": "#2E5FA8"
+          },
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1E1E1E"
+          },
+          {
+            "id": "green",
+            "label": "Болотный",
+            "hex": "#7E9A78"
+          },
+          {
+            "id": "white",
+            "label": "Белый",
+            "hex": "#E6E6E6"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005009397418722.html",
+        "price": 1440,
+        "originalPrice": 1359,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.75
+  },
+  {
+    "id": "p_0002",
+    "title": "Смарт-часы Xiaomi Redmi Watch 6 Active",
+    "description": "Смарт-часы с AMOLED-экраном 1,85 дюйма. Умеют принимать звонки по Bluetooth и знают больше 140 спортивных режимов.\n\nПо данным производителя, без подзарядки работают до 18 дней при обычном использовании.",
+    "category": "tech",
+    "interests": [
+      "gadgets",
+      "fitness"
+    ],
+    "audience": "all",
+    "priceMin": 4060,
+    "priceMax": 4060,
+    "images": [
+      {
+        "src": "/catalog/products/p_0002/1.webp",
+        "alt": "Часы Redmi Watch 6 Active, чёрные",
+        "variantOptionId": "black",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S0f0ae09dbda44d2d8a1201bb5b54a77dk.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0002/2.webp",
+        "alt": "Часы Redmi Watch 6 Active, серебристые",
+        "variantOptionId": "silver",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S7d8b83341a3347479f5b267e2ddb97ed1.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0002/3.webp",
+        "alt": "Часы Redmi Watch 6 Active, оранжевые",
+        "variantOptionId": "orange",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S29d178d31bb544ae98f24355290128e0J.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0002/4.webp",
+        "alt": "Экран часов Redmi Watch 6 Active крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S301f3eb75b1e4e01bfcf6e654b0e1880P.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1E1E1E"
+          },
+          {
+            "id": "silver",
+            "label": "Серебристый",
+            "hex": "#C9CDD2"
+          },
+          {
+            "id": "orange",
+            "label": "Оранжевый",
+            "hex": "#F08A5D"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005009411610448.html",
+        "price": 4060,
+        "originalPrice": 3843,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.8
+  },
+  {
+    "id": "p_0003",
+    "title": "Наушники Apple AirPods 4",
+    "description": "Беспроводные наушники Apple четвёртого поколения с чипом H2 и Bluetooth 5.3.\n\nРаботают до 5 часов, а с зарядным кейсом — до 30 часов. Кейс заряжается через USB Type-C.",
+    "category": "tech",
+    "interests": [
+      "music",
+      "gadgets"
+    ],
+    "audience": "all",
+    "priceMin": 13490,
+    "priceMax": 13490,
+    "images": [
+      {
+        "src": "/catalog/products/p_0003/1.webp",
+        "alt": "Наушники Apple AirPods 4",
+        "sourceUrl": "https://www.kivano.kg/images/product/141083/full/1728223157_91601100.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0003/2.webp",
+        "alt": "AirPods 4 в зарядном кейсе",
+        "sourceUrl": "https://www.kivano.kg/images/product/141083/172822315686681_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/besprovodnye-naushniki-apple-airpods-4",
+        "price": 13490,
+        "originalPrice": 13491,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.95
+  },
+  {
+    "id": "p_0004",
+    "title": "Электронная книга PocketBook 629 Verse",
+    "description": "Ридер с 6-дюймовым экраном E Ink Carta: текст выглядит как на бумаге и не утомляет глаза.\n\nПамять 8 ГБ, Wi-Fi и аккумулятор 1500 мАч — хватает надолго, удобно брать в дорогу.",
+    "category": "tech",
+    "interests": [
+      "reading",
+      "gadgets",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 17270,
+    "priceMax": 17270,
+    "images": [
+      {
+        "src": "/catalog/products/p_0004/1.webp",
+        "alt": "Электронная книга PocketBook 629 Verse",
+        "sourceUrl": "https://www.kivano.kg/images/product/134638/171049430421095_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0004/2.webp",
+        "alt": "PocketBook 629 Verse, голубая, вид сзади",
+        "variantOptionId": "blue",
+        "sourceUrl": "https://www.kivano.kg/images/product/134638/171049430483217_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0004/3.webp",
+        "alt": "PocketBook 629 Verse, серая, вид сзади",
+        "variantOptionId": "grey",
+        "sourceUrl": "https://www.kivano.kg/images/product/134639/171049525737173_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0004/4.webp",
+        "alt": "PocketBook 629 Verse сбоку",
+        "sourceUrl": "https://www.kivano.kg/images/product/134638/171049430434475_full.png"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "blue",
+            "label": "Голубой",
+            "hex": "#A9C4D8"
+          },
+          {
+            "id": "grey",
+            "label": "Серый",
+            "hex": "#5A5D62"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/elektronnaya-kniga-pocketbook-629-verse-bright-blue",
+        "price": 17270,
+        "originalPrice": 17270,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0005",
+    "title": "Фен-стайлер Dyson Airwrap Complete Long",
+    "description": "Фен-стайлер Dyson с насадками для завивки, выпрямления и сушки — версия Long для длинных волос.\n\nМощность 1300 Вт, 3 режима нагрева и 3 скорости потока. Всё хранится в фирменном футляре.",
+    "category": "beauty",
+    "interests": [
+      "beauty",
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 53220,
+    "priceMax": 54110,
+    "images": [
+      {
+        "src": "/catalog/products/p_0005/1.webp",
+        "alt": "Dyson Airwrap с насадками, синий",
+        "variantOptionId": "blue",
+        "sourceUrl": "https://www.kivano.kg/images/product/125774/full/1693889683_48638700.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0005/2.webp",
+        "alt": "Dyson Airwrap с насадками, сине-медный",
+        "variantOptionId": "copper",
+        "sourceUrl": "https://www.kivano.kg/images/product/124006/full/1689831306_42843200.png"
+      },
+      {
+        "src": "/catalog/products/p_0005/3.webp",
+        "alt": "Dyson Airwrap с насадками, клубнично-бронзовый",
+        "variantOptionId": "strawberry",
+        "sourceUrl": "https://www.kivano.kg/images/product/140214/full/1725526500_77885000.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0005/4.webp",
+        "alt": "Dyson Airwrap в футляре",
+        "variantOptionId": "blue",
+        "sourceUrl": "https://www.kivano.kg/images/product/125774/169388968239353_full.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "blue",
+            "label": "Синий с розовым",
+            "hex": "#2D4FD8"
+          },
+          {
+            "id": "copper",
+            "label": "Сине-медный",
+            "hex": "#2B3350"
+          },
+          {
+            "id": "strawberry",
+            "label": "Клубнично-бронзовый",
+            "hex": "#B56A50"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/fen-stayler-dyson-airwrap-complete-long-hs05-siniy",
+        "price": 53220,
+        "originalPrice": 53220,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.9
+  },
+  {
+    "id": "p_0006",
+    "title": "Эпилятор Rowenta EP5628",
+    "description": "Эпилятор с 24 пинцетами и двумя скоростями. Работает от сети, в комплекте насадки и мешочек для хранения.",
+    "category": "beauty",
+    "interests": [
+      "beauty"
+    ],
+    "audience": "female",
+    "priceMin": 7490,
+    "priceMax": 7490,
+    "images": [
+      {
+        "src": "/catalog/products/p_0006/1.webp",
+        "alt": "Эпилятор Rowenta EP5628",
+        "sourceUrl": "https://www.kivano.kg/images/product/154253/full/1754295170_38725900.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0006/2.webp",
+        "alt": "Эпилятор Rowenta с насадками и чехлом",
+        "sourceUrl": "https://www.kivano.kg/images/product/154253/175429516919827_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0006/3.webp",
+        "alt": "Эпилятор Rowenta сбоку",
+        "sourceUrl": "https://www.kivano.kg/images/product/154253/175429516912792_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/epilyator-rowenta-ep5628f0",
+        "price": 7490,
+        "originalPrice": 7490,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0007",
+    "title": "Набор кистей для макияжа MyDestiny, 11 шт.",
+    "description": "Набор из 11 кистей для лица и глаз с мягким ворсом и синими ручками.\n\nНа AliExpress у него рейтинг 4.9 и тысячи покупок — хороший недорогой подарок тем, кто красится каждый день.",
+    "category": "beauty",
+    "interests": [
+      "beauty"
+    ],
+    "audience": "female",
+    "priceMin": 1340,
+    "priceMax": 1340,
+    "images": [
+      {
+        "src": "/catalog/products/p_0007/1.webp",
+        "alt": "Набор кистей MyDestiny веером",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/H007ef35c48e54df19d63c869c4360a726.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0007/2.webp",
+        "alt": "Все 11 кистей в ряд",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Hcc3d94b4d1684c51893094b2de4beaf1Q.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0007/3.webp",
+        "alt": "Ворс кистей крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Hc45367d53a154c3b99150da1a1574aa6a.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0007/4.webp",
+        "alt": "Кисть в руке",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S37319fb471d24da1a2dbe2c220b0da59W.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/4000110920845.html",
+        "price": 1340,
+        "originalPrice": 1269,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0008",
+    "title": "Мультитриммер Rowenta TN9155",
+    "description": "Мультитриммер для бороды, усов и стрижки волос. Работает от аккумулятора, в комплекте несколько насадок.",
+    "category": "beauty",
+    "interests": [
+      "beauty"
+    ],
+    "audience": "male",
+    "priceMin": 5070,
+    "priceMax": 5070,
+    "images": [
+      {
+        "src": "/catalog/products/p_0008/1.webp",
+        "alt": "Триммер Rowenta TN9155",
+        "sourceUrl": "https://www.kivano.kg/images/product/115748/167289568133843_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0008/2.webp",
+        "alt": "Триммер Rowenta с насадками",
+        "sourceUrl": "https://www.kivano.kg/images/product/115748/full/1672895682_14898300.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0008/3.webp",
+        "alt": "Триммер Rowenta без насадки",
+        "sourceUrl": "https://www.kivano.kg/images/product/115748/167289568159492_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/multitrimmer-rowenta-tn9155f1",
+        "price": 5070,
+        "originalPrice": 5070,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0009",
+    "title": "Плойка Philips BHB872",
+    "description": "Коническая плойка с керамическим покрытием и ионизацией. Нагревается до 210 °C, 9 режимов температуры и дисплей.",
+    "category": "beauty",
+    "interests": [
+      "beauty"
+    ],
+    "audience": "female",
+    "priceMin": 5610,
+    "priceMax": 5610,
+    "images": [
+      {
+        "src": "/catalog/products/p_0009/1.webp",
+        "alt": "Плойка Philips BHB872",
+        "sourceUrl": "https://www.kivano.kg/images/product/62820/62820_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0009/2.webp",
+        "alt": "Дисплей и кнопки плойки Philips",
+        "sourceUrl": "https://www.kivano.kg/images/product/62820/154392260685591_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/ployka-philips-bhb-872-00",
+        "price": 5610,
+        "originalPrice": 5610,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0010",
+    "title": "Лампа-проектор заката Homefish",
+    "description": "Небольшая лампа, которая проецирует на стену тёплый круг «закатного» света. Питается от USB, головку можно поворачивать.\n\nПопулярна для уютного вечернего света и фото.",
+    "category": "home",
+    "interests": [
+      "home",
+      "photo"
+    ],
+    "audience": "all",
+    "priceMin": 150,
+    "priceMax": 150,
+    "images": [
+      {
+        "src": "/catalog/products/p_0010/1.webp",
+        "alt": "Лампа-проектор заката Homefish",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S8351cc558da846f2b0b1902e089a7dbbb.png"
+      },
+      {
+        "src": "/catalog/products/p_0010/2.webp",
+        "alt": "Свет лампы заката на стене",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sbceb47806f384fd087bee4d250ccb25bs.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005010413806052.html",
+        "price": 150,
+        "originalPrice": 145,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0011",
+    "title": "Яндекс Станция Лайт 2 с часами",
+    "description": "Компактная умная колонка с голосовым помощником Алисой и часами на корпусе.\n\nДинамик 6 Вт, два микрофона, Wi-Fi и Bluetooth: можно слушать музыку и общаться с Алисой голосом.",
+    "category": "home",
+    "interests": [
+      "home",
+      "music",
+      "gadgets"
+    ],
+    "audience": "all",
+    "priceMin": 7740,
+    "priceMax": 7740,
+    "images": [
+      {
+        "src": "/catalog/products/p_0011/1.webp",
+        "alt": "Яндекс Станция Лайт 2, синяя",
+        "variantOptionId": "blue",
+        "sourceUrl": "https://www.kivano.kg/images/product/160864/full/1766827396_77327500.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0011/2.webp",
+        "alt": "Яндекс Станция Лайт 2, розовая",
+        "variantOptionId": "pink",
+        "sourceUrl": "https://www.kivano.kg/images/product/160865/full/1766827410_17768200.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0011/3.webp",
+        "alt": "Яндекс Станция Лайт 2, зелёная",
+        "variantOptionId": "green",
+        "sourceUrl": "https://www.kivano.kg/images/product/160866/full/1766827419_63128600.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0011/4.webp",
+        "alt": "Яндекс Станция Лайт 2 сверху",
+        "variantOptionId": "blue",
+        "sourceUrl": "https://www.kivano.kg/images/product/160864/176682739536838_full.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "blue",
+            "label": "Синий",
+            "hex": "#1E9BF0"
+          },
+          {
+            "id": "pink",
+            "label": "Розовый",
+            "hex": "#F25CC0"
+          },
+          {
+            "id": "green",
+            "label": "Зелёный",
+            "hex": "#6DD13A"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/umnaya-kolonka-yandeks-stantsiya-layt-2-s-chasami-sinyaya",
+        "price": 7740,
+        "originalPrice": 7744,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.7
+  },
+  {
+    "id": "p_0012",
+    "title": "Кофеварка De'Longhi Dedica EC685",
+    "description": "Рожковая кофеварка для молотого кофе в узком металлическом корпусе. Готовит капучино и может наливать сразу в две чашки.\n\nСама отключается, если ей не пользуются.",
+    "category": "kitchen",
+    "interests": [
+      "coffee",
+      "cooking",
+      "home"
+    ],
+    "audience": "all",
+    "priceMin": 26080,
+    "priceMax": 28390,
+    "images": [
+      {
+        "src": "/catalog/products/p_0012/1.webp",
+        "alt": "Кофеварка De'Longhi Dedica, металлик",
+        "variantOptionId": "metal",
+        "sourceUrl": "https://www.kivano.kg/images/product/70447/70447_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0012/2.webp",
+        "alt": "Кофеварка De'Longhi Dedica, чёрная",
+        "variantOptionId": "black",
+        "sourceUrl": "https://www.kivano.kg/images/product/80450/full/1592451530_66133700.png"
+      },
+      {
+        "src": "/catalog/products/p_0012/3.webp",
+        "alt": "Кофеварка De'Longhi Dedica, красная",
+        "variantOptionId": "red",
+        "sourceUrl": "https://www.kivano.kg/images/product/70448/70448_full.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "metal",
+            "label": "Металлик",
+            "hex": "#B9BCC0"
+          },
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1E1E1E"
+          },
+          {
+            "id": "red",
+            "label": "Красный",
+            "hex": "#B3242B"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/kofevarka-delonghi-ec685-m",
+        "price": 26610,
+        "originalPrice": 26610,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.7
+  },
+  {
+    "id": "p_0013",
+    "title": "Ручная кофемолка Timemore Chestnut C3S",
+    "description": "Ручная кофемолка Timemore в алюминиевом корпусе — для тех, кто варит кофе в турке, пуровере или френч-прессе.\n\nНа AliExpress — рейтинг 4.9 и больше 6 тысяч покупок.",
+    "category": "kitchen",
+    "interests": [
+      "coffee"
+    ],
+    "audience": "all",
+    "priceMin": 6790,
+    "priceMax": 6790,
+    "images": [
+      {
+        "src": "/catalog/products/p_0013/1.webp",
+        "alt": "Кофемолка Timemore C3S",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S10d4914e4642401f98daf56d2f5a8f9eL.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0013/2.webp",
+        "alt": "Кофемолка Timemore в руке",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sec2c664d7f1a48d587089e0075e5870b5.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0013/3.webp",
+        "alt": "Кофемолка Timemore на столе",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sb58f98d241804bec8804731dec6530e22.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0013/4.webp",
+        "alt": "Жернова кофемолки Timemore",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S5b99df14ec104c3888b8697cfe55a696E.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005008921271084.html",
+        "price": 6790,
+        "originalPrice": 6420,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0014",
+    "title": "Портативная кофеварка Wacaco Picopresso",
+    "description": "Ручная портативная кофеварка для эспрессо: давление создаётся без электричества, поэтому её можно взять в поездку или в горы.\n\nВ комплекте чехол для хранения.",
+    "category": "kitchen",
+    "interests": [
+      "coffee",
+      "travel",
+      "mountains"
+    ],
+    "audience": "all",
+    "priceMin": 10750,
+    "priceMax": 10750,
+    "images": [
+      {
+        "src": "/catalog/products/p_0014/1.webp",
+        "alt": "Кофеварка Wacaco Picopresso с чашкой эспрессо",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Se1f10fa69e7a4ab98ec39cc2aff03c85z.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0014/2.webp",
+        "alt": "Picopresso в руках",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S54ee068e27ba4a09a7f0a92ccee43e461.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0014/3.webp",
+        "alt": "Приготовление эспрессо в Picopresso",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sacfc0105100041c18d9aed6d1c344ee7V.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/32888640008.html",
+        "price": 10750,
+        "originalPrice": 10169,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0015",
+    "title": "Термокружка De'Longhi, керамика, 300 мл",
+    "description": "Керамическая термокружка с двойными стенками и силиконовой крышкой на 300 мл.\n\nВыпускается в нескольких дизайнах — можно выбрать под характер человека.",
+    "category": "kitchen",
+    "interests": [
+      "coffee",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 1570,
+    "priceMax": 1590,
+    "images": [
+      {
+        "src": "/catalog/products/p_0015/1.webp",
+        "alt": "Термокружка De'Longhi с узором",
+        "variantOptionId": "pattern",
+        "sourceUrl": "https://www.kivano.kg/images/product/114765/full/1670236872_97214100.png"
+      },
+      {
+        "src": "/catalog/products/p_0015/2.webp",
+        "alt": "Термокружка De'Longhi с картой",
+        "variantOptionId": "map",
+        "sourceUrl": "https://www.kivano.kg/images/product/114770/full/1670299239_78857300.png"
+      },
+      {
+        "src": "/catalog/products/p_0015/3.webp",
+        "alt": "Термокружка De'Longhi «Вокруг света»",
+        "variantOptionId": "world",
+        "sourceUrl": "https://www.kivano.kg/images/product/114771/full/1670299396_47721400.png"
+      },
+      {
+        "src": "/catalog/products/p_0015/4.webp",
+        "alt": "Термокружка De'Longhi в скандинавском стиле",
+        "variantOptionId": "nordic",
+        "sourceUrl": "https://www.kivano.kg/images/product/119200/full/1679913670_10432700.png"
+      },
+      {
+        "src": "/catalog/products/p_0015/5.webp",
+        "alt": "Двойные стенки термокружки De'Longhi",
+        "variantOptionId": "pattern",
+        "sourceUrl": "https://www.kivano.kg/images/product/114765/167023686833039_full.png"
+      }
+    ],
+    "variants": [
+      {
+        "id": "design",
+        "kind": "other",
+        "label": "Дизайн",
+        "options": [
+          {
+            "id": "pattern",
+            "label": "Узор"
+          },
+          {
+            "id": "map",
+            "label": "Карта"
+          },
+          {
+            "id": "world",
+            "label": "Вокруг света"
+          },
+          {
+            "id": "nordic",
+            "label": "Скандинавский"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/termokruzhka-delonghi-dlsc055",
+        "price": 1570,
+        "originalPrice": 1570,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0016",
+    "title": "Рюкзак Tigernu для ноутбука до 15,6\"",
+    "description": "Городской рюкзак Tigernu с отделением для ноутбука 14–15,6 дюйма и защитой от карманников.\n\nНа AliExpress — рейтинг 4.8 и тысячи покупок.",
+    "category": "fashion",
+    "interests": [
+      "travel",
+      "gadgets",
+      "fashion"
+    ],
+    "audience": "all",
+    "priceMin": 4450,
+    "priceMax": 4450,
+    "images": [
+      {
+        "src": "/catalog/products/p_0016/1.webp",
+        "alt": "Рюкзак Tigernu, чёрный",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Hd207dd1460b2484386e8bfc4f80523d7C.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0016/2.webp",
+        "alt": "Рюкзак Tigernu спереди",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Se55b2f33d34d48d4865892965c072b9c8.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/32902354917.html",
+        "price": 4450,
+        "originalPrice": 4209,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0017",
+    "title": "Кошелёк Contact's из натуральной кожи",
+    "description": "Кошелёк из натуральной кожи в винтажном стиле: отделения для купюр, карт и монет на молнии. Есть защита карт RFID.",
+    "category": "fashion",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "male",
+    "priceMin": 1210,
+    "priceMax": 1210,
+    "images": [
+      {
+        "src": "/catalog/products/p_0017/1.webp",
+        "alt": "Кошелёк Contact's, коричневый",
+        "variantOptionId": "brown",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/HTB1XcLRNpXXXXXqaXXXq6xXFXXX4.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0017/2.webp",
+        "alt": "Кошелёк Contact's, чёрный",
+        "variantOptionId": "black",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/HTB1uzQgNpXXXXcvXXXXq6xXFXXXu.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0017/3.webp",
+        "alt": "Кошелёк Contact's, серый",
+        "variantOptionId": "grey",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Abccbbc71b57e49d3865a0c66c8a622277.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0017/4.webp",
+        "alt": "Кошелёк Contact's, зелёный",
+        "variantOptionId": "green",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S4b3c562da42c4b4cbc9d46288437bd35b.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0017/5.webp",
+        "alt": "Кошелёк Contact's в раскрытом виде",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sda3023d679434990a7d8a22a675ad7d61.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "brown",
+            "label": "Коричневый",
+            "hex": "#7A4A2A"
+          },
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1E1E1E"
+          },
+          {
+            "id": "grey",
+            "label": "Дымчато-серый",
+            "hex": "#6E6E6E"
+          },
+          {
+            "id": "green",
+            "label": "Хвойный",
+            "hex": "#2F5D50"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/32604293106.html",
+        "price": 1210,
+        "originalPrice": 1141,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0018",
+    "title": "Сумка-кроссбоди из натуральной кожи",
+    "description": "Небольшая сумка из натуральной кожи с верхней ручкой и ремнём через плечо. Размер около 23 × 17 × 9 см.",
+    "category": "fashion",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 2740,
+    "priceMax": 2740,
+    "images": [
+      {
+        "src": "/catalog/products/p_0018/1.webp",
+        "alt": "Кожаная сумка-кроссбоди, коричневая",
+        "variantOptionId": "brown",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S91750ad24c7e48b290d1b5a072307924F.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0018/2.webp",
+        "alt": "Сумка-кроссбоди в руке",
+        "variantOptionId": "brown",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S3d4f193f6a6246139b5603d8ea6fbb87K.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0018/3.webp",
+        "alt": "Сумка-кроссбоди, чёрная",
+        "variantOptionId": "black",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S31fb05ed7f8e4cc39ed721b98b1492ccU.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0018/4.webp",
+        "alt": "Сумка-кроссбоди, бордовая",
+        "variantOptionId": "burgundy",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sf7db9c0e967048ac87f625fabc1cd87dR.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0018/5.webp",
+        "alt": "Сумка-кроссбоди, тёмно-серая",
+        "variantOptionId": "grey",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sa2cf77d327164e74adc9569e8517556be.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "brown",
+            "label": "Коричневый",
+            "hex": "#5A3422"
+          },
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1E1E1E"
+          },
+          {
+            "id": "burgundy",
+            "label": "Бордовый",
+            "hex": "#6B1E2A"
+          },
+          {
+            "id": "grey",
+            "label": "Тёмно-серый",
+            "hex": "#55585C"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005007856934827.html",
+        "price": 2740,
+        "originalPrice": 2589,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0019",
+    "title": "Ремень Cowather из натуральной кожи",
+    "description": "Мужской ремень из натуральной кожи с классической металлической пряжкой. Можно выбрать цвет и длину.",
+    "category": "fashion",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "male",
+    "priceMin": 1270,
+    "priceMax": 1270,
+    "images": [
+      {
+        "src": "/catalog/products/p_0019/1.webp",
+        "alt": "Кожаный ремень Cowather, кофейный",
+        "variantOptionId": "coffee",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/HTB1csrmRlLoK1RjSZFuq6xn0XXaN.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0019/2.webp",
+        "alt": "Кожаный ремень Cowather, чёрный",
+        "variantOptionId": "black",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/HTB1rPPNRhnaK1RjSZFBq6AW7VXaC.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0019/3.webp",
+        "alt": "Кожаный ремень Cowather, рыжий",
+        "variantOptionId": "brown",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sdc666cafa5624e5ea9c9c1b482463eact.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0019/4.webp",
+        "alt": "Тиснение на коже ремня Cowather",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/HTB1J8U6SXXXXXaIXVXXq6xXFXXXY.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "coffee",
+            "label": "Кофейный",
+            "hex": "#4A3326"
+          },
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1E1E1E"
+          },
+          {
+            "id": "brown",
+            "label": "Рыжий",
+            "hex": "#8A3B22"
+          }
+        ]
+      },
+      {
+        "id": "size",
+        "kind": "size",
+        "label": "Длина",
+        "options": [
+          {
+            "id": "105",
+            "label": "105 см"
+          },
+          {
+            "id": "110",
+            "label": "110 см"
+          },
+          {
+            "id": "115",
+            "label": "115 см"
+          },
+          {
+            "id": "120",
+            "label": "120 см"
+          },
+          {
+            "id": "125",
+            "label": "125 см"
+          },
+          {
+            "id": "130",
+            "label": "130 см"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1392310296.html",
+        "price": 1270,
+        "originalPrice": 1201,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0020",
+    "title": "Коврик для йоги TPE 183 × 61 см",
+    "description": "Двухцветный коврик для йоги и домашних тренировок из TPE размером 183 × 61 см. Не скользит и легко сворачивается.",
+    "category": "sport",
+    "interests": [
+      "fitness",
+      "wellness"
+    ],
+    "audience": "all",
+    "priceMin": 1280,
+    "priceMax": 1280,
+    "images": [
+      {
+        "src": "/catalog/products/p_0020/1.webp",
+        "alt": "Коврик для йоги, фиолетово-голубой",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S21bce201a94b408c8cbf19119364730fp.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0020/2.webp",
+        "alt": "Развёрнутый коврик для йоги",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S78be81d65507453f86cbe8e6851db637j.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005004704874495.html",
+        "price": 1280,
+        "originalPrice": 1212,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0021",
+    "title": "Массажный пистолет Phoenix A2",
+    "description": "Перкуссионный массажёр для мышц после тренировок: 20 скоростей, дисплей и несколько насадок в комплекте.\n\nНа AliExpress — рейтинг 4.8 и тысячи покупок.",
+    "category": "sport",
+    "interests": [
+      "fitness",
+      "wellness"
+    ],
+    "audience": "all",
+    "priceMin": 4560,
+    "priceMax": 4560,
+    "images": [
+      {
+        "src": "/catalog/products/p_0021/1.webp",
+        "alt": "Массажный пистолет Phoenix A2, чёрный",
+        "variantOptionId": "black",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S80011127dac74479b3438c02b4286d0aR.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0021/2.webp",
+        "alt": "Массажный пистолет Phoenix A2, серебристый",
+        "variantOptionId": "silver",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S59c7743b8a9e45b0afab45b653209458P.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1E1E1E"
+          },
+          {
+            "id": "silver",
+            "label": "Серебристый",
+            "hex": "#C0C4C8"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005006657802736.html",
+        "price": 4560,
+        "originalPrice": 4309,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0022",
+    "title": "Наушники Shokz OpenMove",
+    "description": "Спортивные наушники с костной проводимостью: уши остаются открытыми, и на пробежке слышно, что происходит вокруг.\n\nЗаряжаются через USB Type-C.",
+    "category": "sport",
+    "interests": [
+      "fitness",
+      "music"
+    ],
+    "audience": "all",
+    "priceMin": 9410,
+    "priceMax": 9410,
+    "images": [
+      {
+        "src": "/catalog/products/p_0022/1.webp",
+        "alt": "Наушники Shokz OpenMove, белые",
+        "variantOptionId": "white",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S1b45eef4f587476c86065f09621fad2fZ.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0022/2.webp",
+        "alt": "Наушники Shokz OpenMove, розовые",
+        "variantOptionId": "pink",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sf89995c1aecc4fbf89ae75dd10024c86h.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "white",
+            "label": "Белый",
+            "hex": "#F0F0F0"
+          },
+          {
+            "id": "pink",
+            "label": "Розовый",
+            "hex": "#F3C6CF"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005008819712220.html",
+        "price": 9410,
+        "originalPrice": 8899,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0023",
+    "title": "Интерактивный дисплей XPPen Artist 15.6 Pro V2",
+    "description": "Графический планшет с экраном 15,6 дюйма — рисуешь сразу на изображении. В комплекте перо, на корпусе колесо и быстрые клавиши.\n\nНа AliExpress — рейтинг 4.9 и больше 12 тысяч покупок.",
+    "category": "hobby",
+    "interests": [
+      "art",
+      "gadgets"
+    ],
+    "audience": "all",
+    "priceMin": 18180,
+    "priceMax": 18180,
+    "images": [
+      {
+        "src": "/catalog/products/p_0023/1.webp",
+        "alt": "Интерактивный дисплей XPPen Artist 15.6 Pro V2",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S5440f2172b3e4bca843ddc39ef6712de5.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0023/2.webp",
+        "alt": "Рисование пером на экране XPPen",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S361c8f69bb054f4b8d9fffc38649ddfaD.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/32978111214.html",
+        "price": 18180,
+        "originalPrice": 17196,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0024",
+    "title": "Картина по номерам Gatyztory «Пейзаж»",
+    "description": "Набор для рисования по номерам: холст с разметкой, пронумерованные краски и кисти. Сюжеты и размеры можно выбрать.\n\nСпокойное занятие на вечер, а в итоге — картина на стену.",
+    "category": "hobby",
+    "interests": [
+      "art",
+      "home"
+    ],
+    "audience": "all",
+    "priceMin": 550,
+    "priceMax": 550,
+    "images": [
+      {
+        "src": "/catalog/products/p_0024/1.webp",
+        "alt": "Картина по номерам: горный пейзаж с озером",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/H5dd1d4c206c540b098e6d2a0acd97df7r.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0024/2.webp",
+        "alt": "Готовые картины по номерам в интерьере",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/H8ea0a0371a6f42198ebdc1403ef4bd5cy.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0024/3.webp",
+        "alt": "Картина по номерам: зимний пейзаж",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/H9e59cc04cb0345f9a3d29d4b9fe1cfdeu.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/4000720335444.html",
+        "price": 550,
+        "originalPrice": 521,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0025",
+    "title": "Геймпад Sony DualSense для PS5",
+    "description": "Беспроводной контроллер для PlayStation 5 с адаптивными триггерами и тактильной отдачей.\n\nВстроены микрофон, динамик и гироскоп, есть разъём 3,5 мм для гарнитуры. Заряжается через USB Type-C.",
+    "category": "games",
+    "interests": [
+      "gaming"
+    ],
+    "audience": "all",
+    "priceMin": 7830,
+    "priceMax": 8450,
+    "images": [
+      {
+        "src": "/catalog/products/p_0025/1.webp",
+        "alt": "Геймпад DualSense, белый",
+        "variantOptionId": "white",
+        "sourceUrl": "https://www.kivano.kg/images/product/88068/full/1738651846_69661800.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0025/2.webp",
+        "alt": "Геймпад DualSense Chroma Indigo",
+        "variantOptionId": "indigo",
+        "sourceUrl": "https://www.kivano.kg/images/product/144960/full/1739427873_04703000.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0025/3.webp",
+        "alt": "Геймпад DualSense Chroma Teal",
+        "variantOptionId": "teal",
+        "sourceUrl": "https://www.kivano.kg/images/product/144961/full/1739427969_58059200.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0025/4.webp",
+        "alt": "Геймпад DualSense, камуфляж",
+        "variantOptionId": "camo",
+        "sourceUrl": "https://www.kivano.kg/images/product/114013/full/1738652299_24633800.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0025/5.webp",
+        "alt": "Геймпад DualSense сбоку",
+        "variantOptionId": "white",
+        "sourceUrl": "https://www.kivano.kg/images/product/88068/173865184654386_full.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "white",
+            "label": "Белый",
+            "hex": "#F2F2F2"
+          },
+          {
+            "id": "indigo",
+            "label": "Chroma Indigo",
+            "hex": "#4B3FB8"
+          },
+          {
+            "id": "teal",
+            "label": "Chroma Teal",
+            "hex": "#1F8C7A"
+          },
+          {
+            "id": "camo",
+            "label": "Камуфляж",
+            "hex": "#6B6B6B"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/geympad-sony-dualsense-ps5",
+        "price": 7830,
+        "originalPrice": 7830,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.8
+  },
+  {
+    "id": "p_0026",
+    "title": "Кубик Рубика GAN 356 M",
+    "description": "Скоростной магнитный кубик 3×3 от GAN.\n\nНа AliExpress — рейтинг 4.9.",
+    "category": "games",
+    "interests": [
+      "boardgames"
+    ],
+    "audience": "all",
+    "priceMin": 1780,
+    "priceMax": 1780,
+    "images": [
+      {
+        "src": "/catalog/products/p_0026/1.webp",
+        "alt": "Кубик Рубика GAN 356 M",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/H069d9fdc0bf441dd8e9fcbf464123aa5m.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0026/2.webp",
+        "alt": "Кубик GAN 356 M и детали",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Hcbfef5127a204cad868a49d34e602b10t.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0026/3.webp",
+        "alt": "Устройство кубика GAN изнутри",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Ha8a3fe8ccdb94efba6ac98e2a0946bfdt.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005009123919955.html",
+        "price": 1780,
+        "originalPrice": 1681,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0027",
+    "title": "Гарнитура Razer Kaira X",
+    "description": "Игровая гарнитура с 50-миллиметровыми динамиками и микрофоном на гибкой штанге.",
+    "category": "games",
+    "interests": [
+      "gaming",
+      "music"
+    ],
+    "audience": "all",
+    "priceMin": 4980,
+    "priceMax": 4980,
+    "images": [
+      {
+        "src": "/catalog/products/p_0027/1.webp",
+        "alt": "Гарнитура Razer Kaira X, чёрная",
+        "variantOptionId": "black",
+        "sourceUrl": "https://www.kivano.kg/images/product/153628/full/1753163112_26036800.png"
+      },
+      {
+        "src": "/catalog/products/p_0027/2.webp",
+        "alt": "Гарнитура Razer Kaira X, белая",
+        "variantOptionId": "white",
+        "sourceUrl": "https://www.kivano.kg/images/product/153627/full/1753162841_57049600.png"
+      },
+      {
+        "src": "/catalog/products/p_0027/3.webp",
+        "alt": "Razer Kaira X спереди",
+        "variantOptionId": "black",
+        "sourceUrl": "https://www.kivano.kg/images/product/153628/175316309775878_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0027/4.webp",
+        "alt": "Razer Kaira X сбоку",
+        "variantOptionId": "white",
+        "sourceUrl": "https://www.kivano.kg/images/product/153627/175316282928977_full.png"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1E1E1E"
+          },
+          {
+            "id": "white",
+            "label": "Белый",
+            "hex": "#F2F2F2"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/naushniki-razer-kaira-x-chernyy",
+        "price": 4980,
+        "originalPrice": 4980,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0028",
+    "title": "Налобный фонарь Sofirn SP40",
+    "description": "Мощный налобный фонарь на 1200 люмен со светодиодом XPL. Фонарь снимается с крепления и работает как ручной.\n\nНа AliExpress — рейтинг 4.9 и десятки тысяч покупок.",
+    "category": "outdoor",
+    "interests": [
+      "mountains",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 1730,
+    "priceMax": 1730,
+    "images": [
+      {
+        "src": "/catalog/products/p_0028/1.webp",
+        "alt": "Налобный фонарь Sofirn SP40 с креплением",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sa08ce0b7a4b74c04b39bccb4febc40a0L.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0028/2.webp",
+        "alt": "Фонарь Sofirn SP40 на кепке",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S3dd8e42e250a4bb7ac0921a58a4fb25bp.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/33014058575.html",
+        "price": 1730,
+        "originalPrice": 1636,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0029",
+    "title": "Туристический гамак с москитной сеткой",
+    "description": "Лёгкий подвесной гамак с москитной сеткой. Складывается в небольшой мешок — удобно брать на природу.",
+    "category": "outdoor",
+    "interests": [
+      "mountains",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 1000,
+    "priceMax": 1000,
+    "images": [
+      {
+        "src": "/catalog/products/p_0029/1.webp",
+        "alt": "Гамак с москитной сеткой, хаки",
+        "variantOptionId": "green",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sfa69ea0f09a847139bafd1b6e877d82dG.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0029/2.webp",
+        "alt": "Гамак с москитной сеткой, чёрный",
+        "variantOptionId": "black",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sff97bad8fe5741da9919dc40b2179274C.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0029/3.webp",
+        "alt": "Гамак с москитной сеткой, светло-серый",
+        "variantOptionId": "grey",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S7a2ad96ff4184639a2530026b9b090b5R.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0029/4.webp",
+        "alt": "Гамак в сложенном виде",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S7ece5da290d64ffea50265a9f929c0e23.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "green",
+            "label": "Хаки",
+            "hex": "#4B5320"
+          },
+          {
+            "id": "black",
+            "label": "Чёрный",
+            "hex": "#1E1E1E"
+          },
+          {
+            "id": "grey",
+            "label": "Светло-серый",
+            "hex": "#C8C8C8"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005008042302952.html",
+        "price": 1000,
+        "originalPrice": 941,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0030",
+    "title": "Палатка Naturehike Cloud Up 2",
+    "description": "Лёгкая двухместная палатка Naturehike для походов и кемпинга.\n\nНа AliExpress — рейтинг 4.8 и больше тысячи отзывов.",
+    "category": "outdoor",
+    "interests": [
+      "mountains",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 9000,
+    "priceMax": 9000,
+    "images": [
+      {
+        "src": "/catalog/products/p_0030/1.webp",
+        "alt": "Палатка Naturehike Cloud Up 2, зелёная",
+        "variantOptionId": "green",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S04923d5a393047db829af75fc4060dd1L.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0030/2.webp",
+        "alt": "Палатка Naturehike Cloud Up 2, серая",
+        "variantOptionId": "grey",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sc62f9838e7164d60ab0ed617513263398.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "green",
+            "label": "Зелёный",
+            "hex": "#5C7A3A"
+          },
+          {
+            "id": "grey",
+            "label": "Серый",
+            "hex": "#B5B5B0"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/33007026100.html",
+        "price": 9000,
+        "originalPrice": 8509,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0031",
+    "title": "Книга «Атомные привычки», Джеймс Клир",
+    "description": "Бестселлер New York Times о том, как маленькие ежедневные изменения складываются в большие результаты.\n\nИздательство «Питер», новое издание.",
+    "category": "books",
+    "interests": [
+      "reading"
+    ],
+    "audience": "all",
+    "priceMin": 600,
+    "priceMax": 600,
+    "images": [
+      {
+        "src": "/catalog/products/p_0031/1.webp",
+        "alt": "Книга «Атомные привычки», обложка",
+        "sourceUrl": "https://imo10.labirint.ru/books/1032117/cover.jpg/2048-0"
+      },
+      {
+        "src": "/catalog/products/p_0031/2.webp",
+        "alt": "Страница из книги «Атомные привычки»",
+        "sourceUrl": "https://imo10.labirint.ru/books/1032117/ph_01.jpg/2048-0"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.labirint.ru/books/1032117/",
+        "price": 600,
+        "originalPrice": 569,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0032",
+    "title": "Книга «Ночной полёт. Маленький принц»",
+    "description": "Две повести Антуана де Сент-Экзюпери в одной книге — «Ночной полёт» и «Маленький принц».\n\nИздательство «Качели».",
+    "category": "books",
+    "interests": [
+      "reading"
+    ],
+    "audience": "all",
+    "priceMin": 470,
+    "priceMax": 470,
+    "images": [
+      {
+        "src": "/catalog/products/p_0032/1.webp",
+        "alt": "Книга «Ночной полёт. Маленький принц»",
+        "sourceUrl": "https://imo10.labirint.ru/books/882177/ph_001.jpg/2048-0"
+      },
+      {
+        "src": "/catalog/products/p_0032/2.webp",
+        "alt": "Обложка книги «Ночной полёт. Маленький принц»",
+        "sourceUrl": "https://imo10.labirint.ru/books/882177/cover.jpg/2048-0"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.labirint.ru/books/882177/",
+        "price": 470,
+        "originalPrice": 444,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0033",
+    "title": "Колье Lynne из серебра 925 с цирконом",
+    "description": "Тонкая цепочка из серебра 925 с подвеской-кольцом, усыпанной цирконами. Длину цепочки можно выбрать.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 330,
+    "priceMax": 330,
+    "images": [
+      {
+        "src": "/catalog/products/p_0033/1.webp",
+        "alt": "Колье Lynne с подвеской-кольцом",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S8c9fe5b386a740069a8b8e8339a47a89J.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0033/2.webp",
+        "alt": "Колье Lynne на шее",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Scbe8ab62000e4e7594e0ba75878ccefaC.png"
+      },
+      {
+        "src": "/catalog/products/p_0033/3.webp",
+        "alt": "Подвеска колье крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/H0a72b447766c4f378dfd498c9d7277a7F.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "size",
+        "kind": "size",
+        "label": "Длина",
+        "options": [
+          {
+            "id": "40",
+            "label": "40 см"
+          },
+          {
+            "id": "45",
+            "label": "45 см"
+          },
+          {
+            "id": "50",
+            "label": "50 см"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/32838306066.html",
+        "price": 330,
+        "originalPrice": 309,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0034",
+    "title": "Серьги-гвоздики Modian из серебра с муассанитом",
+    "description": "Классические серьги-гвоздики из серебра с муассанитом — камнем, который блестит почти как бриллиант.\n\nРазмер камня можно выбрать.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 630,
+    "priceMax": 630,
+    "images": [
+      {
+        "src": "/catalog/products/p_0034/1.webp",
+        "alt": "Серьги-гвоздики Modian",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S58df7e1227ea4fd4a486737919a4709aF.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0034/2.webp",
+        "alt": "Серьги Modian в ухе",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sdef733629e114ba784d5601344337a25i.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0034/3.webp",
+        "alt": "Серьги Modian разных размеров",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sac070c1f018140468ff794f4b76a06f8Y.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005009075983767.html",
+        "price": 630,
+        "originalPrice": 599,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0035",
+    "title": "Часы Casio MTP-V001",
+    "description": "Классические мужские кварцевые часы Casio со светлым циферблатом и стрелками. Простые часы на каждый день.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "male",
+    "priceMin": 2680,
+    "priceMax": 2680,
+    "images": [
+      {
+        "src": "/catalog/products/p_0035/1.webp",
+        "alt": "Часы Casio MTP-V001",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sb7583d6d42094893975889ca36160b0d7.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0035/2.webp",
+        "alt": "Циферблат Casio MTP-V001 крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S7c209a08da264122be6b687b3fc8bc0cQ.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0035/3.webp",
+        "alt": "Часы Casio MTP-V001 на руке",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S40f07795b35449e3b73cfcbff4cf3d9aE.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005009570728812.html",
+        "price": 2680,
+        "originalPrice": 2539,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0036",
+    "title": "Магнитный конструктор Mzhuh",
+    "description": "Магнитный конструктор из крупных цветных деталей: из них строят домики, фигуры и объёмные модели.\n\nЕсть наборы с разным количеством деталей.",
+    "category": "kids",
+    "interests": [
+      "art"
+    ],
+    "audience": "all",
+    "priceMin": 540,
+    "priceMax": 540,
+    "images": [
+      {
+        "src": "/catalog/products/p_0036/1.webp",
+        "alt": "Модель из магнитного конструктора Mzhuh",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sd06bcdcdb6bd40fbb125246b18b70f94u.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0036/2.webp",
+        "alt": "Фигуры из конструктора Mzhuh",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Se3a56be54672496699b757f16d093ac5u.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0036/3.webp",
+        "alt": "Детали конструктора крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S6f051d4d927542779d368a21a3750524N.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005008880125216.html",
+        "price": 540,
+        "originalPrice": 509,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0037",
+    "title": "Автопылесос Baseus A5",
+    "description": "Беспроводной ручной пылесос для салона машины мощностью всасывания 16 000 Па. В комплекте насадки.\n\nНа AliExpress — рейтинг 4.8 и тысячи покупок.",
+    "category": "auto",
+    "interests": [
+      "cars"
+    ],
+    "audience": "all",
+    "priceMin": 4930,
+    "priceMax": 4930,
+    "images": [
+      {
+        "src": "/catalog/products/p_0037/1.webp",
+        "alt": "Автопылесос Baseus A5 с насадками",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S92f5abccb72f4c24b08fda496a311a35V.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0037/2.webp",
+        "alt": "Автопылесос Baseus A5 в руке",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S2d8a79af747e48e897cb71859cc9d6cf6.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005005988162152.html",
+        "price": 4930,
+        "originalPrice": 4666,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0038",
+    "title": "Автомобильный компрессор Baseus",
+    "description": "Беспроводной портативный компрессор для подкачки шин, работает от аккумулятора.\n\nНа AliExpress — рейтинг 4.9 и десятки тысяч покупок.",
+    "category": "auto",
+    "interests": [
+      "cars",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 2120,
+    "priceMax": 2120,
+    "images": [
+      {
+        "src": "/catalog/products/p_0038/1.webp",
+        "alt": "Компрессор Baseus",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S20d834fcf6a5473f945a6acf72148e63K.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0038/2.webp",
+        "alt": "Компрессор Baseus в машине",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S4b2d22e8dd7a40fb893259260139090eU.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005005605683958.html",
+        "price": 2120,
+        "originalPrice": 2009,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0039",
+    "title": "Фонтан-поилка ZYFeeder 2,2 л",
+    "description": "Автоматическая поилка для кошек и собак из нержавеющей стали на 2,2 литра. Вода постоянно циркулирует через сменный фильтр.",
+    "category": "pets",
+    "interests": [
+      "pets"
+    ],
+    "audience": "all",
+    "priceMin": 2170,
+    "priceMax": 2170,
+    "images": [
+      {
+        "src": "/catalog/products/p_0039/1.webp",
+        "alt": "Фонтан-поилка ZYFeeder",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sed4fb16fb8a745e7873a2f6a68a7511db.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0039/2.webp",
+        "alt": "Кошка и собака пьют из фонтана ZYFeeder",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S7552f5b9c3a04ff1bd5ff0904402b7f99.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0039/3.webp",
+        "alt": "Фонтан ZYFeeder сбоку",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S3eb31fe56bdb4f7883bacdcaf9f85eadO.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005008523627539.html",
+        "price": 2170,
+        "originalPrice": 2049,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0040",
+    "title": "Круглая плюшевая лежанка для кошек и собак",
+    "description": "Мягкая круглая лежанка с высоким бортиком, в которую питомец может свернуться. Есть несколько цветов и размеров.",
+    "category": "pets",
+    "interests": [
+      "pets",
+      "home"
+    ],
+    "audience": "all",
+    "priceMin": 630,
+    "priceMax": 630,
+    "images": [
+      {
+        "src": "/catalog/products/p_0040/1.webp",
+        "alt": "Лежанка, серая",
+        "variantOptionId": "grey",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S27077479bb314ee6b9d626f84cb3d1a4V.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0040/2.webp",
+        "alt": "Лежанка, коричневая",
+        "variantOptionId": "khaki",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S9d7819dfd0044ce989d2911be4a995a6R.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0040/3.webp",
+        "alt": "Лежанка, мятная, с котом",
+        "variantOptionId": "green",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S27604facc98042fe9841bc2113a47ad4w.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0040/4.webp",
+        "alt": "Лежанка, розовая",
+        "variantOptionId": "pink",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sc917a90507d84c03ad8bd810e1a5ed6bT.jpg"
+      }
+    ],
+    "variants": [
+      {
+        "id": "color",
+        "kind": "color",
+        "label": "Цвет",
+        "options": [
+          {
+            "id": "grey",
+            "label": "Серый",
+            "hex": "#B8BCC2"
+          },
+          {
+            "id": "khaki",
+            "label": "Коричневый",
+            "hex": "#7B5A44"
+          },
+          {
+            "id": "green",
+            "label": "Мятный",
+            "hex": "#A8D5BA"
+          },
+          {
+            "id": "pink",
+            "label": "Розовый",
+            "hex": "#F2B8C6"
+          }
+        ]
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005011608904658.html",
+        "price": 630,
+        "originalPrice": 592,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  }
+]

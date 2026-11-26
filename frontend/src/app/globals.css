@@ -1,1 +1,223 @@
 @import "tailwindcss";
+
+/* ============================================================
+   ТОКЕНЫ — один в один из docs/DESIGN.md §2–4.
+   Стандартная палитра Tailwind сброшена: в компонентах доступны только
+   цвета дизайн-системы, случайный `bg-rose-500` просто не соберётся.
+   ============================================================ */
+@theme {
+  --color-*: initial;
+
+  --color-velvet: #2a1024;
+  --color-velvet-2: #3a1832;
+  --color-velvet-3: #4a2241;
+  --color-line: rgb(255 241 243 / 0.12);
+  --color-paper: #fff1f3;
+  --color-paper-2: #f6e1e7;
+  --color-ink: #2a1024;
+  --color-ink-soft: #7a5a6e;
+  --color-rose: #cba8bc;
+  --color-mandarin: #ff8a3d;
+  --color-mandarin-ink: #b8460e;
+  --color-mint: #8fe3c6;
+  --color-champagne: #ffd27a;
+  --color-pomegranate: #ff5c7a;
+
+  /* DESIGN.md §7 Avatar: «тканевые» фоны, только для аватаров */
+  --color-avatar-plum: #e3c4da;
+  --color-avatar-mandarin: #ffc49c;
+  --color-avatar-mint: #bfefdd;
+  --color-avatar-champagne: #ffe3a8;
+  --color-avatar-rose: #f2c9d6;
+  --color-avatar-pomegranate: #ffb3c1;
+  --color-avatar-graphite: #cfc8d2;
+  --color-avatar-olive: #d8dfb4;
+
+  /* Шире 520px — рамка телефона; шире 960px — рядом логотип и QR (DESIGN.md §4) */
+  --breakpoint-frame: 32.5625rem;
+  --breakpoint-wide: 60rem;
+
+  --radius-chip: 999px;
+  --radius-field: 14px;
+  --radius-paper: 22px;
+  --radius-sheet: 28px;
+
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-quick: cubic-bezier(0.4, 0, 1, 1);
+
+  /* DESIGN.md §2 «Бумага»: бумага лежит на ткани; когда её тащат — тень растёт */
+  --shadow-paper:
+    0 1px 0 rgb(255 255 255 / 0.6) inset, 0 18px 40px -12px rgb(10 0 8 / 0.55),
+    0 4px 10px rgb(10 0 8 / 0.25);
+  --shadow-lift:
+    0 1px 0 rgb(255 255 255 / 0.6) inset, 0 30px 60px -10px rgb(10 0 8 / 0.65);
+}
+
+/* Шрифты приходят из next/font (переменные --font-cormorant и --font-onest
+   ставятся классом на <html>), поэтому семейства объявлены через inline:
+   утилиты подставляют var() как есть, а не значение на момент сборки. */
+@theme inline {
+  --font-display:
+    var(--font-cormorant), "Cormorant Garamond", "Times New Roman", serif;
+  --font-sans: var(--font-onest), "Onest", system-ui, sans-serif;
+}
+
+:root {
+  /* DESIGN.md §2 «Фон бархат», слой 2: свет на ткани — один на всё приложение */
+  --sheen: radial-gradient(
+    120% 60% at 50% -10%,
+    rgb(255 138 61 / 0.1),
+    transparent 60%
+  );
+  /* Слой 3 и зерно бумаги: SVG-шум feTurbulence */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Бархат вокруг рамки телефона на десктопе — «потемнее» (DESIGN.md §4) */
+  --velvet-deep: color-mix(in srgb, var(--color-velvet) 72%, rgb(10 0 8));
+  /* Место под плавающий таб-бар: 64px таблетка + отступ снизу + 16px воздуха.
+     Переопределяется оболочкой, когда таб-бара на экране нет. */
+  --tabbar-space: calc(92px + env(safe-area-inset-bottom));
+  color-scheme: dark;
+}
+
+/* ============================================================
+   ТИПОГРАФИКА — DESIGN.md §3. Cormorant только от 22px.
+   ============================================================ */
+@utility text-display {
+  font-family: var(--font-display);
+  font-size: 40px;
+  line-height: 44px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility text-title-1 {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility text-title-2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 30px;
+  font-weight: 600;
+}
+@utility text-title-3 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 500;
+  font-style: italic;
+}
+@utility text-body-lg {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 26px;
+  font-weight: 400;
+}
+@utility text-body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 400;
+}
+@utility text-label {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+}
+@utility text-price {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+@utility text-caption {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+@utility text-micro {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+}
+
+/* Бумажная поверхность: заливка + зерно бумаги (DESIGN.md §2 «Бумага»).
+   Тень не здесь: у бирки и билетика маска обрезает box-shadow, поэтому тень
+   ставится на обёртку через drop-shadow (см. DESIGN.md §2, важное). */
+@utility paper {
+  position: relative;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-image: var(--grain);
+    opacity: 0.035;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer base {
+  html {
+    background: var(--color-velvet);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--color-velvet);
+    color: var(--color-paper);
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  /* DESIGN.md §10: видимый фокус — кольцо 2px мандарин + отступ 2px */
+  :focus-visible {
+    outline: 2px solid var(--color-mandarin);
+    outline-offset: 2px;
+  }
+
+  /* Шире 520px вокруг рамки телефона — бархат потемнее (DESIGN.md §4) */
+  @media (min-width: 521px) {
+    html,
+    body {
+      background: var(--velvet-deep);
+    }
+  }
+}
+
+/* prefers-reduced-motion (DESIGN.md §6, §10): все переходы почти мгновенные.
+   Компоненты с жестами дополнительно проверяют useReducedMotion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+}

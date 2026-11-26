@@ -1,0 +1,1 @@
+export { SantaPage } from "./ui";

@@ -1,0 +1,386 @@
+[
+  {
+    "id": "a_001",
+    "title": "Горные лыжи и сноуборд в Чункурчаке",
+    "description": "Горнолыжная база в ущелье рядом с Бишкеком: можно взять прокат и кататься до вечера. Подходит и новичкам, и тем, кто уже уверенно стоит на лыжах или доске.",
+    "category": "active",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "big_group"
+    ],
+    "pricePerPersonMin": 1500,
+    "pricePerPersonMax": 4500,
+    "durationMin": 240,
+    "durationMax": 480,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "place": "Чункурчак",
+    "distanceNote": "около 40 минут от города",
+    "image": {
+      "src": "/catalog/activities/a_001.webp",
+      "alt": "Лыжники на подъёмнике в горах"
+    }
+  },
+  {
+    "id": "a_002",
+    "title": "Каток",
+    "description": "Покататься на коньках вечером или днём. Коньки можно взять напрокат прямо на катке.",
+    "category": "active",
+    "tags": [
+      "kids_ok",
+      "evening",
+      "date",
+      "cheap"
+    ],
+    "pricePerPersonMin": 500,
+    "pricePerPersonMax": 800,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "place": "«Бишкек Арена», «Локомотив»",
+    "image": {
+      "src": "/catalog/activities/a_002.webp",
+      "alt": "Люди катаются на открытом катке"
+    }
+  },
+  {
+    "id": "a_003",
+    "title": "Скалодром",
+    "description": "Боулдеринг и лазание по стене со страховкой. Инструктор поможет новичкам, обувь можно взять на месте.",
+    "category": "active",
+    "tags": [
+      "indoor",
+      "kids_ok",
+      "evening"
+    ],
+    "pricePerPersonMin": 500,
+    "pricePerPersonMax": 1000,
+    "durationMin": 90,
+    "durationMax": 150,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": 8
+    },
+    "image": {
+      "src": "/catalog/activities/a_003.webp",
+      "alt": "Зал для боулдеринга с цветными зацепами"
+    }
+  },
+  {
+    "id": "a_004",
+    "title": "Боулинг",
+    "description": "Классика для компании: дорожка на час-два, немного азарта и закуски между бросками.",
+    "category": "active",
+    "tags": [
+      "indoor",
+      "evening",
+      "big_group",
+      "date"
+    ],
+    "pricePerPersonMin": 400,
+    "pricePerPersonMax": 1000,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 12
+    },
+    "image": {
+      "src": "/catalog/activities/a_004.webp",
+      "alt": "Шар катится к кеглям на дорожке боулинга"
+    }
+  },
+  {
+    "id": "a_005",
+    "title": "Кино",
+    "description": "Сходить на новый фильм всей компанией или вдвоём. Самый простой вариант на вечер.",
+    "category": "chill",
+    "tags": [
+      "indoor",
+      "evening",
+      "date",
+      "cheap"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 600,
+    "durationMin": 120,
+    "durationMax": 180,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "image": {
+      "src": "/catalog/activities/a_005.webp",
+      "alt": "Зал кинотеатра с красными креслами"
+    }
+  },
+  {
+    "id": "a_006",
+    "title": "Караоке",
+    "description": "Снять комнату или столик в караоке-баре и петь любимые песни по очереди.",
+    "category": "chill",
+    "tags": [
+      "indoor",
+      "evening",
+      "big_group"
+    ],
+    "pricePerPersonMin": 500,
+    "pricePerPersonMax": 1500,
+    "durationMin": 120,
+    "durationMax": 240,
+    "seasons": [],
+    "groupSize": {
+      "min": 3,
+      "max": 15
+    },
+    "image": {
+      "src": "/catalog/activities/a_006.webp",
+      "alt": "Микрофон в караоке-баре"
+    }
+  },
+  {
+    "id": "a_007",
+    "title": "Плов в чайхане",
+    "description": "Большой казан плова на всю компанию, чай и долгие разговоры. Сытно и недорого.",
+    "category": "food",
+    "tags": [
+      "indoor",
+      "cheap",
+      "big_group",
+      "kids_ok"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 700,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "image": {
+      "src": "/catalog/activities/a_007.webp",
+      "alt": "Плов в казане"
+    }
+  },
+  {
+    "id": "a_008",
+    "title": "Театр оперы и балета",
+    "description": "Балет или опера в главном театре Бишкека. Хороший повод выбраться в красивое место.",
+    "category": "culture",
+    "tags": [
+      "indoor",
+      "evening",
+      "date"
+    ],
+    "pricePerPersonMin": 200,
+    "pricePerPersonMax": 1500,
+    "durationMin": 120,
+    "durationMax": 180,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "place": "Театр оперы и балета им. А. Малдыбаева",
+    "image": {
+      "src": "/catalog/activities/a_008.webp",
+      "alt": "Здание Театра оперы и балета в Бишкеке"
+    }
+  },
+  {
+    "id": "a_009",
+    "title": "Концерт в филармонии",
+    "description": "Живая музыка — от классики до национальных инструментов — в филармонии рядом с памятником Манасу.",
+    "category": "culture",
+    "tags": [
+      "indoor",
+      "evening",
+      "date"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 1500,
+    "durationMin": 90,
+    "durationMax": 150,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "place": "Филармония им. Т. Сатылганова",
+    "image": {
+      "src": "/catalog/activities/a_009.webp",
+      "alt": "Здание филармонии в Бишкеке с фонтаном"
+    }
+  },
+  {
+    "id": "a_010",
+    "title": "Зимняя прогулка в Ала-Арче",
+    "description": "Прогулка по заснеженному национальному парку: горы, ели и свежий воздух. Возьмите термос и тёплую обувь.",
+    "category": "nature",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "cheap",
+      "big_group"
+    ],
+    "pricePerPersonMin": 100,
+    "pricePerPersonMax": 500,
+    "durationMin": 180,
+    "durationMax": 360,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "place": "Ала-Арча",
+    "distanceNote": "около 40 минут от города",
+    "image": {
+      "src": "/catalog/activities/a_010.webp",
+      "alt": "Заснеженные горы и ели в Ала-Арче"
+    }
+  },
+  {
+    "id": "a_011",
+    "title": "Выходные на Иссык-Куле",
+    "description": "Уехать на озеро на день-два: прогулки по берегу, закаты и отдых от города.",
+    "category": "nature",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "big_group"
+    ],
+    "pricePerPersonMin": 3000,
+    "pricePerPersonMax": 10000,
+    "durationMin": 1440,
+    "durationMax": 2880,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "place": "Иссык-Куль",
+    "distanceNote": "3–4 часа от города",
+    "image": {
+      "src": "/catalog/activities/a_011.webp",
+      "alt": "Берег Иссык-Куля"
+    }
+  },
+  {
+    "id": "a_012",
+    "title": "Квест-комната",
+    "description": "Час на то, чтобы разгадать загадки и выбраться из комнаты. Лучше всего — командой 3–5 человек.",
+    "category": "party",
+    "tags": [
+      "indoor",
+      "evening",
+      "big_group"
+    ],
+    "pricePerPersonMin": 700,
+    "pricePerPersonMax": 1500,
+    "durationMin": 60,
+    "durationMax": 90,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 6
+    },
+    "image": {
+      "src": "/catalog/activities/a_012.webp",
+      "alt": "Комната квеста со старой картой на стене"
+    }
+  },
+  {
+    "id": "a_013",
+    "title": "Концерт",
+    "description": "Сходить на концерт любимого артиста или фестиваль и провести вечер с музыкой и светом.",
+    "category": "party",
+    "tags": [
+      "evening",
+      "big_group"
+    ],
+    "pricePerPersonMin": 1000,
+    "pricePerPersonMax": 5000,
+    "durationMin": 120,
+    "durationMax": 240,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "image": {
+      "src": "/catalog/activities/a_013.webp",
+      "alt": "Сцена большого концерта со светом"
+    }
+  },
+  {
+    "id": "a_014",
+    "title": "Баня с друзьями",
+    "description": "Попариться в бане, а потом посидеть с чаем. Хороший способ согреться зимой.",
+    "category": "selfcare",
+    "tags": [
+      "indoor",
+      "big_group",
+      "weekend",
+      "evening"
+    ],
+    "pricePerPersonMin": 500,
+    "pricePerPersonMax": 1500,
+    "durationMin": 120,
+    "durationMax": 240,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 10
+    },
+    "image": {
+      "src": "/catalog/activities/a_014.webp",
+      "alt": "Здание бани зимой"
+    }
+  },
+  {
+    "id": "a_015",
+    "title": "Горячие источники",
+    "description": "Окунуться в тёплую воду под открытым небом, когда вокруг снег. Можно съездить на день.",
+    "category": "selfcare",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "date"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 1500,
+    "durationMin": 180,
+    "durationMax": 480,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "place": "Иссык-Ата",
+    "distanceNote": "около 1,5 часа от города",
+    "image": {
+      "src": "/catalog/activities/a_015.webp",
+      "alt": "Горячий источник среди снега"
+    }
+  }
+]

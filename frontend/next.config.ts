@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
   // Без явного root Next ищет lockfile вверх по дереву и может принять за
   // корень воркспейса домашнюю папку (так было в imbir-nextjs).
   turbopack: { root: __dirname },
+  // Значок Next в режиме разработки лежит в левом нижнем углу прямо поверх
+  // таб-бара и мешает проверять экраны на ширине телефона.
+  devIndicators: false,
 };
 
 export default nextConfig;
