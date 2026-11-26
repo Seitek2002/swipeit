@@ -13,7 +13,11 @@ const LOCK_NAME = "swipeit-db";
 
 const isQuotaError = (error: unknown) =>
   error instanceof DOMException &&
-  (error.name === "QuotaExceededError" || error.code === 22);
+  (error.name === "QuotaExceededError" ||
+    // Старый Firefox называет переполнение по-своему.
+    error.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+    error.code === 22 ||
+    error.code === 1014);
 
 // База в localStorage (режим local, TECH_SPEC §5–6). Запись — под
 // navigator.locks, чтобы две вкладки не затёрли изменения друг друга. Где
@@ -58,7 +62,10 @@ export const createLocalStorageDb = ({
       : task();
 
   return {
-    read: () => load(),
+    // Чтение тоже под блокировкой: на пустом устройстве load() создаёт базу из
+    // сида и сохраняет её — без блокировки это затёрло бы запись, сделанную
+    // параллельно (GET /me и POST /users на первом запуске).
+    read: () => withLock(load),
     replace: async (next) => {
       await withLock(async () => save(assertValidDb(next)));
     },

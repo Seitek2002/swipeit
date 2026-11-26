@@ -222,6 +222,45 @@ describe("лента", () => {
   });
 });
 
+describe("найдено на ревью этапа 0", () => {
+  it("невозможная дата рождения — VALIDATION", async () => {
+    await expect(newUser({ birthday: "13-40" })).rejects.toMatchObject({
+      code: "VALIDATION",
+    });
+    await expect(newUser({ birthday: "02-30" })).rejects.toMatchObject({
+      code: "VALIDATION",
+    });
+    await expect(newUser({ birthday: "02-29" })).resolves.toMatchObject({
+      birthday: "02-29",
+    });
+  });
+
+  it("сброс демо-пользователем оставляет Айгерим человеком", async () => {
+    await call("POST", "/auth/demo", null);
+    await call("POST", "/demo/reset", DEMO_USER_ID);
+    const me = await call<User>("GET", "/me", DEMO_USER_ID);
+    expect(me.isBot).toBe(false);
+  });
+
+  it("битый параметр пути — VALIDATION, а не URIError", async () => {
+    await expect(call("GET", "/users/%E0%A4%A", null)).rejects.toMatchObject({
+      code: "VALIDATION",
+    });
+  });
+
+  it("сброс не теряется, если запись началась раньше", async () => {
+    const user = await newUser();
+    const write = db.write((data) => {
+      data.users[user.id]!.name = "Перед сбросом";
+    });
+    const reset = call("POST", "/demo/reset", user.id);
+    await Promise.all([write, reset]);
+    await expect(call("GET", "/me", user.id)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+});
+
 describe("демо", () => {
   it("сброс пересоздаёт базу: созданный пользователь исчезает", async () => {
     const user = await newUser();

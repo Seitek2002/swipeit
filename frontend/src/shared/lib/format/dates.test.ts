@@ -33,3 +33,21 @@ describe("formatRemaining", () => {
     expect(remainingVerb(30 * MIN)).toBe("Осталось");
   });
 });
+
+describe("дни рождения", () => {
+  it("nextBirthdayDate не перескакивает на следующий день после 23:00", async () => {
+    const { birthdayInDays, daysUntilBirthday, nextBirthdayDate } =
+      await import("./dates");
+    const lateEvening = new Date(2026, 10, 26, 23, 30).getTime();
+    const birthday = birthdayInDays(5, lateEvening);
+    expect(daysUntilBirthday(birthday, lateEvening)).toBe(5);
+    expect(nextBirthdayDate(birthday, lateEvening)).toBe("2026-12-01");
+  });
+
+  it("сегодняшний день рождения — 0 дней, вчерашний — через год", async () => {
+    const { daysUntilBirthday } = await import("./dates");
+    const now = new Date(2026, 10, 26, 10).getTime();
+    expect(daysUntilBirthday("11-26", now)).toBe(0);
+    expect(daysUntilBirthday("11-25", now)).toBe(364);
+  });
+});

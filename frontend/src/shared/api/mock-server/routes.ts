@@ -1,4 +1,5 @@
 import type { Handler } from "./context";
+import { validation } from "./errors";
 import { getCount, getFeed, getProduct } from "./handlers/catalog";
 import { getSettings, resetDemo, updateSettings } from "./handlers/demo";
 import {
@@ -45,7 +46,11 @@ export const matchRoute = (method: HttpMethod, path: string) => {
     const matched = pattern.every((segment, index) => {
       const part = parts[index] ?? "";
       if (segment.startsWith(":")) {
-        params[segment.slice(1)] = decodeURIComponent(part);
+        try {
+          params[segment.slice(1)] = decodeURIComponent(part);
+        } catch {
+          throw validation("Адрес повреждён");
+        }
         return true;
       }
       return segment === part;

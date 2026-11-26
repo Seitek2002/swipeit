@@ -43,6 +43,23 @@ const RealtimeBridge = () => {
   return null;
 };
 
+// Сменился пользователь вкладки (онбординг, демо-вход, «Смотреть как») —
+// кэш React Query целиком заново: ключи не содержат id пользователя, и без
+// сброса до 30 секунд показывались бы данные прошлого.
+const SessionCacheReset = () => {
+  const queryClient = useQueryClient();
+
+  useEffect(
+    () =>
+      useSessionStore.subscribe((state, previous) => {
+        if (state.activeUserId !== previous.activeUserId) queryClient.clear();
+      }),
+    [queryClient],
+  );
+
+  return null;
+};
+
 export const Providers = ({ children }: { children: ReactNode }) => {
   useTapHaptics();
 
@@ -55,10 +72,11 @@ export const Providers = ({ children }: { children: ReactNode }) => {
             // от других вкладок и ботов приходят событием, а не опросом.
             staleTime: 30_000,
             refetchOnWindowFocus: false,
-            // Ошибки 4xx — это ответ (не найдено, нет доступа), повтор не
-            // поможет. Сетевые и 5xx — повторяем дважды.
+            // Повторяем только сбой связи (OFFLINE) и неожиданные ошибки.
+            // Ответы API (не найдено, нет доступа, память заполнена) повтор
+            // не исправит.
             retry: (failureCount, error) => {
-              if (isApiError(error) && error.status < 500) return false;
+              if (isApiError(error) && error.code !== "OFFLINE") return false;
               return failureCount < 2;
             },
           },
@@ -69,6 +87,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
   return (
     <QueryClientProvider client={queryClient}>
       <RealtimeBridge />
+      <SessionCacheReset />
       {children}
       <Toaster />
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="top-right" />

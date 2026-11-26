@@ -31,8 +31,14 @@ export const createMemoryDb = (
   return {
     snapshot: () => current,
     read: async () => structuredClone(await load()),
-    replace: async (next) => {
-      current = assertValidDb(structuredClone(next));
+    // Сброс — в той же очереди, что и записи: иначе запись, начатая до сброса,
+    // вернула бы старую базу.
+    replace: (next) => {
+      const run = queue.then(() => {
+        current = assertValidDb(structuredClone(next));
+      });
+      queue = run.catch(() => undefined);
+      return run;
     },
     write: <T>(mutator: (db: Db) => T) => {
       const run = queue.then(async () => {

@@ -2,6 +2,18 @@ import { z } from "zod";
 
 import { AUDIENCES, AVATAR_COLORS } from "@/shared/config";
 
+// "MM-DD": месяц 01–12, день — какой бывает в этом месяце (29 февраля можно).
+const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const isValidMonthDay = (value: string) => {
+  const [month = 0, day = 0] = value.split("-").map(Number);
+  return (
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= (DAYS_IN_MONTH[month - 1] ?? 0)
+  );
+};
+
 export const BotProfileSchema = z.object({
   // CategoryId | ActivityCategoryId — бот любит и подарки, и занятия.
   likesCategories: z.array(z.string()),
@@ -19,6 +31,7 @@ export const UserSchema = z.object({
   birthday: z
     .string()
     .regex(/^\d{2}-\d{2}$/)
+    .refine(isValidMonthDay, "Такой даты нет")
     .optional(),
   interests: z.array(z.string()),
   audience: z.enum(AUDIENCES),

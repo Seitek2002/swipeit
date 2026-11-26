@@ -54,7 +54,10 @@ export const daysUntilBirthday = (birthday: string, now: number): number => {
 
 // Дата ближайшего дня рождения "YYYY-MM-DD" — для повода вишлиста.
 export const nextBirthdayDate = (birthday: string, now: number): string => {
-  const date = startOfDay(now + daysUntilBirthday(birthday, now) * DAY + HOUR);
+  // От полуночи и через setDate: прибавка часов к now после 23:00 перескочила
+  // бы на следующий день.
+  const date = startOfDay(now);
+  date.setDate(date.getDate() + daysUntilBirthday(birthday, now));
   return toDateKey(date.getTime());
 };
 
