@@ -9,9 +9,6 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    // До T04 тестов ещё нет; без этого флага vitest выходит с кодом 1 и
-    // «check» красный на пустом каркасе. Тесты появятся в T04 — флаг уберём.
-    passWithNoTests: true,
     include: ["src/**/*.test.ts", "lan/**/*.test.ts", "scripts/**/*.test.ts"],
   },
 });

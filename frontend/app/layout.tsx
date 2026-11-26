@@ -4,12 +4,43 @@ import { AppFrame } from "@/app/app-frame";
 import { cormorant, onest } from "@/app/fonts";
 import "@/app/globals.css";
 
-import { COLORS } from "@/shared/config";
+import {
+  COLORS,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/shared/config";
+
+// Превью ссылки в Telegram и WhatsApp (TECH_SPEC §13). Статические теги на всё
+// приложение: у ссылок с данными (/w/?d=…) превью то же — собрать своё превью
+// под каждую ссылку статический сайт не может. Адреса абсолютные.
+const OG_IMAGE = `${SITE_URL}/og.png`;
 
 export const metadata: Metadata = {
   title: "SwipeIt",
-  description:
-    "Свайпай подарки, которые хочешь сам. Друзья увидят — и угадают с подарком.",
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    url: `${SITE_URL}/`,
+    siteName: "SwipeIt",
+    locale: "ru_RU",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "Бант на бархате и фраза «Свайпай подарки, которые хочешь сам»",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [OG_IMAGE],
+  },
 };
 
 // viewport-fit=cover — чтобы на iPhone фон заходил под «чёлку» и полоску
