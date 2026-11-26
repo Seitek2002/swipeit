@@ -221,3 +221,35 @@
     transition-delay: 0ms !important;
   }
 }
+
+/* Блокировка прокрутки под шторками (shared/lib/useScrollLock: счётчик). */
+:root[data-scroll-locked] [data-scroll-root] {
+  overflow: hidden;
+}
+
+/* Скелетон: заливка + перелив (DESIGN.md §7 GiftTagCard «Скелетон»). */
+@keyframes skeleton-wave {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.35),
+      transparent
+    );
+    animation: skeleton-wave 1.4s ease-in-out infinite;
+  }
+}

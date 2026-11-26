@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { AppFrame } from "@/app/app-frame";
 import { cormorant, onest } from "@/app/fonts";
 import "@/app/globals.css";
+import { Providers } from "@/app/providers";
 
 import {
   COLORS,
@@ -58,7 +59,9 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${cormorant.variable} ${onest.variable}`}>
       <body>
-        <AppFrame>{children}</AppFrame>
+        <Providers>
+          <AppFrame>{children}</AppFrame>
+        </Providers>
       </body>
     </html>
   );

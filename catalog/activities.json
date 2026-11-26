@@ -382,5 +382,752 @@
       "src": "/catalog/activities/a_015.webp",
       "alt": "Горячий источник среди снега"
     }
+  },
+  {
+    "id": "a_016",
+    "title": "Урок сноуборда для новичков",
+    "description": "Пара часов с инструктором на пологом склоне: научиться стоять на доске, тормозить и поворачивать. Доску и ботинки можно взять в прокате на базе.",
+    "category": "active",
+    "tags": [
+      "outdoor",
+      "weekend"
+    ],
+    "pricePerPersonMin": 2500,
+    "pricePerPersonMax": 5000,
+    "durationMin": 120,
+    "durationMax": 240,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 1,
+      "max": 4
+    },
+    "place": "Чункурчак, Орловка",
+    "distanceNote": "40–60 минут от города",
+    "image": {
+      "src": "/catalog/activities/a_016.webp",
+      "alt": "Сноубордист спускается по снежному склону"
+    }
+  },
+  {
+    "id": "a_017",
+    "title": "Тюбинг с горки",
+    "description": "Скатиться с горы на надувной ватрушке — весело в любом возрасте и не нужно уметь кататься. Ватрушки берут напрокат по часам.",
+    "category": "active",
+    "tags": [
+      "outdoor",
+      "kids_ok",
+      "weekend",
+      "cheap",
+      "big_group"
+    ],
+    "pricePerPersonMin": 350,
+    "pricePerPersonMax": 600,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "place": "Чункурчак",
+    "distanceNote": "около 40 минут от города",
+    "image": {
+      "src": "/catalog/activities/a_017.webp",
+      "alt": "Люди съезжают на ватрушках по снежному склону"
+    }
+  },
+  {
+    "id": "a_018",
+    "title": "Батутный центр",
+    "description": "Попрыгать на батутах, поделать сальто в поролоновую яму и как следует выдохнуться. Подходит и взрослым, и детям.",
+    "category": "active",
+    "tags": [
+      "indoor",
+      "kids_ok",
+      "cheap"
+    ],
+    "pricePerPersonMin": 400,
+    "pricePerPersonMax": 800,
+    "durationMin": 60,
+    "durationMax": 90,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": 10
+    },
+    "image": {
+      "src": "/catalog/activities/a_018.webp",
+      "alt": "Батуты, встроенные в площадку"
+    }
+  },
+  {
+    "id": "a_019",
+    "title": "Картинг",
+    "description": "Несколько заездов по крытой трассе с таймером на каждом круге. Хороший способ выяснить, кто в компании самый быстрый.",
+    "category": "active",
+    "tags": [
+      "indoor",
+      "evening",
+      "big_group"
+    ],
+    "pricePerPersonMin": 800,
+    "pricePerPersonMax": 1500,
+    "durationMin": 30,
+    "durationMax": 60,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 10
+    },
+    "image": {
+      "src": "/catalog/activities/a_019.webp",
+      "alt": "Карты на повороте крытой трассы"
+    }
+  },
+  {
+    "id": "a_020",
+    "title": "Бассейн",
+    "description": "Поплавать в крытом бассейне, когда на улице холодно. После можно погреться в сауне, если она есть.",
+    "category": "active",
+    "tags": [
+      "indoor",
+      "kids_ok",
+      "cheap"
+    ],
+    "pricePerPersonMin": 400,
+    "pricePerPersonMax": 900,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": 6
+    },
+    "image": {
+      "src": "/catalog/activities/a_020.webp",
+      "alt": "Крытый бассейн с голубой водой"
+    }
+  },
+  {
+    "id": "a_021",
+    "title": "Пейнтбол или лазертаг",
+    "description": "Командная игра с укрытиями и заданиями: пейнтбол на площадке под открытым небом или лазертаг в зале. Снаряжение выдают на месте.",
+    "category": "active",
+    "tags": [
+      "weekend",
+      "big_group"
+    ],
+    "pricePerPersonMin": 600,
+    "pricePerPersonMax": 1500,
+    "durationMin": 90,
+    "durationMax": 180,
+    "seasons": [],
+    "groupSize": {
+      "min": 4,
+      "max": 20
+    },
+    "image": {
+      "src": "/catalog/activities/a_021.webp",
+      "alt": "Игроки в масках с маркерами за укрытием"
+    }
+  },
+  {
+    "id": "a_022",
+    "title": "Падел",
+    "description": "Ракеточная игра двое на двое на небольшом корте со стеклянными стенками. Правила простые, втягиваешься с первой игры.",
+    "category": "active",
+    "tags": [
+      "evening",
+      "date"
+    ],
+    "pricePerPersonMin": 500,
+    "pricePerPersonMax": 1000,
+    "durationMin": 60,
+    "durationMax": 90,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 4
+    },
+    "image": {
+      "src": "/catalog/activities/a_022.webp",
+      "alt": "Корт для падела с синим покрытием"
+    }
+  },
+  {
+    "id": "a_023",
+    "title": "Антикафе с настолками",
+    "description": "Платишь за время, а чай, печенье и полка с настольными играми уже включены. Можно сидеть хоть весь вечер.",
+    "category": "chill",
+    "tags": [
+      "indoor",
+      "evening",
+      "cheap",
+      "big_group",
+      "date"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 600,
+    "durationMin": 120,
+    "durationMax": 240,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 10
+    },
+    "image": {
+      "src": "/catalog/activities/a_023.webp",
+      "alt": "Настольная игра с фишками на столе"
+    }
+  },
+  {
+    "id": "a_024",
+    "title": "Квиз",
+    "description": "Командная интеллектуальная игра в кафе: раунды вопросов про кино, музыку и всё на свете. Нужна команда из 4–8 человек.",
+    "category": "chill",
+    "tags": [
+      "indoor",
+      "evening",
+      "big_group"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 600,
+    "durationMin": 120,
+    "durationMax": 180,
+    "seasons": [],
+    "groupSize": {
+      "min": 3,
+      "max": 8
+    },
+    "image": {
+      "src": "/catalog/activities/a_024.webp",
+      "alt": "Меловая доска с объявлением о квизе"
+    }
+  },
+  {
+    "id": "a_025",
+    "title": "Кофейня с видом на горы",
+    "description": "Неспешно посидеть с кофе и десертом у окна, за которым видны горы. Хороший вариант для утра выходного дня.",
+    "category": "chill",
+    "tags": [
+      "indoor",
+      "date",
+      "cheap"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 700,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": 4
+    },
+    "image": {
+      "src": "/catalog/activities/a_025.webp",
+      "alt": "Чашка кофе на деревянном столе"
+    }
+  },
+  {
+    "id": "a_026",
+    "title": "VR-клуб",
+    "description": "Надеть шлем виртуальной реальности и попасть в игру: от ритм-игр до командных шутеров. Обычно берут сеанс на полчаса или час.",
+    "category": "chill",
+    "tags": [
+      "indoor",
+      "evening",
+      "kids_ok"
+    ],
+    "pricePerPersonMin": 500,
+    "pricePerPersonMax": 1000,
+    "durationMin": 30,
+    "durationMax": 60,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": 6
+    },
+    "image": {
+      "src": "/catalog/activities/a_026.webp",
+      "alt": "Человек в VR-шлеме перед экраном с игрой"
+    }
+  },
+  {
+    "id": "a_027",
+    "title": "Гончарный мастер-класс",
+    "description": "Слепить чашку или тарелку на гончарном круге под присмотром мастера. Готовую вещь обжигают и отдают через пару недель.",
+    "category": "chill",
+    "tags": [
+      "indoor",
+      "date"
+    ],
+    "pricePerPersonMin": 1500,
+    "pricePerPersonMax": 2500,
+    "durationMin": 90,
+    "durationMax": 150,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": 8
+    },
+    "image": {
+      "src": "/catalog/activities/a_027.webp",
+      "alt": "Руки мастера и глиняное изделие в мастерской"
+    }
+  },
+  {
+    "id": "a_028",
+    "title": "Рисование на холсте",
+    "description": "Мастер-класс, где за один вечер пишут картину акрилом по образцу. Опыт не нужен, всё объясняют по шагам.",
+    "category": "chill",
+    "tags": [
+      "indoor",
+      "date",
+      "kids_ok"
+    ],
+    "pricePerPersonMin": 1200,
+    "pricePerPersonMax": 2000,
+    "durationMin": 120,
+    "durationMax": 180,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": 10
+    },
+    "image": {
+      "src": "/catalog/activities/a_028.webp",
+      "alt": "Мастерская художника с мольбертом и красками"
+    }
+  },
+  {
+    "id": "a_029",
+    "title": "Бранч в выходной",
+    "description": "Поздний завтрак с друзьями: сырники, панкейки, яйца бенедикт и кофе. Спокойное начало субботы.",
+    "category": "food",
+    "tags": [
+      "indoor",
+      "weekend",
+      "date"
+    ],
+    "pricePerPersonMin": 500,
+    "pricePerPersonMax": 1000,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 6
+    },
+    "image": {
+      "src": "/catalog/activities/a_029.webp",
+      "alt": "Панкейки на тарелке в кафе"
+    }
+  },
+  {
+    "id": "a_030",
+    "title": "Кулинарный мастер-класс",
+    "description": "Вместе с поваром приготовить манты, лагман или десерт, а потом съесть всё, что получилось. Весело и сытно.",
+    "category": "food",
+    "tags": [
+      "indoor",
+      "big_group",
+      "date"
+    ],
+    "pricePerPersonMin": 1500,
+    "pricePerPersonMax": 3000,
+    "durationMin": 120,
+    "durationMax": 180,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 10
+    },
+    "image": {
+      "src": "/catalog/activities/a_030.webp",
+      "alt": "Учебная кухня с рабочими местами для участников"
+    }
+  },
+  {
+    "id": "a_031",
+    "title": "Новое кафе в городе",
+    "description": "Выбрать кафе, которое недавно открылось, и попробовать меню всей компанией. Повод узнать город с новой стороны.",
+    "category": "food",
+    "tags": [
+      "indoor",
+      "evening",
+      "date"
+    ],
+    "pricePerPersonMin": 600,
+    "pricePerPersonMax": 1500,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 8
+    },
+    "image": {
+      "src": "/catalog/activities/a_031.webp",
+      "alt": "Уютный зал кафе с деревянной мебелью"
+    }
+  },
+  {
+    "id": "a_032",
+    "title": "Ужин с видом на город",
+    "description": "Ужин в ресторане на верхнем этаже или в предгорьях, откуда видны огни Бишкека. Подходит для особого случая.",
+    "category": "food",
+    "tags": [
+      "evening",
+      "date"
+    ],
+    "pricePerPersonMin": 1500,
+    "pricePerPersonMax": 3500,
+    "durationMin": 90,
+    "durationMax": 180,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": 6
+    },
+    "image": {
+      "src": "/catalog/activities/a_032.webp",
+      "alt": "Вечерний Бишкек с подсветкой на площади"
+    }
+  },
+  {
+    "id": "a_033",
+    "title": "Лагман и манты в дунганском кафе",
+    "description": "Горячий лагман, манты и чай в простом дунганском кафе. Быстро, сытно и недорого.",
+    "category": "food",
+    "tags": [
+      "indoor",
+      "cheap",
+      "big_group",
+      "kids_ok"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 600,
+    "durationMin": 60,
+    "durationMax": 90,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "image": {
+      "src": "/catalog/activities/a_033.webp",
+      "alt": "Лагман, салаты и чай на столе в кафе"
+    }
+  },
+  {
+    "id": "a_034",
+    "title": "Исторический музей",
+    "description": "Экспозиция об истории Кыргызстана от древности до наших дней на главной площади. Можно совместить с прогулкой по центру.",
+    "category": "culture",
+    "tags": [
+      "indoor",
+      "kids_ok",
+      "cheap"
+    ],
+    "pricePerPersonMin": 100,
+    "pricePerPersonMax": 300,
+    "durationMin": 90,
+    "durationMax": 150,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "place": "Национальный исторический музей, площадь Ала-Тоо",
+    "image": {
+      "src": "/catalog/activities/a_034.webp",
+      "alt": "Здание исторического музея на площади Ала-Тоо"
+    }
+  },
+  {
+    "id": "a_035",
+    "title": "Художественная выставка",
+    "description": "Посмотреть живопись, войлок и вышивку кыргызских мастеров или новую временную выставку. Тихий и недорогой вариант на пару часов.",
+    "category": "culture",
+    "tags": [
+      "indoor",
+      "cheap",
+      "date"
+    ],
+    "pricePerPersonMin": 100,
+    "pricePerPersonMax": 300,
+    "durationMin": 60,
+    "durationMax": 120,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "place": "Музей изобразительных искусств им. Г. Айтиева",
+    "image": {
+      "src": "/catalog/activities/a_035.webp",
+      "alt": "Картина кыргызского художника с людьми у юрты"
+    }
+  },
+  {
+    "id": "a_036",
+    "title": "Стендап",
+    "description": "Вечер комедии в небольшом зале: несколько комиков и полтора часа шуток. Билеты лучше брать заранее.",
+    "category": "culture",
+    "tags": [
+      "indoor",
+      "evening",
+      "big_group",
+      "date"
+    ],
+    "pricePerPersonMin": 700,
+    "pricePerPersonMax": 2000,
+    "durationMin": 90,
+    "durationMax": 150,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "image": {
+      "src": "/catalog/activities/a_036.webp",
+      "alt": "Комик выступает на сцене небольшого зала"
+    }
+  },
+  {
+    "id": "a_037",
+    "title": "Башня Бурана",
+    "description": "Поездка к средневековому минарету в Чуйской долине: можно подняться наверх, посмотреть балбалы и небольшой музей.",
+    "category": "culture",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "kids_ok",
+      "cheap",
+      "big_group"
+    ],
+    "pricePerPersonMin": 200,
+    "pricePerPersonMax": 1000,
+    "durationMin": 240,
+    "durationMax": 360,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "place": "Бурана, рядом с Токмоком",
+    "distanceNote": "около 1,5 часа от города",
+    "image": {
+      "src": "/catalog/activities/a_037.webp",
+      "alt": "Башня Бурана на фоне гор"
+    }
+  },
+  {
+    "id": "a_038",
+    "title": "Водопад Кегети",
+    "description": "Прогулка по еловому ущелью к водопаду, который зимой замерзает в ледяную стену. Нужна тёплая обувь с хорошей подошвой.",
+    "category": "nature",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "big_group"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 1000,
+    "durationMin": 300,
+    "durationMax": 480,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "place": "ущелье Кегети",
+    "distanceNote": "около 1,5 часа от города",
+    "image": {
+      "src": "/catalog/activities/a_038.webp",
+      "alt": "Ущелье Кегети с елями и горами"
+    }
+  },
+  {
+    "id": "a_039",
+    "title": "Конная прогулка в Чон-Кемине",
+    "description": "Покататься верхом по долине с проводником, даже если раньше не сидел в седле. Зимой долина особенно тихая.",
+    "category": "nature",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "date"
+    ],
+    "pricePerPersonMin": 1500,
+    "pricePerPersonMax": 4000,
+    "durationMin": 180,
+    "durationMax": 480,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": 8
+    },
+    "place": "Чон-Кемин",
+    "distanceNote": "около 2,5 часа от города",
+    "image": {
+      "src": "/catalog/activities/a_039.webp",
+      "alt": "Всадники с лошадьми в заснеженных горах"
+    }
+  },
+  {
+    "id": "a_040",
+    "title": "Каньон Сказка",
+    "description": "Красные скалы причудливой формы на южном берегу Иссык-Куля. Обычно едут на выходные с ночёвкой.",
+    "category": "nature",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "big_group"
+    ],
+    "pricePerPersonMin": 2000,
+    "pricePerPersonMax": 6000,
+    "durationMin": 480,
+    "durationMax": 1440,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "place": "Каньон Сказка, южный берег Иссык-Куля",
+    "distanceNote": "около 5 часов от города",
+    "image": {
+      "src": "/catalog/activities/a_040.webp",
+      "alt": "Красные скалы каньона Сказка"
+    }
+  },
+  {
+    "id": "a_041",
+    "title": "Пикник в горах",
+    "description": "Уехать в ближайшее ущелье с пледом, казаном или шашлыком и провести день у речки.",
+    "category": "nature",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "cheap",
+      "big_group",
+      "kids_ok"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 800,
+    "durationMin": 180,
+    "durationMax": 360,
+    "seasons": [
+      "spring",
+      "summer",
+      "autumn"
+    ],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "distanceNote": "30–60 минут от города",
+    "image": {
+      "src": "/catalog/activities/a_041.webp",
+      "alt": "Зелёная горная долина с речкой"
+    }
+  },
+  {
+    "id": "a_042",
+    "title": "Вечеринка с танцами",
+    "description": "Выбраться всей компанией в клуб или на тематическую вечеринку и танцевать до ночи.",
+    "category": "party",
+    "tags": [
+      "indoor",
+      "evening",
+      "big_group"
+    ],
+    "pricePerPersonMin": 500,
+    "pricePerPersonMax": 2000,
+    "durationMin": 180,
+    "durationMax": 360,
+    "seasons": [],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "image": {
+      "src": "/catalog/activities/a_042.webp",
+      "alt": "Танцпол с цветными огнями"
+    }
+  },
+  {
+    "id": "a_043",
+    "title": "Вечер сальсы и бачаты",
+    "description": "Открытый урок для новичков, а потом свободные танцы. Можно прийти без пары, партнёры меняются.",
+    "category": "party",
+    "tags": [
+      "indoor",
+      "evening",
+      "date"
+    ],
+    "pricePerPersonMin": 300,
+    "pricePerPersonMax": 800,
+    "durationMin": 120,
+    "durationMax": 180,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "image": {
+      "src": "/catalog/activities/a_043.webp",
+      "alt": "Пары танцуют сальсу на вечеринке"
+    }
+  },
+  {
+    "id": "a_044",
+    "title": "Хаммам и СПА",
+    "description": "Турецкая баня, пилинг и бассейн в СПА-центре. Полдня, чтобы прогреться и расслабиться.",
+    "category": "selfcare",
+    "tags": [
+      "indoor",
+      "weekend",
+      "date"
+    ],
+    "pricePerPersonMin": 1500,
+    "pricePerPersonMax": 4000,
+    "durationMin": 120,
+    "durationMax": 240,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": 6
+    },
+    "image": {
+      "src": "/catalog/activities/a_044.webp",
+      "alt": "Зал восточного хаммама под куполом"
+    }
+  },
+  {
+    "id": "a_045",
+    "title": "Массаж",
+    "description": "Час классического или расслабляющего массажа, чтобы снять напряжение после рабочей недели.",
+    "category": "selfcare",
+    "tags": [
+      "indoor",
+      "date"
+    ],
+    "pricePerPersonMin": 1500,
+    "pricePerPersonMax": 3500,
+    "durationMin": 60,
+    "durationMax": 90,
+    "seasons": [],
+    "groupSize": {
+      "min": 1,
+      "max": 2
+    },
+    "image": {
+      "src": "/catalog/activities/a_045.webp",
+      "alt": "Массажный стол в кабинете"
+    }
   }
 ]
