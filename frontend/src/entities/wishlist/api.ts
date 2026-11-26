@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { getMyWishlist, wishlistKeys } from "@/shared/api";
+import { getMyWishlist, getUserWishlist, wishlistKeys } from "@/shared/api";
 import { useMounted } from "@/shared/lib/dom";
 import { useSessionStore } from "@/shared/store";
 
@@ -26,4 +26,14 @@ export const useWishlistSummary = () => {
     shareUnlocked: Boolean(data?.meta.shareUnlockedAt),
     isLoaded: Boolean(data),
   };
+};
+
+// Вишлист друга в гостевом виде (DESIGN.md §8.9): только активные желания.
+export const useUserWishlist = (userId: string | undefined) => {
+  const mounted = useMounted();
+  return useQuery({
+    queryKey: wishlistKeys.user(userId ?? ""),
+    queryFn: () => getUserWishlist(userId ?? ""),
+    enabled: mounted && Boolean(userId),
+  });
 };

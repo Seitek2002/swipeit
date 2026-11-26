@@ -1,4 +1,4 @@
-export { useMyWishlist, useWishlistSummary } from "./api";
+export { useMyWishlist, useUserWishlist, useWishlistSummary } from "./api";
 export type {
   Occasion,
   SwipeResponse,

@@ -4,6 +4,7 @@ export {
   useLoginDemo,
   useMe,
   useUpdateMe,
+  useUser,
 } from "./api";
 export type {
   AvatarColor,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatRemaining, remainingVerb } from "./dates";
+import { formatDayMonth, formatRemaining, remainingVerb } from "./dates";
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -49,5 +49,24 @@ describe("дни рождения", () => {
     const now = new Date(2026, 10, 26, 10).getTime();
     expect(daysUntilBirthday("11-26", now)).toBe(0);
     expect(daysUntilBirthday("11-25", now)).toBe(364);
+  });
+});
+
+describe("formatDayMonth", () => {
+  it("дата без времени — по местному календарю, без сдвига поясом", () => {
+    expect(formatDayMonth("2027-03-14")).toBe("14 марта");
+    expect(formatDayMonth("2026-12-31")).toBe("31 декабря");
+  });
+
+  it("мусор — пустая строка", () => {
+    expect(formatDayMonth("не дата")).toBe("");
+  });
+});
+
+describe("formatBirthday", () => {
+  it("MM-DD → «5 декабря», мусор — пусто", async () => {
+    const { formatBirthday } = await import("./dates");
+    expect(formatBirthday("12-05")).toBe("5 декабря");
+    expect(formatBirthday("13-01")).toBe("");
   });
 });

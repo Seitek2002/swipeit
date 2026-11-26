@@ -98,7 +98,7 @@ const MONTHS_GENITIVE = [
 
 // «14 марта» по ISO-дате или "YYYY-MM-DD".
 export const formatDayMonth = (value: string): string => {
-  const date = /^d{4}-d{2}-d{2}$/.test(value)
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
     ? new Date(`${value}T12:00:00`)
     : new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -122,4 +122,11 @@ export const occasionLabel = (occasion?: OccasionLike): string => {
       : (OCCASION_PHRASE[occasion.kind] ?? "");
   const date = occasion.date ? formatDayMonth(occasion.date) : "";
   return [phrase, date].filter(Boolean).join(", ");
+};
+
+// День рождения "MM-DD" → «14 марта» (год не хранится).
+export const formatBirthday = (birthday: string): string => {
+  const [month = 0, day = 0] = birthday.split("-").map(Number);
+  const name = MONTHS_GENITIVE[month - 1];
+  return name && day ? `${day} ${name}` : "";
 };

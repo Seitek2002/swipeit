@@ -8,6 +8,7 @@ import {
   friendKeys,
   getFriends,
   getMe,
+  getUser,
   loginDemoFn,
   updateMe,
   userKeys,
@@ -34,6 +35,16 @@ export const useFriends = () => {
     queryKey: friendKeys.list(),
     queryFn: getFriends,
     enabled: mounted && Boolean(userId),
+  });
+};
+
+// Профиль другого человека (друг, бот) — для «Профиль друга».
+export const useUser = (id: string | undefined) => {
+  const mounted = useMounted();
+  return useQuery({
+    queryKey: userKeys.detail(id ?? ""),
+    queryFn: () => getUser(id ?? ""),
+    enabled: mounted && Boolean(id),
   });
 };
 

@@ -1,6 +1,7 @@
 export {
   birthdayInDays,
   daysUntilBirthday,
+  formatBirthday,
   formatDayMonth,
   formatRemaining,
   nextBirthdayDate,
