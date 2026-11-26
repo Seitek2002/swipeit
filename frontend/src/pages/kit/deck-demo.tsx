@@ -37,9 +37,10 @@ export const DeckDemo = () => {
 
   const handleUndo = () => {
     const last = done[done.length - 1];
-    if (!last) return;
+    if (!last) return null;
     setDone((current) => current.slice(0, -1));
     setQueue((current) => [last.card, ...current]);
+    return { key: last.card.id, direction: last.direction };
   };
 
   const lastResult = done[done.length - 1];

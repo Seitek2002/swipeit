@@ -44,6 +44,8 @@ export const createSwipe: Handler = async (ctx, { body }) => {
     throw notFound("Товар не найден");
   }
   const at = nowIso(ctx.clock);
+  // «Мимо» убрал товар из вишлиста — другим вкладкам тоже надо перечитать его.
+  let passRemovedItem = false;
 
   const response = await ctx.db.write((db): SwipeResponse => {
     const user = requireUser(ctx, db);
@@ -69,6 +71,7 @@ export const createSwipe: Handler = async (ctx, { body }) => {
     // Передумал: «Мимо» после «Хочу» по тому же товару убирает его из вишлиста.
     if (input.context.kind === "self" && !isLike(input.decision)) {
       const items = db.wishlistItems[user.id] ?? [];
+      const before = items.length;
       db.wishlistItems[user.id] = items.filter(
         (item) =>
           !(
@@ -77,6 +80,7 @@ export const createSwipe: Handler = async (ctx, { body }) => {
             item.source.productId === input.productId
           ),
       );
+      passRemovedItem = (db.wishlistItems[user.id]?.length ?? 0) < before;
     }
 
     let wishlistItemId: string | undefined;
@@ -129,7 +133,10 @@ export const createSwipe: Handler = async (ctx, { body }) => {
 
   ctx.realtime.publish({
     type: "db:changed",
-    scope: response.wishlistItemId ? ["swipes", "wishlist"] : ["swipes"],
+    scope:
+      response.wishlistItemId || passRemovedItem
+        ? ["swipes", "wishlist"]
+        : ["swipes"],
     by: ctx.userId ?? "",
   });
   return response;

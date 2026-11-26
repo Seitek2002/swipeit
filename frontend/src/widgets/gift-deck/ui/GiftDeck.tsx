@@ -104,6 +104,10 @@ export const GiftDeck = ({
   const epoch = useRef(0);
   const loading = useRef(false);
   const variants = useRef<Record<string, Record<string, string>>>({});
+  const swipedRef = useRef<Product[]>([]);
+  const bowTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(bowTimer.current), []);
 
   const likeCount = likes ?? summary.likeCount;
   const showRibbon =
@@ -119,7 +123,11 @@ export const GiftDeck = ({
           filters,
           context: contextKey,
           limit: PAGE_SIZE,
-          exclude: current.map((product) => product.id),
+          // И карточки на столе, и уже свайпнутые в этой колоде: свайп мог
+          // ещё не дойти до сервера, и лента вернула бы его повторно.
+          exclude: [...current, ...swipedRef.current].map(
+            (product) => product.id,
+          ),
         });
         if (myEpoch !== epoch.current) return;
         setQueue((queueNow) => {
@@ -153,6 +161,7 @@ export const GiftDeck = ({
   useEffect(() => {
     epoch.current += 1;
     loading.current = false;
+    swipedRef.current = [];
     // Запуск в следующей задаче: эффект не меняет состояние синхронно, а
     // двойной вызов эффекта в StrictMode не даёт двух запросов.
     const timer = setTimeout(() => void loadMore([], true), 0);
@@ -174,6 +183,8 @@ export const GiftDeck = ({
   const handleDecision = (product: Product, direction: SwipeDirection) => {
     setQueue((current) => current.filter((item) => item.id !== product.id));
     setHistory((current) => [...current, { product, direction }]);
+    swipedRef.current = [...swipedRef.current, product];
+    const myEpoch = epoch.current;
     if (isLike(direction)) {
       setLikes((count) => (count ?? summary.likeCount) + 1);
       onLike?.(product, direction);
@@ -191,7 +202,7 @@ export const GiftDeck = ({
         setLikes(response.likeCount);
         if (response.shareJustUnlocked && !hideRibbon) {
           setDrawingBow(true);
-          setTimeout(() => {
+          bowTimer.current = setTimeout(() => {
             setDrawingBow(false);
             setReadyOpen(true);
           }, BOW_DURATION_MS);
@@ -199,6 +210,9 @@ export const GiftDeck = ({
         void queryClient.invalidateQueries({ queryKey: wishlistKeys.all });
       },
       () => {
+        // Колода уже другая (новые фильтры, «Начать заново») — не подбрасывать
+        // в неё карточку из старой.
+        if (myEpoch !== epoch.current) return;
         toast("Не получилось сохранить. Карточка вернулась", { tone: "error" });
         setQueue((current) => [product, ...current]);
         setHistory((current) =>
@@ -212,7 +226,7 @@ export const GiftDeck = ({
 
   const handleUndo = () => {
     const last = history[history.length - 1];
-    if (!last) return;
+    if (!last) return null;
     setHistory((current) => current.slice(0, -1));
     setQueue((current) => [last.product, ...current]);
     if (isLike(last.direction))
@@ -224,6 +238,7 @@ export const GiftDeck = ({
       },
       () => toast("Не получилось вернуть", { tone: "error" }),
     );
+    return { key: last.product.id, direction: last.direction };
   };
 
   const handleRestart = () => {
@@ -252,7 +267,7 @@ export const GiftDeck = ({
   };
 
   const empty =
-    status === "loading" ? (
+    status === "loading" || status === "idle" ? (
       <div className="mt-[34px] mb-4 h-[calc(100%-50px)] w-[min(100%,calc((100%-50px)*0.74))] max-w-full">
         <GiftTagSkeleton />
       </div>

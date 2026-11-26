@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 
 import { useMe } from "@/entities/user";
 
+import { isApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { useMounted } from "@/shared/lib/dom";
 import { useSessionStore } from "@/shared/store";
-import { Splash } from "@/shared/ui";
+import { Button, EmptyState, Splash } from "@/shared/ui";
 
 // Вход «/» (TECH_SPEC §10): профиля нет — онбординг, есть — лента подарков.
 // Пока решаем — заставка с бантом.
@@ -24,6 +25,22 @@ export const HomePage = () => {
     if (!userId) router.replace(ROUTES.ONBOARDING);
     else if (me.data) router.replace(ROUTES.GIFTS);
   }, [mounted, userId, me.data, router]);
+
+  // NOT_FOUND разбирают «ворота» сессии (уводят в онбординг). Другая ошибка —
+  // нет связи или сбой: не держим человека на заставке вечно.
+  if (me.isError && !(isApiError(me.error) && me.error.code === "NOT_FOUND")) {
+    return (
+      <EmptyState
+        className="h-full"
+        title="Не получилось открыть приложение. Проверь связь и попробуй ещё раз."
+        action={
+          <Button variant="secondary" onClick={() => void me.refetch()}>
+            Попробовать ещё раз
+          </Button>
+        }
+      />
+    );
+  }
 
   return <Splash />;
 };

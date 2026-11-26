@@ -44,7 +44,9 @@ type Props<T> = {
   // Осталось 3 карточки — пора дозапросить следующую порцию.
   onNeedMore?: () => void;
   onOpen?: (item: T) => void;
-  onUndo?: () => void;
+  // Вернуть последнюю карточку. Родитель кладёт её первой и сообщает, куда
+  // она уходила, — колода прилетит с той стороны (null — возвращать нечего).
+  onUndo?: () => { direction: SwipeDirection; key: string } | null;
   renderCard: (item: T, state: { isTop: boolean }) => ReactNode;
   // Отступ сверху — место под нитку бирки.
   stampTop?: number;
@@ -99,7 +101,6 @@ export const SwipeDeck = <T,>({
   const buttonsRef = useRef<ButtonRefs>({});
   const topApi = useRef<CardApi | null>(null);
   const isBusyRef = useRef(false);
-  const history = useRef<Array<{ direction: SwipeDirection; key: string }>>([]);
   const [enterFrom, setEnterFrom] = useState<{
     direction: SwipeDirection;
     key: string;
@@ -142,17 +143,14 @@ export const SwipeDeck = <T,>({
 
   const undo = () => {
     if (disabled || !canUndo || isBusyRef.current || !onUndo) return;
-    const last = history.current.pop();
-    if (last) setEnterFrom(last);
-    onUndo();
+    const restored = onUndo();
+    if (restored) setEnterFrom(restored);
   };
 
   useImperativeHandle(handleRef, () => ({ swipe, undo }));
 
   const handleCommit = (direction: SwipeDirection) => {
     if (!top) return;
-    history.current.push({ key: getKey(top), direction });
-    if (history.current.length > 50) history.current.shift();
     setEnterFrom(null);
     if (announce) setAnnouncement(announce(top, direction));
     onDecision(top, direction);

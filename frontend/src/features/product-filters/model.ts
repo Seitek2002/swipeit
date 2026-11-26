@@ -14,6 +14,7 @@ import {
   type MarketplaceId,
 } from "@/shared/config";
 import { formatBudget } from "@/shared/lib/format";
+import { useSessionStore } from "@/shared/store";
 
 export type FilterChip = {
   id: string;
@@ -66,7 +67,14 @@ const DEBOUNCE_MS = 250;
 // Живой счётчик «Показать 84 подарка»: пока тянут ползунок, запрос не
 // уходит на каждый шаг — только после паузы 250 ms. Старое число остаётся на
 // кнопке, пока считается новое.
-export const useFilterCount = (filters: ProductFilters, context = "self") => {
+export const useFilterCount = (
+  filters: ProductFilters,
+  {
+    context = "self",
+    enabled = true,
+  }: { context?: string; enabled?: boolean } = {},
+) => {
+  const userId = useSessionStore((state) => state.activeUserId);
   const [debounced, setDebounced] = useState(filters);
 
   useEffect(() => {
@@ -78,5 +86,8 @@ export const useFilterCount = (filters: ProductFilters, context = "self") => {
     queryKey: catalogKeys.count(context, debounced),
     queryFn: () => getCatalogCount({ filters: debounced, context }),
     placeholderData: keepPreviousData,
+    // Только пока шторка открыта: иначе счётчик перечитывался бы после
+    // каждого свайпа (событие swipes инвалидирует весь каталог).
+    enabled: enabled && Boolean(userId),
   });
 };

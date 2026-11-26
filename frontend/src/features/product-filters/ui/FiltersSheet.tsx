@@ -42,7 +42,7 @@ export const FiltersSheet = ({ open, filters, onApply, onClose }: Props) => {
     if (open) setDraft(filters);
   }
 
-  const count = useFilterCount(draft);
+  const count = useFilterCount(draft, { enabled: open });
   const total = count.data?.count;
 
   return (
