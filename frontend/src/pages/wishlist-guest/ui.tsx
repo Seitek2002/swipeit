@@ -56,6 +56,7 @@ const GuestContent = () => {
     <GuestWishlistView
       wishlist={wishlist}
       ownerId={ownerId}
+      readOnly={isMine}
       footer={
         <div className="px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+12px)] text-center">
           {isMine ? (

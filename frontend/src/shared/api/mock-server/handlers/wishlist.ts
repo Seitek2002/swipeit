@@ -52,6 +52,8 @@ export const createCustomWish: Handler = async (ctx, { body }) => {
   const custom = parseInput(
     CustomWishSchema.extend({
       title: z.string().trim().min(1, "Напиши, что хочешь").max(80),
+      // Длиннее ссылка не влезет в ссылку на вишлист (share-codec).
+      url: z.string().trim().max(500, "Ссылка слишком длинная").optional(),
     }),
     body,
   );
@@ -171,9 +173,7 @@ const GivenSchema = z.object({
 
 // itemKey брони: productId или "custom:<title>" (TECH_SPEC §5 Reservation).
 export const itemKeyOf = (item: WishlistItem) =>
-  item.source.kind === "product"
-    ? item.source.productId
-    : `custom:${item.source.custom.title}`;
+  item.source.kind === "product" ? item.source.productId : `custom:${item.id}`;
 
 // POST /wishlist/items/:id/given — «Мне это подарили»: желание уходит во
 // вкладку «Подарили», брони на него закрываются (гость видит «Уже подарено»).

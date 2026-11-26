@@ -31,7 +31,10 @@ export const PickRequestSchema = z.object({
 
 export const PickAnswerSchema = z.object({
   requestId: z.string(),
-  by: PersonSchema.extend({ gender: GenderSchema.optional() }),
+  by: PersonSchema.extend({
+    gender: GenderSchema.optional(),
+    userId: z.string().optional(),
+  }),
   picks: z.array(
     z.object({
       productId: z.string(),

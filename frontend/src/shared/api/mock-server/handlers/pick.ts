@@ -9,11 +9,11 @@ import {
 
 import { ProductFiltersSchema } from "../../catalog/types";
 import type { PickAnswer, PickRequest } from "../../pick/types";
-import { OccasionSchema } from "../../wishlist/types";
 import { type Handler, nowIso } from "../context";
 import type { Db } from "../db";
 import { validation } from "../errors";
 import { parseInput, requireUser } from "./common";
+import { OccasionInputSchema } from "./guest";
 
 // «Выбери подарок сам» (TECH_SPEC §6, §8; DESIGN.md §8.6). Ссылка-фильтр
 // уходит другу, друг свайпает в контексте pick — эти свайпы не трогают его
@@ -23,7 +23,7 @@ const CreateBodySchema = z.object({
   toName: z.string().trim().max(40, "Имя — до 40 символов").optional(),
   filters: ProductFiltersSchema,
   hidePrices: z.boolean(),
-  occasion: OccasionSchema.optional(),
+  occasion: OccasionInputSchema.optional(),
   message: z.string().trim().max(200, "Сообщение — до 200 символов").optional(),
 });
 
@@ -101,6 +101,7 @@ export const answerPickRequest: Handler = async (ctx, { params }) => {
       name: user.name,
       avatarColor: user.avatarColor,
       gender: user.audience === "all" ? undefined : user.audience,
+      userId: user.id,
     },
     picks,
     answeredAt: nowIso(ctx.clock),
@@ -109,7 +110,8 @@ export const answerPickRequest: Handler = async (ctx, { params }) => {
 };
 
 // POST /pick-answers — отправитель открыл ссылку-ответ: сохраняем выбор
-// (повторное открытие той же ссылки не плодит копии) и, если запрос был
+// (повторное открытие или обновлённый ответ того же друга заменяют прежний;
+// друзья различаются по id профиля, а не по имени) и, если запрос был
 // создан на этом устройстве, отдаём его — там повод и скрытие цен.
 export const importPickAnswer: Handler = async (ctx, { body }) => {
   const { encoded } = parseInput(ImportBodySchema, body);
@@ -119,7 +121,8 @@ export const importPickAnswer: Handler = async (ctx, { body }) => {
   return ctx.db.write((db) => {
     const sameAnswer = (answer: PickAnswer) =>
       answer.requestId === decoded.requestId &&
-      answer.by.name === decoded.by.name;
+      (answer.by.userId ?? answer.by.name) ===
+        (decoded.by.userId ?? decoded.by.name);
     const previous = db.pickAnswers.find(sameAnswer);
     const answer: PickAnswer = {
       ...decoded,

@@ -256,3 +256,28 @@ describe("ссылка-ответ", () => {
     expect(result.request).toBeNull();
   });
 });
+
+describe("ревью этапа 2", () => {
+  it("два друга с одинаковым именем — два ответа, а не один", async () => {
+    await call("POST", "/auth/demo", null);
+    const { request } = await createRequest(DEMO_USER_ID);
+    const answers: string[] = [];
+    for (let index = 0; index < 2; index += 1) {
+      const friend = await newFriend();
+      await swipe(friend.id, request.id, "p_0008", "like");
+      const { url } = await call<{ url: string }>(
+        "POST",
+        `/pick-requests/${request.id}/answer`,
+        friend.id,
+      );
+      answers.push(url.slice("/pick/answer/?d=".length));
+    }
+    for (const encoded of answers) {
+      await call("POST", "/pick-answers", DEMO_USER_ID, { encoded });
+    }
+    const ids = answers.map((encoded) => decodePickAnswer(encoded)?.by.userId);
+    expect(new Set(ids).size).toBe(2);
+    // Повторный импорт первого не добавляет третий ответ.
+    await call("POST", "/pick-answers", DEMO_USER_ID, { encoded: answers[0] });
+  });
+});

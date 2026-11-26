@@ -34,8 +34,41 @@ const changed = (
 
 // ── Повод, отправка, подсказка ──────────────────────────────────────────
 
+// Свой повод — до 60 символов, как в поле ввода и в ссылке (share-codec).
+export const OccasionInputSchema = OccasionSchema.extend({
+  label: z.string().trim().max(60, "Повод — до 60 символов").optional(),
+});
+
+// Один ключ — одно желание в гостевом виде: товар, лайкнутый заново, пока
+// старая копия в «Подарили», после «Вернуть» оказался бы дважды.
+const uniqueByKey = <T>(items: T[], keyOf: (item: T) => string) => {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = keyOf(item);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
+// Желания, которые видят друзья: только активные, «Очень хочу» сверху,
+// без повторов по ключу брони.
+const guestItems = (db: Db, ownerId: string) =>
+  uniqueByKey(
+    (db.wishlistItems[ownerId] ?? [])
+      .filter((item) => item.status === "active")
+      .sort((a, b) =>
+        a.priority === b.priority
+          ? a.order - b.order
+          : a.priority === "top"
+            ? -1
+            : 1,
+      ),
+    itemKeyOf,
+  );
+
 const MetaPatchSchema = z.object({
-  occasion: OccasionSchema.nullable().optional(),
+  occasion: OccasionInputSchema.nullable().optional(),
   message: z.string().trim().max(200, "Сообщение — до 200 символов").optional(),
   hideReservationCount: z.boolean().optional(),
 });
@@ -72,15 +105,7 @@ export const shareWishlist: Handler = async (ctx) => {
   if (!meta?.shareUnlockedAt) {
     throw new ApiError(403, "FORBIDDEN", "Отправить можно после 5 «Хочу»");
   }
-  const items = (db.wishlistItems[user.id] ?? [])
-    .filter((item) => item.status === "active")
-    .sort((a, b) =>
-      a.priority === b.priority
-        ? a.order - b.order
-        : a.priority === "top"
-          ? -1
-          : 1,
-    );
+  const items = guestItems(db, user.id);
   const encoded = encodeWishlist({
     owner: {
       name: user.name,
@@ -93,6 +118,7 @@ export const shareWishlist: Handler = async (ctx) => {
     items: items.map((item) => ({
       productId:
         item.source.kind === "product" ? item.source.productId : undefined,
+      key: item.source.kind === "custom" ? itemKeyOf(item) : undefined,
       custom:
         item.source.kind === "custom"
           ? {
@@ -202,32 +228,23 @@ export const getUserWishlist: Handler = async (ctx, { params }) => {
       userId: owner.id,
     },
     meta: { occasion: meta?.occasion, message: meta?.message },
-    items: (db.wishlistItems[owner.id] ?? [])
-      .filter((item) => item.status === "active")
-      .sort((a, b) =>
-        a.priority === b.priority
-          ? a.order - b.order
-          : a.priority === "top"
-            ? -1
-            : 1,
-      )
-      .map((item) => ({
-        key: itemKeyOf(item),
-        productId:
-          item.source.kind === "product" ? item.source.productId : undefined,
-        custom:
-          item.source.kind === "custom"
-            ? {
-                title: item.source.custom.title,
-                priceMin: item.source.custom.priceMin,
-                priceMax: item.source.custom.priceMax,
-                url: item.source.custom.url,
-              }
-            : undefined,
-        priority: item.priority,
-        variantChoice: item.variantChoice,
-        note: item.note,
-      })),
+    items: guestItems(db, owner.id).map((item) => ({
+      key: itemKeyOf(item),
+      productId:
+        item.source.kind === "product" ? item.source.productId : undefined,
+      custom:
+        item.source.kind === "custom"
+          ? {
+              title: item.source.custom.title,
+              priceMin: item.source.custom.priceMin,
+              priceMax: item.source.custom.priceMax,
+              url: item.source.custom.url,
+            }
+          : undefined,
+      priority: item.priority,
+      variantChoice: item.variantChoice,
+      note: item.note,
+    })),
   };
   return view;
 };
@@ -265,10 +282,18 @@ export const getReservations: Handler = async (ctx, { query }) => {
     return view;
   }
   const me = reserverId(ctx, guestId);
+  // Желание вернули из «Подарили» — закрытая бронь больше не значит «Уже
+  // подарено»: желание снова свободно (брони не восстанавливаются, TECH_SPEC
+  // §6). Владелец с другого устройства в этой базе не виден — там снимок.
+  const activeKeys = new Set(guestItems(db, ownerId).map(itemKeyOf));
   const view: ReservationsView = {
     role: "guest",
     items: db.reservations
-      .filter((reservation) => reservation.ownerId === ownerId)
+      .filter(
+        (reservation) =>
+          reservation.ownerId === ownerId &&
+          !(reservation.closedAt && activeKeys.has(reservation.itemKey)),
+      )
       .map((reservation) => ({
         id: reservation.id,
         itemKey: reservation.itemKey,

@@ -8,6 +8,7 @@ import { ImagePlus, X } from "lucide-react";
 import { createCustomWish, isApiError, wishlistKeys } from "@/shared/api";
 import {
   compressImage,
+  deleteCustomImage,
   saveCustomImage,
   useCustomImageUrl,
 } from "@/shared/lib/dom";
@@ -25,6 +26,8 @@ const parsePrice = (value: string) => {
   return digits ? Number(digits) : undefined;
 };
 
+const URL_MAX = 500;
+
 const isUrl = (value: string) => /^https?:\/\/\S+\.\S+/i.test(value.trim());
 
 // «Своё желание» (TASKS T08): название, цена от–до, ссылка и фото — по
@@ -40,6 +43,14 @@ export const CustomWishSheet = ({ open, onClose }: Props) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const preview = useCustomImageUrl(imageKey);
+
+  // Несохранённое фото заменили или убрали — из IndexedDB тоже.
+  const replaceImage = (next?: string) => {
+    if (imageKey && imageKey !== next) {
+      void deleteCustomImage(imageKey).catch(() => undefined);
+    }
+    setImageKey(next);
+  };
 
   const reset = () => {
     setTitle("");
@@ -73,7 +84,7 @@ export const CustomWishSheet = ({ open, onClose }: Props) => {
     if (!file) return;
     setIsProcessing(true);
     try {
-      setImageKey(await saveCustomImage(await compressImage(file)));
+      replaceImage(await saveCustomImage(await compressImage(file)));
     } catch {
       toast("Не получилось сохранить фото. Попробуй другое", { tone: "error" });
     } finally {
@@ -91,6 +102,10 @@ export const CustomWishSheet = ({ open, onClose }: Props) => {
     }
     if (url.trim() && !isUrl(url))
       nextErrors.url = "Проверь ссылку: она начинается с https://";
+    // Длиннее не влезет в ссылку на вишлист — лучше сказать сразу.
+    else if (url.trim().length > URL_MAX)
+      nextErrors.url =
+        "Ссылка слишком длинная. Скопируй её без хвоста после «?»";
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
     create.mutate({
@@ -170,7 +185,7 @@ export const CustomWishSheet = ({ open, onClose }: Props) => {
               <button
                 type="button"
                 aria-label="Убрать фото"
-                onClick={() => setImageKey(undefined)}
+                onClick={() => replaceImage(undefined)}
                 className="bg-velvet text-paper absolute -top-2 -right-2 grid size-8 place-items-center rounded-full before:absolute before:-inset-1.5 before:content-['']"
               >
                 <X aria-hidden size={16} strokeWidth={1.75} />

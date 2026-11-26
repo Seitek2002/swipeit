@@ -29,6 +29,8 @@ type Props = {
   ownerGender?: "female" | "male";
   // Брони привязаны к id владельца (TECH_SPEC §5 Reservation.ownerId).
   ownerId: string;
+  // Владелец смотрит свою ссылку «как друзья»: бронировать своё нельзя.
+  readOnly?: boolean;
   wishlist: GuestWishlist;
 };
 
@@ -37,11 +39,13 @@ type Props = {
 const GuestWishCard = ({
   item,
   ownerId,
+  readOnly,
   onOpen,
 }: {
   item: Item;
   onOpen: (product: Product) => void;
   ownerId: string;
+  readOnly: boolean;
 }) => {
   const { data: product } = useProduct(item.productId);
   const image = product
@@ -111,9 +115,11 @@ const GuestWishCard = ({
               </a>
             )}
           </div>
-          <div className="mt-3.5">
-            <ReserveControl ownerId={ownerId} itemKey={item.key} />
-          </div>
+          {!readOnly && (
+            <div className="mt-3.5">
+              <ReserveControl ownerId={ownerId} itemKey={item.key} />
+            </div>
+          )}
         </div>
       </article>
     </li>
@@ -127,6 +133,7 @@ export const GuestWishlistView = ({
   ownerId,
   ownerGender,
   footer,
+  readOnly = false,
 }: Props) => {
   const [details, setDetails] = useState<null | Product>(null);
   const occasion = occasionLabel(wishlist.meta.occasion);
@@ -162,6 +169,7 @@ export const GuestWishlistView = ({
               key={item.key}
               item={item}
               ownerId={ownerId}
+              readOnly={readOnly}
               onOpen={setDetails}
             />
           ))}

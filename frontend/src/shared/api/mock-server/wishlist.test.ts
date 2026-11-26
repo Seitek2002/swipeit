@@ -345,10 +345,10 @@ describe("«Мне это подарили»", () => {
     expect((await reservation())?.closedAt).toBe(NOW_ISO);
   });
 
-  it("бронь своего желания ищется по ключу custom:<title>", async () => {
+  it("бронь своего желания ищется по ключу custom:<id>", async () => {
     const user = await newUser();
     const item = await addCustom(user.id, { title: "Плед" });
-    await reserve(user.id, "custom:Плед");
+    await reserve(user.id, `custom:${item.id}`);
     await reserve(user.id, "custom:Другое", "rs_other");
     await markGiven(user.id, item.id, { at: GIVEN_AT });
     expect((await reservation())?.closedAt).toBe(NOW_ISO);

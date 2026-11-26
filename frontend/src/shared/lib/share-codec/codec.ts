@@ -57,6 +57,11 @@ const OccasionShort = z.object({
   d: z.string().max(10).optional(),
 });
 
+// Ссылка «Где купить» — только http(s): чужая ссылка не должна увести на
+// другую схему. Неподходящую молча отбрасываем, а не ломаем всю ссылку.
+const isWebUrl = (value: string | undefined): value is string =>
+  Boolean(value && value.length <= 500 && /^https?:\/\//i.test(value));
+
 const WishlistShort = z.object({
   o: z.object({
     n: z.string().min(1).max(40),
@@ -70,12 +75,14 @@ const WishlistShort = z.object({
     .array(
       z.object({
         p: z.string().max(40).optional(),
+        // Ключ своего желания для броней (два «Книга» — разные желания).
+        k: z.string().max(60).optional(),
         c: z
           .object({
             t: z.string().min(1).max(80),
             a: z.number().nonnegative().optional(),
             b: z.number().nonnegative().optional(),
-            u: z.string().max(500).optional(),
+            u: z.string().max(2000).optional(),
           })
           .optional(),
         t: z.literal(1).optional(),
@@ -94,6 +101,8 @@ export type SharedWishlist = {
       title: string;
       url?: string;
     };
+    // Ключ для броней; без него — по товару или названию (sharedItemKey).
+    key?: string;
     note?: string;
     priority: "normal" | "top";
     productId?: string;
@@ -124,19 +133,20 @@ export const encodeWishlist = (wishlist: SharedWishlist): string =>
     oc: wishlist.occasion
       ? {
           k: wishlist.occasion.kind,
-          l: wishlist.occasion.label,
+          l: wishlist.occasion.label?.slice(0, 60),
           d: wishlist.occasion.date,
         }
       : undefined,
-    m: wishlist.message || undefined,
+    m: wishlist.message?.slice(0, 200) || undefined,
     i: wishlist.items.map((item) => ({
       p: item.productId,
+      k: item.key,
       c: item.custom
         ? {
-            t: item.custom.title,
+            t: item.custom.title.slice(0, 80),
             a: item.custom.priceMin,
             b: item.custom.priceMax,
-            u: item.custom.url,
+            u: isWebUrl(item.custom.url) ? item.custom.url : undefined,
           }
         : undefined,
       t: item.priority === "top" ? 1 : undefined,
@@ -144,7 +154,7 @@ export const encodeWishlist = (wishlist: SharedWishlist): string =>
         item.variantChoice && Object.keys(item.variantChoice).length
           ? item.variantChoice
           : undefined,
-      n: item.note || undefined,
+      n: item.note?.slice(0, 140) || undefined,
     })),
   });
 
@@ -168,12 +178,13 @@ export const decodeWishlist = (
     message: short.m,
     items: short.i.map((item) => ({
       productId: item.p,
+      key: item.k,
       custom: item.c
         ? {
             title: item.c.t,
             priceMin: item.c.a,
             priceMax: item.c.b,
-            url: item.c.u,
+            url: isWebUrl(item.c.u) ? item.c.u : undefined,
           }
         : undefined,
       priority: item.t ? "top" : "normal",
@@ -185,7 +196,7 @@ export const decodeWishlist = (
 
 // Ключ желания для броней — стабилен между устройствами (TECH_SPEC §5).
 export const sharedItemKey = (item: SharedWishlist["items"][number]) =>
-  item.productId ?? `custom:${item.custom?.title ?? ""}`;
+  item.key ?? item.productId ?? `custom:${item.custom?.title ?? ""}`;
 
 // ── «Выбери подарок сам» ────────────────────────────────────────────────
 
@@ -294,6 +305,8 @@ const PickAnswerShort = z.object({
   b: z.object({
     n: z.string().min(1).max(40),
     c: z.enum(AVATAR_COLORS),
+    // id профиля друга: два ответа от разных «Айгерим» не сливаются в один.
+    u: z.string().max(40).optional(),
     g: GenderShort.optional(),
   }),
   p: z
@@ -312,6 +325,7 @@ export type SharedPickAnswer = {
     avatarColor: (typeof AVATAR_COLORS)[number];
     gender?: Gender;
     name: string;
+    userId?: string;
   };
   picks: Array<{
     priority: "normal" | "top";
@@ -327,6 +341,7 @@ export const encodePickAnswer = (answer: SharedPickAnswer): string =>
     b: {
       n: answer.by.name,
       c: answer.by.avatarColor,
+      u: answer.by.userId,
       g: fromGender(answer.by.gender),
     },
     p: answer.picks.map((pick) => ({
@@ -349,6 +364,7 @@ export const decodePickAnswer = (
     by: {
       name: short.b.n,
       avatarColor: short.b.c,
+      userId: short.b.u,
       gender: toGender(short.b.g),
     },
     picks: short.p.map((pick) => ({

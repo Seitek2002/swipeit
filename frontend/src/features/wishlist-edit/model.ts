@@ -13,6 +13,7 @@ import {
   updateWishlistItem,
   wishlistKeys,
 } from "@/shared/api";
+import { deleteCustomImage } from "@/shared/lib/dom";
 import { toast } from "@/shared/ui";
 
 type Patch = Parameters<typeof updateWishlistItem>[1];
@@ -104,6 +105,8 @@ export const useReorder = () => {
 
 // Удаление с «Отменить» в тосте (TASKS T08): желание возвращается на то же
 // место с тем же вариантом и заметкой.
+const IMAGE_CLEANUP_MS = 6000;
+
 export const useDeleteItem = () => {
   const { apply, rollback, settle } = useOptimistic();
   return useMutation({
@@ -113,17 +116,31 @@ export const useDeleteItem = () => {
         ...data,
         items: data.items.filter((entry) => entry.id !== item.id),
       })),
-    onSuccess: (removed) =>
+    onSuccess: (removed) => {
+      // Фото своего желания удаляем, когда «Отменить» уже не нажать: тост с
+      // действием живёт 5 с (или его сменил другой тост).
+      const imageKey =
+        removed.source.kind === "custom"
+          ? removed.source.custom.imageKey
+          : undefined;
+      const cleanup = imageKey
+        ? setTimeout(
+            () => void deleteCustomImage(imageKey).catch(() => undefined),
+            IMAGE_CLEANUP_MS,
+          )
+        : undefined;
       toast("Желание удалено", {
         action: {
           label: "Отменить",
           onClick: () => {
+            clearTimeout(cleanup);
             undeleteWishlistItem(removed)
               .then(() => settle())
               .catch(() => toast("Не получилось вернуть", { tone: "error" }));
           },
         },
-      }),
+      });
+    },
     onError: (_error, _item, context) => {
       rollback(context);
       toast("Не получилось удалить", { tone: "error" });

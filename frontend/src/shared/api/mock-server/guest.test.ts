@@ -611,3 +611,103 @@ describe("подсказка «Возможно, тебе подарили эт�
     expect((await wishlist(ownerId)).givenHintIds).toEqual([item.id]);
   });
 });
+
+describe("ревью этапа 2", () => {
+  const addCustom = (userId: string, body: Record<string, unknown>) =>
+    call<WishlistItem>("POST", "/wishlist/items", userId, body);
+
+  it("два своих желания с одним названием — разные ключи броней", async () => {
+    const owner = await newUser();
+    const first = await addCustom(owner.id, { title: "Книга" });
+    const second = await addCustom(owner.id, { title: "Книга" });
+    const view = await call<GuestWishlist>(
+      "GET",
+      `/users/${owner.id}/wishlist`,
+      null,
+    );
+    const keys = view.items.map((item) => item.key);
+    expect(keys).toEqual([`custom:${first.id}`, `custom:${second.id}`]);
+    await reserve(null, {
+      ownerId: owner.id,
+      itemKey: keys[0] ?? "",
+      guestId: "g_1",
+    });
+    const forOther = await reservations(null, owner.id, "g_2");
+    if (forOther.role !== "guest") throw new Error("нужен гостевой вид");
+    expect(forOther.items.map((item) => item.itemKey)).toEqual([keys[0]]);
+  });
+
+  it("ссылка: ключ своего желания едет в снимке, длинная и не-http ссылка отбрасывается", async () => {
+    const owner = await newUser();
+    const item = await addCustom(owner.id, {
+      title: "Плед",
+      url: "https://shop.kg/pled",
+    });
+    await expect(
+      addCustom(owner.id, {
+        title: "Длинная",
+        url: `https://a.kg/${"x".repeat(500)}`,
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
+    const encoded = encodeWishlist({
+      owner: { name: "А", avatarColor: "mint" },
+      items: [
+        {
+          key: `custom:${item.id}`,
+          priority: "normal",
+          custom: { title: "Плед", url: "javascript:alert(1)" },
+        },
+        {
+          priority: "normal",
+          custom: { title: "Шарф", url: `https://a.kg/${"x".repeat(600)}` },
+        },
+      ],
+    });
+    const decoded = decodeWishlist(encoded);
+    expect(decoded?.items[0]?.key).toBe(`custom:${item.id}`);
+    expect(decoded?.items[0]?.custom?.url).toBeUndefined();
+    expect(decoded?.items[1]?.custom?.url).toBeUndefined();
+  });
+
+  it("желание вернули из «Подарили» — закрытая бронь не держит «Уже подарено»", async () => {
+    const userId = await demo();
+    const [target] = (await wishlist(userId)).items;
+    if (!target || target.source.kind !== "product")
+      throw new Error("нужен товар");
+    const key = target.source.productId;
+    await reserve(BOT_ID, { ownerId: userId, itemKey: key });
+    await markGiven(userId, target.id);
+    const closed = await reservations(BOT_ID, userId);
+    if (closed.role !== "guest") throw new Error("нужен гостевой вид");
+    expect(closed.items.find((item) => item.itemKey === key)?.closed).toBe(
+      true,
+    );
+    await call("POST", `/wishlist/items/${target.id}/restore`, userId, {});
+    const reopened = await reservations(BOT_ID, userId);
+    if (reopened.role !== "guest") throw new Error("нужен гостевой вид");
+    expect(reopened.items.some((item) => item.itemKey === key)).toBe(false);
+    // Желание снова свободно — бронировать можно заново.
+    await reserve(BOT_ID, { ownerId: userId, itemKey: key });
+  });
+
+  it("товар, лайкнутый заново при копии в «Подарили», у гостя — один раз", async () => {
+    const userId = await demo();
+    const [target] = (await wishlist(userId)).items;
+    if (!target || target.source.kind !== "product")
+      throw new Error("нужен товар");
+    await markGiven(userId, target.id);
+    await call("POST", "/swipes", userId, {
+      productId: target.source.productId,
+      decision: "like",
+      context: { kind: "self" },
+    });
+    await call("POST", `/wishlist/items/${target.id}/restore`, userId, {});
+    const view = await call<GuestWishlist>(
+      "GET",
+      `/users/${userId}/wishlist`,
+      null,
+    );
+    const keys = view.items.map((item) => item.key);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+});

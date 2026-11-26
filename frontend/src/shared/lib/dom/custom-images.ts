@@ -17,7 +17,11 @@ export const deleteCustomImage = (key: string) => del(PREFIX + key);
 
 // Ссылка на фото по ключу (object URL), пока компонент на экране.
 export const useCustomImageUrl = (key?: string): null | string => {
-  const [url, setUrl] = useState<null | string>(null);
+  // Ссылка помнит свой ключ: сменился ключ — старую (уже отозванную) не
+  // показываем, пока грузится новая.
+  const [loaded, setLoaded] = useState<{ key: string; url: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!key) return;
@@ -27,7 +31,7 @@ export const useCustomImageUrl = (key?: string): null | string => {
       .then((blob) => {
         if (cancelled || !blob) return;
         objectUrl = URL.createObjectURL(blob);
-        setUrl(objectUrl);
+        setLoaded({ key, url: objectUrl });
       })
       .catch(() => undefined);
     return () => {
@@ -36,5 +40,5 @@ export const useCustomImageUrl = (key?: string): null | string => {
     };
   }, [key]);
 
-  return key ? url : null;
+  return key && loaded?.key === key ? loaded.url : null;
 };
