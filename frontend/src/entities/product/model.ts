@@ -38,3 +38,31 @@ export const colorSwatches = (product: Product): string[] =>
     ?.options.map((option) => option.hex)
     .filter((hex): hex is string => Boolean(hex))
     .slice(0, 6) ?? [];
+
+// «чёрный, M» — выбранный вариант словами.
+export const describeVariant = (
+  product: Product,
+  choice?: Record<string, string>,
+): string =>
+  (product.variants ?? [])
+    .map(
+      (group) =>
+        group.options.find((option) => option.id === choice?.[group.id])?.label,
+    )
+    .filter(Boolean)
+    .join(", ")
+    .toLocaleLowerCase("ru");
+
+// Первое фото — или фото выбранного цвета, если оно есть.
+export const imageForChoice = (
+  product: Product,
+  choice?: Record<string, string>,
+) => {
+  const chosen = Object.values(choice ?? {});
+  return (
+    product.images.find(
+      (image) =>
+        image.variantOptionId && chosen.includes(image.variantOptionId),
+    ) ?? product.images[0]
+  );
+};

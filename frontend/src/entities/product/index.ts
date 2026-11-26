@@ -1,8 +1,10 @@
-export { useFeedPage } from "./api";
+export { useFeedPage, useProduct } from "./api";
 export {
   colorSwatches,
+  describeVariant,
   EMPTY_FILTERS,
   type FeedResponse,
+  imageForChoice,
   type Offer,
   type Product,
   type ProductFilters,
@@ -13,3 +15,4 @@ export {
   type VariantOption,
 } from "./model";
 export { GiftTagCard, GiftTagSkeleton } from "./ui/GiftTagCard";
+export { VariantPicker } from "./ui/VariantPicker";

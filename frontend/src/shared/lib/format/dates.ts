@@ -80,3 +80,46 @@ export const remainingVerb = (ms: number): string => {
   const tail = first % 100;
   return tail % 10 === 1 && tail !== 11 ? "Остался" : "Осталось";
 };
+
+const MONTHS_GENITIVE = [
+  "января",
+  "февраля",
+  "марта",
+  "апреля",
+  "мая",
+  "июня",
+  "июля",
+  "августа",
+  "сентября",
+  "октября",
+  "ноября",
+  "декабря",
+];
+
+// «14 марта» по ISO-дате или "YYYY-MM-DD".
+export const formatDayMonth = (value: string): string => {
+  const date = /^d{4}-d{2}-d{2}$/.test(value)
+    ? new Date(`${value}T12:00:00`)
+    : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getDate()} ${MONTHS_GENITIVE[date.getMonth()]}`;
+};
+
+type OccasionLike = { date?: string; kind: string; label?: string };
+
+const OCCASION_PHRASE: Record<string, string> = {
+  birthday: "на день рождения",
+  new_year: "на Новый год",
+  just_because: "просто так",
+};
+
+// Подзаголовок вишлиста: «на день рождения, 14 марта» (DESIGN.md §8.3).
+export const occasionLabel = (occasion?: OccasionLike): string => {
+  if (!occasion) return "";
+  const phrase =
+    occasion.kind === "custom"
+      ? (occasion.label ?? "").trim()
+      : (OCCASION_PHRASE[occasion.kind] ?? "");
+  const date = occasion.date ? formatDayMonth(occasion.date) : "";
+  return [phrase, date].filter(Boolean).join(", ");
+};

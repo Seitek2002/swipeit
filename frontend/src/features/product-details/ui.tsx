@@ -7,13 +7,14 @@ import { ExternalLink } from "lucide-react";
 import {
   type Product,
   type VariantGroup,
+  VariantPicker,
   storeLabel,
 } from "@/entities/product";
 
 import { withBasePath } from "@/shared/lib/base-path";
 import { formatPrice } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
-import { BottomSheet, Button, Chip } from "@/shared/ui";
+import { BottomSheet, Button } from "@/shared/ui";
 
 type Decision = "left" | "right";
 
@@ -231,55 +232,15 @@ const Details = ({
           <b className="text-paper font-semibold">{chosenLabels}</b>
         </p>
       )}
-      {product.variants?.map((group) => (
-        <div key={group.id} className="mt-3">
-          <p className="text-caption text-rose mb-2">{group.label}</p>
-          {group.kind === "color" &&
-          group.options.every((option) => option.hex) ? (
-            <div
-              role="group"
-              aria-label={group.label}
-              className="flex flex-wrap gap-1"
-            >
-              {group.options.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={choice[group.id] === option.id}
-                  aria-label={option.label}
-                  onClick={() => choose(group, option.id)}
-                  className="grid size-11 place-items-center rounded-full"
-                >
-                  <i
-                    className={cn(
-                      "ease-out-soft size-8 rounded-full shadow-[inset_0_0_0_1px_rgb(42_16_36/0.25)] transition-shadow duration-200",
-                      choice[group.id] === option.id &&
-                        "shadow-[inset_0_0_0_1px_rgb(42_16_36/0.25),0_0_0_2px_var(--color-velvet-2),0_0_0_4px_var(--color-paper)]",
-                    )}
-                    style={{ background: option.hex }}
-                  />
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div
-              role="group"
-              aria-label={group.label}
-              className="flex flex-wrap gap-2"
-            >
-              {group.options.map((option) => (
-                <Chip
-                  key={option.id}
-                  selected={choice[group.id] === option.id}
-                  onClick={() => choose(group, option.id)}
-                >
-                  {option.label}
-                </Chip>
-              ))}
-            </div>
-          )}
+      {product.variants && product.variants.length > 0 && (
+        <div className="mt-3">
+          <VariantPicker
+            groups={product.variants}
+            choice={choice}
+            onChoose={choose}
+          />
         </div>
-      ))}
+      )}
 
       <p className="text-caption text-rose mt-[22px] mb-2.5">Где купить</p>
       <ul className="border-line border-t">

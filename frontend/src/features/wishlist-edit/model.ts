@@ -1,0 +1,192 @@
+"use client";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import type { WishlistItem, WishlistResponse } from "@/entities/wishlist";
+
+import {
+  deleteWishlistItem,
+  markWishlistItemGiven,
+  reorderWishlist,
+  restoreWishlistItem,
+  undeleteWishlistItem,
+  updateWishlistItem,
+  wishlistKeys,
+} from "@/shared/api";
+import { toast } from "@/shared/ui";
+
+type Patch = Parameters<typeof updateWishlistItem>[1];
+
+// Оптимистичное обновление вишлиста по полному циклу (как в imbir,
+// CODESTYLE §10): onMutate меняет кэш сразу → onError откатывает →
+// onSettled перечитывает с «сервера». Реакция на действие — мгновенно.
+const useOptimistic = () => {
+  const queryClient = useQueryClient();
+  const key = wishlistKeys.mine();
+
+  const apply = async (
+    change: (data: WishlistResponse) => WishlistResponse,
+  ) => {
+    await queryClient.cancelQueries({ queryKey: key });
+    const previous = queryClient.getQueryData<WishlistResponse>(key);
+    if (previous) queryClient.setQueryData(key, change(previous));
+    return { previous };
+  };
+
+  const rollback = (context?: { previous?: WishlistResponse }) => {
+    if (context?.previous) queryClient.setQueryData(key, context.previous);
+  };
+
+  const settle = () =>
+    queryClient.invalidateQueries({ queryKey: wishlistKeys.all });
+
+  return { apply, rollback, settle };
+};
+
+const mapItem = (
+  data: WishlistResponse,
+  id: string,
+  change: (item: WishlistItem) => WishlistItem,
+): WishlistResponse => ({
+  ...data,
+  items: data.items.map((item) => (item.id === id ? change(item) : item)),
+});
+
+export const useUpdateItem = () => {
+  const { apply, rollback, settle } = useOptimistic();
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Patch }) =>
+      updateWishlistItem(id, patch),
+    onMutate: ({ id, patch }) =>
+      apply((data) =>
+        mapItem(data, id, (item) => ({
+          ...item,
+          ...patch,
+          note:
+            patch.note === undefined
+              ? item.note
+              : patch.note.trim() || undefined,
+        })),
+      ),
+    onError: (_error, _input, context) => {
+      rollback(context);
+      toast("Не получилось сохранить. Попробуй ещё раз", { tone: "error" });
+    },
+    onSettled: settle,
+  });
+};
+
+// Новый ручной порядок: ids — все желания в нужном порядке.
+export const useReorder = () => {
+  const { apply, rollback, settle } = useOptimistic();
+  return useMutation({
+    mutationFn: reorderWishlist,
+    onMutate: (ids: string[]) =>
+      apply((data) => {
+        const position = new Map(ids.map((id, index) => [id, index]));
+        return {
+          ...data,
+          items: data.items
+            .map((item) => ({
+              ...item,
+              order: position.get(item.id) ?? item.order,
+            }))
+            .sort((a, b) => a.order - b.order),
+        };
+      }),
+    onError: (_error, _ids, context) => {
+      rollback(context);
+      toast("Не получилось поменять порядок", { tone: "error" });
+    },
+    onSettled: settle,
+  });
+};
+
+// Удаление с «Отменить» в тосте (TASKS T08): желание возвращается на то же
+// место с тем же вариантом и заметкой.
+export const useDeleteItem = () => {
+  const { apply, rollback, settle } = useOptimistic();
+  return useMutation({
+    mutationFn: (item: WishlistItem) => deleteWishlistItem(item.id),
+    onMutate: (item) =>
+      apply((data) => ({
+        ...data,
+        items: data.items.filter((entry) => entry.id !== item.id),
+      })),
+    onSuccess: (removed) =>
+      toast("Желание удалено", {
+        action: {
+          label: "Отменить",
+          onClick: () => {
+            undeleteWishlistItem(removed)
+              .then(() => settle())
+              .catch(() => toast("Не получилось вернуть", { tone: "error" }));
+          },
+        },
+      }),
+    onError: (_error, _item, context) => {
+      rollback(context);
+      toast("Не получилось удалить", { tone: "error" });
+    },
+    onSettled: settle,
+  });
+};
+
+// «Мне это подарили» (DESIGN.md §8.3): тост «Перенесено в „Подарили“» с
+// «Отменить» — желание встаёт на прежнее место, закрытые брони снова открыты.
+export const useMarkGiven = () => {
+  const { apply, rollback, settle } = useOptimistic();
+  return useMutation({
+    mutationFn: ({
+      id,
+      given,
+    }: {
+      given: { at: string; fromName?: string; fromUserId?: string };
+      id: string;
+    }) => markWishlistItemGiven(id, given),
+    onMutate: ({ id, given }) =>
+      apply((data) =>
+        mapItem(data, id, (item) => ({ ...item, status: "given", given })),
+      ),
+    onSuccess: (item) =>
+      toast("Перенесено в «Подарили»", {
+        action: {
+          label: "Отменить",
+          onClick: () => {
+            restoreWishlistItem(item.id, { undo: true })
+              .then(() => settle())
+              .catch(() => toast("Не получилось вернуть", { tone: "error" }));
+          },
+        },
+      }),
+    onError: (_error, _input, context) => {
+      rollback(context);
+      toast("Не получилось перенести", { tone: "error" });
+    },
+    onSettled: settle,
+  });
+};
+
+// «Вернуть в вишлист» из вкладки «Подарили» — в конец списка (TECH_SPEC §6).
+export const useRestoreItem = () => {
+  const { apply, rollback, settle } = useOptimistic();
+  return useMutation({
+    mutationFn: (id: string) => restoreWishlistItem(id),
+    onMutate: (id) =>
+      apply((data) => {
+        const last = Math.max(-1, ...data.items.map((item) => item.order)) + 1;
+        return mapItem(data, id, (item) => ({
+          ...item,
+          status: "active",
+          given: undefined,
+          order: last,
+        }));
+      }),
+    onSuccess: () => toast("Вернулось в вишлист"),
+    onError: (_error, _id, context) => {
+      rollback(context);
+      toast("Не получилось вернуть", { tone: "error" });
+    },
+    onSettled: settle,
+  });
+};

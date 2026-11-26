@@ -6,3 +6,4 @@ export type {
   WishlistMeta,
   WishlistResponse,
 } from "./model";
+export { WishMiniTag } from "./ui/WishMiniTag";

@@ -1,0 +1,23 @@
+import { describe, expect, it } from "vitest";
+
+import { genitive } from "./names";
+
+describe("genitive — «от кого»", () => {
+  it("мужские имена на согласную", () => {
+    expect(genitive("Азамат", "male")).toBe("Азамата");
+    expect(genitive("Тимур", "male")).toBe("Тимура");
+    expect(genitive("Андрей", "male")).toBe("Андрея");
+  });
+
+  it("имена на -а/-я", () => {
+    expect(genitive("Алина")).toBe("Алины");
+    expect(genitive("Ольга")).toBe("Ольги");
+    expect(genitive("Таня")).toBe("Тани");
+  });
+
+  it("женские имена на согласную и неизвестный пол — без изменений", () => {
+    expect(genitive("Айгерим", "female")).toBe("Айгерим");
+    expect(genitive("Нурай", "female")).toBe("Нурай");
+    expect(genitive("Данияр")).toBe("Данияр");
+  });
+});

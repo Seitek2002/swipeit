@@ -61,10 +61,17 @@ export {
   type User,
 } from "./users/types";
 export {
+  createCustomWish,
   createSwipe,
+  deleteWishlistItem,
   getMyWishlist,
+  markWishlistItemGiven,
+  reorderWishlist,
   restartSwipes,
+  restoreWishlistItem,
+  undeleteWishlistItem,
   undoSwipe,
+  updateWishlistItem,
 } from "./wishlist/requests";
 export {
   type CustomWish,

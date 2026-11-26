@@ -1,8 +1,10 @@
 export {
   birthdayInDays,
   daysUntilBirthday,
+  formatDayMonth,
   formatRemaining,
   nextBirthdayDate,
+  occasionLabel,
   remainingVerb,
   toDateKey,
 } from "./dates";
@@ -14,3 +16,4 @@ export {
   NNBSP,
 } from "./format-price";
 export { plural, pluralize } from "./plural";
+export { genitive } from "./names";

@@ -11,7 +11,16 @@ import {
   loginDemo,
   updateMe,
 } from "./handlers/users";
-import { getMyWishlist } from "./handlers/wishlist";
+import {
+  createCustomWish,
+  deleteItem,
+  getMyWishlist,
+  markGiven,
+  reorderItems,
+  restoreItem,
+  undeleteItem,
+  updateItem,
+} from "./handlers/wishlist";
 
 export type HttpMethod = "DELETE" | "GET" | "PATCH" | "POST";
 
@@ -34,6 +43,21 @@ export const ROUTE_TABLE: Route[] = [
   { method: "POST", pattern: "/swipes/undo", handler: undoSwipe },
   { method: "POST", pattern: "/swipes/restart", handler: restartSwipes },
   { method: "GET", pattern: "/wishlist", handler: getMyWishlist },
+  { method: "POST", pattern: "/wishlist/items", handler: createCustomWish },
+  { method: "PATCH", pattern: "/wishlist/items/:id", handler: updateItem },
+  { method: "DELETE", pattern: "/wishlist/items/:id", handler: deleteItem },
+  {
+    method: "POST",
+    pattern: "/wishlist/items/:id/undelete",
+    handler: undeleteItem,
+  },
+  { method: "POST", pattern: "/wishlist/reorder", handler: reorderItems },
+  { method: "POST", pattern: "/wishlist/items/:id/given", handler: markGiven },
+  {
+    method: "POST",
+    pattern: "/wishlist/items/:id/restore",
+    handler: restoreItem,
+  },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },
   { method: "GET", pattern: "/demo/settings", handler: getSettings },
   { method: "PATCH", pattern: "/demo/settings", handler: updateSettings },
