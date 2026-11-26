@@ -3804,13 +3804,13 @@
     "images": [
       {
         "src": "/catalog/products/p_0081/1.webp",
-        "alt": "Мини-термопринтер MMN, розовый",
-        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sca5e9521d23f4c53b05ea6784816434fY.jpg"
+        "alt": "Термопринтер MMN на столе",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sfdd8bd13dfdd4458a2a18f98dea593d9K.jpg"
       },
       {
         "src": "/catalog/products/p_0081/2.webp",
-        "alt": "Термопринтер MMN на столе",
-        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sfdd8bd13dfdd4458a2a18f98dea593d9K.jpg"
+        "alt": "Мини-термопринтер MMN с разных сторон",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sca5e9521d23f4c53b05ea6784816434fY.jpg"
       }
     ],
     "offers": [
@@ -4488,5 +4488,866 @@
       }
     ],
     "popularity": 0.45
+  },
+  {
+    "id": "p_0099",
+    "title": "Мужская кожаная сумка через плечо Lethelux",
+    "description": "Компактная мужская сумка из натуральной кожи на ремне через плечо — для телефона, документов и кошелька.\n\nНа Wildberries — рейтинг 4.9 и больше 1700 оценок.",
+    "category": "fashion",
+    "interests": [
+      "fashion",
+      "travel"
+    ],
+    "audience": "male",
+    "priceMin": 4700,
+    "priceMax": 4700,
+    "images": [
+      {
+        "src": "/catalog/products/p_0099/1.webp",
+        "alt": "Кожаная сумка Lethelux в машине",
+        "sourceUrl": "https://basket-41.wbcontent.net/vol9998/part999857/999857269/images/big/1.webp"
+      },
+      {
+        "src": "/catalog/products/p_0099/2.webp",
+        "alt": "Сумка Lethelux, размеры",
+        "sourceUrl": "https://basket-41.wbcontent.net/vol9998/part999857/999857269/images/big/4.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/999857269/detail.aspx",
+        "price": 4700,
+        "originalPrice": 4698,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0100",
+    "title": "Электробритва Philips S1151",
+    "description": "Роторная электробритва Philips Series 1000 с плавающими головками для сухого бритья.",
+    "category": "beauty",
+    "interests": [
+      "gadgets"
+    ],
+    "audience": "male",
+    "priceMin": 3940,
+    "priceMax": 3940,
+    "images": [
+      {
+        "src": "/catalog/products/p_0100/1.webp",
+        "alt": "Электробритва Philips S1151",
+        "sourceUrl": "https://basket-25.wbcontent.net/vol4381/part438193/438193084/images/big/6.webp"
+      },
+      {
+        "src": "/catalog/products/p_0100/2.webp",
+        "alt": "Коробка электробритвы Philips",
+        "sourceUrl": "https://basket-25.wbcontent.net/vol4381/part438193/438193084/images/big/5.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/438193084/detail.aspx",
+        "price": 3940,
+        "originalPrice": 3942,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0101",
+    "title": "Триммер Philips OneBlade QP2824",
+    "description": "Триммер OneBlade для бороды и тела: подравнивает, бреет и делает контуры одним лезвием. В комплекте 2 лезвия и насадки-гребни.\n\nНа Wildberries — рейтинг 4.8 и больше 13 тысяч оценок.",
+    "category": "beauty",
+    "interests": [
+      "gadgets"
+    ],
+    "audience": "male",
+    "priceMin": 5690,
+    "priceMax": 5690,
+    "images": [
+      {
+        "src": "/catalog/products/p_0101/1.webp",
+        "alt": "Триммер Philips OneBlade",
+        "sourceUrl": "https://basket-13.wbcontent.net/vol1934/part193466/193466760/images/big/8.webp"
+      },
+      {
+        "src": "/catalog/products/p_0101/2.webp",
+        "alt": "OneBlade с насадками и кабелем",
+        "sourceUrl": "https://basket-13.wbcontent.net/vol1934/part193466/193466760/images/big/5.webp"
+      },
+      {
+        "src": "/catalog/products/p_0101/3.webp",
+        "alt": "Лезвие OneBlade крупно",
+        "sourceUrl": "https://basket-13.wbcontent.net/vol1934/part193466/193466760/images/big/7.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/193466760/detail.aspx",
+        "price": 5690,
+        "originalPrice": 5688,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0102",
+    "title": "Мужские часы Naviforce NF9269",
+    "description": "Мужские кварцевые часы со светящимися стрелками и кожаным ремешком.\n\nНа AliExpress — рейтинг 4.9.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "male",
+    "priceMin": 2090,
+    "priceMax": 2090,
+    "images": [
+      {
+        "src": "/catalog/products/p_0102/1.webp",
+        "alt": "Часы Naviforce NF9269",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sa590413911ba4615b0f612326c364497A.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0102/2.webp",
+        "alt": "Часы Naviforce с синим ремешком",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sd8d29d55007048e190e4afde453f769c6.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0102/3.webp",
+        "alt": "Часы Naviforce на руке",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S045090dcd71d4defaadef23a46816c07t.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005012061983256.html",
+        "price": 2090,
+        "originalPrice": 2089.1,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0103",
+    "title": "Планшет для заметок Onyx Boox Note Air 3",
+    "description": "Большой E Ink-планшет на 10,3 дюйма со стилусом: можно читать, писать от руки и делать наброски. Память 64 ГБ, слот microSD, Wi-Fi и Bluetooth.",
+    "category": "hobby",
+    "interests": [
+      "reading",
+      "art",
+      "gadgets"
+    ],
+    "audience": "all",
+    "priceMin": 56780,
+    "priceMax": 56780,
+    "images": [
+      {
+        "src": "/catalog/products/p_0103/1.webp",
+        "alt": "Onyx Boox Note Air 3 со стилусом",
+        "sourceUrl": "https://www.kivano.kg/images/product/146022/full/1741242641_41335100.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0103/2.webp",
+        "alt": "Onyx Boox Note Air 3 сзади",
+        "sourceUrl": "https://www.kivano.kg/images/product/146022/174124264032378_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0103/3.webp",
+        "alt": "Onyx Boox Note Air 3 под углом",
+        "sourceUrl": "https://www.kivano.kg/images/product/146022/174124264038324_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/elektronnaya-kniga-onyx-book-note-air-3-black",
+        "price": 56780,
+        "originalPrice": 56780,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0104",
+    "title": "Проектор BenQ TH575 Full HD",
+    "description": "DLP-проектор с разрешением Full HD и картинкой от 30 до 300 дюймов — кино и игры на большой стене дома.",
+    "category": "home",
+    "interests": [
+      "home",
+      "gaming"
+    ],
+    "audience": "all",
+    "priceMin": 46460,
+    "priceMax": 46460,
+    "images": [
+      {
+        "src": "/catalog/products/p_0104/1.webp",
+        "alt": "Проектор BenQ TH575",
+        "sourceUrl": "https://www.kivano.kg/images/product/147858/full/1744318019_87275900.png"
+      },
+      {
+        "src": "/catalog/products/p_0104/2.webp",
+        "alt": "BenQ TH575 сбоку",
+        "sourceUrl": "https://www.kivano.kg/images/product/147858/174431800634197_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0104/3.webp",
+        "alt": "BenQ TH575 сверху",
+        "sourceUrl": "https://www.kivano.kg/images/product/147858/174431800792151_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/proektor-benq-th575-dlp",
+        "price": 46460,
+        "originalPrice": 46460,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0105",
+    "title": "Выпрямитель Dyson Corrale",
+    "description": "Беспроводной выпрямитель Dyson с гибкими пластинами, цвет фуксия/никель. Есть автоотключение и защита от перегрева.",
+    "category": "beauty",
+    "interests": [
+      "beauty",
+      "gadgets"
+    ],
+    "audience": "female",
+    "priceMin": 40670,
+    "priceMax": 40670,
+    "images": [
+      {
+        "src": "/catalog/products/p_0105/1.webp",
+        "alt": "Выпрямитель Dyson Corrale",
+        "sourceUrl": "https://www.kivano.kg/images/product/108810/full/1658204873_93228200.png"
+      },
+      {
+        "src": "/catalog/products/p_0105/2.webp",
+        "alt": "Dyson Corrale крупно",
+        "sourceUrl": "https://www.kivano.kg/images/product/108810/165820486520283_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0105/3.webp",
+        "alt": "Пластины Dyson Corrale",
+        "sourceUrl": "https://www.kivano.kg/images/product/108810/165820486557788_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/vypryamitel-dyson-corrale-hs03-fuksiya-nikel",
+        "price": 40670,
+        "originalPrice": 40670,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.6
+  },
+  {
+    "id": "p_0106",
+    "title": "Климатический комплекс Ballu AW-500",
+    "description": "Очиститель и увлажнитель воздуха для комнаты до 60 м²: четыре ступени фильтрации, УФ-лампа, бак на 5 л и сенсорное управление.",
+    "category": "home",
+    "interests": [
+      "home",
+      "wellness"
+    ],
+    "audience": "all",
+    "priceMin": 18130,
+    "priceMax": 18130,
+    "images": [
+      {
+        "src": "/catalog/products/p_0106/1.webp",
+        "alt": "Климатический комплекс Ballu AW-500",
+        "sourceUrl": "https://www.kivano.kg/images/product/130454/full/1702356982_55630800.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0106/2.webp",
+        "alt": "Ballu AW-500 в интерьере",
+        "sourceUrl": "https://www.kivano.kg/images/product/130454/170235698144539_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0106/3.webp",
+        "alt": "Дисплей Ballu AW-500",
+        "sourceUrl": "https://www.kivano.kg/images/product/130454/170235698174211_full.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/klimaticheskiy-kompleks-ballu-aw-500",
+        "price": 18130,
+        "originalPrice": 18130,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.35
+  },
+  {
+    "id": "p_0107",
+    "title": "Увлажнитель воздуха Ballu UHB-1500",
+    "description": "Ультразвуковой увлажнитель с баком на 7,5 л для комнаты до 40 м², с дисплеем.",
+    "category": "home",
+    "interests": [
+      "home",
+      "wellness"
+    ],
+    "audience": "all",
+    "priceMin": 12630,
+    "priceMax": 12630,
+    "images": [
+      {
+        "src": "/catalog/products/p_0107/1.webp",
+        "alt": "Увлажнитель Ballu UHB-1500",
+        "sourceUrl": "https://www.kivano.kg/images/product/115753/full/1672905482_37796500.png"
+      },
+      {
+        "src": "/catalog/products/p_0107/2.webp",
+        "alt": "Ballu UHB-1500 с подсветкой",
+        "sourceUrl": "https://www.kivano.kg/images/product/115753/167290547611295_full.png"
+      },
+      {
+        "src": "/catalog/products/p_0107/3.webp",
+        "alt": "Дисплей Ballu UHB-1500",
+        "sourceUrl": "https://www.kivano.kg/images/product/115753/16729054764982_full.png"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.kivano.kg/product/view/uvlazhnitel-vozdukha-ballu-uhb-1500-chernyy",
+        "price": 12630,
+        "originalPrice": 12630,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.35
+  },
+  {
+    "id": "p_0108",
+    "title": "Мужская цепочка Fongten из нержавеющей стали",
+    "description": "Массивная мужская цепь «византийского» плетения из нержавеющей стали, ширина 6–8 мм.\n\nНа AliExpress — рейтинг 4.8.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "male",
+    "priceMin": 770,
+    "priceMax": 770,
+    "images": [
+      {
+        "src": "/catalog/products/p_0108/1.webp",
+        "alt": "Мужская цепочка Fongten крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/He61ad75df2b043f481974754f76c8ea3s.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0108/2.webp",
+        "alt": "Цепочка Fongten на ткани",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/H2cb7e5140c4e4c3c93da5d5431d3bee4A.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0108/3.webp",
+        "alt": "Плетение цепочки Fongten",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/H806811f6b5854bc2a73a63693b58a8ecM.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/4000897060757.html",
+        "price": 770,
+        "originalPrice": 769.54,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0109",
+    "title": "Браслет-теннис из серебра с цирконами",
+    "description": "Тонкий браслет-теннис из серебра 925 с позолотой и дорожкой цирконов.\n\nНа AliExpress — рейтинг 4.9 и больше тысячи покупок.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 1990,
+    "priceMax": 1990,
+    "images": [
+      {
+        "src": "/catalog/products/p_0109/1.webp",
+        "alt": "Браслет-теннис крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S8be71bb49c384ee48866fc102a8aed1cT.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0109/2.webp",
+        "alt": "Браслет-теннис с цирконами",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S6190163c01fc4a52951fcae4ce8b855bH.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005007427713688.html",
+        "price": 1990,
+        "originalPrice": 1993.89,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0110",
+    "title": "Плюшевая игрушка-капибара BuBuLucky",
+    "description": "Мягкая плюшевая капибара в разных нарядах — милая игрушка для детей и взрослых.\n\nНа AliExpress — рейтинг 4.8 и почти 4 тысячи покупок.",
+    "category": "kids",
+    "interests": [
+      "pets",
+      "anime"
+    ],
+    "audience": "all",
+    "priceMin": 400,
+    "priceMax": 400,
+    "images": [
+      {
+        "src": "/catalog/products/p_0110/1.webp",
+        "alt": "Плюшевые капибары BuBuLucky",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sfec66804cc03498aa0f0c08c3c548bbdM.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0110/2.webp",
+        "alt": "Капибары в корзинке",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S57aede42e2344879a842ef68ac14eec89.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0110/3.webp",
+        "alt": "Капибара в руках",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sf25cbdfa63f04ff88f2d89a881fe60d3R.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005008812045795.html",
+        "price": 400,
+        "originalPrice": 403.26,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0111",
+    "title": "Складные магнитные шахматы из дерева",
+    "description": "Деревянная шахматная доска складывается в коробку для фигур, а магниты держат фигуры на месте — удобно брать в дорогу.\n\nНа AliExpress — рейтинг 4.8.",
+    "category": "games",
+    "interests": [
+      "boardgames"
+    ],
+    "audience": "all",
+    "priceMin": 2760,
+    "priceMax": 2760,
+    "images": [
+      {
+        "src": "/catalog/products/p_0111/1.webp",
+        "alt": "Деревянные шахматы на доске",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sd3c2f6ed2cc9431dbde609d699d644ed2.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0111/2.webp",
+        "alt": "Шахматные фигуры из дерева",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S49d16f5013034985a3d599ae0b411f51h.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0111/3.webp",
+        "alt": "Складная шахматная доска с фигурами",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S90a949b33cb34fc4bc5b4edce98a28bcy.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005008832295389.html",
+        "price": 2760,
+        "originalPrice": 2757.55,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0112",
+    "title": "Мужской городской рюкзак Frenet",
+    "description": "Чёрный городской рюкзак из экокожи с коричневыми ремешками-застёжками в винтажном стиле.\n\nНа Wildberries — рейтинг 4.6.",
+    "category": "fashion",
+    "interests": [
+      "fashion",
+      "travel"
+    ],
+    "audience": "male",
+    "priceMin": 2480,
+    "priceMax": 2480,
+    "images": [
+      {
+        "src": "/catalog/products/p_0112/1.webp",
+        "alt": "Рюкзак Frenet спереди",
+        "sourceUrl": "https://basket-15.wbcontent.net/vol2340/part234072/234072581/images/big/4.webp"
+      },
+      {
+        "src": "/catalog/products/p_0112/2.webp",
+        "alt": "Рюкзак Frenet на полу",
+        "sourceUrl": "https://basket-15.wbcontent.net/vol2340/part234072/234072581/images/big/1.webp"
+      },
+      {
+        "src": "/catalog/products/p_0112/3.webp",
+        "alt": "Рюкзак Frenet сбоку",
+        "sourceUrl": "https://basket-15.wbcontent.net/vol2340/part234072/234072581/images/big/5.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/234072581/detail.aspx",
+        "price": 2480,
+        "originalPrice": 2481,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0113",
+    "title": "Сумка-шоппер Mandarina Bag",
+    "description": "Большая сумка-тоут формата А4 с подкладкой, в коричневом цвете — помещаются ноутбук и документы.\n\nНа Wildberries — рейтинг 4.9 и тысячи оценок.",
+    "category": "fashion",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 4210,
+    "priceMax": 4210,
+    "images": [
+      {
+        "src": "/catalog/products/p_0113/1.webp",
+        "alt": "Сумка-шоппер Mandarina Bag на плече",
+        "sourceUrl": "https://basket-27.wbcontent.net/vol5062/part506268/506268262/images/big/1.webp"
+      },
+      {
+        "src": "/catalog/products/p_0113/2.webp",
+        "alt": "Сумка Mandarina Bag в руке",
+        "sourceUrl": "https://basket-27.wbcontent.net/vol5062/part506268/506268262/images/big/8.webp"
+      },
+      {
+        "src": "/catalog/products/p_0113/3.webp",
+        "alt": "Кожа сумки Mandarina Bag крупно",
+        "sourceUrl": "https://basket-27.wbcontent.net/vol5062/part506268/506268262/images/big/6.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/506268262/detail.aspx",
+        "price": 4210,
+        "originalPrice": 4206,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0114",
+    "title": "Сумка-хобо «Веский Довод» из натуральной кожи",
+    "description": "Мягкая женская сумка-хобо из натуральной кожи на плечо.\n\nНа Wildberries — рейтинг 4.8 и больше 6 тысяч оценок.",
+    "category": "fashion",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 6960,
+    "priceMax": 6960,
+    "images": [
+      {
+        "src": "/catalog/products/p_0114/1.webp",
+        "alt": "Сумка-хобо из кожи на плече",
+        "sourceUrl": "https://basket-10.wbcontent.net/vol1476/part147662/147662567/images/big/1.webp"
+      },
+      {
+        "src": "/catalog/products/p_0114/2.webp",
+        "alt": "Сумка-хобо на кресле",
+        "sourceUrl": "https://basket-10.wbcontent.net/vol1476/part147662/147662567/images/big/7.webp"
+      },
+      {
+        "src": "/catalog/products/p_0114/3.webp",
+        "alt": "Сумка-хобо в руке",
+        "sourceUrl": "https://basket-10.wbcontent.net/vol1476/part147662/147662567/images/big/3.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/147662567/detail.aspx",
+        "price": 6960,
+        "originalPrice": 6961,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0115",
+    "title": "Мужское термобельё Blossom Men's",
+    "description": "Комплект мужского термобелья из лонгслива и брюк с начёсом — для лыж, походов и холодных дней.",
+    "category": "sport",
+    "interests": [
+      "fitness",
+      "mountains"
+    ],
+    "audience": "male",
+    "priceMin": 1440,
+    "priceMax": 1440,
+    "images": [
+      {
+        "src": "/catalog/products/p_0115/1.webp",
+        "alt": "Мужское термобельё Blossom, комплект",
+        "sourceUrl": "https://basket-32.wbcontent.net/vol6527/part652707/652707335/images/big/2.webp"
+      },
+      {
+        "src": "/catalog/products/p_0115/2.webp",
+        "alt": "Термобельё Blossom сзади",
+        "sourceUrl": "https://basket-32.wbcontent.net/vol6527/part652707/652707335/images/big/5.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/652707335/detail.aspx",
+        "price": 1440,
+        "originalPrice": 1437,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0116",
+    "title": "Компрессионная футболка Jogel",
+    "description": "Обтягивающая мужская компрессионная футболка-рашгард для тренировок в зале и бега.\n\nНа Wildberries — рейтинг 4.9.",
+    "category": "sport",
+    "interests": [
+      "fitness"
+    ],
+    "audience": "male",
+    "priceMin": 1580,
+    "priceMax": 1580,
+    "images": [
+      {
+        "src": "/catalog/products/p_0116/1.webp",
+        "alt": "Компрессионная футболка Jogel сзади",
+        "sourceUrl": "https://basket-04.wbcontent.net/vol717/part71719/71719415/images/big/7.webp"
+      },
+      {
+        "src": "/catalog/products/p_0116/2.webp",
+        "alt": "Компрессионная футболка Jogel спереди",
+        "sourceUrl": "https://basket-04.wbcontent.net/vol717/part71719/71719415/images/big/3.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/71719415/detail.aspx",
+        "price": 1580,
+        "originalPrice": 1578,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0117",
+    "title": "Самонадувающийся коврик RSP Velour 38",
+    "description": "Туристический коврик, который сам надувается: открываешь клапан — и он набирает воздух. Велюровое покрытие, цвет олива.\n\nНа Wildberries — рейтинг 4.9 и больше 500 оценок.",
+    "category": "outdoor",
+    "interests": [
+      "mountains",
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 4680,
+    "priceMax": 4680,
+    "images": [
+      {
+        "src": "/catalog/products/p_0117/1.webp",
+        "alt": "Самонадувающийся коврик RSP, олива",
+        "sourceUrl": "https://basket-42.wbcontent.net/vol11050/part1105025/1105025333/images/big/6.webp"
+      },
+      {
+        "src": "/catalog/products/p_0117/2.webp",
+        "alt": "Коврик RSP развёрнутый",
+        "sourceUrl": "https://basket-42.wbcontent.net/vol11050/part1105025/1105025333/images/big/5.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/1105025333/detail.aspx",
+        "price": 4680,
+        "originalPrice": 4684,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0118",
+    "title": "Мужские спортивные тайтсы Usha",
+    "description": "Длинные мужские тайтсы для бега и тренировок, плотно облегают ноги.\n\nНа Wildberries — рейтинг 4.8 и больше тысячи оценок.",
+    "category": "sport",
+    "interests": [
+      "fitness"
+    ],
+    "audience": "male",
+    "priceMin": 1220,
+    "priceMax": 1220,
+    "images": [
+      {
+        "src": "/catalog/products/p_0118/1.webp",
+        "alt": "Мужские тайтсы Usha спереди",
+        "sourceUrl": "https://basket-10.wbcontent.net/vol1464/part146428/146428530/images/big/2.webp"
+      },
+      {
+        "src": "/catalog/products/p_0118/2.webp",
+        "alt": "Тайтсы Usha сбоку",
+        "sourceUrl": "https://basket-10.wbcontent.net/vol1464/part146428/146428530/images/big/6.webp"
+      },
+      {
+        "src": "/catalog/products/p_0118/3.webp",
+        "alt": "Тайтсы Usha в движении",
+        "sourceUrl": "https://basket-10.wbcontent.net/vol1464/part146428/146428530/images/big/7.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/146428530/detail.aspx",
+        "price": 1220,
+        "originalPrice": 1223,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
+  },
+  {
+    "id": "p_0119",
+    "title": "Набор для рисования MikaMax в чемоданчике",
+    "description": "Большой детский набор для рисования: карандаши, фломастеры, мелки и краски в чемоданчике.\n\nНа Wildberries — рейтинг 4.9 и больше 12 тысяч оценок.",
+    "category": "kids",
+    "interests": [
+      "art"
+    ],
+    "audience": "all",
+    "priceMin": 1930,
+    "priceMax": 1930,
+    "images": [
+      {
+        "src": "/catalog/products/p_0119/1.webp",
+        "alt": "Открытый набор для рисования MikaMax",
+        "sourceUrl": "https://basket-10.wbcontent.net/vol1469/part146957/146957607/images/big/8.webp"
+      },
+      {
+        "src": "/catalog/products/p_0119/2.webp",
+        "alt": "Набор MikaMax сверху",
+        "sourceUrl": "https://basket-10.wbcontent.net/vol1469/part146957/146957607/images/big/7.webp"
+      },
+      {
+        "src": "/catalog/products/p_0119/3.webp",
+        "alt": "Чемоданчик MikaMax",
+        "sourceUrl": "https://basket-10.wbcontent.net/vol1469/part146957/146957607/images/big/5.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/146957607/detail.aspx",
+        "price": 1930,
+        "originalPrice": 1928,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0120",
+    "title": "Три серебряных кольца Alizero",
+    "description": "Кольцо из трёх переплетённых серебряных колец — носится как одно украшение.\n\nНа AliExpress — рейтинг 4.7 и больше 3 тысяч покупок.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 160,
+    "priceMax": 160,
+    "images": [
+      {
+        "src": "/catalog/products/p_0120/1.webp",
+        "alt": "Тройное серебряное кольцо Alizero",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sc8ba044da7de4d0a899c60ce27ba3ddfe.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0120/2.webp",
+        "alt": "Кольцо Alizero на красной ткани",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sd3897637869d47bcbc802d1a62acf4ccJ.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0120/3.webp",
+        "alt": "Кольцо Alizero на руке",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sde1bab57e3f34d9994a4201655f7bf89q.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005006004692682.html",
+        "price": 160,
+        "originalPrice": 155.34,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.4
   }
 ]

@@ -111,3 +111,18 @@ export type Occasion = z.infer<typeof OccasionSchema>;
 export type WishlistMeta = z.infer<typeof WishlistMetaSchema>;
 export type Reservation = z.infer<typeof ReservationSchema>;
 export type ExternalWishlist = z.infer<typeof ExternalWishlistSchema>;
+
+// Ответ на свайп: сколько «Хочу» уже есть и открылся ли шеринг прямо сейчас
+// (по shareJustUnlocked клиент запускает бант, TECH_SPEC §6).
+export type SwipeResponse = {
+  likeCount: number;
+  shareJustUnlocked: boolean;
+  shareUnlocked: boolean;
+  wishlistItemId?: string;
+};
+
+export type WishlistResponse = {
+  items: WishlistItem[];
+  likeCount: number;
+  meta: WishlistMeta;
+};

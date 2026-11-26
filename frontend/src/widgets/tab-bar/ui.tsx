@@ -5,12 +5,13 @@ import { usePathname } from "next/navigation";
 
 import { Gift, Heart, type LucideIcon, Mail, Ticket } from "lucide-react";
 
+import { useWishlistSummary } from "@/entities/wishlist";
+
 import { ROUTES, type TabId, getActiveTab, hasTabBar } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
 
 type Props = {
   santaReady?: boolean;
-  wishCount?: number;
 };
 
 type Tab = {
@@ -30,8 +31,10 @@ const TABS: Tab[] = [
 
 // Плавающая таблетка (DESIGN.md §7 TabBar). Активный таб — «Бумага» и
 // мандариновая точка 4px; бейджи — бумага с чернилами, не мандарин.
-export const TabBar = ({ wishCount = 0, santaReady = false }: Props) => {
+export const TabBar = ({ santaReady = false }: Props) => {
   const pathname = usePathname();
+  // Бейдж — число активных желаний (DESIGN.md §7 TabBar).
+  const wishCount = useWishlistSummary().activeCount;
   if (!hasTabBar(pathname)) return null;
   const active = getActiveTab(pathname);
 

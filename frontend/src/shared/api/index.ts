@@ -36,6 +36,7 @@ export {
   friendKeys,
   SCOPE_KEYS,
   userKeys,
+  wishlistKeys,
 } from "./query-keys";
 export { type SantaGame } from "./santa/types";
 export {
@@ -60,6 +61,12 @@ export {
   type User,
 } from "./users/types";
 export {
+  createSwipe,
+  getMyWishlist,
+  restartSwipes,
+  undoSwipe,
+} from "./wishlist/requests";
+export {
   type CustomWish,
   type ExternalWishlist,
   type Occasion,
@@ -67,6 +74,8 @@ export {
   type Reservation,
   type SwipeContext,
   type SwipeDecision,
+  type SwipeResponse,
   type WishlistItem,
   type WishlistMeta,
+  type WishlistResponse,
 } from "./wishlist/types";

@@ -26,6 +26,11 @@ export const catalogKeys = {
   product: (id: string) => [...catalogKeys.all, "product", id] as const,
 };
 
+export const wishlistKeys = {
+  all: ["wishlist"] as const,
+  mine: () => [...wishlistKeys.all, "mine"] as const,
+};
+
 export const demoKeys = {
   all: ["demo"] as const,
   settings: () => [...demoKeys.all, "settings"] as const,
@@ -40,7 +45,7 @@ export const SCOPE_KEYS: Record<
 > = {
   users: [userKeys.all, friendKeys.all],
   swipes: [catalogKeys.all],
-  wishlist: [],
+  wishlist: [wishlistKeys.all],
   reservations: [],
   plans: [],
   santa: [],

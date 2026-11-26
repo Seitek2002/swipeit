@@ -22,6 +22,9 @@ const eslintConfig = defineConfig([
       "perfectionist/sort-interfaces": ["warn", { type: "alphabetical" }],
       "perfectionist/sort-object-types": ["warn", { type: "alphabetical" }],
       "perfectionist/sort-union-types": ["warn", { type: "alphabetical" }],
+      // Статическая сборка (output: "export"): оптимизации картинок Next нет,
+      // TECH_SPEC §3 прямо велит обычный <img> с размерами или aspect-ratio.
+      "@next/next/no-img-element": "off",
     },
   },
   {

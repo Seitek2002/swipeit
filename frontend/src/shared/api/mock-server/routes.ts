@@ -2,6 +2,7 @@ import type { Handler } from "./context";
 import { validation } from "./errors";
 import { getCount, getFeed, getProduct } from "./handlers/catalog";
 import { getSettings, resetDemo, updateSettings } from "./handlers/demo";
+import { createSwipe, restartSwipes, undoSwipe } from "./handlers/swipes";
 import {
   createUser,
   getMe,
@@ -10,6 +11,7 @@ import {
   loginDemo,
   updateMe,
 } from "./handlers/users";
+import { getMyWishlist } from "./handlers/wishlist";
 
 export type HttpMethod = "DELETE" | "GET" | "PATCH" | "POST";
 
@@ -28,6 +30,10 @@ export const ROUTE_TABLE: Route[] = [
   { method: "GET", pattern: "/catalog/feed", handler: getFeed },
   { method: "GET", pattern: "/catalog/count", handler: getCount },
   { method: "GET", pattern: "/catalog/products/:id", handler: getProduct },
+  { method: "POST", pattern: "/swipes", handler: createSwipe },
+  { method: "POST", pattern: "/swipes/undo", handler: undoSwipe },
+  { method: "POST", pattern: "/swipes/restart", handler: restartSwipes },
+  { method: "GET", pattern: "/wishlist", handler: getMyWishlist },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },
   { method: "GET", pattern: "/demo/settings", handler: getSettings },
   { method: "PATCH", pattern: "/demo/settings", handler: updateSettings },
