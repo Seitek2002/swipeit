@@ -4,10 +4,10 @@ import { defineConfig } from "steiger";
 export default defineConfig([
   ...fsd.configs.recommended,
   {
-    // Временно, до T07: сейчас каталогом пользуется только витрина /kit/
-    // (проверка слоя данных из T04). В T07 колода подарков и шторка
+    // Временно, до T07: каталогом и движком колоды пока пользуется только
+    // витрина /kit/ (проверка T04 и T06). В T07 колода подарков и шторка
     // «Подробнее» станут вторыми потребителями — тогда исключение убрать.
-    files: ["./src/entities/product/**"],
+    files: ["./src/entities/product/**", "./src/features/swipe-deck/**"],
     rules: {
       "fsd/insignificant-slice": "off",
     },

@@ -1,0 +1,287 @@
+"use client";
+
+import {
+  type ReactNode,
+  type Ref,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+
+import { useMotionValue, useReducedMotion } from "motion/react";
+
+import { cn } from "@/shared/lib/utils";
+import { type SwipeAction, SwipeActionButton } from "@/shared/ui";
+
+import { type SwipeDirection, cardSize } from "../model";
+import { type ButtonRefs, type CardApi, DeckCard } from "./DeckCard";
+
+export type SwipeDeckHandle = {
+  swipe: (direction: SwipeDirection) => void;
+  undo: () => void;
+};
+
+type Props<T> = {
+  // Озвучка результата свайпа для скринридера («Добавлено в вишлист»).
+  announce?: (item: T, direction: SwipeDirection) => string;
+  canUndo?: boolean;
+  className?: string;
+  directions?: readonly SwipeDirection[];
+  // Нет связи с LAN-сервером — колода и кнопки неактивны (DESIGN.md §8.11).
+  disabled?: boolean;
+  // Что показать, когда карточки кончились.
+  empty?: ReactNode;
+  getKey: (item: T) => string;
+  getLabel: (item: T) => string;
+  handleRef?: Ref<SwipeDeckHandle>;
+  // Очередь: items[0] — верхняя. Родитель убирает карточку в onDecision и
+  // возвращает её первой в onUndo.
+  items: T[];
+  labels?: Partial<Record<SwipeDirection, string>>;
+  onDecision: (item: T, direction: SwipeDirection) => void;
+  // Осталось 3 карточки — пора дозапросить следующую порцию.
+  onNeedMore?: () => void;
+  onOpen?: (item: T) => void;
+  onUndo?: () => void;
+  renderCard: (item: T, state: { isTop: boolean }) => ReactNode;
+  // Отступ сверху — место под нитку бирки.
+  stampTop?: number;
+  topInset?: number;
+};
+
+const ACTIONS: Record<SwipeDirection, SwipeAction> = {
+  left: "pass",
+  up: "super",
+  right: "like",
+};
+
+const DEFAULT_LABELS: Record<SwipeDirection, string> = {
+  right: "ХОЧУ",
+  left: "МИМО",
+  up: "ОЧЕНЬ ХОЧУ",
+};
+
+const VISIBLE = 3;
+
+const isTypingTarget = (target: EventTarget | null) =>
+  target instanceof HTMLElement &&
+  (target.matches("input, textarea, select, [contenteditable]") ||
+    target.closest('[role="slider"]') !== null);
+
+// Движок колоды (TASKS T06): общий для бирок подарков и билетиков занятий.
+// Ничего не знает о товарах и занятиях — получает элементы, рендер карточки,
+// разрешённые направления и колбэк решения (TECH_SPEC §4).
+export const SwipeDeck = <T,>({
+  items,
+  getKey,
+  getLabel,
+  renderCard,
+  directions = ["left", "right", "up"],
+  onDecision,
+  onUndo,
+  canUndo = false,
+  onNeedMore,
+  onOpen,
+  empty,
+  topInset = 34,
+  stampTop = 58,
+  labels,
+  announce,
+  disabled = false,
+  handleRef,
+  className,
+}: Props<T>) => {
+  const reducedMotion = Boolean(useReducedMotion());
+  const progress = useMotionValue(0);
+  const areaRef = useRef<HTMLDivElement>(null);
+  const buttonsRef = useRef<ButtonRefs>({});
+  const topApi = useRef<CardApi | null>(null);
+  const isBusyRef = useRef(false);
+  const history = useRef<Array<{ direction: SwipeDirection; key: string }>>([]);
+  const [enterFrom, setEnterFrom] = useState<{
+    direction: SwipeDirection;
+    key: string;
+  } | null>(null);
+  const [area, setArea] = useState({ width: 0, height: 0 });
+  const [announcement, setAnnouncement] = useState("");
+
+  const visible = items.slice(0, VISIBLE);
+  const top = visible[0];
+  const { cardWidth, cardHeight } = cardSize(area.width, area.height, topInset);
+  const allLabels = { ...DEFAULT_LABELS, ...labels };
+
+  // Размер карточки — от места между шапкой и кнопками (DESIGN.md §7).
+  useLayoutEffect(() => {
+    const element = areaRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      setArea((current) =>
+        current.width === width && current.height === height
+          ? current
+          : { width, height },
+      );
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (items.length <= VISIBLE) onNeedMore?.();
+    // Только при изменении длины очереди, а не на каждый рендер родителя.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length]);
+
+  const swipe = (direction: SwipeDirection) => {
+    if (disabled || !top) return;
+    topApi.current?.swipe(direction);
+  };
+
+  const undo = () => {
+    if (disabled || !canUndo || isBusyRef.current || !onUndo) return;
+    const last = history.current.pop();
+    if (last) setEnterFrom(last);
+    onUndo();
+  };
+
+  useImperativeHandle(handleRef, () => ({ swipe, undo }));
+
+  const handleCommit = (direction: SwipeDirection) => {
+    if (!top) return;
+    history.current.push({ key: getKey(top), direction });
+    if (history.current.length > 50) history.current.shift();
+    setEnterFrom(null);
+    if (announce) setAnnouncement(announce(top, direction));
+    onDecision(top, direction);
+  };
+
+  // Клавиатура (DESIGN.md §10): ← «Мимо», → «Хочу», ↑ «Очень хочу»,
+  // Backspace/Z «Вернуть», Enter/Space «Подробнее». Пока открыта шторка или
+  // диалог, колода клавиш не слушает.
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      if (
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.defaultPrevented
+      )
+        return;
+      if (isTypingTarget(event.target)) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]'))
+        return;
+      const key = event.key;
+      const map: Record<string, SwipeDirection> = {
+        ArrowLeft: "left",
+        ArrowRight: "right",
+        ArrowUp: "up",
+      };
+      const direction = map[key];
+      if (direction && directions.includes(direction)) {
+        event.preventDefault();
+        swipe(direction);
+      } else if (["Backspace", "z", "Z", "я", "Я"].includes(key)) {
+        event.preventDefault();
+        undo();
+      } else if (
+        (key === "Enter" || key === " ") &&
+        top &&
+        onOpen &&
+        !(
+          event.target instanceof HTMLElement &&
+          event.target.closest("button, a")
+        )
+      ) {
+        event.preventDefault();
+        onOpen(top);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  });
+
+  const buttonOrder: SwipeDirection[] = (
+    ["left", "up", "right"] as const
+  ).filter((direction) => directions.includes(direction));
+
+  return (
+    <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
+      <div
+        ref={areaRef}
+        className={cn("relative mx-5 min-h-0 flex-1", disabled && "opacity-50")}
+      >
+        {area.width > 0 &&
+          [...visible].reverse().map((item) => {
+            const key = getKey(item);
+            const depth = visible.indexOf(item);
+            return (
+              <DeckCard
+                key={key}
+                depth={depth}
+                label={getLabel(item)}
+                cardWidth={cardWidth}
+                cardHeight={cardHeight}
+                containerWidth={area.width}
+                topInset={topInset}
+                stampTop={stampTop}
+                directions={directions}
+                labels={allLabels}
+                progress={progress}
+                buttonsRef={buttonsRef}
+                isBusyRef={isBusyRef}
+                disabled={disabled}
+                reducedMotion={reducedMotion}
+                enterFrom={
+                  enterFrom?.key === key ? enterFrom.direction : undefined
+                }
+                onCommit={handleCommit}
+                onRegister={(api) => {
+                  if (depth === 0) topApi.current = api;
+                }}
+              >
+                {renderCard(item, { isTop: depth === 0 })}
+              </DeckCard>
+            );
+          })}
+        {!top && empty && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            {empty}
+          </div>
+        )}
+      </div>
+
+      <div
+        className={cn(
+          "flex h-[84px] flex-none items-center justify-center gap-[18px] pb-1",
+          disabled && "opacity-50",
+        )}
+      >
+        {onUndo && (
+          <SwipeActionButton
+            action="undo"
+            disabled={disabled || !canUndo}
+            onClick={undo}
+          />
+        )}
+        {buttonOrder.map((direction) => (
+          <SwipeActionButton
+            key={direction}
+            ref={(element) => {
+              buttonsRef.current[direction] = element;
+            }}
+            action={ACTIONS[direction]}
+            disabled={disabled || !top}
+            onClick={() => swipe(direction)}
+          />
+        ))}
+      </div>
+
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+    </div>
+  );
+};

@@ -3860,5 +3860,633 @@
       }
     ],
     "popularity": 0.45
+  },
+  {
+    "id": "p_0083",
+    "title": "Джордж Оруэлл «1984»",
+    "description": "Самый знаменитый роман-антиутопия Джорджа Оруэлла, написанный через три года после окончания Второй мировой войны.\n\nИздание «Текста» в серии «Классика ХХ» в переводе Виктора Голышева, твёрдая обложка, 320 страниц.",
+    "category": "books",
+    "interests": [
+      "reading"
+    ],
+    "audience": "all",
+    "priceMin": 760,
+    "priceMax": 760,
+    "images": [
+      {
+        "src": "/catalog/products/p_0083/1.webp",
+        "alt": "Книга «1984», твёрдая обложка",
+        "sourceUrl": "https://imo10.labirint.ru/books/790566/ph_001.jpg/2048-0"
+      },
+      {
+        "src": "/catalog/products/p_0083/2.webp",
+        "alt": "Обложка книги «1984» Джорджа Оруэлла",
+        "sourceUrl": "https://imo10.labirint.ru/books/790566/cover.jpg/2048-0"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.labirint.ru/books/790566/",
+        "price": 760,
+        "originalPrice": 714,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0084",
+    "title": "Дейл Карнеги «Как завоёвывать друзей»",
+    "description": "Классика Дейла Карнеги о том, как общаться с людьми и располагать их к себе: основные правила общения, способы склонить собеседника к своей точке зрения и изменить его мнение без спора.\n\nИздательство «Попурри», твёрдая обложка с покрытием софттач, 368 страниц.",
+    "category": "books",
+    "interests": [
+      "reading"
+    ],
+    "audience": "all",
+    "priceMin": 870,
+    "priceMax": 870,
+    "images": [
+      {
+        "src": "/catalog/products/p_0084/1.webp",
+        "alt": "Обложка книги Дейла Карнеги «Как завоевывать друзей и оказывать влияние на людей»",
+        "sourceUrl": "https://imo10.labirint.ru/books/709478/cover.jpg/2048-0"
+      },
+      {
+        "src": "/catalog/products/p_0084/2.webp",
+        "alt": "Содержание книги Дейла Карнеги",
+        "sourceUrl": "https://imo10.labirint.ru/books/709478/ph_01.jpg/2048-0"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.labirint.ru/books/709478/",
+        "price": 870,
+        "originalPrice": 821,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0085",
+    "title": "«Гордость и предубеждение» с иллюстрациями",
+    "description": "Самый известный роман Джейн Остен — история Элизабет Беннет и мистера Дарси — в переводе Иммануэля Маршака.\n\nПодарочное издание «Качелей» с цветными иллюстрациями Екатерины Ореховой: твёрдая обложка с частичной лакировкой, ляссе, 464 страницы.",
+    "category": "books",
+    "interests": [
+      "reading",
+      "art"
+    ],
+    "audience": "all",
+    "priceMin": 1580,
+    "priceMax": 1580,
+    "images": [
+      {
+        "src": "/catalog/products/p_0085/1.webp",
+        "alt": "Книга «Гордость и предубеждение», издание с иллюстрациями",
+        "sourceUrl": "https://imo10.labirint.ru/books/852771/ph_001.jpg/2048-0"
+      },
+      {
+        "src": "/catalog/products/p_0085/2.webp",
+        "alt": "Обложка «Гордости и предубеждения» с иллюстрацией Екатерины Ореховой",
+        "sourceUrl": "https://imo10.labirint.ru/books/852771/cover.jpg/2048-0"
+      },
+      {
+        "src": "/catalog/products/p_0085/3.webp",
+        "alt": "Разворот с иллюстрацией в начале главы",
+        "sourceUrl": "https://imo10.labirint.ru/books/852771/ph_01.jpg/2048-0"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.labirint.ru/books/852771/",
+        "price": 1580,
+        "originalPrice": 1493,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0086",
+    "title": "Толкин «The Hobbit», карманное издание",
+    "description": "«Хоббит» Толкина на английском — компактное издание HarperCollins к 75-летию книги, в твёрдой обложке с суперобложкой и тиснением золотом.\n\nНа обложке — рисунок самого Толкина, внутри его чёрно-белые иллюстрации и карта. 300 страниц, формат 16×12 см.",
+    "category": "books",
+    "interests": [
+      "reading"
+    ],
+    "audience": "all",
+    "priceMin": 2180,
+    "priceMax": 2180,
+    "images": [
+      {
+        "src": "/catalog/products/p_0086/1.webp",
+        "alt": "Книга The Hobbit в суперобложке",
+        "sourceUrl": "https://imo10.labirint.ru/books/725089/ph_001.jpg/2048-0"
+      },
+      {
+        "src": "/catalog/products/p_0086/2.webp",
+        "alt": "Обложка The Hobbit с рисунком Толкина",
+        "sourceUrl": "https://imo10.labirint.ru/books/725089/cover.jpg/2048-0"
+      },
+      {
+        "src": "/catalog/products/p_0086/3.webp",
+        "alt": "Разворот с картой",
+        "sourceUrl": "https://imo10.labirint.ru/books/725089/ph_02.jpg/2048-0"
+      },
+      {
+        "src": "/catalog/products/p_0086/4.webp",
+        "alt": "Разворот с иллюстрацией Толкина",
+        "sourceUrl": "https://imo10.labirint.ru/books/725089/ph_03.jpg/2048-0"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "other",
+        "url": "https://www.labirint.ru/books/725089/",
+        "price": 2180,
+        "originalPrice": 2066,
+        "originalCurrency": "RUB",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0087",
+    "title": "Жемчужное колье-чокер Fyuan",
+    "description": "Колье-чокер из нескольких переплетённых нитей искусственного жемчуга, длина около 42 см.\n\nНа AliExpress — рейтинг 4.7 и больше 10 тысяч покупок.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 260,
+    "priceMax": 260,
+    "images": [
+      {
+        "src": "/catalog/products/p_0087/1.webp",
+        "alt": "Жемчужное колье-чокер Fyuan",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S2c1c8e9093fe496a9d1ae62adcea89c61.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0087/2.webp",
+        "alt": "Колье Fyuan на тёмном фоне",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S8a88a8c9afea441893f2c19b8326434eZ.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0087/3.webp",
+        "alt": "Колье Fyuan на шее",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sea3f91efe4684f038113f587128a79b6E.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005004057437218.html",
+        "price": 260,
+        "originalPrice": 257.1,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0088",
+    "title": "Перчатки для тренажёрного зала",
+    "description": "Перчатки без пальцев для тренировок с весом: мягкая ладонь и фиксатор на запястье. Размеры M, L, XL.\n\nНа AliExpress — рейтинг 4.8 и больше 16 тысяч покупок.",
+    "category": "sport",
+    "interests": [
+      "fitness"
+    ],
+    "audience": "all",
+    "priceMin": 370,
+    "priceMax": 370,
+    "images": [
+      {
+        "src": "/catalog/products/p_0088/1.webp",
+        "alt": "Перчатки для зала, чёрно-синие",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sc32b1172d80e4410901ad66a1b9072f2r.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0088/2.webp",
+        "alt": "Перчатки для зала разных цветов",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S277d47db3ec04981b761f8d80fbed8d6u.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0088/3.webp",
+        "alt": "Перчатки на руках",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sa88f3604560040c886a6230e75b5afa5R.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005002283532821.html",
+        "price": 370,
+        "originalPrice": 365.53,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0089",
+    "title": "Часы Casio Collection MTP-1183A-2A",
+    "description": "Классические мужские кварцевые часы Casio с синим циферблатом, датой и стальным браслетом.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "male",
+    "priceMin": 6230,
+    "priceMax": 6230,
+    "images": [
+      {
+        "src": "/catalog/products/p_0089/1.webp",
+        "alt": "Часы Casio MTP-1183A-2A",
+        "sourceUrl": "https://basket-05.wbcontent.net/vol754/part75449/75449406/images/big/2.webp"
+      },
+      {
+        "src": "/catalog/products/p_0089/2.webp",
+        "alt": "Часы Casio на столе",
+        "sourceUrl": "https://basket-05.wbcontent.net/vol754/part75449/75449406/images/big/5.webp"
+      },
+      {
+        "src": "/catalog/products/p_0089/3.webp",
+        "alt": "Часы Casio сбоку",
+        "sourceUrl": "https://basket-05.wbcontent.net/vol754/part75449/75449406/images/big/6.webp"
+      },
+      {
+        "src": "/catalog/products/p_0089/4.webp",
+        "alt": "Задняя крышка часов Casio",
+        "sourceUrl": "https://basket-05.wbcontent.net/vol754/part75449/75449406/images/big/7.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/75449406/detail.aspx",
+        "price": 6230,
+        "originalPrice": 6227,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0090",
+    "title": "Женские часы Contena с браслетом",
+    "description": "Женские кварцевые часы в цвете розового золота с металлическим браслетом.\n\nНа Wildberries — рейтинг 4.8 и больше 8 тысяч оценок.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 1200,
+    "priceMax": 1200,
+    "images": [
+      {
+        "src": "/catalog/products/p_0090/1.webp",
+        "alt": "Женские часы Contena на руке",
+        "sourceUrl": "https://basket-09.wbcontent.net/vol1229/part122917/122917555/images/big/8.webp"
+      },
+      {
+        "src": "/catalog/products/p_0090/2.webp",
+        "alt": "Часы Contena крупно",
+        "sourceUrl": "https://basket-09.wbcontent.net/vol1229/part122917/122917555/images/big/4.webp"
+      },
+      {
+        "src": "/catalog/products/p_0090/3.webp",
+        "alt": "Часы Contena на запястье",
+        "sourceUrl": "https://basket-09.wbcontent.net/vol1229/part122917/122917555/images/big/5.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/122917555/detail.aspx",
+        "price": 1200,
+        "originalPrice": 1200,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0091",
+    "title": "Набор Gillette Mach3: бритва и гель для бритья",
+    "description": "Подарочный набор: бритвенный станок Gillette Mach3 с тремя лезвиями и гель для бритья 75 мл.\n\nНа Wildberries — рейтинг 4.8 и больше 100 тысяч оценок.",
+    "category": "beauty",
+    "interests": [
+      "beauty"
+    ],
+    "audience": "male",
+    "priceMin": 700,
+    "priceMax": 700,
+    "images": [
+      {
+        "src": "/catalog/products/p_0091/1.webp",
+        "alt": "Набор Gillette Mach3 в коробке",
+        "sourceUrl": "https://basket-16.wbcontent.net/vol2621/part262104/262104508/images/big/3.webp"
+      },
+      {
+        "src": "/catalog/products/p_0091/2.webp",
+        "alt": "Станок Gillette Mach3 и гель для бритья",
+        "sourceUrl": "https://basket-16.wbcontent.net/vol2621/part262104/262104508/images/big/2.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/262104508/detail.aspx",
+        "price": 700,
+        "originalPrice": 701,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0092",
+    "title": "Палетка теней Vivienne Sabo Croissant",
+    "description": "Палетка теней для век Vivienne Sabo Croissant в нюдовых оттенках, оттенок 01. Матовые и блестящие тени в одной палетке.",
+    "category": "beauty",
+    "interests": [
+      "beauty"
+    ],
+    "audience": "female",
+    "priceMin": 290,
+    "priceMax": 290,
+    "images": [
+      {
+        "src": "/catalog/products/p_0092/1.webp",
+        "alt": "Палетка теней Vivienne Sabo Croissant",
+        "sourceUrl": "https://basket-33.wbcontent.net/vol6870/part687084/687084796/images/big/7.webp"
+      },
+      {
+        "src": "/catalog/products/p_0092/2.webp",
+        "alt": "Оттенки палетки Croissant",
+        "sourceUrl": "https://basket-33.wbcontent.net/vol6870/part687084/687084796/images/big/3.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/687084796/detail.aspx",
+        "price": 290,
+        "originalPrice": 293,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0093",
+    "title": "Кожаный дорожный несессер",
+    "description": "Несессер из экокожи на молнии для поездок: внутри отделения для бритвы, щётки и косметики, есть крючок, чтобы повесить в ванной.\n\nНа AliExpress — рейтинг 4.7 и больше 20 тысяч покупок.",
+    "category": "outdoor",
+    "interests": [
+      "travel"
+    ],
+    "audience": "all",
+    "priceMin": 1250,
+    "priceMax": 1250,
+    "images": [
+      {
+        "src": "/catalog/products/p_0093/1.webp",
+        "alt": "Кожаный дорожный несессер",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sccacb00ff8cc4d4591874f56c634e152e.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0093/2.webp",
+        "alt": "Несессер с вещами для поездки",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sdbfaf5b116cf4d329523cd6970676b3aG.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0093/3.webp",
+        "alt": "Несессер в чемодане",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S61ef0bef7691412bae10f968ed04c55cF.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005008879585451.html",
+        "price": 1250,
+        "originalPrice": 1253.04,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0094",
+    "title": "Войлочный домик для кошки",
+    "description": "Домик-корзина из натурального войлока: можно поставить друг на друга два яруса с круглыми входами.\n\nНа AliExpress — рейтинг 4.9.",
+    "category": "pets",
+    "interests": [
+      "pets",
+      "home"
+    ],
+    "audience": "all",
+    "priceMin": 2790,
+    "priceMax": 2790,
+    "images": [
+      {
+        "src": "/catalog/products/p_0094/1.webp",
+        "alt": "Войлочный домик для кошки, серый",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S5017d804c125445d9b6c90b737e514eaS.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0094/2.webp",
+        "alt": "Кошка в войлочном домике",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sf91b0a7cfdf14e95872d40540b3a45d1H.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0094/3.webp",
+        "alt": "Кошка спит в домике",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sa2e11b0941e0471a8c9fd58785b12442O.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/4001056090358.html",
+        "price": 2790,
+        "originalPrice": 2785.2,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0095",
+    "title": "Подарочный набор Old Spice Wolfthorn с косметичкой",
+    "description": "Мужской набор Old Spice с ароматом Wolfthorn в фирменной косметичке.\n\nНа Wildberries у товаров Old Spice рейтинг 4.9 и сотни тысяч оценок.",
+    "category": "beauty",
+    "interests": [
+      "beauty",
+      "travel"
+    ],
+    "audience": "male",
+    "priceMin": 1380,
+    "priceMax": 1380,
+    "images": [
+      {
+        "src": "/catalog/products/p_0095/1.webp",
+        "alt": "Набор Old Spice Wolfthorn с косметичкой",
+        "sourceUrl": "https://basket-33.wbcontent.net/vol6988/part698881/698881723/images/big/7.webp"
+      },
+      {
+        "src": "/catalog/products/p_0095/2.webp",
+        "alt": "Косметичка Old Spice",
+        "sourceUrl": "https://basket-33.wbcontent.net/vol6988/part698881/698881723/images/big/6.webp"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/698881723/detail.aspx",
+        "price": 1380,
+        "originalPrice": 1381,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.55
+  },
+  {
+    "id": "p_0096",
+    "title": "Женские кожаные перчатки Anihasaiyou",
+    "description": "Зимние перчатки из натуральной кожи с тёплой велюровой подкладкой. Много цветов на выбор.\n\nНа AliExpress — рейтинг 4.8 и больше 7 тысяч покупок.",
+    "category": "fashion",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 1360,
+    "priceMax": 1360,
+    "images": [
+      {
+        "src": "/catalog/products/p_0096/1.webp",
+        "alt": "Женские кожаные перчатки, бордовые",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S27305af5c45847579e9c6f44a8a97e0dh.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0096/2.webp",
+        "alt": "Перчатки Anihasaiyou сбоку",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S47f20d1056914cb2a4170e254a8d1924U.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0096/3.webp",
+        "alt": "Кожа перчаток крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S2394ca2277724269bd081bf62591b248X.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005004319244723.html",
+        "price": 1360,
+        "originalPrice": 1360.68,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.5
+  },
+  {
+    "id": "p_0097",
+    "title": "Серьги-гвоздики Bamoer с жемчугом",
+    "description": "Классические серьги-гвоздики из серебра 925 с жемчужинами.\n\nНа AliExpress — рейтинг 4.7 и больше тысячи покупок.",
+    "category": "jewelry",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 330,
+    "priceMax": 330,
+    "images": [
+      {
+        "src": "/catalog/products/p_0097/1.webp",
+        "alt": "Серьги Bamoer с жемчугом",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sfc9773005ce24259be58a7a483e31363G.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0097/2.webp",
+        "alt": "Серьга Bamoer в ухе",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S905e9169754842f6a05fb812ca7fb86a5.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005009204859488.html",
+        "price": 330,
+        "originalPrice": 327.93,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
+  },
+  {
+    "id": "p_0098",
+    "title": "Женский шерстяной берет",
+    "description": "Классический шерстяной берет во французском стиле, больше десяти цветов.\n\nНа AliExpress — рейтинг 4.7 и больше 3 тысяч покупок.",
+    "category": "fashion",
+    "interests": [
+      "fashion"
+    ],
+    "audience": "female",
+    "priceMin": 830,
+    "priceMax": 830,
+    "images": [
+      {
+        "src": "/catalog/products/p_0098/1.webp",
+        "alt": "Шерстяной берет, чёрный",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S8a8c4510bde448219b4974394a1c2ec2N.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0098/2.webp",
+        "alt": "Шерстяной берет, молочный",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sf9855b296a6f44d9b9486eea9f491a035.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0098/3.webp",
+        "alt": "Шерстяной берет, оливковый",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S280d518b65214f1b9ee01a01ba28650bu.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0098/4.webp",
+        "alt": "Береты разных цветов",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S0af3b368515c43cb880e2fbec23c2b78T.jpg"
+      }
+    ],
+    "offers": [
+      {
+        "marketplace": "aliexpress",
+        "url": "https://aliexpress.ru/item/1005009255949790.html",
+        "price": 830,
+        "originalPrice": 831.45,
+        "originalCurrency": "KGS",
+        "checkedAt": "2026-11-27"
+      }
+    ],
+    "popularity": 0.45
   }
 ]
