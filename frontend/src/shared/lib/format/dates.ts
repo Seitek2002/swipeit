@@ -5,6 +5,7 @@ import {
   OCCASION_PHRASES,
 } from "@/shared/config";
 
+import { NBSP } from "./format-price";
 import { plural } from "./plural";
 
 const MINUTE = 60_000;
@@ -103,14 +104,19 @@ const MONTHS_GENITIVE = [
   "декабря",
 ];
 
-// «14 марта» по ISO-дате или "YYYY-MM-DD".
-export const formatDayMonth = (value: string): string => {
+// Между числом и месяцем — неразрывный пробел: в узкой строке напоминания
+// «10» оставалось в конце строки, а «декабря» уезжало на следующую.
+const dayMonthOf = (value: string, space: string): string => {
   const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
     ? new Date(`${value}T12:00:00`)
     : new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return `${date.getDate()} ${MONTHS_GENITIVE[date.getMonth()]}`;
+  return `${date.getDate()}${space}${MONTHS_GENITIVE[date.getMonth()]}`;
 };
+
+// «14 марта» по ISO-дате или "YYYY-MM-DD".
+export const formatDayMonth = (value: string): string =>
+  dayMonthOf(value, NBSP);
 
 type OccasionLike = {
   date?: string;
@@ -128,7 +134,9 @@ const PRESET_PHRASES: Record<string, string> = IMPORTANT_DATE_PRESET_PHRASES;
 // ссылку не попадает. Старый custom — его подпись как есть.
 export const occasionLabel = (occasion?: OccasionLike): string => {
   if (!occasion) return "";
-  const date = occasion.date ? formatDayMonth(occasion.date) : "";
+  // Пока с обычным пробелом: эти строки сверяют тесты mock-server
+  // (important-dates.test.ts) — неразрывный переводить вместе с ними.
+  const date = occasion.date ? dayMonthOf(occasion.date, " ") : "";
   if (occasion.kind === "important") {
     const phrase = occasion.preset ? PRESET_PHRASES[occasion.preset] : "";
     if (phrase) return [phrase, date].filter(Boolean).join(", ");
@@ -147,5 +155,5 @@ export const occasionLabel = (occasion?: OccasionLike): string => {
 export const formatBirthday = (birthday: string): string => {
   const [month = 0, day = 0] = birthday.split("-").map(Number);
   const name = MONTHS_GENITIVE[month - 1];
-  return name && day ? `${day} ${name}` : "";
+  return name && day ? `${day}${NBSP}${name}` : "";
 };

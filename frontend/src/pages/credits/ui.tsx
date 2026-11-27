@@ -50,7 +50,8 @@ const CreditRow = ({ row }: { row: Row }) => {
           <span className="min-w-0 truncate">{activity.title}</span>
         </a>
         {/* Обрезается только автор: лицензию показывать обязательно (CC BY),
-            поэтому она не сжимается и всегда видна целиком. */}
+            поэтому она не сжимается и всегда видна целиком. Зона нажатия
+            лицензии — псевдоэлемент не меньше 44×44: «CC0» сам ~20px. */}
         <p className="text-caption text-rose flex min-w-0 items-center gap-1 whitespace-nowrap">
           <span className="min-w-0 truncate">{credit.author}</span>
           <span aria-hidden className="flex-none">
@@ -61,7 +62,7 @@ const CreditRow = ({ row }: { row: Row }) => {
               href={credit.licenseUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative z-[1] inline-flex min-h-6 flex-none items-center underline underline-offset-2 before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-['']"
+              className="relative z-[1] inline-flex min-h-6 flex-none items-center underline underline-offset-2 before:absolute before:-inset-y-2.5 before:left-1/2 before:w-[max(calc(100%+8px),44px)] before:-translate-x-1/2 before:content-['']"
             >
               {credit.license}
             </a>

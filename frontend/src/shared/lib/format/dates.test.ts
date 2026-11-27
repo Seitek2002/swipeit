@@ -54,8 +54,8 @@ describe("дни рождения", () => {
 
 describe("formatDayMonth", () => {
   it("дата без времени — по местному календарю, без сдвига поясом", () => {
-    expect(formatDayMonth("2027-03-14")).toBe("14 марта");
-    expect(formatDayMonth("2026-12-31")).toBe("31 декабря");
+    expect(formatDayMonth("2027-03-14")).toBe("14\u00a0марта");
+    expect(formatDayMonth("2026-12-31")).toBe("31\u00a0декабря");
   });
 
   it("мусор — пустая строка", () => {
@@ -66,7 +66,7 @@ describe("formatDayMonth", () => {
 describe("formatBirthday", () => {
   it("MM-DD → «5 декабря», мусор — пусто", async () => {
     const { formatBirthday } = await import("./dates");
-    expect(formatBirthday("12-05")).toBe("5 декабря");
+    expect(formatBirthday("12-05")).toBe("5\u00a0декабря");
     expect(formatBirthday("13-01")).toBe("");
   });
 });

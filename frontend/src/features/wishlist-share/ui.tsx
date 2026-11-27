@@ -343,20 +343,15 @@ export const WishlistShareSheet = ({
   const back = BACK[current];
   const busy = pending !== null;
 
-  const title = (
-    <span className="flex items-center gap-1">
-      {back && (
-        <button
-          type="button"
-          aria-label="Назад"
-          onClick={() => go(back)}
-          className="text-paper -ml-2 grid size-11 flex-none place-items-center rounded-full"
-        >
-          <ChevronLeft aria-hidden size={24} strokeWidth={1.75} />
-        </button>
-      )}
-      <span>{TITLES[current]}</span>
-    </span>
+  const backButton = back && (
+    <button
+      type="button"
+      aria-label="Назад"
+      onClick={() => go(back)}
+      className="text-paper -ml-2 grid size-11 flex-none place-items-center rounded-full"
+    >
+      <ChevronLeft aria-hidden size={24} strokeWidth={1.75} />
+    </button>
   );
 
   const errorLine = error && (
@@ -369,7 +364,8 @@ export const WishlistShareSheet = ({
     <BottomSheet
       open={open}
       onClose={onClose}
-      title={title}
+      title={TITLES[current]}
+      headerStart={backButton}
       height={current === "send" ? "full" : "auto"}
     >
       <div ref={stepRef} tabIndex={-1} className="outline-none">

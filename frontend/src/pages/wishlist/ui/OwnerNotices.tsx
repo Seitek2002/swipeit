@@ -36,8 +36,10 @@ export const ReservationNote = ({ data }: { data: WishlistResponse }) => {
           выбрал
         </p>
       )}
+      {/* Строка — вся зона нажатия, 44px; -my-1 оставляет в потоке прежние
+          36px, чтобы отступы вокруг не выросли. */}
       <Switch
-        className="min-h-9"
+        className="-my-1"
         label="Не показывать мне даже это"
         checked={hidden}
         onChange={toggle}

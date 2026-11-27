@@ -26,6 +26,9 @@ type Props = {
   footer?: ReactNode;
   // Что-то справа от заголовка (кнопка «Сбросить» и т. п.).
   headerExtra?: ReactNode;
+  // Что-то слева от заголовка (стрелка «Назад»): вне <h2>, иначе
+  // скринридер читает её подпись как часть заголовка шторки.
+  headerStart?: ReactNode;
   // auto — по контенту (до 90% высоты), full — всегда 90%.
   height?: "auto" | "full";
   onClose: () => void;
@@ -55,6 +58,7 @@ const SheetPanel = ({
   title,
   ariaLabel,
   headerExtra,
+  headerStart,
   footer,
   height = "auto",
   onClose,
@@ -154,9 +158,12 @@ const SheetPanel = ({
             onPointerDown={startDrag}
             className="flex flex-none touch-none items-center gap-3 px-5 pt-0.5 pb-3.5"
           >
-            <h2 id={titleId} className="text-title-2 min-w-0 flex-1">
-              {title}
-            </h2>
+            <div className="flex min-w-0 flex-1 items-center gap-1">
+              {headerStart}
+              <h2 id={titleId} className="text-title-2 min-w-0 flex-1">
+                {title}
+              </h2>
+            </div>
             {headerExtra}
           </div>
         )}

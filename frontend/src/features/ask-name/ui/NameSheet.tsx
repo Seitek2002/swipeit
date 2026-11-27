@@ -85,10 +85,13 @@ export const NameForm = ({
           />
         </div>
       </div>
+      {/* Колонки не уже 44px (зона нажатия, DESIGN §4): 8 × 44 не помещается
+          на 360px — там последний кружок уходит на вторую строку, а где
+          помещается, кружки делят ширину поровну. */}
       <div
         role="radiogroup"
         aria-label="Цвет аватара"
-        className="-mx-1 grid grid-cols-8"
+        className="-mx-1 grid grid-cols-[repeat(auto-fit,minmax(44px,1fr))]"
       >
         {AVATAR_COLORS.map((option) => {
           const selected = option === avatarColor;
