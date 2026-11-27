@@ -4,8 +4,9 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { type MotionValue, motion, useTransform } from "motion/react";
 
-import { withBasePath } from "@/shared/lib/base-path";
 import { usePreloaderDone } from "@/shared/lib/preloader";
+
+import { GuideHand, GuideScroll } from "./GuideIcons";
 
 // Текст подсказки для скринридера — у карточки в aria-describedby (сам слой
 // aria-hidden).
@@ -23,11 +24,7 @@ type Props = {
 const DASH = "rgb(255 241 243 / 0.5)";
 
 const Hand = ({ delay }: { delay: string }) => (
-  <img
-    src={withBasePath("/icons/guide-hand.svg")}
-    alt=""
-    width={56}
-    height={56}
+  <GuideHand
     className="guide-press block size-14"
     style={{ "--delay": delay } as CSSProperties}
   />
@@ -75,13 +72,7 @@ export const DeckGuide = ({ x, onMore, plaque }: Props) => {
             onClick={onMore}
             className="text-paper pointer-events-auto absolute inset-x-0 top-[52%] bottom-0 flex flex-col items-center gap-2 pt-7"
           >
-            <img
-              src={withBasePath("/icons/guide-scroll.svg")}
-              alt=""
-              width={80}
-              height={54}
-              className="block h-[54px] w-20"
-            />
+            <GuideScroll className="block h-[54px] w-20" />
             <span className="text-body-lg font-semibold">
               Подробнее о подарке
             </span>

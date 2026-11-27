@@ -1,12 +1,11 @@
 "use client";
 
-import { type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, useRef, useState } from "react";
 
 import { clock } from "@/shared/lib/clock";
 import { formatBirthday } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 
-import { Chip } from "../chip";
 import {
   MONTHS_FULL,
   MONTHS_SHORT,
@@ -29,26 +28,11 @@ type Props = {
   value: null | string;
 };
 
-// Подтянуть выбранный месяц в видимую часть ряда, не дёргая ряд, если он и
-// так виден (как в quick-start.html, кадр 4). Отступ 20px — поле экрана.
-const EDGE = 20;
-const revealChip = (row: HTMLElement | null) => {
-  const chip = row?.querySelector<HTMLElement>('[aria-pressed="true"]');
-  if (!row || !chip) return;
-  const left = chip.offsetLeft;
-  const right = left + chip.offsetWidth;
-  if (
-    left < row.scrollLeft + EDGE ||
-    right > row.scrollLeft + row.clientWidth - EDGE
-  )
-    row.scrollLeft = left - EDGE;
-};
-
-// DayMonthPicker (DESIGN.md §7): день и месяц без года. Сверху месяцы чипами
-// в горизонтальной прокрутке, под ними живая подпись «14 марта» и сетка дней
+// DayMonthPicker (DESIGN.md §7): день и месяц без года. Сверху 12 месяцев
+// чипами в два ряда по 6, под ними живая подпись «14 марта» и сетка дней
 // 7 колонок. Дней недели нет — год неизвестен. Кнопку «Дальше»/«Сохранить»
 // рисует тот, кто встроил пикер (вариант paper: мандарин занят выбранным
-// днём). Ряд месяцев выходит на поля (-mx-5) — пикер живёт в теле шторки.
+// днём).
 //
 // Клавиатура: ячейки — roving tabindex (в сетку попадаешь одним Tab), стрелки
 // двигают фокус по дням и неделям, Home/End — к краям месяца, Enter и пробел
@@ -66,17 +50,12 @@ export const DayMonthPicker = ({
   );
   // Какой день доступен по Tab, пока по сетке ходят стрелками.
   const [focusDay, setFocusDay] = useState<null | number>(null);
-  const rowRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Выбранное значение главнее: месяц на экране — месяц выбранного дня.
   const month = parsed?.month ?? viewMonth;
   const maxDay = daysInMonth(month);
   const tabbableDay = Math.min(focusDay ?? parsed?.day ?? 1, maxDay);
-
-  useEffect(() => {
-    revealChip(rowRef.current);
-  }, [month]);
 
   const pickMonth = (next: number) => {
     setViewMonth(next);
@@ -106,23 +85,35 @@ export const DayMonthPicker = ({
 
   return (
     <div className={cn("flex flex-col", className)}>
+      {/* Все 12 месяцев видны сразу (UX-аудит 27.11.2026, M6): в ряду с
+          прокруткой январь–июнь уезжали за левый край, и мартовский день
+          рождения приходилось искать. На 360px ячейка ~46px: Check
+          выбранного чипа не помещается рядом с «сен», выбранный узнаётся по
+          «Бумаге». Зона нажатия — 44px по высоте (before), как у Chip. */}
       <div
-        ref={rowRef}
         role="group"
         aria-label="Месяц"
-        className="no-scrollbar relative -mx-5 flex gap-2 overflow-x-auto px-5 py-1"
+        className="grid grid-cols-6 gap-2 py-1"
       >
-        {MONTHS_SHORT.map((short, index) => (
-          <Chip
-            key={short}
-            selected={index + 1 === month}
-            aria-label={MONTHS_FULL[index]}
-            disabled={disabled}
-            onClick={() => pickMonth(index + 1)}
-          >
-            {short}
-          </Chip>
-        ))}
+        {MONTHS_SHORT.map((short, index) => {
+          const selected = index + 1 === month;
+          return (
+            <button
+              key={short}
+              type="button"
+              aria-pressed={selected}
+              aria-label={MONTHS_FULL[index]}
+              disabled={disabled}
+              onClick={() => pickMonth(index + 1)}
+              className={cn(
+                "rounded-chip ease-out-soft relative h-9 min-w-0 text-[14px] leading-none font-medium transition-[background-color,color] duration-200 before:absolute before:inset-x-0 before:-inset-y-1 before:content-[''] disabled:pointer-events-none",
+                selected ? "bg-paper text-ink" : "bg-velvet-3 text-paper",
+              )}
+            >
+              {short}
+            </button>
+          );
+        })}
       </div>
 
       <p className="text-title-3 text-paper mt-4 mb-2.5" aria-live="polite">

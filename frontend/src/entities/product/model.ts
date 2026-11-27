@@ -28,6 +28,28 @@ export const storeLabels = (product: Product): string[] => [
   ...new Set(product.offers.map(storeLabel)),
 ];
 
+const cheaper = (best: Offer, offer: Offer) =>
+  offer.price < best.price ? offer : best;
+
+// Самый дешёвый оффер — куда ведёт «Купить на …» у гостя после брони
+// (DESIGN.md §8.5). Офферов у товара всегда хотя бы один (ProductSchema).
+export const cheapestOffer = (product: Product): Offer =>
+  product.offers.reduce(cheaper);
+
+// Магазины без повторов, у каждого — его самый дешёвый оффер: плашки
+// магазинов на карточке гостя — ссылки (DESIGN.md §8.5).
+export const storeOffers = (
+  product: Product,
+): { label: string; offer: Offer }[] => {
+  const byLabel = new Map<string, Offer>();
+  for (const offer of product.offers) {
+    const label = storeLabel(offer);
+    const best = byLabel.get(label);
+    byLabel.set(label, best ? cheaper(best, offer) : offer);
+  }
+  return [...byLabel].map(([label, offer]) => ({ label, offer }));
+};
+
 // Цвета для точек-сваточей на бирке (DESIGN.md §7: если у товара есть
 // варианты с цветами).
 export const colorSwatches = (product: Product): string[] =>

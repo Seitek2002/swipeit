@@ -23,6 +23,10 @@ import {
 type Props = {
   // Условия словами — их показывает экран, который открыл шторку.
   conditions: string;
+  // «Кому» заполнено заранее — шторку открыли с профиля друга или из
+  // баннера его дня рождения (DESIGN.md §8.6 «Где начать»). Читается при
+  // монтировании: другому другу — своя шторка (key).
+  defaultToName?: string;
   filters: ProductFilters;
   // Сначала имя (DESIGN.md §8.6) — форму NameSheet даёт страница
   // (features/ask-name): фичи друг друга не импортируют. Пока он есть,
@@ -44,12 +48,13 @@ export const PickRequestSheet = ({
   onClose,
   filters,
   conditions,
+  defaultToName = "",
   nameStep,
   onShareError,
 }: Props) => {
   const { data: me } = useMe();
   const askName = Boolean(nameStep);
-  const [toName, setToName] = useState("");
+  const [toName, setToName] = useState(defaultToName);
   const [draft, setDraft] = useState(() => occasionDraftOf());
   const [message, setMessage] = useState("");
   const [hidePrices, setHidePrices] = useState(false);

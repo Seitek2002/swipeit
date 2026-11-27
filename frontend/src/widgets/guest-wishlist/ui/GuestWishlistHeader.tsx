@@ -1,8 +1,12 @@
+import type { ReactNode } from "react";
+
 import type { Occasion } from "@/shared/api";
 import { genitive, occasionLabel } from "@/shared/lib/format";
 import { Avatar } from "@/shared/ui";
 
 type Props = {
+  // Под шапкой: «Предложить выбрать подарок» на профиле друга (DESIGN §8.6).
+  action?: ReactNode;
   message?: string;
   occasion?: null | Occasion;
   owner: {
@@ -18,6 +22,7 @@ type Props = {
 // по ссылке всё это лежит в самой ссылке (d=) — шапка рисуется сразу, не
 // дожидаясь каталога (UX-аудит H2), а бирки — скелетонами.
 export const GuestWishlistHeader = ({
+  action,
   owner,
   occasion,
   message,
@@ -42,6 +47,7 @@ export const GuestWishlistHeader = ({
           {message}
         </p>
       )}
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 };

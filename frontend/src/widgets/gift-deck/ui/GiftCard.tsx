@@ -157,6 +157,7 @@ const GiftCardActions = ({ state }: { state: PhotoCardState }) => {
   const likeBg = useGlass(p, "rgba(255, 138, 61, 0.92)", PAPER);
   const likeColor = useGlass(p, INK, MANDARIN_INK);
   const disabled = state.disabled || !state.isTop;
+  const undoDisabled = disabled || !state.canUndo;
 
   return (
     <div className="sticky bottom-0 z-[3] px-5 pb-4">
@@ -169,12 +170,16 @@ const GiftCardActions = ({ state }: { state: PhotoCardState }) => {
         <motion.button
           type="button"
           aria-label="Вернуть"
-          disabled={disabled || !state.canUndo}
+          disabled={undoDisabled}
           onClick={state.undo}
           style={{
             backgroundColor: smallBg,
             color: smallColor,
-            boxShadow: smallShadow,
+            // Неактивная — без тени, как в стеклянном ряду: на «бумажном»
+            // ряду тень приподнимала её, и при 0.4 она читалась нажимаемой
+            // (UX-аудит 27.11.2026, L2). Inline-стиль motion перебил бы
+            // disabled:shadow-none, поэтому решаем здесь.
+            boxShadow: undoDisabled ? "none" : smallShadow,
           }}
           className="grid size-11 place-items-center rounded-full disabled:opacity-40"
         >

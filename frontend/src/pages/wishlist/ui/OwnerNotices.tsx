@@ -40,7 +40,7 @@ export const ReservationNote = ({ data }: { data: WishlistResponse }) => {
           36px, чтобы отступы вокруг не выросли. */}
       <Switch
         className="-my-1"
-        label="Не показывать мне даже это"
+        label="Скрыть, сколько уже выбрали"
         checked={hidden}
         onChange={toggle}
       />

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Check, Gift } from "lucide-react";
+import { Check, ExternalLink, Gift } from "lucide-react";
 
 import { useGuestStore } from "@/shared/store";
 import { BottomSheet, Button, TextField } from "@/shared/ui";
@@ -21,7 +21,17 @@ export type NameGuard = {
   run: (action: () => unknown) => void;
 };
 
+// Куда идти покупать: самый дешёвый оффер или ссылка своего желания. store —
+// для подписи «Купить на AliExpress»; без него — «Где купить».
+export type BuyLink = {
+  href: string;
+  store?: string;
+};
+
 type Props = {
+  // После брони следующий шаг гостя — купить: ссылка в магазин сразу под
+  // «Этот подарок выбран тобой» (DESIGN.md §8.5, UX-аудит 27.11.2026, M3).
+  buy?: BuyLink;
   itemKey: string;
   // Профиль без имени — NameSheet, имя сохраняется в профиль (DESIGN.md
   // §8.5); бронь продолжается сама. NAME_REQUIRED от сервера — та же шторка.
@@ -30,9 +40,11 @@ type Props = {
 };
 
 // Бронь на карточке чужого вишлиста (DESIGN.md §8.5, reference .g-act):
-// «Забронирую я» → «Ты выбрал этот подарок» с «Отменить»; у других гостей —
-// «Кто-то уже выбрал»; подаренное желание у забронировавшего — «Уже подарено».
-export const ReserveControl = ({ ownerId, itemKey, nameGuard }: Props) => {
+// «Забронирую я» → «Этот подарок выбран тобой» с «Отменить» и «Купить на …»;
+// у других гостей — «Кто-то уже выбрал»; подаренное желание у
+// забронировавшего — «Уже подарено». Тексты без рода: гость может быть кем
+// угодно (UX-аудит, L4).
+export const ReserveControl = ({ ownerId, itemKey, nameGuard, buy }: Props) => {
   const reserver = useReserver();
   const reservations = useReservations(ownerId);
   const reserve = useReserve(ownerId);
@@ -90,20 +102,35 @@ export const ReserveControl = ({ ownerId, itemKey, nameGuard }: Props) => {
 
   if (state === "mine") {
     return (
-      <div className="bg-paper-2 rounded-field flex min-h-12 items-center justify-between gap-2 pr-1.5 pl-3.5 text-[15px] leading-5 font-semibold">
-        <span className="flex items-center gap-2">
-          <Check aria-hidden size={18} strokeWidth={2} />
-          Ты выбрал этот подарок
-        </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-ink-soft"
-          loading={cancel.isPending}
-          onClick={() => id && cancel.mutate(id)}
-        >
-          Отменить
-        </Button>
+      <div className="flex flex-col items-center gap-1.5">
+        <div className="bg-paper-2 rounded-field flex min-h-12 w-full items-center justify-between gap-2 pr-1.5 pl-3.5 text-[15px] leading-5 font-semibold">
+          <span className="flex items-center gap-2">
+            <Check aria-hidden size={18} strokeWidth={2} />
+            Этот подарок выбран тобой
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-ink-soft"
+            loading={cancel.isPending}
+            onClick={() => id && cancel.mutate(id)}
+          >
+            Отменить
+          </Button>
+        </div>
+        {buy && (
+          // «Мандарин-чернила», а не мандарин: на бумаге светлый мандарин
+          // нечитаем, а главная кнопка этой карточки уже не нужна.
+          <a
+            href={buy.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-mandarin-ink flex min-h-11 items-center gap-1.5 px-2 text-[15px] leading-5 font-semibold"
+          >
+            {buy.store ? `Купить на ${buy.store}` : "Где купить"}
+            <ExternalLink aria-hidden size={16} strokeWidth={2} />
+          </a>
+        )}
       </div>
     );
   }

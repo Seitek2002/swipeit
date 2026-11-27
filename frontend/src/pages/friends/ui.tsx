@@ -1,12 +1,13 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 
 import Link from "next/link";
 
-import { ChevronRight, Gift } from "lucide-react";
+import { ChevronRight, Gift, Sparkles } from "lucide-react";
 
 import { AppHeader } from "@/widgets/app-header";
+import { FriendPickSheet } from "@/widgets/friend-pick-sheet";
 
 import { type FriendSummary, useFriends, usePresence } from "@/entities/user";
 
@@ -45,34 +46,53 @@ const rowNote = ({ user, daysToBirthday }: FriendSummary) => {
 };
 
 // Ближайший день рождения (DESIGN.md §8.9): «Через 5 дней у Нурай —
-// посмотреть вишлист».
-const SoonCard = ({ friend }: { friend: FriendSummary }) => (
-  <Link
-    href={ROUTES.FRIEND_PROFILE(friend.user.id)}
-    className="paper rounded-paper shadow-paper mx-5 mt-2 flex items-center gap-3.5 px-4 py-3.5"
-  >
-    <Avatar
-      name={friend.user.name}
-      color={friend.user.avatarColor}
-      size={48}
-      decorative
-    />
-    <span className="min-w-0 flex-1">
-      <span className="text-title-3 block">
-        {whenLabel(friend.daysToBirthday ?? 0)} у {friend.user.name}
+// посмотреть вишлист». Второе действие — «Предложить выбрать» (DESIGN.md
+// §8.6 «Где начать»): подарок на выбор ищут здесь, а не в фильтрах ленты.
+// Отдельной строкой карточки, а не ссылкой рядом: на 360px две подписи в
+// одну строку не помещаются.
+const SoonCard = ({
+  friend,
+  onPick,
+}: {
+  friend: FriendSummary;
+  onPick: () => void;
+}) => (
+  <div className="paper rounded-paper shadow-paper mx-5 mt-2 px-4 pt-3.5 pb-1">
+    <Link
+      href={ROUTES.FRIEND_PROFILE(friend.user.id)}
+      className="flex items-center gap-3.5 pb-3"
+    >
+      <Avatar
+        name={friend.user.name}
+        color={friend.user.avatarColor}
+        size={48}
+        decorative
+      />
+      <span className="min-w-0 flex-1">
+        <span className="text-title-3 block">
+          {whenLabel(friend.daysToBirthday ?? 0)} у {friend.user.name}
+        </span>
+        <span className="text-caption text-ink-soft mt-0.5 flex items-center gap-1">
+          <Gift aria-hidden size={14} strokeWidth={1.75} />
+          Посмотреть вишлист
+        </span>
       </span>
-      <span className="text-caption text-ink-soft mt-0.5 flex items-center gap-1">
-        <Gift aria-hidden size={14} strokeWidth={1.75} />
-        Посмотреть вишлист
-      </span>
-    </span>
-    <ChevronRight
-      aria-hidden
-      size={22}
-      strokeWidth={1.75}
-      className="text-ink-soft flex-none"
-    />
-  </Link>
+      <ChevronRight
+        aria-hidden
+        size={22}
+        strokeWidth={1.75}
+        className="text-ink-soft flex-none"
+      />
+    </Link>
+    <button
+      type="button"
+      onClick={onPick}
+      className="border-paper-2 text-ink flex min-h-11 w-full items-center gap-2 border-t text-[15px] leading-5 font-semibold"
+    >
+      <Sparkles aria-hidden size={16} strokeWidth={1.75} />
+      Предложить выбрать
+    </button>
+  </div>
 );
 
 const FriendSection = ({
@@ -147,11 +167,12 @@ export const FriendsPage = () => {
     nearest.daysToBirthday <= SOON_DAYS
       ? nearest
       : null;
+  const [pickOpen, setPickOpen] = useState(false);
 
   return (
     <Screen>
       <AppHeader title="Друзья" showBack backHref={ROUTES.PROFILE} />
-      <ScreenBody className="pb-6">
+      <ScreenBody>
         {friends.isError ? (
           <EmptyState
             className="h-full"
@@ -176,7 +197,9 @@ export const FriendsPage = () => {
           <EmptyState className="h-full" title="Друзей пока нет." />
         ) : (
           <>
-            {soon && <SoonCard friend={soon} />}
+            {soon && (
+              <SoonCard friend={soon} onPick={() => setPickOpen(true)} />
+            )}
             {getMode() === "lan" ? (
               <>
                 {/* Сеть (DESIGN.md §8.11): люди с мятной точкой онлайна
@@ -212,6 +235,13 @@ export const FriendsPage = () => {
           </>
         )}
       </ScreenBody>
+      {soon && (
+        <FriendPickSheet
+          friendName={soon.user.name}
+          open={pickOpen}
+          onClose={() => setPickOpen(false)}
+        />
+      )}
     </Screen>
   );
 };
