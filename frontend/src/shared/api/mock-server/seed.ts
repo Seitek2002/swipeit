@@ -22,6 +22,8 @@ import { computeTaste } from "./taste";
 // с вишлистом. Это тот же человек, что и бот-подруга Айгерим, — при демо-входе
 // она перестаёт быть ботом. Так в демо нет двух разных «Айгерим».
 export const DEMO_USER_ID = "u_aigerim";
+// Значимая дата Айгерим в сиде — «Годовщина, 2 июня».
+export const DEMO_ANNIVERSARY_ID = "d_seed_anniversary";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -266,6 +268,18 @@ export const createSeedDb = ({
       const year = new Date(now).getFullYear();
       meta.occasion = { kind: "new_year", date: `${year}-12-31` };
       meta.message = "Буду рада любому подарку из списка";
+      // «Мои даты» в профиле не пустые: день рождения (03-14) и одна
+      // значимая дата с готовым поводом (TASKS T24, «Сид»).
+      db.importantDates[bot.id] = [
+        {
+          id: DEMO_ANNIVERSARY_ID,
+          ownerId: bot.id,
+          date: "06-02",
+          preset: "anniversary",
+          autoNumber: 1,
+          createdAt,
+        },
+      ];
     } else if (birthday) {
       meta.occasion = {
         kind: "birthday",

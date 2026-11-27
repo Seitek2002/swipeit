@@ -69,6 +69,18 @@ const writeMe = async (ctx: HandlerContext, mutate: (me: User) => void) => {
 // §7a). Боты всегда с именем.
 export const isNamelessHuman = (user: User) => !user.isBot && !user.name;
 
+// Профиль глазами других: без личного — подсказок, вкуса, «Не моё» и
+// скрытых напоминаний (TECH_SPEC §6 «Личное»). День рождения остаётся: его
+// видят друзья в списке.
+export const publicUser = (user: User): User => {
+  const view = { ...user };
+  delete view.seenHints;
+  delete view.mutedInterests;
+  delete view.taste;
+  delete view.dismissedReminders;
+  return view;
+};
+
 // POST /users — профиль создаётся сам при первом входе, без анкеты (DESIGN
 // §8.1): без имени, со случайным фоном аватара, без интересов, «всем».
 // Тело необязательное — поля оставлены для совместимости со старыми
@@ -139,7 +151,8 @@ export const updateMe: Handler = async (ctx, { body }) => {
   return writeMe(ctx, (me) => {
     if (patch.name !== undefined) me.name = patch.name;
     if (patch.avatarColor !== undefined) me.avatarColor = patch.avatarColor;
-    if (patch.birthday !== undefined) me.birthday = patch.birthday;
+    if (patch.birthday === null) delete me.birthday;
+    else if (patch.birthday !== undefined) me.birthday = patch.birthday;
     if (patch.audience !== undefined) me.audience = patch.audience;
     if (interests !== undefined) {
       me.interests = unique(interests);
@@ -176,7 +189,7 @@ export const getUser: Handler = async (ctx, { params }) => {
   const db = await ctx.db.read();
   const user = db.users[params.id ?? ""];
   if (!user) throw notFound("Профиль не найден");
-  return user;
+  return user.id === ctx.userId ? user : publicUser(user);
 };
 
 const byName = (a: User, b: User) =>
@@ -201,7 +214,7 @@ export const listFriends: Handler = async (ctx) => {
       (user): user is User => user !== undefined && !isNamelessHuman(user),
     )
     .map((user) => ({
-      user: { ...user, name: user.name ?? "" },
+      user: { ...publicUser(user), name: user.name ?? "" },
       daysToBirthday: user.birthday
         ? daysUntilBirthday(user.birthday, now)
         : null,

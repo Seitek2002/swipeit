@@ -1,3 +1,10 @@
+import {
+  IMPORTANT_DATE_PHRASE_PREFIX,
+  IMPORTANT_DATE_PRESET_PHRASES,
+  OCCASION_DATE_IN_PHRASE,
+  OCCASION_PHRASES,
+} from "@/shared/config";
+
 import { plural } from "./plural";
 
 const MINUTE = 60_000;
@@ -105,22 +112,34 @@ export const formatDayMonth = (value: string): string => {
   return `${date.getDate()} ${MONTHS_GENITIVE[date.getMonth()]}`;
 };
 
-type OccasionLike = { date?: string; kind: string; label?: string };
-
-const OCCASION_PHRASE: Record<string, string> = {
-  birthday: "на день рождения",
-  new_year: "на Новый год",
-  just_because: "просто так",
+type OccasionLike = {
+  date?: string;
+  kind: string;
+  label?: string;
+  preset?: string;
 };
 
-// Подзаголовок вишлиста: «на день рождения, 14 марта» (DESIGN.md §8.3).
+const PHRASES: Record<string, string> = OCCASION_PHRASES;
+const PRESET_PHRASES: Record<string, string> = IMPORTANT_DATE_PRESET_PHRASES;
+
+// Подзаголовок вишлиста так, как его видят гости (DESIGN.md §8.3, §8.4):
+// «на день рождения, 14 марта», «на 8 Марта», «на годовщину, 2 июня».
+// Значимая дата без готового повода — «к 2 июня»: своё название личное, в
+// ссылку не попадает. Старый custom — его подпись как есть.
 export const occasionLabel = (occasion?: OccasionLike): string => {
   if (!occasion) return "";
+  const date = occasion.date ? formatDayMonth(occasion.date) : "";
+  if (occasion.kind === "important") {
+    const phrase = occasion.preset ? PRESET_PHRASES[occasion.preset] : "";
+    if (phrase) return [phrase, date].filter(Boolean).join(", ");
+    return date ? `${IMPORTANT_DATE_PHRASE_PREFIX} ${date}` : "";
+  }
   const phrase =
     occasion.kind === "custom"
       ? (occasion.label ?? "").trim()
-      : (OCCASION_PHRASE[occasion.kind] ?? "");
-  const date = occasion.date ? formatDayMonth(occasion.date) : "";
+      : (PHRASES[occasion.kind] ?? "");
+  // У 8 Марта дата уже в названии.
+  if (OCCASION_DATE_IN_PHRASE.has(occasion.kind)) return phrase;
   return [phrase, date].filter(Boolean).join(", ");
 };
 

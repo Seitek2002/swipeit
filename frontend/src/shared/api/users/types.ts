@@ -4,6 +4,8 @@ import {
   AUDIENCES,
   AVATAR_COLORS,
   CATEGORY_IDS,
+  IMPORTANT_DATE_LABEL_MAX,
+  IMPORTANT_DATE_PRESETS,
   INTEREST_IDS,
 } from "@/shared/config";
 
@@ -54,6 +56,34 @@ export const TasteSchema = z.object({
   updatedAt: z.string(),
 });
 
+// Значимая дата (TECH_SPEC §5 ImportantDate) — личное: в ссылки и чужим не
+// отдаётся. Название для владельца — importantDateTitle из shared/config.
+export const ImportantDateSchema = z.object({
+  id: z.string().min(1),
+  ownerId: z.string().min(1),
+  date: MonthDaySchema,
+  preset: z.enum(IMPORTANT_DATE_PRESETS).optional(),
+  label: z.string().min(1).max(IMPORTANT_DATE_LABEL_MAX).optional(),
+  // Ставится при создании; виден, только пока нет ни label, ни preset.
+  autoNumber: z.number().int().positive(),
+  createdAt: z.string(),
+});
+
+// Напоминание за месяц до своей даты (TECH_SPEC §6 «Даты и напоминания»).
+// Вычисляется сервером, в базе не хранится.
+export const ReminderSchema = z.object({
+  // "birthday:2027" или "<dateId>:2027": ключ даты + год наступления.
+  id: z.string(),
+  kind: z.enum(["birthday", "important"]),
+  dateId: z.string().optional(),
+  // «твой день рождения» или название даты.
+  label: z.string(),
+  // "YYYY-MM-DD" ближайшего наступления.
+  date: z.string(),
+  // 0..30.
+  daysLeft: z.number().int().min(0),
+});
+
 export const UserSchema = z.object({
   id: z.string().min(1),
   // Нет, пока человек не назвался: имя спрашиваем, когда его увидят другие
@@ -72,6 +102,9 @@ export const UserSchema = z.object({
   // «Не моё» — интерес больше не предлагаем, лента его опускает.
   mutedInterests: z.array(z.string()).optional(),
   taste: TasteSchema.optional(),
+  // id напоминаний, скрытых кнопкой «Скрыть». В id есть год — поэтому
+  // «Скрыть» действует до следующего года.
+  dismissedReminders: z.array(z.string()).optional(),
   isBot: z.boolean(),
   bot: BotProfileSchema.optional(),
   createdAt: z.string(),
@@ -81,6 +114,49 @@ export type BotProfile = z.infer<typeof BotProfileSchema>;
 export type User = z.infer<typeof UserSchema>;
 export type HintId = z.infer<typeof HintIdSchema>;
 export type Taste = z.infer<typeof TasteSchema>;
+export type ImportantDate = z.infer<typeof ImportantDateSchema>;
+export type Reminder = z.infer<typeof ReminderSchema>;
+export type { ImportantDatePreset } from "@/shared/config";
+
+// GET /me/dates: дата и то, что сервер посчитал для экрана — название для
+// владельца и ближайшее наступление ("YYYY-MM-DD"). Сортировка — по нему.
+export type ImportantDateView = ImportantDate & {
+  nextDate: string;
+  title: string;
+};
+
+// POST /me/dates. autoNumber — только при «Отменить» после удаления: сервер
+// оставит его, если номер свободен.
+export const CreateDateInputSchema = z.object({
+  date: MonthDaySchema,
+  preset: z.enum(IMPORTANT_DATE_PRESETS).optional(),
+  label: z
+    .string()
+    .trim()
+    .max(
+      IMPORTANT_DATE_LABEL_MAX,
+      `Название — до ${IMPORTANT_DATE_LABEL_MAX} символов`,
+    )
+    .optional(),
+  autoNumber: z.number().int().positive().max(999).optional(),
+});
+export type CreateDateInput = z.input<typeof CreateDateInputSchema>;
+
+// PATCH /me/dates/:id. Пустое название или null — вернуть подпись готового
+// повода или «Значимая дата N».
+export const UpdateDateInputSchema = z.object({
+  label: z
+    .string()
+    .trim()
+    .max(
+      IMPORTANT_DATE_LABEL_MAX,
+      `Название — до ${IMPORTANT_DATE_LABEL_MAX} символов`,
+    )
+    .nullable()
+    .optional(),
+  date: MonthDaySchema.optional(),
+});
+export type UpdateDateInput = z.input<typeof UpdateDateInputSchema>;
 
 // GET /me: профиль и вычисленные сервером поля (в базе не хранятся).
 // inferredInterests — «Похоже, тебе нравится»: выведены из лайков, без уже
@@ -125,7 +201,8 @@ const KnownInterestSchema = z
 export const UpdateMeInputSchema = z.object({
   name: NameSchema.optional(),
   avatarColor: z.enum(AVATAR_COLORS).optional(),
-  birthday: MonthDaySchema.optional(),
+  // "MM-DD" или null — убрать. Узнаём при отправке вишлиста (DESIGN §8.4).
+  birthday: MonthDaySchema.nullable().optional(),
   // Свои интересы и «Не моё» (DESIGN §8.9 «Мне нравится»): только из 20
   // известных — у чипа должна быть подпись.
   interests: z.array(KnownInterestSchema).max(INTEREST_IDS.length).optional(),

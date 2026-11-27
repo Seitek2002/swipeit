@@ -12,6 +12,7 @@ import type { PickAnswer, PickRequest } from "../../pick/types";
 import { type Handler, nowIso } from "../context";
 import type { Db } from "../db";
 import { validation } from "../errors";
+import { normalizeOccasion, publicOccasion } from "../occasion";
 import { parseInput, requireNamedUser, requireUser } from "./common";
 import { OccasionInputSchema } from "./guest";
 
@@ -67,7 +68,13 @@ export const createPickRequest: Handler = async (ctx, { body }) => {
       toName: input.toName || undefined,
       filters: input.filters,
       hidePrices: input.hidePrices,
-      occasion: input.occasion,
+      // В ссылку другу — как в ссылку вишлиста: у значимой даты только
+      // дата и готовый повод.
+      occasion: input.occasion
+        ? publicOccasion(
+            normalizeOccasion(db, user, input.occasion, ctx.clock.now()),
+          )
+        : undefined,
       message: input.message || undefined,
       createdAt: nowIso(ctx.clock),
     };

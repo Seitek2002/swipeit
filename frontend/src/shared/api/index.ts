@@ -26,6 +26,7 @@ export { EMPTY_FILTERS } from "./catalog/constants";
 export {
   getDemoSettings,
   getDemoUsers,
+  jumpToReminder,
   loadNewYearScenario,
   resetDemo,
   resetDemoHints,
@@ -160,7 +161,13 @@ export {
   type Transport,
 } from "./transport";
 export {
+  createMyDate,
   createUser,
+  deleteMyDate,
+  dismissReminder,
+  getMyDates,
+  getMyReminders,
+  updateMyDate,
   getFriends,
   getPresence,
   getMe,
@@ -171,7 +178,13 @@ export {
 } from "./users/requests";
 export {
   type BotProfile,
+  type CreateDateInput,
   type FriendSummary,
+  type ImportantDate,
+  type ImportantDatePreset,
+  type ImportantDateView,
+  type Reminder,
+  type UpdateDateInput,
   HINT_IDS,
   type HintId,
   type MeResponse,

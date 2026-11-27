@@ -9,8 +9,12 @@ import {
   type Audience,
   CATEGORY_IDS,
   type CategoryId,
+  IMPORTANT_DATE_PRESETS,
+  type ImportantDatePreset,
   MARKETPLACE_IDS,
   type MarketplaceId,
+  OCCASION_KINDS,
+  type OccasionKind,
 } from "@/shared/config";
 
 // Кодек ссылок (TECH_SPEC §8): данные едут прямо в URL, поэтому ссылка
@@ -52,11 +56,49 @@ export const decodeEnvelope = <T>(
 // ~2 000 символов URL (тест обязателен). Фото своих желаний в ссылку не
 // кладём — у гостя вместо фото бумажная заглушка.
 
+// Повод: k — вид, d — дата, p — готовый повод значимой даты, l — только
+// у старого custom. У important своего названия в ссылке нет никогда: оно
+// личное, а свободный текст гостю не склонить (DESIGN §8.4).
 const OccasionShort = z.object({
-  k: z.enum(["birthday", "new_year", "just_because", "custom"]),
+  k: z.enum(OCCASION_KINDS),
   l: z.string().max(60).optional(),
   d: z.string().max(10).optional(),
+  p: z.enum(IMPORTANT_DATE_PRESETS).optional(),
 });
+
+export type SharedOccasion = {
+  date?: string;
+  kind: OccasionKind;
+  // Только у старого custom.
+  label?: string;
+  // Только у important.
+  preset?: ImportantDatePreset;
+};
+
+const encodeOccasion = (occasion: SharedOccasion | undefined) =>
+  occasion
+    ? {
+        k: occasion.kind,
+        l:
+          occasion.kind === "custom"
+            ? occasion.label?.slice(0, 60) || undefined
+            : undefined,
+        d: occasion.date,
+        p: occasion.kind === "important" ? occasion.preset : undefined,
+      }
+    : undefined;
+
+const decodeOccasion = (
+  short: undefined | z.infer<typeof OccasionShort>,
+): SharedOccasion | undefined =>
+  short
+    ? {
+        kind: short.k,
+        label: short.k === "custom" ? short.l : undefined,
+        date: short.d,
+        preset: short.k === "important" ? short.p : undefined,
+      }
+    : undefined;
 
 // Ссылка «Где купить» — только http(s): чужая ссылка не должна увести на
 // другую схему. Неподходящую молча отбрасываем, а не ломаем всю ссылку.
@@ -110,11 +152,7 @@ export type SharedWishlist = {
     variantChoice?: Record<string, string>;
   }>;
   message?: string;
-  occasion?: {
-    date?: string;
-    kind: "birthday" | "custom" | "just_because" | "new_year";
-    label?: string;
-  };
+  occasion?: SharedOccasion;
   owner: {
     avatarColor: (typeof AVATAR_COLORS)[number];
     birthday?: string;
@@ -131,13 +169,7 @@ export const encodeWishlist = (wishlist: SharedWishlist): string =>
       u: wishlist.owner.userId,
       b: wishlist.owner.birthday,
     },
-    oc: wishlist.occasion
-      ? {
-          k: wishlist.occasion.kind,
-          l: wishlist.occasion.label?.slice(0, 60),
-          d: wishlist.occasion.date,
-        }
-      : undefined,
+    oc: encodeOccasion(wishlist.occasion),
     m: wishlist.message?.slice(0, 200) || undefined,
     i: wishlist.items.map((item) => ({
       p: item.productId,
@@ -173,9 +205,7 @@ export const decodeWishlist = (
       userId: short.o.u,
       birthday: short.o.b,
     },
-    occasion: short.oc
-      ? { kind: short.oc.k, label: short.oc.l, date: short.oc.d }
-      : undefined,
+    occasion: decodeOccasion(short.oc),
     message: short.m,
     items: short.i.map((item) => ({
       productId: item.p,
@@ -249,7 +279,7 @@ export type SharedPickRequest = {
   hidePrices: boolean;
   id: string;
   message?: string;
-  occasion?: SharedWishlist["occasion"];
+  occasion?: SharedOccasion;
   toName?: string;
 };
 
@@ -274,13 +304,7 @@ export const encodePickRequest = (request: SharedPickRequest): string =>
       ),
     },
     h: request.hidePrices ? 1 : undefined,
-    oc: request.occasion
-      ? {
-          k: request.occasion.kind,
-          l: request.occasion.label,
-          d: request.occasion.date,
-        }
-      : undefined,
+    oc: encodeOccasion(request.occasion),
     ms: request.message || undefined,
   });
 
@@ -305,9 +329,7 @@ export const decodePickRequest = (
       audience: toGender(short.fl.a),
     },
     hidePrices: short.h === 1,
-    occasion: short.oc
-      ? { kind: short.oc.k, label: short.oc.l, date: short.oc.d }
-      : undefined,
+    occasion: decodeOccasion(short.oc),
     message: short.ms,
   };
 };

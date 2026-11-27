@@ -459,6 +459,8 @@ describe("совместимость со старой базой", () => {
       interests: ["coffee", "music"],
     });
     expect(db.wishlistItems.u_old).toHaveLength(1);
+    // Значимых дат в старой базе нет — пустой список, а не сброс.
+    expect(db.importantDates).toEqual({});
     expect(db.wishlistMeta.u_old?.occasion).toMatchObject({
       kind: "custom",
       label: "Защита диплома",
