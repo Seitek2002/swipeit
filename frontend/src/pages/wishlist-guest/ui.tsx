@@ -13,6 +13,7 @@ import { useMe } from "@/entities/user";
 
 import { importExternalWishlist, wishlistKeys } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { usePreloaderHold } from "@/shared/lib/preloader";
 import { decodeWishlist } from "@/shared/lib/share-codec";
 import {
   Brand,
@@ -35,6 +36,12 @@ const GuestContent = () => {
     enabled: isValid,
     staleTime: Infinity,
   });
+
+  // Гостевой вишлист держит прелоадер до своего первого запроса (T21).
+  usePreloaderHold(
+    "guest-wishlist",
+    isValid && !external.data && !external.isError,
+  );
 
   if (!isValid) return <BrokenLink />;
   if (external.isError) return <BrokenLink />;

@@ -1,0 +1,943 @@
+<!doctype html>
+<!--
+  Эталон для TASKS.md T21–T24: прелоадер, обучающая карточка, имя по требованию, даты. Спецификация — DESIGN.md §6 «Прелоадер», §7 DeckGuide/NameSheet/DayMonthPicker/ReminderBanner, §8.1, §8.4, §8.9.
+
+  Продолжение docs/design/gift-card.html: те же токены, рамка телефона, шапка,
+  таб-бар и GiftCard. Семь кадров 390×844:
+    1. Прелоадер (кнопка «Повторить» под телефоном проигрывает его заново).
+    2. Обучающая карточка (DeckGuide) поверх первой карточки ленты.
+    3. «Как тебя зовут?» в шторке отправки: поле и фоны аватара живые.
+    4. «К какому дню друзьям готовить подарки?» — кликабельно проходит шаги 2–4,
+       включая «Что за повод?» после «Нет, другой повод» (решение владельца от 27.11.2026).
+    5. «Это твой день рождения?» — тот же шаг статично.
+    6. Вишлист с напоминанием о дате.
+    7. Профиль: имя, «Мои даты», «Мне нравится», «Показывать подарки».
+  Фото — настоящие из catalog/products/<id>/<n>.webp.
+-->
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Быстрый старт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Токены (DESIGN.md §2, §7 Avatar) ─────────────────────── */
+  :root {
+    --velvet: #2a1024; --velvet-2: #3a1832; --velvet-3: #4a2241;
+    --line: rgb(255 241 243 / 0.12);
+    --paper: #fff1f3; --paper-2: #f6e1e7; --ink: #2a1024; --ink-soft: #7a5a6e;
+    --rose: #cba8bc; --mandarin: #ff8a3d; --mandarin-ink: #b8460e;
+    --mint: #8fe3c6; --champagne: #ffd27a; --pomegranate: #ff5c7a;
+    --display: "Cormorant Garamond", "Times New Roman", serif;
+    --sans: "Onest", system-ui, sans-serif;
+    --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-quick: cubic-bezier(0.4, 0, 1, 1);
+    --shadow-paper: 0 1px 0 rgb(255 255 255 / 0.6) inset, 0 18px 40px -12px rgb(10 0 8 / 0.55), 0 4px 10px rgb(10 0 8 / 0.25);
+    --sheen: radial-gradient(120% 60% at 50% -10%, rgb(255 138 61 / 0.10), transparent 60%);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --av-plum: #e3c4da; --av-mandarin: #ffc49c; --av-mint: #bfefdd; --av-champagne: #ffe3a8;
+    --av-rose: #f2c9d6; --av-pomegranate: #ffb3c1; --av-graphite: #cfc8d2; --av-olive: #d8dfb4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: #1c0a18; color: var(--paper); font-family: var(--sans); -webkit-font-smoothing: antialiased; padding: 36px 40px 28px; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  p, h1, h2, h3, ul { margin: 0; padding: 0; }
+  ul { list-style: none; }
+  input, textarea { font: inherit; }
+  [hidden] { display: none !important; }
+  :focus-visible { outline: 2px solid var(--mandarin); outline-offset: 2px; }
+
+  /* ── Типографика (§3) ─────────────────────────────────────── */
+  .t-title1 { font: 600 32px/36px var(--display); letter-spacing: -0.01em; }
+  .t-title2 { font: 600 26px/30px var(--display); }
+  .t-title3 { font: italic 500 22px/28px var(--display); }
+  .t-body-lg { font: 400 17px/26px var(--sans); }
+  .t-body { font: 400 15px/22px var(--sans); }
+  .t-label { font: 600 15px/20px var(--sans); }
+  .t-caption { font: 500 13px/18px var(--sans); }
+  .price { font: 600 17px/22px var(--sans); font-variant-numeric: tabular-nums; }
+  .rose { color: var(--rose); }
+  .ink-soft { color: var(--ink-soft); }
+
+  /* ── Доска с кадрами ──────────────────────────────────────── */
+  .board { display: flex; flex-direction: column; align-items: center; gap: 36px; }
+  .row { display: flex; gap: 32px; justify-content: center; align-items: flex-start; }
+  .frame { margin: 0; width: 390px; display: flex; flex-direction: column; gap: 12px; }
+  .frame-cap { font: 600 15px/20px var(--sans); color: var(--paper); }
+  .frame-cap span { color: var(--rose); font-weight: 500; }
+  .frame-ctl { min-height: 36px; display: flex; align-items: center; gap: 14px; color: var(--rose); font: 500 13px/18px var(--sans); }
+  .ctl-btn { height: 36px; padding: 0 14px; border-radius: 14px; background: var(--velvet-2); border: 1px solid var(--line); color: var(--paper); font: 500 13px/1 var(--sans); display: inline-flex; align-items: center; gap: 6px; }
+  .ctl-link { color: var(--paper); text-decoration: underline; text-underline-offset: 3px; font: 500 13px/18px var(--sans); }
+
+  /* ── Телефон (как в gift-card.html) ───────────────────────── */
+  .phone {
+    position: relative; width: 390px; height: 844px; overflow: hidden; border-radius: 44px; isolation: isolate;
+    border: 1px solid var(--line); background: var(--sheen), var(--velvet);
+  }
+  /* Слой 3 бархата — зерно (§2). Под экраном, над заливкой. */
+  .phone::after { content: ""; position: absolute; inset: 0; background-image: var(--grain); opacity: 0.05; mix-blend-mode: overlay; pointer-events: none; z-index: 0; }
+  .screen { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; }
+  .scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+  .scroll::-webkit-scrollbar { display: none; }
+
+  .hdr { flex: none; height: 56px; margin-top: 8px; padding: 0 16px 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+  .hdr.deck-hdr { padding: 0 16px; }
+  .hdr.with-back { padding-left: 8px; justify-content: flex-start; }
+  .hdr h1 { margin: 0; flex: 1; min-width: 0; font: 600 32px/36px var(--display); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hdr .acts { display: flex; gap: 4px; align-items: center; }
+  .icon-btn { position: relative; width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 50%; color: var(--paper); }
+  .icon-btn.on-paper { color: var(--ink-soft); }
+  .ava { --size: 36px; width: var(--size); height: var(--size); flex: none; border-radius: 50%; background: var(--av-rose); color: var(--ink); display: inline-grid; place-items: center; font: 600 calc(var(--size) * 0.42)/1 var(--sans); transition: background 200ms var(--ease-out-soft); }
+  .ava-slot { width: 44px; height: 44px; display: grid; place-items: center; }
+
+  /* WishRibbon (§7) — как в gift-card.html */
+  .ribbon { flex: none; margin: 4px 16px 0; display: flex; align-items: center; gap: 10px; }
+  .ribbon .segs { display: flex; gap: 4px; }
+  .ribbon .segs i { width: 22px; height: 6px; border-radius: 3px; background: var(--velvet-3); }
+  .ribbon .segs i.on { background: var(--mandarin); }
+  .ribbon span { font: 500 13px/18px var(--sans); color: var(--rose); }
+
+  /* TabBar (§7): плавающая таблетка */
+  .tabbar {
+    position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 40; height: 64px; border-radius: 999px;
+    background: rgb(58 24 50 / 0.92); border: 1px solid var(--line); backdrop-filter: blur(16px);
+    box-shadow: 0 16px 40px -16px rgb(10 0 8 / 0.7);
+    display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;
+  }
+  .tab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; font: 600 11px/14px var(--sans); color: var(--rose); }
+  .tab.on { color: var(--paper); }
+  .tab.on::after { content: ""; position: absolute; bottom: -9px; width: 4px; height: 4px; border-radius: 50%; background: var(--mandarin); }
+  .tab-ic { position: relative; display: grid; place-items: center; }
+  .badge { position: absolute; top: -7px; right: -13px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--paper); color: var(--ink); font: 600 11px/18px var(--sans); text-align: center; font-style: normal; box-shadow: 0 0 0 2px var(--velvet-2); }
+  /* Напоминание (§7 ReminderBanner): мандариновая точка 6px у иконки. Справа занят бейдж — точка слева сверху. */
+  .rdot { position: absolute; top: -3px; left: -9px; width: 6px; height: 6px; border-radius: 50%; background: var(--mandarin); box-shadow: 0 0 0 2px var(--velvet-2); }
+  .tabbar-space { flex: none; height: 88px; }
+
+  /* ── Кнопки (§7 Button) ───────────────────────────────────── */
+  .btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 22px; border-radius: 999px; font: 600 15px/20px var(--sans); white-space: nowrap; transition: transform 120ms ease, opacity 200ms var(--ease-out-soft); }
+  .btn:active { transform: scale(0.96); }
+  .btn[disabled] { opacity: 0.4; box-shadow: none; pointer-events: none; }
+  .btn-lg { height: 56px; width: 100%; }
+  .btn-md { width: 100%; }
+  .btn-sm { height: 36px; padding: 0 14px; border-radius: 14px; }
+  .btn-sm::before { content: ""; position: absolute; inset: -4px; }
+  .btn-primary { background: var(--mandarin); color: var(--ink); box-shadow: 0 10px 24px -10px rgb(255 138 61 / 0.6); }
+  .btn-secondary { background: var(--velvet-3); color: var(--paper); }
+  .btn-ghost { color: var(--rose); }
+  .btn-ghost-ink { color: var(--ink-soft); }
+  .btn-danger { color: var(--pomegranate); }
+  .btn-paper { background: var(--paper); color: var(--ink); }
+  .link-btn { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; font: 600 15px/20px var(--sans); color: var(--rose); }
+
+  /* ── Чипы, сегменты, поля (из reference.html) ─────────────── */
+  .chip { position: relative; height: 36px; flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border-radius: 999px; background: var(--velvet-3); color: var(--paper); font: 500 14px/1 var(--sans); white-space: nowrap; transition: background 200ms var(--ease-out-soft), color 200ms; }
+  .chip::before { content: ""; position: absolute; inset: -4px 0; }
+  .chip .i { color: var(--rose); }
+  .chip .ck { display: none; }
+  .chip[aria-pressed="true"] { background: var(--paper); color: var(--ink); padding-left: 10px; }
+  .chip[aria-pressed="true"] .ck { display: inline-block; color: var(--ink); }
+  .chip-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+  .seg { display: flex; padding: 4px; border-radius: 999px; background: var(--velvet-2); }
+  .seg button { flex: 1; height: 36px; border-radius: 999px; color: var(--rose); font: 600 15px/20px var(--sans); transition: background 200ms var(--ease-out-soft), color 200ms; }
+  .seg button[aria-pressed="true"] { background: var(--velvet-3); color: var(--paper); }
+  .input { width: 100%; height: 52px; padding: 0 16px; border-radius: 14px; background: var(--velvet-3); border: 1.5px solid transparent; color: var(--paper); outline: none; font: 400 17px/22px var(--sans); }
+  .input::placeholder { color: rgb(203 168 188 / 0.6); }
+  .input:focus-visible { border-color: var(--mandarin); }
+  textarea.input { height: auto; padding: 14px 16px; resize: none; display: block; }
+
+  /* ── Бумага ───────────────────────────────────────────────── */
+  .paper { position: relative; background: var(--paper); color: var(--ink); }
+  .paper::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background-image: var(--grain); opacity: 0.035; mix-blend-mode: multiply; pointer-events: none; }
+
+  /* ════════════════════════════════════════════════════════════
+     Кадр 1 — Прелоадер (§6 «Прелоадер»). Анимируются только
+     transform, opacity и clip-path.
+     ════════════════════════════════════════════════════════════ */
+  .pre {
+    position: absolute; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    background: var(--sheen), var(--velvet); /* слои 1–2, без зерна */
+  }
+  .pre-badge { position: relative; width: 96px; height: 96px; animation: pre-breathe 1.6s ease-in-out 0.6s infinite; }
+  .pre-badge > i { position: absolute; inset: 0; border-radius: 24px; }
+  /* clip-path обрезает box-shadow, поэтому тень и свечение — отдельные слои под плашкой. */
+  .pre-shadow { box-shadow: 0 18px 40px -12px rgb(10 0 8 / 0.55), 0 4px 10px rgb(10 0 8 / 0.25); opacity: 0; animation: pre-show 0.5s var(--ease-out-soft) forwards; }
+  .pre-glow { box-shadow: 0 0 22px rgb(255 138 61 / 0.35); opacity: 0; animation: pre-glow 1.6s ease-in-out 0.6s infinite; }
+  .pre-plate {
+    display: grid; place-items: center; background: var(--paper); box-shadow: 0 1px 0 rgb(255 255 255 / 0.6) inset;
+    clip-path: inset(100% 0 0 0); animation: pre-reveal 0.5s var(--ease-out-soft) forwards;
+  }
+  .pre-bow { width: 56px; height: 38px; opacity: 0; transform: scale(0.6); animation: pre-bow-in 0.35s var(--ease-out-soft) 0.25s forwards; }
+  .pre-bow svg { display: block; width: 100%; height: 100%; overflow: visible; animation: pre-bow-sway 1.4s ease-in-out 0.6s infinite; }
+  .pre-word { display: flex; font: italic 600 34px/40px var(--display); color: var(--paper); }
+  .pre-word span { display: inline-block; opacity: 0; transform: translateY(10px); animation: pre-letter 0.35s var(--ease-out-soft) forwards; animation-delay: calc(0.45s + var(--n) * 0.05s); }
+  @keyframes pre-reveal { to { clip-path: inset(0); } }
+  @keyframes pre-show { to { opacity: 1; } }
+  @keyframes pre-glow { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+  @keyframes pre-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  @keyframes pre-bow-in { to { opacity: 1; transform: scale(1); } }
+  @keyframes pre-bow-sway { 0%, 100% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(-4deg) scale(1.06); } }
+  @keyframes pre-letter { to { opacity: 1; transform: translateY(0); } }
+  .bow-g { fill: var(--mandarin); stroke: var(--mandarin); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .bow-g .tail { fill: none; stroke-width: 4; }
+  .bow-g .fold { fill: none; stroke: var(--mandarin-ink); stroke-width: 1.6; }
+
+  /* ════════════════════════════════════════════════════════════
+     Кадр 2 — Колода и GiftCard (целиком из gift-card.html)
+     ════════════════════════════════════════════════════════════ */
+  .deck { position: relative; flex: 1; margin: 12px 16px 0; min-height: 0; }
+  .card {
+    position: absolute; inset: 0; border-radius: 24px; background: var(--velvet);
+    overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain;
+    box-shadow: 0 18px 40px -12px rgb(10 0 8 / 0.55), 0 4px 10px rgb(10 0 8 / 0.25);
+  }
+  .card::-webkit-scrollbar { display: none; }
+  .card.under { transform: scale(0.95); overflow: hidden; pointer-events: none; }
+  .photo { position: relative; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+  .photo .fill { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(28px) saturate(1.1); }
+  .photo .pic-area { position: relative; flex: 1; min-height: 0; margin-bottom: -28px; }
+  .photo .pic { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .scrim-top { position: absolute; inset: 0 0 auto; height: 72px; background: linear-gradient(rgb(42 16 36 / 0.38), transparent); pointer-events: none; }
+  .segs-photo { position: absolute; inset: 12px 12px auto; display: flex; gap: 6px; pointer-events: none; z-index: 3; }
+  .segs-photo i { height: 4px; flex: 1; border-radius: 2px; background: rgb(255 241 243 / 0.45); }
+  .segs-photo i.on { background: var(--paper); }
+  .tap { position: absolute; top: 0; bottom: 0; width: 50%; border: 0; background: none; cursor: pointer; }
+  .tap.l { left: 0; } .tap.r { right: 0; }
+  .info { position: relative; padding: 44px 16px 88px; color: var(--paper); background: linear-gradient(to bottom, rgb(42 16 36 / 0) 0, rgb(42 16 36 / 0.88) 44px, rgb(42 16 36 / 0.96) 100%); }
+  .pill { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--mint); color: var(--ink); font-size: 12px; font-weight: 600; }
+  .info-btn { all: unset; cursor: pointer; display: flex; width: 100%; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 8px; }
+  .info h2 { margin: 0; font: 600 26px/30px var(--display); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .meta { margin-top: 6px; display: flex; align-items: center; gap: 12px; }
+  .store { font-size: 13px; font-weight: 500; color: rgb(255 241 243 / 0.8); display: flex; align-items: center; gap: 4px; }
+  .mini { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--velvet); }
+  .mini img { width: 36px; height: 36px; border-radius: 10px; object-fit: contain; background: #fff; }
+  .mini span { font-size: 17px; line-height: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .details { padding: 0 0 12px; }
+  .sec { margin-top: 12px; border-radius: 16px; background: var(--velvet-2); padding: 16px; }
+  .sec:first-child { margin-top: 0; }
+  .sec-t { display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--rose); }
+  .sec-b { margin-top: 8px; font-size: 15px; line-height: 22px; }
+  .offer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .offer b { font-weight: 600; }
+  .offer .go { display: flex; align-items: center; gap: 4px; color: var(--mandarin); font-size: 15px; font-weight: 600; text-decoration: none; }
+  .ichips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ichips span { height: 32px; padding: 0 12px; border-radius: 999px; background: var(--velvet-3); display: flex; align-items: center; font-size: 13px; font-weight: 500; }
+  .bar { position: sticky; bottom: 0; z-index: 3; padding: 0 20px 16px; }
+  .bar .back { position: absolute; inset: -24px 0 0; pointer-events: none; opacity: 0; background: linear-gradient(to top, rgb(42 16 36 / 0.7), rgb(42 16 36 / 0.4) 55%, rgb(42 16 36 / 0)); backdrop-filter: blur(3px); }
+  .bar .row { position: relative; display: flex; align-items: center; justify-content: space-between; }
+  .bar .mid { display: flex; gap: 20px; }
+  .b { border: 0; display: grid; place-items: center; border-radius: 50%; cursor: pointer; padding: 0; }
+  .b.s { width: 44px; height: 44px; }
+  .b.l { width: 56px; height: 56px; backdrop-filter: blur(30px); box-shadow: inset 2px -1px 2px rgb(255 255 255 / 0.16); }
+  .b[disabled] { opacity: 0.4; cursor: default; }
+
+  /* DeckGuide (§7): слой над фото и текстовым блоком, под рядом кнопок */
+  .guide { position: absolute; inset: 0; z-index: 2; background: rgb(42 16 36 / 0.55); pointer-events: none; color: var(--paper); opacity: 0; animation: pre-show 200ms var(--ease-out-soft) forwards; }
+  .guide .vline { position: absolute; top: 0; left: 50%; height: 52%; margin-left: -1px; border-left: 2px dashed rgb(255 241 243 / 0.5); }
+  .guide .hline { position: absolute; left: 0; right: 0; top: 52%; border-top: 2px dashed rgb(255 241 243 / 0.5); }
+  .guide .demo { position: absolute; top: 28px; left: 12px; right: 12px; z-index: 1; padding: 8px 12px; border-radius: 12px; background: var(--paper-2); color: var(--ink-soft); font: 500 13px/18px var(--sans); }
+  .guide .half { position: absolute; top: 24%; width: 50%; padding: 0 12px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; font: 600 15px/20px var(--sans); }
+  .guide .half.l { left: 0; } .guide .half.r { right: 0; }
+  .guide .hand { width: 56px; height: 56px; display: block; animation: press 600ms ease-in-out 200ms 2; }
+  .guide .half.r .hand { animation-delay: 500ms; }
+  .guide .more { position: absolute; left: 0; right: 0; top: 52%; bottom: 0; pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 28px; color: var(--paper); cursor: pointer; }
+  .guide .more svg { width: 80px; height: 54px; display: block; }
+  .guide .more span { font: 600 17px/26px var(--sans); }
+  .guide .hint { position: absolute; left: 16px; right: 16px; bottom: 84px; text-align: center; font: 600 13px/18px var(--sans); }
+  @keyframes press { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.88); } }
+  /* Подсказка над кнопками ложится ровно на название и цену. Пока слой виден,
+     текстовый блок прячем: его роль («Подробнее о подарке») играет кнопка слоя. */
+  .card.has-guide .info > * { opacity: 0; }
+
+  /* ════════════════════════════════════════════════════════════
+     Вишлист (§8.3) — фон кадров 3–5 и кадр 6
+     ════════════════════════════════════════════════════════════ */
+  .subhead { padding: 0 20px; color: var(--paper); }
+  .wl-seg { margin: 16px 20px 0; }
+  .wl { padding: 14px 20px 190px; display: flex; flex-direction: column; gap: 10px; }
+  .wl-item { display: flex; align-items: center; gap: 12px; padding: 10px 4px 10px 8px; border-radius: 18px; box-shadow: var(--shadow-paper); }
+  .wl-grip { color: var(--ink-soft); opacity: 0.7; display: grid; place-items: center; }
+  .wl-photo { position: relative; width: 60px; height: 60px; flex: none; }
+  .wl-photo .ph { position: absolute; inset: 0; border-radius: 12px; overflow: hidden; background: var(--paper-2); }
+  .wl-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .wl-star { position: absolute; top: -6px; right: -6px; z-index: 3; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--velvet); color: var(--champagne); }
+  .wl-text { flex: 1; min-width: 0; }
+  .wl-title { font: 600 15px/20px var(--sans); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .wl-price { font-size: 15px; line-height: 20px; margin-top: 2px; }
+  .wl-var { color: var(--ink-soft); margin-top: 1px; }
+  .sticky-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; padding: 28px 20px 88px; background: linear-gradient(to top, var(--velvet) 62%, rgb(42 16 36 / 0)); pointer-events: none; }
+  .sticky-foot > * { pointer-events: auto; }
+
+  /* ReminderBanner (§7) */
+  .reminder { margin: 14px 20px 0; padding: 14px 16px; border-radius: 22px; box-shadow: var(--shadow-paper); }
+  .rm-row { display: flex; gap: 12px; align-items: flex-start; }
+  .rm-row > .i { flex: none; color: var(--mandarin-ink); margin-top: -1px; }
+  .rm-row .t-caption { margin-top: 2px; }
+  .rm-actions { display: flex; gap: 4px; align-items: center; margin: 12px 0 0 36px; }
+
+  /* ════════════════════════════════════════════════════════════
+     BottomSheet (§7, reference.html)
+     ════════════════════════════════════════════════════════════ */
+  .backdrop { position: absolute; inset: 0; z-index: 70; background: rgb(10 0 8 / 0.55); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 71; max-height: 90%; display: flex; flex-direction: column; background: var(--velvet-2); border-radius: 28px 28px 0 0; box-shadow: 0 -24px 60px -12px rgb(10 0 8 / 0.7), 0 -1px 0 var(--line); }
+  .sheet-handle { flex: none; display: flex; justify-content: center; padding: 10px 0 8px; }
+  .sheet-handle span { width: 36px; height: 4px; border-radius: 2px; background: rgb(255 241 243 / 0.28); }
+  .sheet-head { flex: none; display: flex; align-items: flex-start; gap: 4px; padding: 2px 20px 16px; }
+  .sheet-head.with-back { padding-left: 8px; }
+  .sheet-head .icon-btn { margin-top: -7px; }
+  .sh-t { flex: 1; min-width: 0; }
+  .sh-t .t-caption { margin-top: 4px; }
+  .sheet-body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 20px 20px; scrollbar-width: none; }
+  .sheet-body::-webkit-scrollbar { display: none; }
+  .sheet-foot { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 12px 20px 24px; border-top: 1px solid var(--line); }
+
+  /* NameSheet (§7) */
+  .ns-row { display: flex; align-items: center; gap: 12px; }
+  .ns-row .input { flex: 1; }
+  .colors { display: grid; grid-template-columns: repeat(8, 1fr); margin: 12px -3px 0; }
+  .color { height: 44px; display: grid; place-items: center; border-radius: 50%; }
+  .color i { width: 32px; height: 32px; border-radius: 50%; transition: box-shadow 200ms var(--ease-out-soft); }
+  .color[aria-checked="true"] i { box-shadow: 0 0 0 2px var(--bg-ring, var(--velvet-2)), 0 0 0 4px var(--paper); }
+
+  /* Шаг 2 отправки: строки-варианты */
+  .opts { display: flex; flex-direction: column; gap: 8px; }
+  .opt { height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-radius: 16px; background: var(--velvet-3); color: var(--paper); font: 500 15px/20px var(--sans); text-align: left; transition: transform 120ms ease; }
+  .opt:active { transform: scale(0.98); }
+  .opt .i { color: var(--rose); flex: none; }
+  .no-date { display: flex; justify-content: center; margin-top: 8px; }
+
+  /* Шаг 3б «Что за повод?»: чипы-поводы */
+  .reasons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .reasons .chip { flex: none; }
+  .custom-reason { margin-top: 12px; }
+
+  /* DayMonthPicker (§7) */
+  .months { position: relative; display: flex; gap: 8px; overflow-x: auto; margin: 0 -20px; padding: 4px 20px; scrollbar-width: none; }
+  .months::-webkit-scrollbar { display: none; }
+  .dm-label { margin: 16px 0 10px; color: var(--paper); }
+  .days { display: grid; grid-template-columns: repeat(7, 44px); justify-content: space-between; row-gap: 6px; }
+  .day { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: var(--paper); font: 500 15px/1 var(--sans); font-variant-numeric: tabular-nums; transition: background 200ms var(--ease-out-soft); }
+  .day:hover { background: var(--velvet-3); }
+  .day[aria-pressed="true"] { background: var(--mandarin); color: var(--ink); font-weight: 600; }
+
+  /* Шаг 3 */
+  .big-date { color: var(--paper); }
+
+  /* Шаг 4 */
+  .occ { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .occ .t-title3 { color: var(--paper); min-width: 0; }
+  .occ .link-btn { min-height: 28px; flex: none; position: relative; }
+  .occ .link-btn::before { content: ""; position: absolute; inset: -8px -6px; }
+  .saved { margin-top: 4px; }
+  .inline-link { color: var(--paper); font: 600 13px/18px var(--sans); text-decoration: underline; text-underline-offset: 2px; position: relative; }
+  .inline-link::before { content: ""; position: absolute; inset: -13px -6px; }
+  .rename { margin-top: 10px; }
+  .field { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+  .postcard { margin-top: 20px; border-radius: 22px; box-shadow: var(--shadow-paper); padding: 20px 16px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .fan { position: relative; width: 100%; height: 96px; }
+  .fan .ft { position: absolute; top: 0; left: 50%; width: 72px; height: 96px; margin-left: -36px; padding: 4px; border-radius: 14px; background: var(--paper); box-shadow: var(--shadow-paper); overflow: hidden; }
+  .fan .ft img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
+  .fan .ft:nth-child(1) { transform: translateX(-36px) rotate(-8deg); }
+  .fan .ft:nth-child(2) { z-index: 2; }
+  .fan .ft:nth-child(3) { transform: translateX(36px) rotate(8deg); }
+  .pc-name { display: flex; align-items: center; gap: 8px; }
+  .pc-occ { margin-top: -6px; color: var(--ink-soft); }
+
+  /* Toast (§7) */
+  .toast { position: absolute; top: 76px; left: 50%; z-index: 120; display: flex; align-items: center; gap: 8px; padding: 11px 16px; border-radius: 14px; background: var(--paper); color: var(--ink); font: 500 14px/20px var(--sans); box-shadow: var(--shadow-paper); opacity: 0; transform: translate(-50%, -10px); transition: opacity 200ms var(--ease-out-soft), transform 200ms var(--ease-out-soft); pointer-events: none; white-space: nowrap; }
+  .toast .i { color: var(--mandarin-ink); }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ════════════════════════════════════════════════════════════
+     Кадр 7 — Профиль (§8.9)
+     ════════════════════════════════════════════════════════════ */
+  .prof { padding: 8px 20px 112px; }
+  .pf-name { display: flex; align-items: center; gap: 14px; }
+  .pf-name .input { flex: 1; }
+  .pf-colors { --bg-ring: var(--velvet); }
+  .pf-h { margin: 28px 0 6px; font: 600 15px/20px var(--sans); color: var(--paper); }
+  .pf-h + .pf-sub { margin-top: -2px; }
+  .d-row { display: flex; align-items: center; gap: 12px; min-height: 56px; border-bottom: 1px solid var(--line); }
+  .d-row > .i { color: var(--rose); flex: none; }
+  .d-name { flex: 1; min-width: 0; text-align: left; font: 400 15px/22px var(--sans); color: var(--paper); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 44px; }
+  .d-date { position: relative; height: 36px; padding: 0 12px; border-radius: 14px; background: var(--velvet-3); color: var(--paper); font: 500 15px/20px var(--sans); white-space: nowrap; }
+  .d-date::before { content: ""; position: absolute; inset: -4px; }
+  .d-del { color: var(--pomegranate); margin-right: -10px; }
+  .d-spacer { width: 34px; flex: none; }
+  .d-add { display: flex; align-items: center; gap: 12px; min-height: 52px; color: var(--paper); font: 600 15px/20px var(--sans); }
+  .d-add .i { color: var(--rose); }
+  .pf-note { color: var(--rose); margin-top: 4px; }
+  .pf-sub { color: var(--rose); margin: 16px 0 10px; }
+  .guess { position: relative; height: 36px; display: inline-flex; align-items: center; border-radius: 999px; background: var(--velvet-3); color: var(--paper); font: 500 14px/1 var(--sans); }
+  .guess .g-main { height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 12px; border-radius: 999px 0 0 999px; }
+  .guess .g-main .i { color: var(--rose); }
+  .guess .g-x { position: relative; width: 32px; height: 36px; display: grid; place-items: center; color: var(--rose); border-radius: 0 999px 999px 0; }
+  .guess .g-x::before { content: ""; position: absolute; inset: -4px -6px -4px 0; }
+  .all-int { margin-top: 6px; }
+  .all-int .i { transition: transform 200ms var(--ease-out-soft); }
+  .all-int[aria-expanded="true"] .i { transform: rotate(180deg); }
+  .pf-seg { margin-top: 4px; }
+  .l-rows { margin-top: 24px; border-top: 1px solid var(--line); }
+  .l-row { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 56px; border-bottom: 1px solid var(--line); text-align: left; font: 400 15px/22px var(--sans); color: var(--paper); }
+  .l-row span { flex: 1; }
+  .l-row .i { color: var(--rose); }
+  .l-row.danger { color: var(--pomegranate); }
+  .demo-user { margin-top: 20px; }
+  .credits { position: relative; display: inline-block; margin-top: 20px; color: var(--rose); font: 500 13px/18px var(--sans); text-decoration: underline; text-underline-offset: 2px; }
+  .credits::before { content: ""; position: absolute; inset: -13px -8px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pre-badge, .pre-badge > i, .pre-plate, .pre-bow, .pre-bow svg, .pre-word span, .guide, .guide .hand { animation: none !important; }
+    .pre-shadow, .pre-bow, .pre-word span, .guide { opacity: 1 !important; }
+    .pre-glow { opacity: 0 !important; }
+    .pre-plate { clip-path: none !important; }
+    .pre-bow, .pre-word span { transform: none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="board" id="board"></main>
+
+<script>
+/* ── Иконки: пути lucide, обводка 2, скругления ─────────────── */
+const P = {
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+  chevs: '<path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/>',
+  quote: '<path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/>',
+  bag: '<path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/>',
+  ext: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  sparkles: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  sliders: '<path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/>',
+  gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>',
+  ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/>',
+  mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98"/><path d="m15.41 6.51-6.82 3.98"/>',
+  grip: '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>',
+  more: '<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>',
+  plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+  left: '<path d="m15 18-6-6 6-6"/>',
+  right: '<path d="m9 18 6-6-6-6"/>',
+  down: '<path d="m6 9 6 6 6-6"/>',
+  flower: '<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"/><circle cx="12" cy="8" r="2"/><path d="M12 10v12"/><path d="M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z"/><path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z"/>',
+  calplus: '<path d="M8 2v4"/><path d="M16 2v4"/><path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/><path d="M3 10h18"/><path d="M16 19h6"/><path d="M19 16v6"/>',
+  calheart: '<path d="M12.127 22H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5.125"/><path d="M14.62 18.8A2.25 2.25 0 1 1 18 15.836a2.25 2.25 0 1 1 3.38 2.966l-2.626 2.856a.998.998 0 0 1-1.507 0z"/><path d="M16 2v4"/><path d="M3 10h18"/><path d="M8 2v4"/>',
+  cake: '<path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>',
+  send: '<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  qr: '<rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/>',
+  replay: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+};
+const icon = (n, s = 20, { fill = "none", sw = 2, stroke = "currentColor" } = {}) =>
+  `<svg class="i" width="${s}" height="${s}" viewBox="0 0 24 24" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+
+/* Бант — знак SwipeIt (frontend/src/shared/ui/bow/ui.tsx) */
+const BOW = `<svg viewBox="0 0 64 44" aria-hidden="true"><g class="bow-g">
+  <path d="M32 20C24 5 5 2 5 14s19 11 27 6z"/><path d="M32 20c8-15 27-18 27-6s-19 11-27 6z"/>
+  <path class="tail" d="M30 23c-4 8-8 13-14 19"/><path class="tail" d="M34 23c4 8 8 13 14 19"/>
+  <path class="fold" d="M30 19c-6-6-14-8-18-6M34 19c6-6 14-8 18-6"/><circle cx="32" cy="20" r="5"/></g></svg>`;
+
+/* Руки из tap-tap (src/shared/assets/icons/guide-*.svg), перекрашены в «Бумагу».
+   У прокрутки убрана надпись заглавными — подпись есть под иконкой. */
+const HAND = `<svg class="hand" viewBox="0 0 60 60" fill="none" aria-hidden="true">
+<path d="M35 21C29.4772 21 25 16.5228 25 11C25 5.47715 29.4772 1 35 1C40.5228 1 45 5.47715 45 11C45 16.5228 40.5228 21 35 21Z" fill="currentColor" fill-opacity="0.36"/>
+<path d="M14.4787 40.6866C14.4787 50.6658 20.4462 56.0116 28.0203 56.0116C36.4612 54.4991 43.4378 52.6116 41.867 30.0516M20.1328 31.3266C20.1225 30.94 20.0354 30.5592 19.8765 30.2066C19.7177 29.8539 19.4903 29.5364 19.2076 29.2724C18.9248 29.0085 18.5924 28.8034 18.2297 28.6692C17.867 28.5349 17.4811 28.4741 17.0947 28.4904C16.7083 28.5066 16.3289 28.5996 15.9787 28.7638C15.6285 28.928 15.3145 29.1603 15.0549 29.447C14.7954 29.7338 14.5954 30.0693 14.4667 30.434C14.338 30.7988 14.2832 31.1855 14.3053 31.5716" fill="currentColor"/>
+<path d="M25.9639 31.1325C25.9478 30.7498 25.8566 30.3741 25.6953 30.0266C25.5341 29.6792 25.3059 29.3669 25.024 29.1077C24.7421 28.8484 24.4118 28.6472 24.0521 28.5156C23.6924 28.3839 23.3103 28.3244 22.9276 28.3404C22.5449 28.3565 22.1691 28.4477 21.8217 28.609C21.4743 28.7703 21.162 28.9984 20.9027 29.2803C20.6435 29.5623 20.4423 29.8925 20.3106 30.2522C20.179 30.6119 20.1195 30.994 20.1355 31.3767" fill="currentColor"/>
+<path d="M25.9619 31.022C25.9311 30.6401 25.8255 30.2681 25.651 29.9271C25.4764 29.5861 25.2365 29.2829 24.9447 29.0346C24.653 28.7864 24.3152 28.598 23.9507 28.4803C23.5862 28.3626 23.202 28.3179 22.8202 28.3486C22.4384 28.3794 22.0664 28.485 21.7254 28.6596C21.3844 28.8341 21.0811 29.0741 20.8329 29.3658C20.5847 29.6575 20.3963 29.9953 20.2786 30.3598C20.1609 30.7243 20.1161 31.1085 20.1469 31.4903M31.8294 30.7345C31.7703 29.9697 31.4124 29.259 30.8331 28.7563C30.2538 28.2536 29.4997 27.9993 28.7343 28.0485C27.9689 28.0977 27.2536 28.4464 26.7434 29.0192C26.2333 29.5919 25.9693 30.3426 26.0086 31.1086M41.4236 38.4886C46.3136 32.1386 47.0444 29.5828 45.8861 28.4636C44.7277 27.3445 41.1411 29.117 40.0219 30.2761M37.6627 12.092C37.6627 11.7089 37.5873 11.3297 37.4407 10.9758C37.2941 10.6219 37.0793 10.3004 36.8085 10.0296C36.5376 9.75873 36.2161 9.54389 35.8622 9.39731C35.5084 9.25073 35.1291 9.17529 34.7461 9.17529C34.363 9.17529 33.9838 9.25073 33.6299 9.39731C33.276 9.54389 32.9545 9.75873 32.6837 10.0296C32.4128 10.3004 32.198 10.6219 32.0514 10.9758C31.9048 11.3297 31.8294 11.7089 31.8294 12.092" fill="currentColor"/>
+<path d="M44.4863 34.5195C42.8597 36.3062 41.6755 38.8262 41.7363 42.4545L44.4863 34.5195Z" fill="currentColor"/>
+<path d="M31.7381 34.937L37.624 33.2978V11.812H31.8298L31.7381 34.937ZM31.7381 30.7037H14.304L13.4995 42.5L31.7381 40.892V30.7037ZM37.6631 33.3878L39.8765 32.5587L39.4523 29.9037L37.649 32.3453L37.6631 33.3878Z" fill="currentColor"/>
+<path d="M25.9747 31.0347C25.944 30.6528 25.8383 30.2808 25.6638 29.9398C25.4893 29.5988 25.2493 29.2956 24.9576 29.0473C24.6658 28.7991 24.3281 28.6107 23.9636 28.493C23.599 28.3753 23.2149 28.3306 22.8331 28.3613C22.4513 28.3921 22.0792 28.4977 21.7383 28.6723C21.3973 28.8468 21.094 29.0868 20.8458 29.3785C20.5975 29.6702 20.4092 30.008 20.2915 30.3725C20.1737 30.737 20.129 31.1212 20.1597 31.503M31.8422 30.748C31.7828 29.9836 31.4247 29.2734 30.8456 28.771C30.2664 28.2687 29.5128 28.0145 28.7477 28.0636C27.9826 28.1126 27.2676 28.461 26.7574 29.0332C26.2471 29.6055 25.9828 30.3556 26.0214 31.1213M31.8431 30.7172L31.8422 12.1047C31.8422 11.7216 31.9177 11.3424 32.0643 10.9885C32.2108 10.6346 32.4257 10.3131 32.6965 10.0423C32.9674 9.77142 33.2889 9.55658 33.6428 9.41001C33.9966 9.26343 34.3759 9.18799 34.7589 9.18799C35.1419 9.18799 35.5212 9.26343 35.8751 9.41001C36.2289 9.55658 36.5505 9.77142 36.8213 10.0423C37.0921 10.3131 37.307 10.6346 37.4536 10.9885C37.6001 11.3424 37.6756 11.7216 37.6756 12.1047V35.2638M40.1431 30.3938L41.7747 28.5488C42.0408 28.2732 42.3586 28.0526 42.7099 27.8998C43.0612 27.747 43.4391 27.6648 43.8222 27.6581C44.2052 27.6514 44.5859 27.7202 44.9423 27.8606C45.2988 28.001 45.6241 28.2103 45.8996 28.4764C46.1752 28.7426 46.3956 29.0604 46.5483 29.4118C46.701 29.7631 46.783 30.1411 46.7896 30.5242C46.7962 30.9072 46.7273 31.2878 46.5867 31.6442C46.4462 32.0006 46.2368 32.3258 45.9706 32.6013L44.4531 34.5847M44.4981 34.5347C42.8706 36.3205 41.6864 38.8405 41.7464 42.4688M14.3072 42.3013C14.3072 49.8738 20.4472 56.0138 28.0206 56.0138C35.5939 56.0138 41.7339 49.8738 41.7339 42.3005" stroke="currentColor" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+const SCROLL = `<svg viewBox="0 12 77 52" fill="none" aria-hidden="true">
+<path d="M57.6866 23.0705C67.6658 23.0705 73.0116 29.038 73.0116 36.6121C71.4991 45.053 69.6116 52.0296 47.0516 50.4588M48.3266 28.7246C47.94 28.7143 47.5592 28.6272 47.2066 28.4683C46.8539 28.3095 46.5364 28.0821 46.2724 27.7994C46.0085 27.5166 45.8034 27.1842 45.6692 26.8215C45.5349 26.4588 45.4741 26.0729 45.4904 25.6865C45.5066 25.3001 45.5996 24.9207 45.7638 24.5705C45.928 24.2203 46.1603 23.9063 46.447 23.6467C46.7338 23.3872 47.0693 23.1872 47.434 23.0585C47.7988 22.9298 48.1855 22.875 48.5716 22.8971" fill="currentColor"/>
+<path d="M48.1325 34.5557C47.7498 34.5396 47.3741 34.4484 47.0266 34.2871C46.6792 34.1259 46.3669 33.8977 46.1077 33.6158C45.8484 33.3339 45.6472 33.0036 45.5156 32.6439C45.3839 32.2842 45.3244 31.9021 45.3404 31.5194C45.3565 31.1367 45.4477 30.7609 45.609 30.4135C45.7703 30.0661 45.9984 29.7538 46.2803 29.4945C46.5623 29.2353 46.8925 29.0341 47.2522 28.9024C47.6119 28.7708 47.994 28.7113 48.3767 28.7273" fill="currentColor"/>
+<path d="M48.0217 34.5537C47.6399 34.5229 47.2679 34.4173 46.9269 34.2428C46.5859 34.0682 46.2826 33.8283 46.0344 33.5365C45.7861 33.2448 45.5978 32.907 45.4801 32.5425C45.3624 32.178 45.3176 31.7938 45.3484 31.412C45.3791 31.0302 45.4848 30.6582 45.6593 30.3172C45.8338 29.9762 46.0738 29.6729 46.3655 29.4247C46.6573 29.1765 46.995 28.9881 47.3596 28.8704C47.7241 28.7527 48.1082 28.7079 48.49 28.7387M47.7342 40.4212C46.9695 40.3621 46.2588 40.0042 45.7561 39.4249C45.2533 38.8456 44.999 38.0915 45.0482 37.3261C45.0974 36.5607 45.4462 35.8454 46.0189 35.3352C46.5917 34.8251 47.3424 34.561 48.1084 34.6004M55.4884 50.0154C49.1384 54.9054 46.5825 55.6362 45.4634 54.4779C44.3442 53.3195 46.1167 49.7329 47.2759 48.6137M29.0917 46.2545C28.7087 46.2545 28.3294 46.1791 27.9756 46.0325C27.6217 45.8859 27.3002 45.6711 27.0293 45.4003C26.7585 45.1294 26.5436 44.8079 26.3971 44.454C26.2505 44.1002 26.175 43.7209 26.175 43.3379C26.175 42.9548 26.2505 42.5756 26.3971 42.2217C26.5436 41.8678 26.7585 41.5463 27.0293 41.2755C27.3002 41.0046 27.6217 40.7898 27.9756 40.6432C28.3294 40.4966 28.7087 40.4212 29.0917 40.4212" fill="currentColor"/>
+<path d="M51.5195 53.0781C53.3062 51.4515 55.8262 50.2673 59.4545 50.3281L51.5195 53.0781Z" fill="currentColor"/>
+<path d="M51.9368 40.3299L50.2976 46.2158H28.8118V40.4216L51.9368 40.3299ZM47.7034 40.3299V22.8958L59.4998 22.0913L57.8918 40.3299H47.7034ZM50.3876 46.2549L49.5584 48.4683L46.9034 48.0441L49.3451 46.2408L50.3876 46.2549Z" fill="currentColor"/>
+<path d="M48.0344 34.5665C47.6526 34.5358 47.2806 34.4301 46.9396 34.2556C46.5986 34.0811 46.2953 33.8411 46.0471 33.5494C45.7988 33.2576 45.6105 32.9199 45.4928 32.5554C45.3751 32.1908 45.3303 31.8067 45.3611 31.4249C45.3918 31.0431 45.4975 30.671 45.672 30.3301C45.8465 29.9891 46.0865 29.6858 46.3782 29.4375C46.67 29.1893 47.0077 29.001 47.3723 28.8833C47.7368 28.7655 48.1209 28.7208 48.5027 28.7515M47.7477 40.434C46.9834 40.3746 46.2732 40.0165 45.7708 39.4374C45.2684 38.8582 45.0143 38.1046 45.0633 37.3395C45.1124 36.5744 45.4607 35.8594 46.033 35.3492C46.6052 34.8389 47.3554 34.5746 48.1211 34.6132M47.7169 40.4349L29.1044 40.434C28.7214 40.434 28.3421 40.5095 27.9883 40.6561C27.6344 40.8026 27.3129 41.0175 27.042 41.2883C26.7712 41.5592 26.5563 41.8807 26.4098 42.2345C26.2632 42.5884 26.1877 42.9677 26.1877 43.3507C26.1877 43.7337 26.2632 44.113 26.4098 44.4669C26.5563 44.8207 26.7712 45.1423 27.042 45.4131C27.3129 45.6839 27.6344 45.8988 27.9883 46.0454C28.3421 46.1919 28.7214 46.2674 29.1044 46.2674H52.2636M47.3936 48.7349L45.5486 50.3665C45.2729 50.6326 45.0524 50.9504 44.8995 51.3017C44.7467 51.653 44.6646 52.0309 44.6579 52.414C44.6512 52.797 44.72 53.1777 44.8604 53.5341C45.0008 53.8906 45.21 54.2159 45.4762 54.4914C45.7423 54.767 46.0602 54.9874 46.4115 55.1401C46.7629 55.2928 47.1409 55.3748 47.5239 55.3814C47.907 55.388 48.2876 55.3191 48.644 55.1785C49.0004 55.038 49.3256 54.8286 49.6011 54.5624L51.5844 53.0449M51.5344 53.0899C53.3202 51.4624 55.8402 50.2782 59.4686 50.3382M59.3011 22.899C66.8736 22.899 73.0136 29.039 73.0136 36.6124C73.0136 44.1857 66.8736 50.3257 59.3002 50.3257" stroke="currentColor" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.5001 43.8456C15.734 43.8456 15.96 43.761 16.1364 43.6074C16.3128 43.4538 16.4277 43.2415 16.4598 43.0098L16.4688 42.8781V26.4817L19.3363 29.344C19.5004 29.5081 19.7178 29.6078 19.9492 29.6251C20.1805 29.6424 20.4104 29.5761 20.597 29.4383L20.7055 29.344C20.8692 29.1801 20.9688 28.9629 20.9861 28.7318C21.0034 28.5007 20.9373 28.2711 20.7998 28.0846L20.7055 27.9761L16.1847 23.4579C16.0205 23.294 15.8029 23.1945 15.5716 23.1774C15.3402 23.1604 15.1105 23.2269 14.924 23.3649L14.8155 23.4579L10.2947 27.9761C10.1199 28.1484 10.0172 28.3807 10.0073 28.6259C9.99733 28.8711 10.081 29.1109 10.2412 29.2968C10.4014 29.4826 10.6263 29.6007 10.8703 29.6269C11.1143 29.6532 11.3592 29.5858 11.5553 29.4383L11.6638 29.344L14.5313 26.4817V42.8781C14.5313 43.4128 14.9653 43.8456 15.5001 43.8456ZM15.5001 49.0083C19.0664 49.0083 21.9584 46.1189 21.9584 42.5552C21.9574 41.24 21.5549 39.9565 20.8048 38.8762C20.0546 37.796 18.9925 36.9705 17.7605 36.5102V38.6427C18.6201 39.1411 19.2915 39.9089 19.6708 40.8273C20.0501 41.7457 20.1162 42.7635 19.8589 43.7232C19.6015 44.6829 19.035 45.5311 18.2471 46.1365C17.4592 46.7418 16.4937 47.0707 15.5001 47.0721C14.5064 47.0707 13.541 46.7418 12.7531 46.1365C11.9651 45.5311 11.3987 44.6829 11.1413 43.7232C10.884 42.7635 10.95 41.7457 11.3294 40.8273C11.7087 39.9089 12.3801 39.1411 13.2397 38.6427V36.5089C12.0075 36.9693 10.9452 37.7949 10.195 38.8754C9.44484 39.956 9.04247 41.2398 9.04175 42.5552C9.04312 44.2671 9.72415 45.9085 10.9352 47.1186C12.1462 48.3286 13.7881 49.0083 15.5001 49.0083Z" fill="currentColor"/>
+</svg>`;
+
+/* ── Данные: настоящие товары из catalog/products.json ───────── */
+const IMG = (id, n = 1) => `../../catalog/products/${id}/${n}.webp`;
+const NBSP = " ", NNBSP = " ";
+const num = (n) => String(Math.round(n / 10) * 10).replace(/\B(?=(\d{3})+(?!\d))/g, NBSP);
+const price = (min, max = min) => (num(min) === num(max) ? `${num(min)}${NBSP}сом` : `${num(min)}${NNBSP}–${NNBSP}${num(max)}${NBSP}сом`);
+
+const JBL = {
+  id: "p_0044", title: "Колонка JBL Flip 7", category: "Техника", min: 9800, photos: 3, stores: ["Wildberries"],
+  description: "Портативная колонка JBL новой модели Flip 7 — компактная, её легко взять с собой на природу или в гости.",
+  interests: ["Музыка", "Гаджеты", "Путешествия"],
+};
+const BAG = { id: "p_0018", title: "Сумка-кроссбоди из натуральной кожи", category: "Одежда", min: 2740, photos: 5, stores: ["AliExpress"] };
+const WISH = [
+  { id: "p_0044", title: "Колонка JBL Flip 7", min: 9800, top: true },
+  { id: "p_0018", title: "Сумка-кроссбоди из натуральной кожи", min: 2740, v: "коричневый" },
+  { id: "p_0015", title: "Термокружка De'Longhi, керамика, 300 мл", min: 1570, max: 1590, v: "узор" },
+  { id: "p_0048", title: "Конструктор Mould King: двигатель V8 с мотором", min: 5090 },
+  { id: "p_0013", title: "Ручная кофемолка Timemore Chestnut C3S", min: 6790 },
+  { id: "p_0049", title: "Аромадиффузор Homefish с эффектом пламени", min: 2950 },
+  { id: "p_0025", title: "Геймпад Sony DualSense для PS5", min: 7830, max: 8450, v: "белый" },
+];
+const COLORS = ["plum", "mandarin", "mint", "champagne", "rose", "pomegranate", "graphite", "olive"];
+const COLOR_LABELS = { plum: "Слива", mandarin: "Мандарин", mint: "Мята", champagne: "Шампань", rose: "Роза", pomegranate: "Гранат", graphite: "Графит", olive: "Олива" };
+/* Подписи — frontend/src/shared/config/catalog.ts, INTEREST_LABELS */
+const INTERESTS = ["Кофе и чай", "Готовить", "Гаджеты", "Видеоигры", "Настолки", "Музыка", "Книги", "Рисование и творчество", "Фото и видео", "Спорт и фитнес", "Горы и походы", "Путешествия", "Уход и косметика", "Мода", "Уют дома", "Растения", "Животные", "Авто", "Сон и здоровье", "Аниме и комиксы"];
+const MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+const MONTHS_SHORT = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+const DAYS_IN = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const dateLabel = (d, m) => `${d} ${MONTHS[m]}`;
+const initial = (name) => (Array.from(name.trim())[0] || "").toLocaleUpperCase("ru");
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+/* ── Общие куски экрана ─────────────────────────────────────── */
+const avatar = (name, { size = 36, color = "rose", label = true } = {}) =>
+  `<span class="ava" data-ava style="--size:${size}px;background:var(--av-${color})" ${label ? `role="img" aria-label="${name ? esc(name) : "Профиль"}"` : 'aria-hidden="true"'}>${name ? initial(name) : icon("user", Math.round(size * 0.5))}</span>`;
+const header = (title, { acts = "", back = false, deck = false } = {}) =>
+  `<header class="hdr${deck ? " deck-hdr" : ""}${back ? " with-back" : ""}">${back ? `<button class="icon-btn" aria-label="Назад">${icon("left", 24)}</button>` : ""}<h1>${title}</h1><div class="acts">${acts}</div></header>`;
+const TABS = [["gifts", "Подарки", "gift"], ["wish", "Вишлист", "heart"], ["plans", "Планы", "ticket"], ["santa", "Санта", "mail"]];
+const tabbar = (active, { badge = 0, remind = false } = {}) =>
+  `<nav class="tabbar" aria-label="Разделы">${TABS.map(([k, l, ic]) => `<span class="tab${k === active ? " on" : ""}"${k === active ? ' aria-current="page"' : ""}><span class="tab-ic">${icon(ic, 22)}${k === "wish" && badge ? `<b class="badge">${badge}</b>` : ""}${k === "wish" && remind ? '<b class="rdot" data-rdot aria-label="Есть напоминание"></b>' : ""}</span>${l}</span>`).join("")}</nav>`;
+const colorPicker = (selected, ring) =>
+  `<div class="colors${ring ? " " + ring : ""}" role="radiogroup" aria-label="Цвет аватара">${COLORS.map((c) => `<button class="color" role="radio" aria-checked="${c === selected}" aria-label="${COLOR_LABELS[c]}" data-color="${c}"><i style="background:var(--av-${c})"></i></button>`).join("")}</div>`;
+
+/* Мини-бирка вишлиста (§8.3, reference.html .wl-item) */
+const miniTag = (w) => `<li class="wl-item paper">
+  <span class="wl-grip" aria-hidden="true">${icon("grip", 18)}</span>
+  <div class="wl-photo"><div class="ph"><img src="${IMG(w.id)}" alt=""></div>${w.top ? `<span class="wl-star" role="img" aria-label="Очень хочу">${icon("star", 13, { fill: "currentColor", sw: 1.75 })}</span>` : ""}</div>
+  <div class="wl-text"><p class="wl-title">${w.title}</p><p class="price wl-price">${price(w.min, w.max)}</p>${w.v ? `<p class="t-caption wl-var">${w.v}</p>` : ""}</div>
+  <button class="icon-btn on-paper" aria-label="Действия: ${esc(w.title)}">${icon("more", 20)}</button></li>`;
+
+/* Экран «Мой вишлист» — фон шторок в кадрах 3–5 и сам кадр 6 */
+const wishlistScreen = ({ name = "", count, occasion = "", banner = "" }) => `
+  ${header("Мой вишлист", { acts: `<button class="icon-btn" aria-label="Отправить вишлист">${icon("share", 22)}</button><span class="ava-slot">${avatar(name)}</span>` })}
+  <div class="scroll">
+    ${occasion ? `<p class="t-title3 subhead">${occasion}</p>` : ""}
+    <div class="seg wl-seg" role="group" aria-label="Список"><button aria-pressed="true">Хочу ${count}</button><button aria-pressed="false">Подарили 0</button></div>
+    ${banner}
+    <ul class="wl">${WISH.slice(0, count).map(miniTag).join("")}</ul>
+  </div>
+  <div class="sticky-foot" data-foot ${banner ? "hidden" : ""}><button class="btn btn-primary btn-lg">Отправить вишлист</button></div>
+  ${tabbar("wish", { badge: count, remind: !!banner })}`;
+
+const sheet = ({ id, back = false, title, sub = "", body = "", foot = "" }) => `
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="${id}">
+    <div class="sheet-handle" aria-hidden="true"><span></span></div>
+    <div class="sheet-head${back ? " with-back" : ""}">${back ? `<button class="icon-btn" data-back aria-label="Назад">${icon("left", 24)}</button>` : ""}<div class="sh-t"><h2 class="t-title2" id="${id}">${title}</h2>${sub ? `<p class="t-caption rose" data-sub>${sub}</p>` : ""}</div></div>
+    <div class="sheet-body">${body}</div>
+    ${foot ? `<div class="sheet-foot">${foot}</div>` : ""}
+  </div>`;
+
+function toast(phone, text, ic = "check") {
+  let t = $(".toast", phone);
+  if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); phone.appendChild(t); }
+  t.innerHTML = `${icon(ic, 18)}<span>${text}</span>`;
+  t.classList.remove("show"); void t.offsetWidth; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+/* ════════════════════════════════════════════════════════════
+   Кадр 1 — Прелоадер
+   ════════════════════════════════════════════════════════════ */
+const preloaderHTML = () => `
+  <div class="pre" role="status" aria-label="Загружаем SwipeIt">
+    <div class="pre-badge"><i class="pre-shadow"></i><i class="pre-glow"></i><i class="pre-plate"><span class="pre-bow">${BOW}</span></i></div>
+    <p class="pre-word" aria-hidden="true">${[..."swipeit"].map((c, n) => `<span style="--n:${n}">${c}</span>`).join("")}</p>
+  </div>`;
+
+/* ════════════════════════════════════════════════════════════
+   Кадр 2 — Обучающая карточка: GiftCard из gift-card.html + DeckGuide
+   ════════════════════════════════════════════════════════════ */
+const guideHTML = () => `
+  <div class="guide" aria-hidden="true">
+    <div class="vline"></div><div class="hline"></div>
+    <p class="demo">Это демо: всё хранится только в твоём браузере, а друзья внутри — демо-боты</p>
+    <div class="half l">${HAND}<span>Предыдущее фото</span></div>
+    <div class="half r">${HAND}<span>Следующее фото</span></div>
+    <button class="more" tabindex="-1" data-more>${SCROLL}<span>Подробнее о подарке</span></button>
+    <p class="hint">Свайпни вправо — хочу, влево — мимо<br>Звезда — очень хочу</p>
+  </div>`;
+
+const cardHTML = (p, { under = false, guide = false } = {}) => `
+  <div class="card${under ? " under" : ""}${guide ? " has-guide" : ""}" ${under ? 'aria-hidden="true"' : `role="group" aria-roledescription="карточка" aria-label="${esc(p.title)}, ${price(p.min)}"${guide ? ' aria-describedby="guide-desc"' : ""}`}>
+    <div class="photo">
+      <img class="fill" alt="" src="${IMG(p.id)}">
+      <div class="pic-area"><img class="pic" alt="${esc(p.title)}" src="${IMG(p.id)}"></div>
+      <div class="scrim-top"></div>
+      <div class="segs-photo">${Array.from({ length: p.photos }, (_, i) => `<i class="${i ? "" : "on"}"></i>`).join("")}</div>
+      <button class="tap l" aria-label="Предыдущее фото"></button>
+      <button class="tap r" aria-label="Следующее фото"></button>
+      <div class="info">
+        <span class="pill">${p.category}</span>
+        <button class="info-btn" aria-label="Подробнее о подарке">
+          <div><h2>${p.title}</h2><div class="meta"><span class="price">${price(p.min)}</span><span class="store">${icon("bag", 14)}${p.stores.join(", ")}</span></div></div>
+          ${icon("chevs", 24)}
+        </button>
+      </div>
+      ${guide ? guideHTML() : ""}
+    </div>
+    ${under ? "" : `
+    <div class="mini"><img alt="" src="${IMG(p.id)}"><span>${p.title}</span></div>
+    <div class="details">
+      <section class="sec"><div class="sec-t">${icon("quote", 16)}Описание</div><div class="sec-b"><p>${p.description}</p></div></section>
+      <section class="sec"><div class="sec-t">${icon("bag", 16)}Где купить</div><div class="sec-b"><div class="offer"><div><b>${p.stores[0]}</b><div class="price">${price(p.min)}</div></div><a class="go" href="#" onclick="return false">Открыть${icon("ext", 16)}</a></div></div></section>
+      <section class="sec"><div class="sec-t">${icon("sparkles", 16)}Подойдёт, если любишь</div><div class="sec-b"><div class="ichips">${p.interests.map((t) => `<span>${t}</span>`).join("")}</div></div></section>
+    </div>`}
+    <div class="bar">
+      <div class="back"></div>
+      <div class="row">
+        <button class="b s" data-k="small" aria-label="Вернуть" disabled>${icon("undo", 20)}</button>
+        <div class="mid">
+          <button class="b l" data-k="x" aria-label="Мимо">${icon("x", 30, { sw: 2.4 })}</button>
+          <button class="b l" data-k="heart" aria-label="Хочу">${icon("heart", 30, { fill: "currentColor", sw: 1.5 })}</button>
+        </div>
+        <button class="b s" data-k="star" aria-label="Очень хочу">${icon("star", 26, { fill: "var(--champagne)", stroke: "var(--mandarin-ink)", sw: 1.4 })}</button>
+      </div>
+    </div>
+  </div>`;
+
+/* «Перетекание» кнопок по прокрутке — как в gift-card.html */
+const mix = (a, b, t) => `rgba(${a.map((v, i) => (i < 3 ? Math.round(v + (b[i] - v) * t) : +(v + (b[i] - v) * t).toFixed(3))).join(",")})`;
+const PAPER = [255, 241, 243], INK = [42, 16, 36], MAND = [255, 138, 61], MAND_INK = [184, 70, 14];
+const applyProgress = (card, p) => {
+  const back = $(".back", card); if (back) back.style.opacity = p;
+  $$(".b", card).forEach((b) => {
+    const k = b.dataset.k;
+    if (k === "x") { b.style.background = mix([...PAPER, 0.16], [...PAPER, 1], p); b.style.color = mix([...PAPER, 1], [...INK, 1], p); }
+    else if (k === "heart") { b.style.background = mix([...MAND, 0.92], [...PAPER, 1], p); b.style.color = mix([...INK, 1], [...MAND_INK, 1], p); }
+    else { b.style.background = mix([...PAPER, 0.18], [...PAPER, 1], p); b.style.color = mix([...PAPER, 1], [...INK, 1], p); b.style.boxShadow = `0 6px 16px rgba(10,0,8,${(0.25 * p).toFixed(3)})`; }
+  });
+};
+
+/* ════════════════════════════════════════════════════════════
+   Сборка доски
+   ════════════════════════════════════════════════════════════ */
+const FRAMES = [
+  { n: 1, t: "Прелоадер", ctl: `<button class="ctl-btn" data-replay-pre>${icon("replay", 16)}Повторить</button><span>Хореография 1.1 с, дальше плашка дышит</span>` },
+  { n: 2, t: "Обучающая карточка", ctl: `<button class="ctl-btn" data-replay-guide>${icon("replay", 16)}Повторить</button><span>Тап по краям фото листает, по низу — подробности</span>` },
+  { n: 3, t: "Как тебя зовут?", ctl: `<span>Поле и фоны аватара живые</span>` },
+  { n: 4, t: "К какому дню готовить подарки", ctl: `<button class="ctl-link" data-restart>Сначала</button><span>Кликабельно: «Выбрать дату» → «Дальше» → «Да» или «Нет» → «Что за повод?»</span>` },
+  { n: 5, t: "Это твой день рождения?", ctl: "" },
+  { n: 6, t: "Вишлист с напоминанием", ctl: `<span>«Скрыть» убирает напоминание и точку на табе</span>` },
+  { n: 7, t: "Профиль", ctl: `<span>Экран прокручивается внутри телефона</span>` },
+];
+const frameHTML = (f) => `<figure class="frame" data-frame="${f.n}"><figcaption class="frame-cap">Кадр ${f.n} <span>— ${f.t}</span></figcaption><div class="phone"></div><div class="frame-ctl">${f.ctl}</div></figure>`;
+$("#board").innerHTML = `<div class="row">${FRAMES.slice(0, 4).map(frameHTML).join("")}</div><div class="row">${FRAMES.slice(4).map(frameHTML).join("")}</div>`;
+const phoneOf = (n) => $(`[data-frame="${n}"] .phone`);
+
+/* ── Кадр 1 ── */
+{
+  const phone = phoneOf(1);
+  phone.innerHTML = preloaderHTML();
+  $("[data-replay-pre]").onclick = () => { $(".pre", phone).replaceWith(document.createRange().createContextualFragment(preloaderHTML())); };
+}
+
+/* ── Кадр 2 ── */
+{
+  const phone = phoneOf(2);
+  phone.innerHTML = `<div class="screen">
+    ${header("Подарки", { deck: true, acts: `<button class="icon-btn" aria-label="Фильтры">${icon("sliders", 22)}</button><span class="ava-slot">${avatar("")}</span>` })}
+    <div class="ribbon"><span class="segs"><i></i><i></i><i></i><i></i><i></i></span><span>Ещё 5 — и можно отправить</span></div>
+    <div class="deck">${cardHTML(BAG, { under: true })}${cardHTML(JBL, { guide: true })}</div>
+    <p id="guide-desc" hidden>Свайпни вправо — хочу, влево — мимо. Звезда — очень хочу. Тап по краям фото листает фото, Enter — подробности.</p>
+    <div class="tabbar-space"></div>
+  </div>${tabbar("gifts")}`;
+  const [under, card] = $$(".card", phone);
+  applyProgress(under, 0); applyProgress(card, 0);
+  let index = 0;
+  const show = (i) => {
+    index = Math.max(0, Math.min(JBL.photos - 1, i));
+    $$(".pic, .fill", card).forEach((im) => (im.src = IMG(JBL.id, index + 1)));
+    $$(".segs-photo i", card).forEach((s, j) => s.classList.toggle("on", j === index));
+  };
+  $(".tap.l", card).onclick = () => show(index - 1);
+  $(".tap.r", card).onclick = () => show(index + 1);
+  const toDetails = () => card.scrollTo({ top: card.clientHeight, behavior: "smooth" });
+  $(".info-btn", card).onclick = toDetails;
+  card.addEventListener("click", (e) => { if (e.target.closest("[data-more]")) toDetails(); });
+  card.addEventListener("scroll", () => applyProgress(card, Math.min(card.scrollTop / 120, 1)), { passive: true });
+  $("[data-replay-guide]").onclick = () => {
+    card.scrollTo({ top: 0 });
+    $(".guide", card).replaceWith(document.createRange().createContextualFragment(guideHTML()));
+  };
+}
+
+/* ── Кадр 3: NameSheet в шторке отправки ── */
+{
+  const phone = phoneOf(3);
+  let name = "Айгерим", color = "rose";
+  phone.innerHTML = `<div class="screen">${wishlistScreen({ count: 5 })}</div>
+    <div class="backdrop"></div>
+    ${sheet({
+      id: "ns-title", title: "Как тебя зовут?", sub: "Друзья увидят: «Вишлист Айгерим»",
+      body: `<div class="ns-row"><span data-ns-ava>${avatar(name, { size: 48, color, label: false })}</span><input class="input" data-name value="${name}" maxlength="40" aria-label="Имя" autocomplete="given-name" enterkeyhint="done"></div>${colorPicker(color)}`,
+      foot: `<button class="btn btn-primary btn-lg" data-continue>Продолжить</button>`,
+    })}`;
+  const input = $("[data-name]", phone), sub = $("[data-sub]", phone), go = $("[data-continue]", phone);
+  const render = () => {
+    const n = input.value.trim();
+    $("[data-ns-ava]", phone).innerHTML = avatar(n, { size: 48, color, label: false });
+    sub.textContent = n ? `Друзья увидят: «Вишлист ${n}»` : "Друзья увидят: «Вишлист …»";
+    go.disabled = !n;
+  };
+  input.addEventListener("input", render);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !go.disabled) go.click(); });
+  $$("[data-color]", phone).forEach((b) => (b.onclick = () => {
+    color = b.dataset.color;
+    $$("[data-color]", phone).forEach((o) => o.setAttribute("aria-checked", String(o === b)));
+    render();
+  }));
+}
+
+/* ── Кадр 4: шаги 2–4 шторки отправки, кликабельно ── */
+{
+  const phone = phoneOf(4);
+  phone.innerHTML = `<div class="screen">${wishlistScreen({ name: "Айгерим", count: 5 })}</div><div class="backdrop"></div><div data-sheet></div>`;
+  const host = $("[data-sheet]", phone);
+  const freshState = () => ({ step: "list", history: [], d: 14, m: 2, occ: null, sigName: "Значимая дата 1", preset: null, renaming: false });
+  let st = freshState();
+
+  // Готовые поводы «Что за повод?» (DESIGN §8.4, TECH_SPEC ImportantDatePreset): подпись и фраза для гостей.
+  const PRESETS = [
+    { id: "anniversary", label: "Годовщина", guest: "на годовщину" },
+    { id: "wedding", label: "Свадьба", guest: "на свадьбу" },
+    { id: "graduation", label: "Выпускной", guest: "на выпускной" },
+    { id: "housewarming", label: "Новоселье", guest: "на новоселье" },
+  ];
+
+  const occasionText = () => {
+    if (st.occ === "bday") return `на день рождения, ${dateLabel(st.d, st.m)}`;
+    if (st.occ === "ny") return "на Новый год, 31 декабря";
+    if (st.occ === "m8") return "на 8 Марта";
+    if (st.occ === "sig") {
+      const p = PRESETS.find((x) => x.id === st.preset);
+      return p ? `${p.guest}, ${dateLabel(st.d, st.m)}` : `к ${dateLabel(st.d, st.m)}`;
+    }
+    return "Просто так";
+  };
+  const go = (step, patch = {}) => { st.history.push(st.step); Object.assign(st, patch, { step }); render(); };
+
+  const VIEWS = {
+    list: () => sheet({
+      id: "send-t", title: "К какому дню друзьям готовить подарки?", sub: "Друзья увидят дату и успеют выбрать",
+      body: `<div class="opts">
+          <button class="opt" data-ny>${icon("sparkles", 20)}<span>Новый год, 31 декабря</span></button>
+          <button class="opt" data-m8>${icon("flower", 20)}<span>8 Марта</span></button>
+          <button class="opt" data-pick>${icon("calplus", 20)}<span>Выбрать дату</span></button>
+        </div>
+        <div class="no-date"><button class="link-btn" data-nodate>Без даты</button></div>`,
+    }),
+    pick: () => sheet({
+      id: "send-t", back: true, title: "К какому дню друзьям готовить подарки?", sub: "Друзья увидят дату и успеют выбрать",
+      body: `<div class="months" role="group" aria-label="Месяц">${MONTHS_SHORT.map((m, i) => `<button class="chip" aria-pressed="${i === st.m}" data-m="${i}">${icon("check", 16, { sw: 2.4 }).replace('class="i"', 'class="i ck"')}${m}</button>`).join("")}</div>
+        <p class="t-title3 dm-label" aria-live="polite">${st.d ? dateLabel(st.d, st.m) : "Выбери день"}</p>
+        <div class="days" role="group" aria-label="День">${Array.from({ length: DAYS_IN[st.m] }, (_, i) => `<button class="day" data-d="${i + 1}" aria-pressed="${i + 1 === st.d}" aria-label="${dateLabel(i + 1, st.m)}" tabindex="${i + 1 === (st.d || 1) ? 0 : -1}">${i + 1}</button>`).join("")}</div>`,
+      foot: `<button class="btn btn-paper btn-lg" data-next ${st.d ? "" : "disabled"}>Дальше</button>`,
+    }),
+    bday: () => sheet({
+      id: "send-t", back: true, title: "Это твой день рождения?",
+      body: `<p class="t-title3 big-date">${dateLabel(st.d, st.m)}</p>`,
+      foot: `<button class="btn btn-primary btn-lg" data-yes>Да, мой день рождения</button><button class="btn btn-secondary btn-lg" data-no>Нет, другой повод</button>`,
+    }),
+    reason: () => sheet({
+      id: "send-t", back: true, title: "Что за повод?", sub: `${dateLabel(st.d, st.m)}. Так напоминание будет понятным`,
+      body: `<div class="reasons" role="group" aria-label="Повод">
+          ${PRESETS.map((p) => `<button class="chip" data-preset="${p.id}">${p.label}</button>`).join("")}
+          <button class="chip" data-custom aria-pressed="${st.custom ? "true" : "false"}">${icon("check", 16, { sw: 2.4 }).replace('class="i"', 'class="i ck"')}Свой вариант</button>
+        </div>
+        ${st.custom ? `<div class="custom-reason"><input class="input" data-custom-input maxlength="40" placeholder="Например, защита диплома" aria-label="Свой повод" enterkeyhint="done"></div>` : ""}
+        <div class="no-date"><button class="link-btn" data-skip>Пропустить</button></div>`,
+      foot: st.custom ? `<button class="btn btn-paper btn-lg" data-custom-done>Готово</button>` : "",
+    }),
+    send: () => sheet({
+      id: "send-t", back: true, title: "Отправить вишлист",
+      body: `<div class="occ"><p class="t-title3">${occasionText()}</p><button class="link-btn" data-change>Изменить</button></div>
+        ${st.occ === "sig" ? `<p class="t-caption rose saved">Сохранили как «${esc(st.sigName)}». <button class="inline-link" data-rename>Переименовать</button></p>` : ""}
+        ${st.occ === "sig" && st.renaming ? `<div class="rename"><input class="input" data-sig value="${esc(st.sigName)}" maxlength="40" aria-label="Название даты" enterkeyhint="done"></div>` : ""}
+        <label class="field"><span class="t-caption rose">Сообщение</span><textarea class="input" rows="2" maxlength="200">Буду рада любому из списка</textarea></label>
+        <div class="postcard paper" aria-label="Превью ссылки">
+          <div class="fan">${WISH.slice(0, 3).map((w) => `<span class="ft"><img src="${IMG(w.id)}" alt=""></span>`).join("")}</div>
+          <p class="pc-name">${avatar("Айгерим", { size: 28, label: false })}<span class="t-title2">Вишлист Айгерим</span></p>
+          ${st.occ === "none" ? "" : `<p class="t-caption pc-occ">${occasionText()}</p>`}
+        </div>`,
+      foot: `<button class="btn btn-primary btn-lg">${icon("send", 20)}Отправить в Telegram</button>
+        <button class="btn btn-secondary btn-lg">Отправить в WhatsApp</button>
+        <button class="btn btn-secondary btn-md" data-copy>${icon("copy", 20)}Скопировать ссылку</button>
+        <button class="btn btn-secondary btn-md">${icon("qr", 20)}Показать QR</button>`,
+    }),
+  };
+
+  function render() {
+    const prevRow = $(".months", host), keepLeft = prevRow ? prevRow.scrollLeft : 0;
+    host.innerHTML = VIEWS[st.step]();
+    if (st.step === "pick") {
+      // Выбранный месяц всегда виден; при перерисовке ряд не прыгает.
+      const row = $(".months", host), chip = $(`[data-m="${st.m}"]`, host);
+      row.scrollLeft = keepLeft;
+      if (chip.offsetLeft + chip.offsetWidth > row.scrollLeft + row.clientWidth - 20 || chip.offsetLeft < row.scrollLeft + 20) row.scrollLeft = chip.offsetLeft - 20;
+    }
+    if (st.step === "send" && st.renaming) { const i = $("[data-sig]", host); i.focus(); i.select(); }
+    if (st.step === "reason" && st.custom) $("[data-custom-input]", host).focus();
+  }
+  const saveReason = (label, preset = null) => go("send", { occ: "sig", sigName: label, preset, custom: false });
+  const saveSig = (v) => { st.sigName = v.trim() || "Значимая дата 1"; st.renaming = false; render(); };
+
+  host.addEventListener("click", (e) => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.matches("[data-back]")) { st.step = st.history.pop() || "list"; st.renaming = false; render(); }
+    else if (t.matches("[data-ny]")) go("send", { occ: "ny" });
+    else if (t.matches("[data-m8]")) go("send", { occ: "m8" });
+    else if (t.matches("[data-preset]")) { const p = PRESETS.find((x) => x.id === t.dataset.preset); saveReason(p.label, p.id); }
+    else if (t.matches("[data-custom]")) { st.custom = !st.custom; render(); }
+    else if (t.matches("[data-custom-done]")) { const v = $("[data-custom-input]", host).value.trim(); saveReason(v || "Значимая дата 1"); }
+    else if (t.matches("[data-skip]")) saveReason("Значимая дата 1");
+    else if (t.matches("[data-nodate]")) go("send", { occ: "none" });
+    else if (t.matches("[data-pick]")) go("pick");
+    else if (t.matches("[data-m]")) { st.m = +t.dataset.m; if (st.d > DAYS_IN[st.m]) st.d = DAYS_IN[st.m]; render(); }
+    else if (t.matches("[data-d]")) { st.d = +t.dataset.d; render(); $(`[data-d="${st.d}"]`, host).focus(); }
+    else if (t.matches("[data-next]")) go("bday");
+    else if (t.matches("[data-yes]")) go("send", { occ: "bday" });
+    else if (t.matches("[data-no]")) go("reason", { custom: false });
+    else if (t.matches("[data-change]")) { st.history = []; st.step = "list"; st.renaming = false; render(); }
+    else if (t.matches("[data-rename]")) { st.renaming = true; render(); }
+    else if (t.matches("[data-copy]")) toast(phone, "Ссылка скопирована", "copy");
+  });
+  host.addEventListener("keydown", (e) => {
+    const day = e.target.closest("[data-d]");
+    if (day) {
+      const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
+      if (step) {
+        e.preventDefault();
+        const next = Math.max(1, Math.min(DAYS_IN[st.m], +day.dataset.d + step));
+        $$("[data-d]", host).forEach((b) => b.setAttribute("tabindex", "-1"));
+        const el = $(`[data-d="${next}"]`, host); el.setAttribute("tabindex", "0"); el.focus();
+      }
+    }
+    if (e.target.matches("[data-sig]") && e.key === "Enter") { e.preventDefault(); saveSig(e.target.value); }
+    if (e.target.matches("[data-custom-input]") && e.key === "Enter") { e.preventDefault(); saveReason(e.target.value.trim() || "Значимая дата 1"); }
+  });
+  host.addEventListener("focusout", (e) => { if (e.target.matches("[data-sig]") && st.renaming) saveSig(e.target.value); });
+  $("[data-restart]").onclick = () => { st = freshState(); render(); };
+  render();
+}
+
+/* ── Кадр 5: «Это твой день рождения?» статично ── */
+{
+  const phone = phoneOf(5);
+  phone.innerHTML = `<div class="screen">${wishlistScreen({ name: "Айгерим", count: 5 })}</div><div class="backdrop"></div>
+    ${sheet({
+      id: "bday-t", back: true, title: "Это твой день рождения?",
+      body: `<p class="t-title3 big-date">14 марта</p>`,
+      foot: `<button class="btn btn-primary btn-lg">Да, мой день рождения</button><button class="btn btn-secondary btn-lg">Нет, другой повод</button>`,
+    })}`;
+}
+
+/* ── Кадр 6: вишлист с напоминанием ── */
+{
+  const phone = phoneOf(6);
+  const banner = `<section class="reminder paper" data-reminder aria-label="Напоминание">
+      <div class="rm-row">${icon("calheart", 24)}<div><p class="t-body">Через 26 дней — Годовщина, 2 июня</p><p class="t-caption ink-soft">Обнови вишлист и отправь друзьям, чтобы они успели выбрать</p></div></div>
+      <div class="rm-actions"><button class="btn btn-primary btn-sm">Отправить вишлист</button><button class="btn btn-ghost-ink btn-sm" data-hide>Скрыть</button></div>
+    </section>`;
+  phone.innerHTML = `<div class="screen">${wishlistScreen({ name: "Айгерим", count: 7, occasion: "на день рождения, 14 марта", banner })}</div>`;
+  $("[data-hide]", phone).onclick = () => {
+    $("[data-reminder]", phone).remove();
+    $("[data-rdot]", phone).remove();
+    $("[data-foot]", phone).hidden = false;
+  };
+}
+
+/* ── Кадр 7: профиль ── */
+{
+  const phone = phoneOf(7);
+  const self = ["Музыка", "Кофе и чай"];
+  let guesses = ["Гаджеты", "Путешествия", "Уют дома"];
+  const dateRow = (ic, name, date, removable) => `<div class="d-row">${icon(ic, 20)}<button class="d-name" ${removable ? 'aria-label="Переименовать: ' + name + '"' : "disabled"}>${name}</button><button class="d-date" aria-label="${name}: ${date}. Изменить дату">${date}</button>${removable ? `<button class="icon-btn d-del" data-del aria-label="Удалить: ${name}">${icon("trash", 20)}</button>` : '<span class="d-spacer"></span>'}</div>`;
+  phone.innerHTML = `<div class="screen">
+    ${header("Профиль", { back: true })}
+    <div class="scroll"><div class="prof">
+      <div class="pf-name"><span data-pf-ava>${avatar("Айгерим", { size: 64, label: false })}</span><input class="input" data-pf-name value="Айгерим" maxlength="40" aria-label="Имя" placeholder="Как тебя зовут?"></div>
+      <p class="t-caption pf-note" data-pf-hint hidden>Нужно, когда отправляешь вишлист или зовёшь друзей</p>
+      ${colorPicker("rose", "pf-colors")}
+
+      <h3 class="pf-h">Мои даты</h3>
+      <div data-dates>
+        ${dateRow("cake", "День рождения", "14 марта", false)}
+        ${dateRow("calheart", "Годовщина", "2 июня", true)}
+        ${dateRow("calheart", "Значимая дата 2", "8 ноября", true)}
+      </div>
+      <button class="d-add">${icon("plus", 20)}Добавить дату</button>
+      <p class="t-caption pf-note">За месяц до даты напомним обновить вишлист и отправить друзьям</p>
+
+      <h3 class="pf-h">Мне нравится</h3>
+      <div class="chip-wrap" data-self></div>
+      <p class="t-caption pf-sub" data-guess-cap>Похоже, тебе нравится — по твоим «Хочу»</p>
+      <div class="chip-wrap" data-guess></div>
+      <div class="chip-wrap" data-rest hidden style="margin-top:8px"></div>
+      <button class="link-btn all-int" data-all aria-expanded="false">Все интересы${icon("down", 18)}</button>
+
+      <h3 class="pf-h">Показывать подарки</h3>
+      <div class="seg pf-seg" role="group" aria-label="Показывать подарки" data-aud><button aria-pressed="true">всем</button><button aria-pressed="false">для неё</button><button aria-pressed="false">для него</button></div>
+
+      <div class="l-rows">
+        <button class="l-row"><span>Друзья</span>${icon("right", 20)}</button>
+        <button class="l-row"><span>Режим демонстрации</span>${icon("right", 20)}</button>
+        <button class="l-row danger"><span>Сбросить демо-данные</span></button>
+      </div>
+      <button class="btn btn-secondary btn-md demo-user">Войти как демо-пользователь</button>
+      <div><a class="credits" href="#" onclick="return false">Авторы фото</a></div>
+    </div></div>
+  </div>${tabbar(null, { badge: 7, remind: true })}`;
+
+  const chipOn = (t) => `<button class="chip" aria-pressed="true" data-int="${t}">${icon("check", 16, { sw: 2.4 }).replace('class="i"', 'class="i ck"')}${t}</button>`;
+  const chipOff = (t) => `<button class="chip" aria-pressed="false" data-int="${t}">${icon("check", 16, { sw: 2.4 }).replace('class="i"', 'class="i ck"')}${t}</button>`;
+  const guessChip = (t) => `<span class="guess"><button class="g-main" data-confirm="${t}" aria-label="Мне нравится: ${t}">${icon("sparkles", 16)}${t}</button><button class="g-x" data-nope="${t}" aria-label="Не моё: ${t}">${icon("x", 16)}</button></span>`;
+  let expanded = false;
+  const render = () => {
+    $("[data-self]", phone).innerHTML = self.map(chipOn).join("");
+    $("[data-guess]", phone).innerHTML = guesses.map(guessChip).join("");
+    $("[data-guess-cap]", phone).hidden = !guesses.length;
+    $("[data-guess]", phone).hidden = !guesses.length;
+    const rest = INTERESTS.filter((t) => !self.includes(t) && !guesses.includes(t));
+    $("[data-rest]", phone).innerHTML = rest.map(chipOff).join("");
+    $("[data-rest]", phone).hidden = !expanded;
+    $("[data-all]", phone).setAttribute("aria-expanded", String(expanded));
+  };
+  render();
+  phone.addEventListener("click", (e) => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.confirm) { guesses = guesses.filter((g) => g !== t.dataset.confirm); self.push(t.dataset.confirm); render(); }
+    else if (t.dataset.nope) { guesses = guesses.filter((g) => g !== t.dataset.nope); render(); }
+    else if (t.dataset.int) {
+      const v = t.dataset.int; const i = self.indexOf(v);
+      if (i >= 0) self.splice(i, 1); else self.push(v);
+      render();
+    }
+    else if (t.matches("[data-all]")) { expanded = !expanded; render(); }
+    else if (t.closest("[data-aud]")) $$("[data-aud] button", phone).forEach((b) => b.setAttribute("aria-pressed", String(b === t)));
+    else if (t.matches("[data-del]")) t.closest(".d-row").remove();
+    else if (t.matches("[data-color]")) {
+      $$("[data-color]", phone).forEach((o) => o.setAttribute("aria-checked", String(o === t)));
+      $("[data-pf-ava] .ava", phone).style.background = `var(--av-${t.dataset.color})`;
+    }
+  });
+  $("[data-pf-name]", phone).addEventListener("input", (e) => {
+    const n = e.target.value.trim();
+    const bg = $("[data-pf-ava] .ava", phone).style.background;
+    $("[data-pf-ava]", phone).innerHTML = avatar(n, { size: 64, label: false });
+    $("[data-pf-ava] .ava", phone).style.background = bg;
+    $("[data-pf-hint]", phone).hidden = !!n;
+  });
+}
+</script>
+</body>
+</html>

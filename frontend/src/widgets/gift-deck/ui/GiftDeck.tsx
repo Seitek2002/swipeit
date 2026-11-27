@@ -30,6 +30,7 @@ import {
 } from "@/shared/api";
 import { withBasePath } from "@/shared/lib/base-path";
 import { formatPrice } from "@/shared/lib/format";
+import { usePreloaderHold } from "@/shared/lib/preloader";
 import { useConnectionStatus } from "@/shared/lib/realtime";
 import { Button, EmptyState, toast } from "@/shared/ui";
 
@@ -171,6 +172,32 @@ export const GiftDeck = ({
     const timer = setTimeout(() => void loadMore([], true), 0);
     return () => clearTimeout(timer);
   }, [loadMore]);
+
+  // Прелоадер уходит, когда первая карточка готова целиком — с декодированным
+  // фото, без «мигания» пустой рамки (DESIGN.md §6). Пустая порция или ошибка
+  // тоже отпускают: экран покажет своё состояние.
+  const firstImage = queue[0]?.images[0]?.src;
+  const [decodedImage, setDecodedImage] = useState<null | string>(null);
+  useEffect(() => {
+    if (!firstImage || decodedImage) return;
+    let cancelled = false;
+    const image = new Image();
+    image.src = withBasePath(firstImage);
+    image
+      .decode()
+      .catch(() => undefined)
+      .then(() => {
+        if (!cancelled) setDecodedImage(firstImage);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [firstImage, decodedImage]);
+  const firstScreenReady =
+    decodedImage !== null ||
+    status === "error" ||
+    (status === "exhausted" && queue.length === 0);
+  usePreloaderHold("feed", !firstScreenReady);
 
   // Картинки двух следующих карточек — заранее (TECH_SPEC §6, п. 4).
   useEffect(() => {

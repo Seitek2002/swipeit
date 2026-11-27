@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { AppFrame } from "@/app/app-frame";
 import { cormorant, onest } from "@/app/fonts";
 import "@/app/globals.css";
+import { Preloader } from "@/app/preloader";
 import { Providers } from "@/app/providers";
 
 import {
@@ -66,6 +67,9 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${cormorant.variable} ${onest.variable}`}>
       <body>
+        {/* Первым в body: статический прелоадер виден до загрузки JS
+            (DESIGN.md §6). Закрывает и рамку телефона на десктопе. */}
+        <Preloader />
         <Providers>
           <AppFrame>{children}</AppFrame>
         </Providers>

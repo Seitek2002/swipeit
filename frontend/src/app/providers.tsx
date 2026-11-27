@@ -23,6 +23,13 @@ import { setAppStatus, useAppReady } from "@/shared/lib/app-status";
 import { withBasePath } from "@/shared/lib/base-path";
 import { useTapHaptics } from "@/shared/lib/dom";
 import {
+  holdPreloader,
+  isPreloaderHidden,
+  releasePreloader,
+  settlePreloaderApp,
+  startPreloader,
+} from "@/shared/lib/preloader";
+import {
   getConnectionStatus,
   getRealtime,
   subscribeConnection,
@@ -189,14 +196,41 @@ const BotsLeader = () => {
 // рисовать, а подписчики шины ниже — когда подписываться.
 const EnvironmentStarter = () => {
   useEffect(() => {
+    startPreloader();
     startEnvironment().then(
-      (mode) => setAppStatus({ status: "ready", mode }),
+      (mode) => {
+        setAppStatus({ status: "ready", mode });
+        settlePreloaderApp();
+      },
       (error: unknown) => {
         console.error("SwipeIt не запустился:", error);
         setAppStatus({ status: "failed" });
+        // Экран ошибки с «Обновить» — прелоадер уходит, чтобы его показать.
+        settlePreloaderApp();
       },
     );
   }, []);
+  return null;
+};
+
+// Первые запросы экрана держат прелоадер (DESIGN.md §6: «на остальных
+// экранах — их первый запрос»): пока идёт загрузка, человек видит бант, а не
+// скелетоны на долю секунды. После скрытия прелоадера не слушаем.
+const InitialQueriesHold = () => {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const sync = () => {
+      if (isPreloaderHidden()) return;
+      if (queryClient.isFetching() > 0) holdPreloader("queries");
+      else releasePreloader("queries");
+    };
+    sync();
+    const unsubscribe = queryClient.getQueryCache().subscribe(sync);
+    return () => {
+      unsubscribe();
+      releasePreloader("queries");
+    };
+  }, [queryClient]);
   return null;
 };
 
@@ -215,6 +249,7 @@ const ReadyBridges = () => {
       <BotsLeader />
       <ServiceWorker />
       <PlanDeadlines />
+      <InitialQueriesHold />
     </>
   );
 };

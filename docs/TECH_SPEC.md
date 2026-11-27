@@ -98,7 +98,7 @@ const nextConfig: NextConfig = {
 src/
 ├── app/                      globals.css (токены из DESIGN.md), providers.tsx (QueryClient, Realtime, BotEngine, Toaster)
 ├── pages/
-│   ├── onboarding/
+│   ├── onboarding/           только редирект на /gifts/ для старых ссылок (анкеты больше нет, DESIGN §8.1)
 │   ├── gifts/                свайп подарков
 │   ├── wishlist/             мой вишлист
 │   ├── wishlist-guest/       чужой вишлист по ссылке
@@ -141,9 +141,14 @@ src/
 │   ├── santa-draw/
 │   ├── santa-open/
 │   ├── profile-switch/       «Смотреть как»
-│   └── calendar-export/      .ics
+│   ├── calendar-export/      .ics
+│   ├── ask-name/             NameSheet + useRequireName(): «сначала имя, потом действие», реакция на NAME_REQUIRED
+│   ├── deck-guide/           обучающий слой на первой карточке колоды подарков + отметка подсказки
+│   ├── important-dates/      «Мои даты» в профиле: день рождения, значимые даты
+│   ├── date-reminder/        ReminderBanner в вишлисте
+│   └── taste-edit/           «Мне нравится» и «Показывать подарки» в профиле
 ├── entities/
-│   ├── user/                 типы, Avatar, AvatarStack, запросы/хуки
+│   ├── user/                 типы, Avatar, AvatarStack, запросы/хуки (useMe, useImportantDates, useReminders)
 │   ├── product/              типы, фото и текстовый блок GiftCard, мини-бирка, скелетон (сама GiftCard с кнопками и подробностями собирается в widgets/gift-deck)
 │   ├── activity/             типы, ActivityTicket
 │   ├── wishlist/
@@ -157,8 +162,8 @@ src/
     │   ├── query-keys.ts     фабрики ключей по доменам
     │   ├── <domain>/requests.ts
     │   └── mock-server/      фейковый бэкенд (см. §6)
-    ├── ui/                   кит из DESIGN.md §7
-    ├── lib/                  format-price, plural, dates, clock, share-codec, share-targets, haptics, realtime, random, image-compress
+    ├── ui/                   кит из DESIGN.md §7 (в том числе day-month-picker)
+    ├── lib/                  format-price, plural, dates, clock, share-codec, share-targets, haptics, realtime, random, image-compress, preloader
     ├── config/               routes, categories, interests, marketplaces, constants
     └── store/                session, demo-settings, filters
 ```
@@ -259,14 +264,52 @@ type AvatarColor = "plum" | "mandarin" | "mint" | "champagne" | "rose" | "pomegr
 
 interface User {
   id: string;
-  name: string;
-  avatarColor: AvatarColor;
-  birthday?: string;             // "MM-DD" (год не спрашиваем)
-  interests: InterestId[];
-  audience: Audience;
+  name?: string;                 // нет, пока человек не назвался: имя спрашиваем, когда его увидят другие (DESIGN §8.1)
+  avatarColor: AvatarColor;      // при создании — случайный (ctx.random)
+  birthday?: string;             // "MM-DD" (год не спрашиваем). Узнаём при отправке вишлиста (DESIGN §8.4)
+  interests: InterestId[];       // выбраны самим человеком в профиле; у нового профиля пусто
+  mutedInterests?: InterestId[]; // «Не моё» — не предлагаем, лента опускает
+  taste?: Taste;                 // считает сервер по свайпам, клиент только читает
+  audience: Audience;            // устарело с этапа 7: лента берёт ProductFilters.audience; у новых профилей "all", поле оставлено для старых баз и ботов
+  seenHints?: HintId[];          // одноразовые подсказки, которые человек уже видел
+  dismissedReminders?: string[]; // id напоминаний, скрытых кнопкой «Скрыть» (id включает год)
   isBot: boolean;
   bot?: BotProfile;
   createdAt: string;
+}
+type HintId = "deck_guide" | "taste_toast";
+
+// Вкус — сумма по свайпам в контексте self, пересчитывается чистой функцией computeTaste() (§6 «Вкус»)
+interface Taste {
+  interests: Partial<Record<InterestId, number>>;  // вес интереса
+  categories: Partial<Record<CategoryId, number>>;
+  audience: { female: number; male: number };      // сколько «Хочу» у товаров «для неё» и «для него»
+  likes: number;                                   // like + superlike в self
+  updatedAt: string;
+}
+
+// GET /me отдаёт профиль и вычисленное поле (в базе не хранится)
+type MeResponse = User & { inferredInterests: InterestId[] };
+
+// ── Значимые даты и напоминания (личное: в ссылки и чужим не отдаётся) ──
+type ImportantDatePreset = "anniversary" | "wedding" | "graduation" | "housewarming"; // «Что за повод?» (DESIGN §8.4, шаг 3б)
+interface ImportantDate {
+  id: string;                    // "d_<nanoid>"
+  ownerId: string;
+  date: string;                  // "MM-DD"
+  preset?: ImportantDatePreset;  // готовый повод: подпись «Годовщина» и фраза для гостей «на годовщину» — в shared/config
+  label?: string;                // своё название (из «Свой вариант» или «Переименовать»)
+  autoNumber: number;            // ставится при создании; виден, только пока нет ни label, ни preset
+  createdAt: string;
+}
+// Название для владельца: label ?? подпись preset ?? «Значимая дата {autoNumber}»
+interface Reminder {             // вычисляется сервером, в базе не хранится
+  id: string;                    // "birthday:2027" или "<dateId>:2027": ключ даты + год ближайшего наступления
+  kind: "birthday" | "important";
+  dateId?: string;
+  label: string;                 // «твой день рождения» или название даты
+  date: string;                  // ISO-дата ближайшего наступления
+  daysLeft: number;              // 0..30
 }
 interface BotProfile {
   likesCategories: (CategoryId | ActivityCategoryId)[];
@@ -302,7 +345,12 @@ interface CustomWish { title: string; priceMin?: number; priceMax?: number; url?
 
 interface WishlistMeta {
   ownerId: string;
-  occasion?: { kind: "birthday" | "new_year" | "just_because" | "custom"; label?: string; date?: string };
+  occasion?: {
+    kind: "birthday" | "new_year" | "march_8" | "just_because" | "important" | "custom"; // "custom" — только старые данные и ссылки, новый интерфейс его не создаёт
+    dateId?: string;             // для "important": ImportantDate.id (в ссылку не попадает)
+    label?: string;              // только у старого "custom"
+    date?: string;               // ISO-дата ближайшего наступления
+  };
   message?: string;              // ≤ 200
   hideReservationCount: boolean;
   shareUnlockedAt?: string;      // ставится на 5-м «Хочу» и больше не снимается
@@ -332,6 +380,7 @@ interface ProductFilters {
   budget: { min: number; max: number | null }; // null = без верхней границы
   categories: CategoryId[];      // пусто = все
   marketplaces: MarketplaceId[]; // пусто = все
+  audience?: Audience;           // «Показывать подарки» в фильтрах и в профиле (один и тот же стор gift-filters); нет = "all". Едет и в ссылку-фильтр
 }
 interface PickRequest {
   id: string;
@@ -411,8 +460,11 @@ interface Db {
   customActivities: Record<string, Activity>;
   plans: Record<string, PlanSession>;
   santaGames: Record<string, SantaGame>;
+  importantDates: Record<string, ImportantDate[]>; // ownerId → даты; в zod-схеме .default({})
 }
 ```
+
+**Совместимость (с этапа 7):** новые поля — необязательные или с `.default(...)` в zod-схеме. Тогда база, сохранённая до обновления (профили из старого онбординга с именем и интересами), читается без сброса, и `version` остаётся `1`. Сброс «Демо-данные сброшены» из-за новых полей — ошибка.
 
 Каталог (`products.json`, `activities.json`) **в базу не кладём**: он только для чтения и большой. Лимит localStorage — около 5 МБ. Фото своих желаний перед сохранением сжимаем до 720px по большей стороне, JPEG с качеством 0.75. В режиме `local` они лежат в IndexedDB через `idb-keyval`. В режиме `lan` загружаются на сервер (`POST /uploads` → `.lan-data/uploads/<key>.jpg`), чтобы их видели другие телефоны. При переполнении — тост «Память заполнена. Удали пару своих желаний с фото».
 
@@ -435,12 +487,13 @@ export function getTransport(mode: ApiMode): Transport; // выбирается 
 - Ответил `{ app: "swipeit", mode: "lan", serverId, now }` → режим `lan`, транспорт `httpTransport` на `/api/*`, шина — WebSocket.
 - Не ответил (статический хостинг, `next dev`, Capacitor) → режим `local`, транспорт `mockTransport`.
 - Одна и та же сборка `out/` работает в обоих режимах. Переменная `NEXT_PUBLIC_API_ORIGIN` позволяет при разработке направить `next dev` на запущенный LAN-сервер (тогда сервер отдаёт CORS-заголовки).
-- Пока режим определяется — экран-заставка с бантом (не дольше 800 ms).
+- Пока режим определяется и создаётся профиль, экран закрыт прелоадером (DESIGN §6 «Прелоадер», `shared/lib/preloader`). Прелоадер — статический HTML из корневого `layout`, поэтому он виден ещё до загрузки JS.
 
 **Транспорты:**
 - `mockTransport` сопоставляет `method + path` с обработчиком из таблицы маршрутов (`mock-server/routes.ts`), ждёт искусственную задержку **150–450 ms** (в демо-панели: «Без задержек») и возвращает **копию** данных (`structuredClone`), чтобы никто не мутировал базу по ссылке.
 - `httpTransport` — `fetch` на `/api/<path>`. В режиме `lan` ходит на Node-сервер, после демо — на настоящий бэкенд без изменений. Текущий пользователь передаётся заголовком `x-user-id` (в демо без авторизации — сеть доверенная).
-- Ошибки — `ApiError { status, code, message }`, коды: `NOT_FOUND`, `VALIDATION`, `CONFLICT`, `FORBIDDEN`, `STORAGE_FULL`, `OFFLINE`. В демо-панели можно включить «Случайные ошибки 10%» — чтобы показать состояния ошибок.
+- Ошибки — `ApiError { status, code, message }`, коды: `NOT_FOUND`, `VALIDATION`, `CONFLICT`, `FORBIDDEN`, `STORAGE_FULL`, `OFFLINE`, `NAME_REQUIRED`. В демо-панели можно включить «Случайные ошибки 10%» — чтобы показать состояния ошибок.
+- **`NAME_REQUIRED`** (статус 409) — действие, где имя увидят другие, а у профиля его нет. Так отвечают `POST /wishlist/share`, `POST /pick-requests`, `POST /plans`, `POST /plans/:id/join`, `POST /santa`, `POST /santa/:id/join` и `POST /reservations` от профиля. Клиент спрашивает имя заранее (`features/ask-name`), но сервер всё равно проверяет: это контракт для будущего бэкенда. На `NAME_REQUIRED` клиент открывает NameSheet и повторяет запрос.
 
 **Изоморфность обработчиков (обязательно с первой строки, иначе режим `lan` не собрать):**
 - Обработчик — функция `(ctx, input) => Promise<output>`, где `ctx = { db: DbAccess, realtime: RealtimePublisher, clock: Clock, userId: string, random: Random, settings: DemoSettings }`.
@@ -459,25 +512,30 @@ export function getTransport(mode: ApiMode): Transport; // выбирается 
 | Метод и путь | Что делает |
 |---|---|
 | `POST /auth/demo` | Войти как готовый демо-пользователь «Айгерим» с заполненным вишлистом |
-| `POST /users` | Создать пользователя из онбординга, добавить ему демо-друзей |
-| `GET /me`, `PATCH /me` | Текущий профиль (id берётся из сессии вкладки) |
+| `POST /users` | Создать профиль **без полей**: сам, под прелоадером, при первом входе (DESIGN §8.1). Без имени, случайный `avatarColor`, `interests: []`, `audience: "all"`. Добавить демо-друзей |
+| `GET /me`, `PATCH /me` | Текущий профиль (id берётся из сессии вкладки). `GET` отдаёт `MeResponse` с `inferredInterests`. `PATCH` принимает `name`, `avatarColor`, `birthday` (`"MM-DD"` или `null`), `interests`, `mutedInterests` |
+| `POST /me/hints` | `{ id: HintId }` — подсказка показана (обучающая карточка, тост «вкус сложился») |
+| `GET /me/dates`, `POST /me/dates` | Значимые даты (сортировка — по ближайшему наступлению). `POST { date, preset?, label?, autoNumber? }`: если такая дата уже есть — вернуть её, не создавая дубль. `autoNumber` передаётся только при «Отменить» после удаления, и сервер оставляет его, если номер свободен |
+| `PATCH /me/dates/:id`, `DELETE /me/dates/:id` | `{ label?: string \| null, date? }`: пустое или `null` название возвращает подпись `preset` или «Значимая дата N». Удаление снимает дату и с повода вишлиста (повод → «Просто так») |
+| `GET /me/reminders` | Активное напоминание: 0 или 1 `Reminder` (правила — «Напоминания» ниже) |
+| `POST /me/reminders/:id/dismiss` | «Скрыть»: id попадает в `dismissedReminders` |
 | `GET /users/:id` | Профиль |
 | `GET /friends` | Друзья с ближайшими днями рождения |
 | `GET /catalog/feed?filters&limit=10&context` | Следующая порция ленты (алгоритм ниже) |
 | `GET /catalog/count?filters` | Счётчик для кнопки «Показать N подарков» |
 | `GET /catalog/products/:id` | Товар |
 | `GET /catalog/meta` | `meta.json`: курсы и авторы фото занятий (для страницы «Авторы фото») |
-| `POST /swipes` | Свайп `{ productId, decision, context }`. `like` и `superlike` в контексте `self` добавляют товар в вишлист. На 5-м таком лайке ставится `shareUnlockedAt`, ответ содержит `shareJustUnlocked: true` (по нему клиент запускает анимацию банта) |
-| `POST /swipes/undo` | Отменить последний свайп в контексте (и убрать товар из вишлиста, если он туда попал) |
+| `POST /swipes` | Свайп `{ productId, decision, context }`. `like` и `superlike` в контексте `self` добавляют товар в вишлист. На 5-м таком лайке ставится `shareUnlockedAt`, ответ содержит `shareJustUnlocked: true` (по нему клиент запускает анимацию банта). В контексте `self` пересчитывает `taste`. Ответ содержит `tasteJustFormed: true`, когда впервые вывелись 2 интереса и подсказки `taste_toast` ещё нет (по нему клиент показывает тост) |
+| `POST /swipes/undo` | Отменить последний свайп в контексте (и убрать товар из вишлиста, если он туда попал). `taste` пересчитывается |
 | `GET /wishlist`, `GET /users/:id/wishlist` | Свой или чужой вишлист с мета-данными. Чужой — только `active` желания. Свой — с полем `givenHints`: забронированные желания, если дата повода прошла и подсказка не скрыта |
-| `PATCH /wishlist/meta` | Повод, сообщение, скрытие счётчика |
+| `PATCH /wishlist/meta` | Повод, сообщение, скрытие счётчика. Повод `important` — только с `dateId` своей даты, `date` сервер ставит сам (ближайшее наступление) |
 | `POST /wishlist/items` | Своё желание |
 | `PATCH /wishlist/items/:id`, `DELETE /wishlist/items/:id` | Вариант, заметка, приоритет; удалить |
 | `POST /wishlist/reorder` | `{ ids: string[] }` |
 | `POST /wishlist/items/:id/given` | `{ fromUserId?, fromName?, at }` → `status: "given"`, брони на это желание получают `closedAt` |
 | `POST /wishlist/items/:id/restore` | Вернуть из «Подарили» в вишлист (в конец списка), брони не восстанавливаются |
 | `POST /wishlist/given-hint/dismiss` | Скрыть подсказку «Возможно, тебе подарили это» для текущего повода |
-| `POST /wishlist/share` | Вернуть `{ url }` со снимком вишлиста: только `active` желания. Ошибка `FORBIDDEN`, если `shareUnlockedAt` ещё не стоит |
+| `POST /wishlist/share` | Вернуть `{ url }` со снимком вишлиста: только `active` желания. Ошибка `FORBIDDEN`, если `shareUnlockedAt` ещё не стоит, и `NAME_REQUIRED`, если у профиля нет имени. Повод `important` попадает в снимок датой и `preset` (если есть), без `dateId` и своего названия |
 | `POST /external-wishlists` | Импортировать снимок из ссылки (на стороне гостя) |
 | `GET /reservations?ownerId` | Брони вишлиста. Владельцу отдаём только количество |
 | `POST /reservations`, `DELETE /reservations/:id` | Забронировать или снять бронь |
@@ -497,6 +555,8 @@ export function getTransport(mode: ApiMode): Transport; // выбирается 
 | `POST /santa/:id/draw` | Жеребьёвка (только владелец) |
 | `POST /santa/:id/open`, `POST /santa/:id/bought` | Вскрыл конверт; купил подарок |
 | `POST /demo/reset`, `POST /demo/scenario/new-year` | Сбросить базу; загрузить сценарий |
+| `POST /demo/hints/reset` | «Показать обучение снова»: убрать `deck_guide` и `taste_toast` из `seenHints` текущего профиля |
+| `POST /demo/clock/to-reminder` | «Перемотать к напоминанию»: поставить смещение часов так, чтобы до ближайшего наступления своей даты, напоминание о котором ещё не скрыто, осталось 30 дней (это может быть та же дата через год). Своих дат нет → `VALIDATION` «Сначала отправь вишлист с датой» |
 | `GET /demo/settings`, `PATCH /demo/settings` | Скорость ботов, смещение часов, задержки, случайные ошибки. В `local` — из стора вкладки, в `lan` — общие для сервера |
 | `GET /health` | Только `lan`: `{ app: "swipeit", mode: "lan", serverId, now }` — по нему клиент узнаёт режим и сверяет часы |
 | `GET /presence` | Только `lan`: кто из людей сейчас онлайн (по открытым WebSocket) |
@@ -504,11 +564,61 @@ export function getTransport(mode: ApiMode): Transport; // выбирается 
 
 ### Алгоритм ленты
 
-1. Кандидаты: каталог, отфильтрованный по `ProductFilters`, минус уже свайпнутые пользователем в этом контексте. Фильтр по бюджету: пересечение диапазонов (`priceMax ≥ budget.min && priceMin ≤ budget.max`). `audience` пользователя: показываем `all` + совпадающий.
-2. Оценка: `2 × (число совпавших интересов) + popularity + случайный разброс 0..0.8`. Разброс считается от сида `userId + дата`, чтобы лента не прыгала при перезагрузке.
-3. Разнообразие: не больше 2 товаров одной категории подряд.
-4. Порции по 10. Клиент дозапрашивает, когда в колоде осталось 3 карточки, и заранее грузит картинки двух следующих карточек.
-5. Кандидаты кончились → пустая порция → экран «Ты посмотрел всё в этих фильтрах». «Начать заново» удаляет из истории свайпы `pass` в этом контексте.
+1. Кандидаты: каталог, отфильтрованный по `ProductFilters`, минус уже свайпнутые пользователем в этом контексте. Фильтр по бюджету: пересечение диапазонов (`priceMax ≥ budget.min && priceMin ≤ budget.max`). `filters.audience` `female` или `male`: показываем `all` + совпадающий; `all` или нет поля — все товары.
+2. **Разведка.** Если у пользователя ещё нет ни одного свайпа в контексте `self`, первая порция — 10 товаров из 10 разных категорий: самый популярный товар каждой категории, сначала `audience: "all"`. Так вкус узнаётся быстрее всего.
+3. Оценка (с этапа 7):
+   ```
+   score = 2 × |product.interests ∩ user.interests|          // выбранные самим
+         + clamp(Σ taste.interests[i] / 3, −1.5, 2.5)        // i ∈ product.interests
+         + clamp(taste.categories[product.category] / 4, −0.5, 1)
+         − 2 × |product.interests ∩ user.mutedInterests|
+         − (лента сдвинута к другой аудитории ? 1 : 0)
+         + popularity + случайный разброс 0..0.8
+   ```
+   - «Сдвинута к другой аудитории»: при `filters.audience` = `all`, когда `taste.audience.female + taste.audience.male ≥ 4` и одна сторона набрала ≥ 75%. Тогда товары для другой стороны получают −1: они опускаются, но не пропадают.
+   - Разброс считается от сида `userId + дата`, чтобы лента не прыгала при перезагрузке.
+4. **Разведка в каждой порции:** 2 места из 10 — товарам из категорий, где `|taste.categories[c]| < 1` (ещё не пробовали), чтобы лента не замкнулась на первых лайках.
+5. Разнообразие: не больше 2 товаров одной категории подряд.
+6. Порции по 10. Клиент дозапрашивает, когда в колоде осталось 3 карточки, и заранее грузит картинки двух следующих карточек. Новый вкус влияет только на следующие порции: уже выданная колода не перемешивается.
+7. Кандидаты кончились → пустая порция → экран «Ты посмотрел всё в этих фильтрах». «Начать заново» удаляет из истории свайпы `pass` в этом контексте.
+
+### Вкус: `computeTaste(swipes, products)` и `inferInterests(...)` — чистые функции в `mock-server/taste.ts`
+
+Пишутся без браузерных API: их вызывают обработчики и в браузере, и в Node.
+
+- Берём только свайпы пользователя в контексте `self` (выбор друга по ссылке-фильтру — не его вкус).
+- Каждый свайп добавляет каждому интересу товара и его категории:
+  - `like` → +1;
+  - `superlike` → +2;
+  - `pass` → −0.3.
+
+  Вес не опускается ниже −3.
+- `like` и `superlike` товара `female` или `male` прибавляют 1 к `taste.audience` этой стороны; `likes` = число `like` + `superlike`.
+- Вкус — функция от истории свайпов. Поэтому `POST /swipes/undo` просто пересчитывает его, и отмена возвращает вкус точно в прежнее состояние (тест).
+- `inferInterests(taste, user)`:
+  1. интересы с весом ≥ 2;
+  2. без `interests` (уже выбраны) и `mutedInterests`;
+  3. по убыванию веса, не больше 4.
+
+  Это `inferredInterests` в `GET /me`.
+- «Вкус сложился» (`tasteJustFormed`): `inferInterests` впервые вернул ≥ 2 интереса, а `taste_toast` ещё нет в `seenHints`. Отметку ставит клиент через `POST /me/hints`, когда показал тост.
+
+### Даты и напоминания — чистые функции в `mock-server/dates.ts`
+
+Тоже без браузерных API. Дни считаются по календарю Бишкека (`Asia/Bishkek`) — так же, как `daysUntilBirthday` в `shared/lib/format`, его и переиспользовать.
+
+- `nextOccurrence("MM-DD", now)` — ближайшая дата с этим днём и месяцем, сегодня или позже. 29 февраля в невисокосный год — это 28 февраля.
+- `nextAutoNumber(dates)` — наименьшее натуральное N, которое не занято у дат без `label` и без `preset`. Новая дата без названия называется «Значимая дата N». У дат с названием или готовым поводом номер не показывается и не занят.
+- **Напоминание** (`activeReminder(user, dates, now)`):
+  - кандидаты — день рождения и каждая значимая дата;
+  - `daysLeft` = дней до `nextOccurrence`, окно 0–30;
+  - `id` = `"birthday:<год наступления>"` или `"<dateId>:<год наступления>"`;
+  - не показываем, если `id` есть в `dismissedReminders`;
+  - из оставшихся — одно, с наименьшим `daysLeft`.
+
+  Так «Скрыть» действует до следующего года: у следующего наступления уже другой `id`. Это и есть «раз в год, за месяц до даты».
+- **Личное:** `GET /me/dates` и `GET /me/reminders` отдают данные только владельцу. В ссылку вишлиста попадает только `occasion.date`, а в ответы для других пользователей и в `lan`-presence — ничего.
+- **После демо:** то же правило рассылает настоящие уведомления — push или Telegram за 30 дней, раз в год. В демо это ReminderBanner и точка на табе (DESIGN §7).
 
 ### `computeMatches(session, activities)` — чистая функция в `entities/plan`
 
@@ -609,8 +719,8 @@ lan/
 
 ### Пользователи и друзья в сети
 
-- Каждое устройство само проходит онбординг. Его `userId` хранится в localStorage под ключом `swipeit:lan:<serverId>:userId`, поэтому разные серверы не путаются. «Смотреть как» и вкладки работают как в `local` (вкладка может временно подменить `x-user-id`).
-- Все люди на сервере автоматически друзья друг другу и демо-ботам. Список друзей делится на «В этой сети» (люди, с отметкой онлайн по `/presence`) и «Демо-друзья» (боты).
+- Каждое устройство получает свой профиль само, при первом входе (DESIGN §8.1); имя — когда понадобится. Его `userId` хранится в localStorage под ключом `swipeit:lan:<serverId>:userId`, поэтому разные серверы не путаются. «Смотреть как» и вкладки работают как в `local` (вкладка может временно подменить `x-user-id`).
+- Все люди на сервере автоматически друзья друг другу и демо-ботам. Список друзей делится на «В этой сети» (люди, с отметкой онлайн по `/presence`) и «Демо-друзья» (боты). Профили без имени в «В этой сети», `/presence` и счётчике плашки сети не показываются.
 - Приглашения в план и Санту (`/plans/join/?id=`, `/santa/join/?id=`) в этом режиме работают на любом телефоне сети.
 - Ссылки на вишлист и фильтр по-прежнему несут данные в URL. В `lan` брони гостей сохраняются на сервере, поэтому владелец видит счётчик сразу.
 
@@ -642,8 +752,8 @@ lan/
 
 | Ссылка | Маршрут | Содержимое |
 |---|---|---|
-| Вишлист | `/w/?d=…` | владелец (имя, цвет, birthday), повод, сообщение, желания: id товара или своё, приоритет, вариант, заметка |
-| Ссылка-фильтр | `/pick/?d=…` | от кого, кому, фильтры, `hidePrices`, повод, сообщение |
+| Вишлист | `/w/?d=…` | владелец (имя, цвет, birthday), повод (у `important` — дата и `preset`, без `dateId` и своего названия), сообщение, желания: id товара или своё, приоритет, вариант, заметка. Старые ссылки с поводом `custom` декодируются как раньше |
+| Ссылка-фильтр | `/pick/?d=…` | от кого, кому, фильтры (с `audience`), `hidePrices`, повод, сообщение |
 | Ответ на фильтр | `/pick/answer/?d=…` | id запроса, кто ответил, выбранные товары с вариантами |
 | Приглашение в план | `/plans/join/?id=…` | только id: в `local` — на этом устройстве (вкладки), в `lan` — на любом телефоне сети |
 | Приглашение в Санту | `/santa/join/?id=…` | то же |
@@ -671,7 +781,7 @@ lan/
 - **zustand** — только клиентское:
   - `session` (`sessionStorage`): `activeUserId`;
   - `demo-settings` (`localStorage`): скорость ботов, задержки, случайные ошибки, смещение часов, режим демонстрации;
-  - `gift-filters` (`localStorage`): текущие фильтры ленты;
+  - `gift-filters` (`localStorage`): текущие фильтры ленты, включая `audience` («Показывать подарки» — его же меняет профиль);
   - локальное состояние колоды (очередь, стек отмены) — внутри `features/swipe-deck`, не в глобальном сторе.
 - Данные с сервера в zustand не дублируем.
 - Колода не перерисовывается на каждый кадр перетаскивания: позиция — через `useMotionValue`/`useTransform`, не через `useState`.
@@ -680,11 +790,11 @@ lan/
 
 ## 10. Маршруты
 
-Все константы — в `shared/config/routes.ts`. Переход на `/` → если профиля нет, то `/onboarding/`, иначе `/gifts/`.
+Все константы — в `shared/config/routes.ts`. Анкеты нет (DESIGN §8.1): `/` и любой экран с профилем без сессии → профиль создаётся сам (`POST /users`) под прелоадером → `/gifts/` (или тот экран, что открывали). Гостевые экраны (`/w/`, `/pick/`, `/pick/answer/`, `/plans/join/`, `/santa/join/`) профиль сами не создают: на приглашениях он создаётся по «Вступить».
 
 | Путь | Страница | Таб-бар |
 |---|---|---|
-| `/onboarding/` | Онбординг | нет |
+| `/onboarding/` | Только редирект на `/gifts/` (старые ссылки) | нет |
 | `/gifts/` | Свайп подарков | да |
 | `/wishlist/` | Мой вишлист | да |
 | `/w/?d=` | Чужой вишлист по ссылке | нет |
