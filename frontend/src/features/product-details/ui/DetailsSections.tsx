@@ -210,39 +210,50 @@ export const ProductDetailsSections = ({
         title="Где купить"
         icon={<ShoppingBag aria-hidden size={16} strokeWidth={2} />}
       >
-        <ul>
-          {product.offers.map((offer) => (
-            <li
-              key={offer.url}
-              className="border-line flex items-center justify-between gap-3 py-1 [&+&]:mt-2 [&+&]:border-t [&+&]:pt-3"
-            >
-              <div className="min-w-0">
-                <b className="block truncate font-semibold">
-                  {storeLabel(offer)}
-                </b>
-                {!hidePrices && (
-                  <span className="text-price block">
-                    {formatPrice(offer.price)}
-                  </span>
-                )}
-              </div>
-              <a
-                href={offer.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`Открыть в магазине ${storeLabel(offer)}`}
-                className="text-mandarin flex min-h-11 flex-none items-center gap-1 text-[15px] font-semibold"
-              >
-                Открыть
-                <ExternalLink aria-hidden size={16} strokeWidth={2} />
-              </a>
-            </li>
-          ))}
-        </ul>
-        {!hidePrices && latestCheck && (
-          <p className="text-caption text-rose mt-2">
-            Цены примерные, обновлены {checkedLabel(latestCheck)}
+        {hidePrices ? (
+          // Цены скрыли — магазины тоже (auto-tasks P13): по ссылке в
+          // магазин цена видна сразу. Друг здесь только выбирает, покупает
+          // тот, кто прислал ссылку.
+          <p className="text-body text-rose">
+            Цены и магазины скрыты — подарок купит тот, кто прислал ссылку.
           </p>
+        ) : (
+          <>
+            <ul>
+              {product.offers.map((offer) => (
+                <li
+                  key={offer.url}
+                  className="border-line flex items-center justify-between gap-3 py-1 [&+&]:mt-2 [&+&]:border-t [&+&]:pt-3"
+                >
+                  <div className="min-w-0">
+                    <b className="block truncate font-semibold">
+                      {storeLabel(offer)}
+                    </b>
+                    {!hidePrices && (
+                      <span className="text-price block">
+                        {formatPrice(offer.price)}
+                      </span>
+                    )}
+                  </div>
+                  <a
+                    href={offer.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Открыть в магазине ${storeLabel(offer)}`}
+                    className="text-mandarin flex min-h-11 flex-none items-center gap-1 text-[15px] font-semibold"
+                  >
+                    Открыть
+                    <ExternalLink aria-hidden size={16} strokeWidth={2} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+            {!hidePrices && latestCheck && (
+              <p className="text-caption text-rose mt-2">
+                Цены примерные, обновлены {checkedLabel(latestCheck)}
+              </p>
+            )}
+          </>
         )}
       </Section>
 

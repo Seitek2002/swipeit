@@ -271,10 +271,13 @@ export const GiftInfo = ({
                 {formatPrice(product.priceMin, product.priceMax)}
               </span>
             )}
-            <span className="text-caption flex min-w-0 items-center gap-1 text-[rgb(255_241_243/0.8)]">
-              <ShoppingBag aria-hidden size={14} strokeWidth={2} />
-              <span className="truncate">{stores}</span>
-            </span>
+            {/* Скрытые цены — и магазины не называем (P13). */}
+            {!hidePrices && (
+              <span className="text-caption flex min-w-0 items-center gap-1 text-[rgb(255_241_243/0.8)]">
+                <ShoppingBag aria-hidden size={14} strokeWidth={2} />
+                <span className="truncate">{stores}</span>
+              </span>
+            )}
             {swatches.length > 0 && (
               <span aria-hidden className="flex gap-1">
                 {swatches.map((hex) => (
