@@ -88,6 +88,9 @@ const StepBasics = ({
     <TextField
       label="Название"
       placeholder="Пятница вечером"
+      // Пустое название — «Дальше» неактивна; говорим почему (V10), а
+      // подсказка «Пятница вечером» не похожа на уже введённое.
+      hint={title.trim() ? undefined : "Назови план, чтобы идти дальше"}
       maxLength={60}
       value={title}
       autoFocus
