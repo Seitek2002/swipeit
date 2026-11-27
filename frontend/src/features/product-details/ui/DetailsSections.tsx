@@ -73,20 +73,25 @@ const Section = ({
   icon: ReactNode;
   title: string;
   tone: Tone;
-}) => (
-  <section
-    className={cn(
-      "rounded-2xl p-4",
-      tone === "card" ? "bg-velvet-2" : "bg-velvet",
-    )}
-  >
-    <h3 className="text-caption text-rose flex items-center gap-1.5 font-semibold">
-      {icon}
-      {title}
-    </h3>
-    <div className="text-body text-paper mt-2">{children}</div>
-  </section>
-);
+}) => {
+  const Heading = tone === "card" ? "h2" : "h3";
+  return (
+    <section
+      className={cn(
+        "rounded-2xl p-4",
+        tone === "card" ? "bg-velvet-2" : "bg-velvet",
+      )}
+    >
+      {/* На карточке выше только h1 экрана — секции h2; в шторке под её h2
+        с названием подарка — h3 (axe heading-order). */}
+      <Heading className="text-caption text-rose flex items-center gap-1.5 font-semibold">
+        {icon}
+        {title}
+      </Heading>
+      <div className="text-body text-paper mt-2">{children}</div>
+    </section>
+  );
+};
 
 type Props = {
   choice: Record<string, string>;

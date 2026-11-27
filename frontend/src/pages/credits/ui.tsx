@@ -61,7 +61,7 @@ const CreditRow = ({ row }: { row: Row }) => {
               href={credit.licenseUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative z-[1] flex-none underline underline-offset-2 before:absolute before:-inset-x-1 before:-inset-y-[13px] before:content-['']"
+              className="relative z-[1] inline-flex min-h-6 flex-none items-center underline underline-offset-2 before:absolute before:-inset-x-1 before:-inset-y-2.5 before:content-['']"
             >
               {credit.license}
             </a>
