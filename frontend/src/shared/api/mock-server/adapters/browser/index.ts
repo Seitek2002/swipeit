@@ -33,5 +33,13 @@ export const getBrowserMockServer = (): MockServer => {
       update: (patch) => useDemoSettingsStore.getState().updateSettings(patch),
     },
   });
+  // Настройки демо живут в localStorage, а стор каждой вкладки читает их
+  // один раз. Поменяли в другой вкладке (скорость ботов, перемотка часов) —
+  // перечитываем, иначе вкладка-лидер гоняла бы ботов по старым настройкам.
+  realtime.subscribe((event) => {
+    if (event.type === "db:changed" && event.scope.includes("settings")) {
+      void useDemoSettingsStore.persist.rehydrate();
+    }
+  });
   return server;
 };

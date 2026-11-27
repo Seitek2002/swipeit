@@ -17,4 +17,8 @@ export const clock = {
     Date.now() +
     serverDiffMs +
     useDemoSettingsStore.getState().settings.clockOffsetMs,
+  // То же, но со смещением из аргумента. Для рендера: смещение берут из
+  // стора хуком и передают сюда — иначе React Compiler закэширует clock.now()
+  // (у вызова нет реактивных зависимостей), и «Перемотать» не обновит экран.
+  at: (offsetMs: number): number => Date.now() + serverDiffMs + offsetMs,
 };

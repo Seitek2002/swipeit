@@ -18,6 +18,7 @@ export {
 } from "./catalog/types";
 export {
   getDemoSettings,
+  getDemoUsers,
   resetDemo,
   updateDemoSettings,
 } from "./demo/requests";
@@ -26,6 +27,13 @@ export {
   type DemoSettings,
   DemoSettingsSchema,
 } from "./demo/types";
+// Боты режима local: запуск во вкладке-лидере и признак лидерства для
+// демо-панели. Сам движок — внутри мок-сервера.
+export {
+  isBotLeader,
+  startBrowserBots,
+  subscribeBotLeader,
+} from "./mock-server/adapters/browser/bots";
 export { type ApiErrorCode, ApiError, isApiError } from "./mock-server/errors";
 export { type ApiMode, detectMode } from "./mode";
 export {

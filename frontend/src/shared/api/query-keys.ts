@@ -48,6 +48,7 @@ export const pickKeys = {
 export const demoKeys = {
   all: ["demo"] as const,
   settings: () => [...demoKeys.all, "settings"] as const,
+  users: () => [...demoKeys.all, "users"] as const,
 };
 
 // Что перечитать, когда пришло событие db:changed с этой областью
@@ -57,7 +58,7 @@ export const SCOPE_KEYS: Record<
   RealtimeScope,
   ReadonlyArray<readonly string[]>
 > = {
-  users: [userKeys.all, friendKeys.all],
+  users: [userKeys.all, friendKeys.all, demoKeys.all],
   swipes: [catalogKeys.all, pickKeys.all],
   wishlist: [wishlistKeys.all],
   reservations: [reservationKeys.all, wishlistKeys.all],

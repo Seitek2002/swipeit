@@ -1,4 +1,5 @@
 import { getTransport } from "../transport";
+import type { User } from "../users/types";
 import type { DemoSettings } from "./types";
 
 export const resetDemo = (): Promise<{ ok: true }> =>
@@ -11,3 +12,6 @@ export const updateDemoSettings = (
   patch: Partial<DemoSettings>,
 ): Promise<DemoSettings> =>
   getTransport().request<DemoSettings>("PATCH", "/demo/settings", patch);
+
+export const getDemoUsers = (): Promise<User[]> =>
+  getTransport().request<User[]>("GET", "/demo/users");

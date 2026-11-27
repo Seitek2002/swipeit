@@ -10,6 +10,8 @@ import { Brand, QrCode } from "@/shared/ui";
 
 type Props = {
   children: ReactNode;
+  // Плавающее поверх экрана — кнопка демо-панели (T12).
+  overlay?: ReactNode;
   tabBar: ReactNode;
 };
 
@@ -23,7 +25,7 @@ const NO_TAB_BAR_SPACE = "calc(16px + env(safe-area-inset-bottom))";
 // transform на рамке делает её «containing block» для position: fixed —
 // шторки, тосты и таб-бар внутри рамки позиционируются относительно неё,
 // а не всего окна. На телефоне рамка и есть экран, разницы нет.
-export const AppShell = ({ children, tabBar }: Props) => {
+export const AppShell = ({ children, overlay, tabBar }: Props) => {
   const pathname = usePathname();
   const mounted = useMounted();
   // URL читаем в рендере после монтирования: смена пути перерисовывает
@@ -69,6 +71,7 @@ export const AppShell = ({ children, tabBar }: Props) => {
         />
         <div className="relative h-full">{children}</div>
         {tabBar}
+        {overlay}
         {/* Сюда порталами попадают шторки, диалоги и тосты (T03) */}
         <div id="overlay-root" />
       </div>

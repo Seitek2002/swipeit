@@ -13,12 +13,17 @@ import { Button, ConfirmDialog, toast } from "@/shared/ui";
 
 type Props = {
   className?: string;
+  // В демо-панели — «Сбросить всё» (DESIGN.md §8.10).
+  label?: string;
 };
 
 // «Сбросить демо-данные» (DESIGN.md §8.9): ConfirmDialog → база заново из
 // сида → сессия вкладки пуста → снова знакомство. Нужно, чтобы показать
 // демо следующему человеку с чистого листа.
-export const ResetDemoButton = ({ className }: Props) => {
+export const ResetDemoButton = ({
+  className,
+  label = "Сбросить демо-данные",
+}: Props) => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const setActiveUser = useSessionStore((state) => state.setActiveUser);
@@ -44,7 +49,7 @@ export const ResetDemoButton = ({ className }: Props) => {
         className={className}
         onClick={() => setOpen(true)}
       >
-        Сбросить демо-данные
+        {label}
       </Button>
       <ConfirmDialog
         open={open}

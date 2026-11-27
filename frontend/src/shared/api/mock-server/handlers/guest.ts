@@ -133,6 +133,14 @@ export const shareWishlist: Handler = async (ctx) => {
       note: item.note,
     })),
   });
+  // Вишлист ушёл друзьям — через 30–90 с боты-друзья бронируют по подарку
+  // (TECH_SPEC §7).
+  ctx.realtime.publish({
+    type: "trigger",
+    name: "wishlist:shared",
+    id: user.id,
+    by: user.id,
+  });
   return { url: `/w/?d=${encoded}` };
 };
 

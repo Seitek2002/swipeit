@@ -9,7 +9,12 @@ import {
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-import { SCOPE_KEYS, isApiError } from "@/shared/api";
+import {
+  SCOPE_KEYS,
+  detectMode,
+  isApiError,
+  startBrowserBots,
+} from "@/shared/api";
 import { useTapHaptics } from "@/shared/lib/dom";
 import { getRealtime } from "@/shared/lib/realtime";
 import { useSessionStore } from "@/shared/store";
@@ -60,6 +65,21 @@ const SessionCacheReset = () => {
   return null;
 };
 
+// Боты (TECH_SPEC §7): в local их исполняет одна вкладка-лидер, в lan —
+// сервер, и вкладки их не запускают.
+const BotsLeader = () => {
+  useEffect(() => {
+    let cancelled = false;
+    void detectMode().then((mode) => {
+      if (!cancelled && mode === "local") startBrowserBots();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return null;
+};
+
 export const Providers = ({ children }: { children: ReactNode }) => {
   useTapHaptics();
 
@@ -88,6 +108,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
     <QueryClientProvider client={queryClient}>
       <RealtimeBridge />
       <SessionCacheReset />
+      <BotsLeader />
       {children}
       <Toaster />
       {/* Кнопка devtools висит поверх экрана телефона и мешает проверять

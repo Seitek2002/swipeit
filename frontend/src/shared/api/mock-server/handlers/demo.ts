@@ -22,6 +22,15 @@ export const resetDemo: Handler = async (ctx) => {
   return { ok: true };
 };
 
+// GET /demo/users — все профили базы для «Смотреть как» в демо-панели:
+// сначала люди, потом боты. Расширение контракта TECH_SPEC §6 (только демо).
+export const listDemoUsers: Handler = async (ctx) => {
+  const db = await ctx.db.read();
+  return Object.values(db.users).sort((a, b) =>
+    a.isBot === b.isBot ? a.name.localeCompare(b.name, "ru") : a.isBot ? 1 : -1,
+  );
+};
+
 export const getSettings: Handler = async (ctx) => ctx.settings.get();
 
 export const updateSettings: Handler = async (ctx, { body }) => {

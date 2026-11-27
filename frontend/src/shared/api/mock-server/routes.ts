@@ -1,7 +1,12 @@
 import type { Handler } from "./context";
 import { validation } from "./errors";
 import { getCount, getFeed, getProduct } from "./handlers/catalog";
-import { getSettings, resetDemo, updateSettings } from "./handlers/demo";
+import {
+  getSettings,
+  listDemoUsers,
+  resetDemo,
+  updateSettings,
+} from "./handlers/demo";
 import {
   createReservation,
   deleteReservation,
@@ -104,6 +109,7 @@ export const ROUTE_TABLE: Route[] = [
   { method: "POST", pattern: "/pick-answers", handler: importPickAnswer },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },
   { method: "GET", pattern: "/demo/settings", handler: getSettings },
+  { method: "GET", pattern: "/demo/users", handler: listDemoUsers },
   { method: "PATCH", pattern: "/demo/settings", handler: updateSettings },
 ];
 

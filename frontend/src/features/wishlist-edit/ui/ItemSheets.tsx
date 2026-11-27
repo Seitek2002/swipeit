@@ -21,6 +21,7 @@ import { WishMiniTag, type WishlistItem } from "@/entities/wishlist";
 import { clock } from "@/shared/lib/clock";
 import { toDateKey } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
+import { useDemoSettingsStore } from "@/shared/store";
 import {
   Avatar,
   BottomSheet,
@@ -262,7 +263,10 @@ export const GivenSheet = ({
 }) => {
   const markGiven = useMarkGiven();
   const friends = useFriends();
-  const today = toDateKey(clock.now());
+  const clockOffset = useDemoSettingsStore(
+    (state) => state.settings.clockOffsetMs,
+  );
+  const today = toDateKey(clock.at(clockOffset));
   const [giver, setGiver] = useState<Giver>({ kind: "none" });
   const [otherName, setOtherName] = useState("");
   const [date, setDate] = useState(today);

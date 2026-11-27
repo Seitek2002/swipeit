@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { AppShell } from "@/widgets/app-shell";
+import { DemoPanel } from "@/widgets/demo-panel";
 import { TabBar } from "@/widgets/tab-bar";
 
 import { SessionGate } from "./session-gate";
@@ -11,7 +12,7 @@ import { SessionGate } from "./session-gate";
 // виджеты одного слоя не импортируют друг друга (FSD), а корневой app/ steiger
 // не сканирует — так он видит, что оба виджета используются.
 export const AppFrame = ({ children }: { children: ReactNode }) => (
-  <AppShell tabBar={<TabBar />}>
+  <AppShell tabBar={<TabBar />} overlay={<DemoPanel />}>
     <SessionGate>{children}</SessionGate>
   </AppShell>
 );
