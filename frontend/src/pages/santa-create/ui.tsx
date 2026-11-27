@@ -149,9 +149,28 @@ export const SantaCreatePage = () => {
       ),
   });
 
-  const budgetValue = Number(budget.replace(/\D/g, ""));
+  // Только цифры и пробелы-разделители: «1500.50» или «1,5» — ошибка, а не
+  // бюджет в сто раз больше или меньше.
+  const budgetValue = /^\s*\d[\d\s]*$/.test(budget)
+    ? Number(budget.replace(/\s/g, ""))
+    : Number.NaN;
+  const budgetError =
+    budget.trim() && !(budgetValue > 0)
+      ? "Целое число в сомах, например 2 000"
+      : undefined;
+  const drawAtValid =
+    drawMode === "manual" || !Number.isNaN(Date.parse(drawAt));
   const canSubmit =
-    title.trim().length > 0 && budgetValue > 0 && Boolean(exchangeDate);
+    title.trim().length > 0 &&
+    budgetValue > 0 &&
+    Boolean(exchangeDate) &&
+    drawAtValid;
+  // Исключения — только между теми, кто сейчас в игре.
+  const activeExclusions = exclusions.filter(
+    ([a, b]) =>
+      people.some((person) => person.id === a) &&
+      people.some((person) => person.id === b),
+  );
 
   const submit = () =>
     create.mutate({
@@ -161,12 +180,7 @@ export const SantaCreatePage = () => {
       drawMode,
       drawAt: drawMode === "date" ? new Date(drawAt).toISOString() : undefined,
       participantIds: invited,
-      // Убранный из игры человек — и из исключений.
-      exclusions: exclusions.filter(
-        ([a, b]) =>
-          people.some((person) => person.id === a) &&
-          people.some((person) => person.id === b),
-      ),
+      exclusions: activeExclusions,
     });
 
   return (
@@ -191,6 +205,7 @@ export const SantaCreatePage = () => {
               label="Бюджет подарка, сом"
               inputMode="numeric"
               value={budget}
+              error={budgetError}
               onChange={(event) => setBudget(event.target.value)}
             />
             <div className="flex flex-wrap gap-2">
@@ -245,9 +260,15 @@ export const SantaCreatePage = () => {
                       type="button"
                       role="checkbox"
                       aria-checked={checked}
-                      onClick={() =>
-                        setInvited((list) => toggle(list, user.id))
-                      }
+                      onClick={() => {
+                        setInvited((list) => toggle(list, user.id));
+                        // Убрали из игры — убираем и его пары исключений.
+                        if (checked) {
+                          setExclusions((list) =>
+                            list.filter((pair) => !pair.includes(user.id)),
+                          );
+                        }
+                      }}
                       className="border-line flex min-h-[60px] w-full items-center gap-3.5 border-b text-left"
                     >
                       <Avatar
@@ -282,7 +303,7 @@ export const SantaCreatePage = () => {
 
           <section className="flex flex-col gap-2.5">
             <p className="text-label">Исключения</p>
-            {exclusions.map((pair) => (
+            {activeExclusions.map((pair) => (
               <div
                 key={pair.join(":")}
                 className="bg-velvet-2 border-line rounded-field flex min-h-12 items-center gap-2 border pr-1 pl-3.5"

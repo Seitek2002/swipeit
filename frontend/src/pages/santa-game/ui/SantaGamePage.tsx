@@ -191,27 +191,32 @@ const GameContent = () => {
         <p className="text-title-2">{view.game.title}</p>
         <p className="text-caption text-rose mt-0.5">{santaTerms(view.game)}</p>
       </div>
-      <SantaEnvelope
-        state={envelope}
-        onOpen={() => open.mutate()}
-        letter={
-          ward && (
-            <>
-              <p className="text-caption text-ink-soft">Ты Тайный Санта для</p>
-              <p className="text-display mt-1 italic">{ward.name}</p>
-              <p className="text-caption text-ink-soft mt-1.5">
-                Вишлист:{" "}
-                {pluralize(ward.wishlist.length, [
-                  "желание",
-                  "желания",
-                  "желаний",
-                ])}
-                , {ward.wishlist.length - ward.overBudgetCount} в бюджете
-              </p>
-            </>
-          )
-        }
-      />
+      {/* Жеребьёвка прошла без меня — конверта у меня нет. */}
+      {(view.game.status === "gathering" || view.me) && (
+        <SantaEnvelope
+          state={envelope}
+          onOpen={() => open.mutate()}
+          letter={
+            ward && (
+              <>
+                <p className="text-caption text-ink-soft">
+                  Ты Тайный Санта для
+                </p>
+                <p className="text-display mt-1 italic">{ward.name}</p>
+                <p className="text-caption text-ink-soft mt-1.5">
+                  Вишлист:{" "}
+                  {pluralize(ward.wishlist.length, [
+                    "желание",
+                    "желания",
+                    "желаний",
+                  ])}
+                  , {ward.wishlist.length - ward.overBudgetCount} в бюджете
+                </p>
+              </>
+            )
+          }
+        />
+      )}
       <div className="-mt-2 flex flex-col items-center gap-3 text-center">
         {view.game.status === "gathering" && (
           <>
