@@ -18,11 +18,15 @@ export default defineConfig([
     },
   },
   {
-    // Колода билетиков и оверлей «Совпадение» по TECH_SPEC §4 — отдельные
+    // Колода билетиков, оверлей «Совпадение» и барабан (TASKS T15) по TECH_SPEC §4 — отдельные
     // виджеты экрана плана: колода — сложный самостоятельный блок, оверлей
     // всплывает поверх любого состояния плана (свайп, итоги). Слить их со
     // страницей значит разойтись с контрактом архитектуры.
-    files: ["./src/widgets/activity-deck/**", "./src/widgets/match-overlay/**"],
+    files: [
+      "./src/widgets/activity-deck/**",
+      "./src/widgets/match-overlay/**",
+      "./src/widgets/random-drum/**",
+    ],
     rules: {
       "fsd/insignificant-slice": "off",
     },

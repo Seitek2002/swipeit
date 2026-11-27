@@ -22,7 +22,9 @@ import {
   Splash,
 } from "@/shared/ui";
 
+import { Decided } from "./Decided";
 import { Lobby } from "./Lobby";
+import { Results } from "./Results";
 
 // Обычный экран плана: шапка с «назад» и прокрутка.
 const Framed = ({ children }: { children: ReactNode }) => (
@@ -97,8 +99,9 @@ const SessionContent = () => {
     );
   }
 
-  // Свайп «Прямо сейчас»: колода на весь экран, вместо таб-бара — «Выйти».
-  if (view.plan.status === "swiping" && view.plan.mode === "live") {
+  // Свайп — колода на весь экран, вместо таб-бара «Выйти». В режиме «До
+  // даты» в шапке обратный отсчёт.
+  if (view.plan.status === "swiping") {
     return (
       <>
         <ActivityDeck view={view} meId={meId} />
@@ -107,18 +110,13 @@ const SessionContent = () => {
     );
   }
 
-  // Итоги, «Решено» и режим «До даты» — T15.
   return (
     <Framed>
-      <EmptyState
-        className="h-full"
-        object="ticket"
-        title={
-          view.plan.status === "swiping"
-            ? "Свайп в режиме «До даты» появится в следующем шаге демо."
-            : "Итоги плана появятся в следующем шаге демо."
-        }
-      />
+      {view.plan.status === "decided" ? (
+        <Decided view={view} meId={meId} />
+      ) : (
+        <Results view={view} meId={meId} />
+      )}
       <MatchOverlay view={view} />
     </Framed>
   );

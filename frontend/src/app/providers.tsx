@@ -12,6 +12,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   SCOPE_KEYS,
   detectMode,
+  expirePlans,
   isApiError,
   startBrowserBots,
 } from "@/shared/api";
@@ -113,6 +114,34 @@ const ConnectionNotices = () => {
   return null;
 };
 
+// Дедлайны планов «До даты» (TECH_SPEC §7 «Часы»): раз в 15 секунд, при
+// возвращении во вкладку и после перемотки часов — наступил дедлайн, план
+// переходит к итогам. Считает сервер (мок или ноутбук) по своим часам.
+const PlanDeadlines = () => {
+  const userId = useSessionStore((state) => state.activeUserId);
+  useEffect(() => {
+    if (!userId) return;
+    const tick = () => void expirePlans().catch(() => undefined);
+    const timer = setInterval(tick, 15_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const unsubscribe = getRealtime().subscribe((event) => {
+      if (event.type === "db:changed" && event.scope.includes("settings")) {
+        tick();
+      }
+    });
+    tick();
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      unsubscribe();
+    };
+  }, [userId]);
+  return null;
+};
+
 // Боты (TECH_SPEC §7): в local их исполняет одна вкладка-лидер, в lan —
 // сервер, и вкладки их не запускают.
 const BotsLeader = () => {
@@ -194,6 +223,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         <SessionCacheReset />
         <ConnectionNotices />
         <BotsLeader />
+        <PlanDeadlines />
         {children}
       </EnvironmentGate>
       <Toaster />

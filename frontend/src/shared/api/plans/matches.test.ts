@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { computeMatches } from "./matches";
+import {
+  computeMatches,
+  decisionCandidates,
+  tallyVotes,
+  voteCandidates,
+} from "./matches";
 import type { PlanSession } from "./types";
 
-// Совпадения плана: правила «все» и «большинство», «почти», сортировка.
+// Совпадения плана: правила «все» и «большинство», «почти», сортировка;
+// пул барабана и голоса (T15).
 type Swipes = PlanSession["swipes"];
 
 const plan = (
@@ -102,5 +108,56 @@ describe("computeMatches", () => {
     ]);
     expect(result.matches).toEqual([{ activityId: "x2", likes: 2 }]);
     expect(result.likesById).toEqual({ x2: 2 });
+  });
+});
+
+describe("варианты решения", () => {
+  it("барабан: совпадения, нет их — «почти», нет и их — пусто", () => {
+    const matched = plan(
+      "all",
+      fromRows({ a: "LL", b: "LL", c: "LL", d: "PL" }),
+    );
+    expect(decisionCandidates(matched)).toEqual({
+      pool: ["x2"],
+      source: "matches",
+    });
+    const almost = plan(
+      "all",
+      fromRows({ a: "LL", b: "LL", c: "LP", d: "PP" }),
+    );
+    expect(decisionCandidates(almost)).toEqual({
+      pool: ["x1"],
+      source: "almost",
+    });
+    const none = plan("all", fromRows({ a: "LL", b: "PL" }));
+    expect(decisionCandidates(none)).toEqual({ pool: [], source: "none" });
+    // Без пула голосуют за любое занятие колоды, что есть в каталоге.
+    expect(voteCandidates(none)).toEqual(["x1", "x2", "x3", "x4"]);
+    expect(voteCandidates(none, [{ id: "x3" }, { id: "x1" }])).toEqual([
+      "x1",
+      "x3",
+    ]);
+    expect(voteCandidates(almost)).toEqual(["x1"]);
+  });
+
+  it("голоса: только участники и только за варианты, ничья — все лидеры", () => {
+    const base = plan(
+      "majority",
+      fromRows({ a: "LLL", b: "LLL", c: "LLL", d: "PPP" }),
+    );
+    const tally = tallyVotes({
+      ...base,
+      votes: { a: "x1", b: "x2", c: "x4", stranger: "x1" },
+    });
+    // x4 никто не лайкнул — не вариант; голос чужого не в счёт.
+    expect(tally.counts).toEqual({ x1: 1, x2: 1 });
+    expect(tally.leaders).toEqual(["x1", "x2"]);
+    expect(tallyVotes({ ...base, votes: {} })).toEqual({
+      counts: {},
+      leaders: [],
+    });
+    expect(
+      tallyVotes({ ...base, votes: { a: "x3", b: "x3", c: "x1" } }).leaders,
+    ).toEqual(["x3"]);
   });
 });

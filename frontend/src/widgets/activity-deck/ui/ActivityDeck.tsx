@@ -18,9 +18,10 @@ import { type PlanView, computeMatches } from "@/entities/plan";
 
 import { planKeys, swipePlan, undoPlanSwipe } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { clock } from "@/shared/lib/clock";
 import { useConnectionStatus } from "@/shared/lib/realtime";
 import { cn } from "@/shared/lib/utils";
-import { EmptyState, toast } from "@/shared/ui";
+import { Countdown, EmptyState, toast } from "@/shared/ui";
 
 import { ProgressRings } from "./ProgressRings";
 
@@ -116,13 +117,23 @@ export const ActivityDeck = ({ view, meId }: Props) => {
         </Link>
         <div className="min-w-0 flex-1">
           <p className="text-title-3 truncate">{plan.title}</p>
-          <p className="text-caption text-rose flex items-center gap-1.5">
-            <i
-              aria-hidden
-              className="bg-mint size-2 rounded-full shadow-[0_0_0_4px_rgb(143_227_198/0.18)]"
+          {plan.mode === "deadline" && plan.deadline ? (
+            // «До даты» (DESIGN.md §8.7): свайпают, когда удобно; итоги — по
+            // дедлайну или когда закончат все.
+            <Countdown
+              to={plan.deadline}
+              now={clock.now}
+              className="text-caption text-rose"
             />
-            Прямо сейчас
-          </p>
+          ) : (
+            <p className="text-caption text-rose flex items-center gap-1.5">
+              <i
+                aria-hidden
+                className="bg-mint size-2 rounded-full shadow-[0_0_0_4px_rgb(143_227_198/0.18)]"
+              />
+              Прямо сейчас
+            </p>
+          )}
         </div>
         <span
           aria-live="polite"

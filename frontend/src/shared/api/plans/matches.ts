@@ -72,3 +72,74 @@ export const computeMatches = (
     likesById,
   };
 };
+
+// ── Результаты и решение (T15) ──────────────────────────────────────
+
+export type DecisionCandidates = {
+  // Среди чего крутится барабан. Пусто — экран «Совпадений нет».
+  pool: string[];
+  source: "almost" | "matches" | "none";
+};
+
+// Барабан крутится среди совпадений, нет их — среди «почти» (TECH_SPEC §6,
+// «computeMatches»). Одна функция на сервер (POST /decide) и экран
+// результатов: иначе барабан показал бы не тот пул, из которого выбрал
+// сервер.
+export const decisionCandidates = (
+  plan: MatchInput,
+  activities?: ReadonlyArray<{ id: string }>,
+): DecisionCandidates => {
+  const { matches, almost } = computeMatches(plan, activities);
+  if (matches.length > 0) {
+    return { pool: matches.map((m) => m.activityId), source: "matches" };
+  }
+  if (almost.length > 0) {
+    return { pool: almost.map((m) => m.activityId), source: "almost" };
+  }
+  return { pool: [], source: "none" };
+};
+
+// За что можно голосовать в «Выбрать самим»: пул барабана, а если он
+// пуст — вся колода (без совпадений выбирать всё равно из чего-то надо).
+export const voteCandidates = (
+  plan: MatchInput,
+  activities?: ReadonlyArray<{ id: string }>,
+): string[] => {
+  const { pool } = decisionCandidates(plan, activities);
+  if (pool.length > 0) return pool;
+  const available = activities
+    ? new Set(activities.map((activity) => activity.id))
+    : null;
+  return [...new Set(plan.deck)].filter(
+    (id) => !available || available.has(id),
+  );
+};
+
+export type VoteTally = {
+  // Голоса по занятиям (только кандидаты, только нынешние участники).
+  counts: Record<string, number>;
+  // Занятия с наибольшим числом голосов; при ничьей — несколько, в порядке
+  // кандидатов. Пусто — никто не голосовал.
+  leaders: string[];
+};
+
+// Подсчёт голосов: «Утвердить» у организатора подтверждает одного из
+// лидеров — так считают и сервер, и экран.
+export const tallyVotes = (
+  plan: MatchInput & Pick<PlanSession, "votes">,
+  activities?: ReadonlyArray<{ id: string }>,
+): VoteTally => {
+  const candidates = voteCandidates(plan, activities);
+  const allowed = new Set(candidates);
+  const counts: Record<string, number> = {};
+  for (const userId of new Set(plan.participantIds)) {
+    const vote = plan.votes[userId];
+    if (vote !== undefined && allowed.has(vote)) {
+      counts[vote] = (counts[vote] ?? 0) + 1;
+    }
+  }
+  const best = Math.max(0, ...Object.values(counts));
+  const leaders =
+    best === 0 ? [] : candidates.filter((id) => counts[id] === best);
+  return { counts, leaders };
+};

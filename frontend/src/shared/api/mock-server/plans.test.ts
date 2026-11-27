@@ -606,7 +606,7 @@ describe("свайп колоды", () => {
     expect(last.plan.status).toBe("results");
   });
 
-  it("«До даты»: закончили все — план ждёт дедлайна (переход — T15)", async () => {
+  it("«До даты»: закончили все — к результатам, не дожидаясь даты", async () => {
     const view = await call<PlanView>("POST", "/plans", DEMO_USER_ID, {
       ...DEADLINE_PLAN,
       participantIds: ["u_azamat"],
@@ -617,7 +617,7 @@ describe("свайп колоды", () => {
       for (const card of view.plan.deck) last = await swipe(id, userId, card);
     }
     expect(last.plan.finishedIds).toEqual([DEMO_USER_ID, "u_azamat"]);
-    expect(last.plan.status).toBe("swiping");
+    expect(last.plan.status).toBe("results");
   });
 
   it("«Вернуть карточку»: свайп удаляется, «закончил» снимается", async () => {
@@ -724,7 +724,7 @@ describe("боты в колоде", () => {
     engine.stop();
   });
 
-  it("«Выкл» — боты не свайпают; «До даты» — пока без ботов (T15)", async () => {
+  it("«Выкл» — боты не свайпают", async () => {
     const { engine, manual } = startBots();
     const { view } = await createLivePlan();
     await tick();
@@ -733,8 +733,6 @@ describe("боты в колоде", () => {
     await call("POST", planPath(view.plan.id, "/start"), DEMO_USER_ID);
     await tick();
     expect(manual.tasks).toHaveLength(0);
-
-    settings.update({ botSpeed: "normal" });
     await call("POST", "/plans", DEMO_USER_ID, {
       ...DEADLINE_PLAN,
       participantIds: BOTS,

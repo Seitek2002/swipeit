@@ -2469,7 +2469,7 @@
       },
       {
         "src": "/catalog/products/p_0048/2.webp",
-        "alt": "Модель двигателя V8 сбоку",
+        "alt": "Модель двигателя V8 с разных сторон",
         "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sa5a334065a524cd8969e30875e6284b39.jpg"
       },
       {
@@ -2545,17 +2545,17 @@
     "images": [
       {
         "src": "/catalog/products/p_0050/1.webp",
-        "alt": "Геймпад 8BitDo Ultimate 2C",
-        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S3ff511c2483044eda1eae9be82daba56y.jpg"
-      },
-      {
-        "src": "/catalog/products/p_0050/2.webp",
-        "alt": "Геймпад 8BitDo в руках",
+        "alt": "Геймпад 8BitDo Ultimate 2C в руках",
         "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S2202774a02df44e9b079e2978c22cb1fM.png"
       },
       {
-        "src": "/catalog/products/p_0050/3.webp",
+        "src": "/catalog/products/p_0050/2.webp",
         "alt": "Кнопки геймпада 8BitDo крупно",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sda890021165b4a358cee045677a2c1ccl.png"
+      },
+      {
+        "src": "/catalog/products/p_0050/3.webp",
+        "alt": "Курки геймпада 8BitDo",
         "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Seab63a9d025c47089b6501bcc2fea773U.png"
       }
     ],
@@ -3562,13 +3562,13 @@
     "images": [
       {
         "src": "/catalog/products/p_0075/1.webp",
-        "alt": "Роллер и гуаша для лица, розовые",
-        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sa5105569d98a4399b105e5abc80bb17bA.jpg"
+        "alt": "Роллеры для лица, белый и розовый",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S53c8f2013a6f490a8cf84a566c343e831.jpg"
       },
       {
         "src": "/catalog/products/p_0075/2.webp",
-        "alt": "Роллер для лица крупно",
-        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S53c8f2013a6f490a8cf84a566c343e831.jpg"
+        "alt": "Роллер и гуаша для лица, розовые",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sa5105569d98a4399b105e5abc80bb17bA.jpg"
       }
     ],
     "offers": [
@@ -3912,11 +3912,6 @@
         "src": "/catalog/products/p_0084/1.webp",
         "alt": "Обложка книги Дейла Карнеги «Как завоевывать друзей и оказывать влияние на людей»",
         "sourceUrl": "https://imo10.labirint.ru/books/709478/cover.jpg/2048-0"
-      },
-      {
-        "src": "/catalog/products/p_0084/2.webp",
-        "alt": "Содержание книги Дейла Карнеги",
-        "sourceUrl": "https://imo10.labirint.ru/books/709478/ph_01.jpg/2048-0"
       }
     ],
     "offers": [
@@ -4196,12 +4191,7 @@
     "images": [
       {
         "src": "/catalog/products/p_0091/1.webp",
-        "alt": "Набор Gillette Mach3 в коробке",
-        "sourceUrl": "https://basket-16.wbcontent.net/vol2621/part262104/262104508/images/big/3.webp"
-      },
-      {
-        "src": "/catalog/products/p_0091/2.webp",
-        "alt": "Станок Gillette Mach3 и гель для бритья",
+        "alt": "Набор Gillette Mach3: коробка, станок и гель для бритья",
         "sourceUrl": "https://basket-16.wbcontent.net/vol2621/part262104/262104508/images/big/2.webp"
       }
     ],
@@ -4983,11 +4973,6 @@
         "src": "/catalog/products/p_0111/2.webp",
         "alt": "Шахматные фигуры из дерева",
         "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S49d16f5013034985a3d599ae0b411f51h.jpg"
-      },
-      {
-        "src": "/catalog/products/p_0111/3.webp",
-        "alt": "Складная шахматная доска с фигурами",
-        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S90a949b33cb34fc4bc5b4edce98a28bcy.jpg"
       }
     ],
     "offers": [
@@ -5173,13 +5158,18 @@
     "images": [
       {
         "src": "/catalog/products/p_0116/1.webp",
-        "alt": "Компрессионная футболка Jogel сзади",
-        "sourceUrl": "https://basket-04.wbcontent.net/vol717/part71719/71719415/images/big/7.webp"
+        "alt": "Компрессионная футболка Jogel спереди",
+        "sourceUrl": "https://basket-04.wbcontent.net/vol717/part71719/71719415/images/big/8.webp"
       },
       {
         "src": "/catalog/products/p_0116/2.webp",
-        "alt": "Компрессионная футболка Jogel спереди",
+        "alt": "Компрессионная футболка Jogel сбоку",
         "sourceUrl": "https://basket-04.wbcontent.net/vol717/part71719/71719415/images/big/3.webp"
+      },
+      {
+        "src": "/catalog/products/p_0116/3.webp",
+        "alt": "Компрессионная футболка Jogel сзади",
+        "sourceUrl": "https://basket-04.wbcontent.net/vol717/part71719/71719415/images/big/7.webp"
       }
     ],
     "offers": [
@@ -5210,12 +5200,12 @@
       {
         "src": "/catalog/products/p_0117/1.webp",
         "alt": "Самонадувающийся коврик RSP, олива",
-        "sourceUrl": "https://basket-42.wbcontent.net/vol11050/part1105025/1105025333/images/big/6.webp"
+        "sourceUrl": "https://basket-42.wbcontent.net/vol11050/part1105025/1105025333/images/big/5.webp"
       },
       {
         "src": "/catalog/products/p_0117/2.webp",
-        "alt": "Коврик RSP развёрнутый",
-        "sourceUrl": "https://basket-42.wbcontent.net/vol11050/part1105025/1105025333/images/big/5.webp"
+        "alt": "Два коврика RSP рядом",
+        "sourceUrl": "https://basket-42.wbcontent.net/vol11050/part1105025/1105025333/images/big/6.webp"
       }
     ],
     "offers": [

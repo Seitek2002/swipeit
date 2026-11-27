@@ -4,7 +4,12 @@ import { z } from "zod";
 import type { BotTrigger } from "@/shared/lib/realtime/types";
 
 import type { Activity } from "../../catalog/types";
-import { computeMatches } from "../../plans/matches";
+import {
+  computeMatches,
+  decisionCandidates,
+  tallyVotes,
+  voteCandidates,
+} from "../../plans/matches";
 import {
   CreatePlanInputSchema,
   type PlanParticipant,
@@ -20,7 +25,8 @@ import { matchesPlanFilters } from "./activities";
 import { parseInput, requireUser } from "./common";
 
 // «Че делать будем?» — список, создание, вступление, лобби, свайп колоды и
-// совпадения (TECH_SPEC §5, §6; DESIGN.md §8.7). Результаты и решение — T15.
+// совпадения, результаты и решение, дедлайны «До даты» (TECH_SPEC §5, §6,
+// §7; DESIGN.md §8.7).
 
 // Сколько готовых нужно, чтобы организатор мог нажать «Поехали».
 const MIN_READY = 2;
@@ -324,22 +330,30 @@ const progressOf = (plan: PlanSession, userId: string, deckIds: string[]) => {
 const matchIdsOf = (plan: PlanSession, deck: Activity[]) =>
   new Set(computeMatches(plan, deck).matches.map((m) => m.activityId));
 
-const requireSwiping = (plan: PlanSession) => {
+// Дедлайн «До даты» по часам сервера (с перемоткой). Планировщик закрывает
+// план раз в 15 с — а свайп в эти секунды после даты уже не принимаем.
+const isPastDeadline = (plan: PlanSession, now: number) =>
+  plan.mode === "deadline" && Date.parse(plan.deadline ?? "") <= now;
+
+const requireSwiping = (plan: PlanSession, now: number) => {
   if (plan.status === "lobby") throw conflict("План ещё не начался");
   if (plan.status !== "swiping") throw conflict("Выбор уже закончился");
+  if (isPastDeadline(plan, now)) {
+    throw conflict("Время вышло — смотрим результаты");
+  }
 };
 
 const markFinished = (plan: PlanSession, userId: string) => {
   if (!plan.finishedIds.includes(userId)) plan.finishedIds.push(userId);
 };
 
-// «Прямо сейчас»: закончили все — сразу к результатам. «До даты» ждёт
-// дедлайна или всех — это переход T15 (по часам), здесь только live.
+const allFinished = (plan: PlanSession) =>
+  plan.participantIds.every((id) => plan.finishedIds.includes(id));
+
+// Закончили все — сразу к результатам, в обоих режимах: «До даты» не ждёт
+// дедлайна, если ждать уже некого (DESIGN.md §8.7).
 const completeIfAllFinished = (plan: PlanSession) => {
-  if (plan.mode !== "live" || plan.status !== "swiping") return;
-  if (plan.participantIds.every((id) => plan.finishedIds.includes(id))) {
-    plan.status = "results";
-  }
+  if (plan.status === "swiping" && allFinished(plan)) plan.status = "results";
 };
 
 const progressEvent = (
@@ -362,7 +376,7 @@ export const swipePlan: Handler = async (ctx, { params, body }) => {
     const user = requireUser(ctx, db);
     const plan = findPlan(db, params.id);
     requireParticipant(plan, user);
-    requireSwiping(plan);
+    requireSwiping(plan, ctx.clock.now());
     const deck = deckOf(db, plan, catalog);
     const deckIds = deck.map((activity) => activity.id);
     if (!deckIds.includes(input.activityId)) {
@@ -404,7 +418,7 @@ export const undoPlanSwipe: Handler = async (ctx, { params, body }) => {
     const user = requireUser(ctx, db);
     const plan = findPlan(db, params.id);
     requireParticipant(plan, user);
-    requireSwiping(plan);
+    requireSwiping(plan, ctx.clock.now());
     const { [input.activityId]: removed, ...rest } = plan.swipes[user.id] ?? {};
     if (removed === undefined) {
       throw conflict("Эту карточку ты ещё не свайпал");
@@ -444,3 +458,305 @@ export const finishPlan: Handler = async (ctx, { params }) => {
   if (result.changed) changed(ctx, result.view.plan.id);
   return result.view;
 };
+
+// ── Результаты и решение (T15) ──────────────────────────────────────
+
+// «Добавить ещё занятий» в плане «До даты», когда дата уже прошла: без
+// продления новый круг закрылся бы на первой же проверке планировщика.
+const EXTRA_ROUND_MS = 24 * 3600_000;
+
+const IsoDateSchema = z.iso.datetime({
+  offset: true,
+  error: "Дата повреждена",
+});
+
+const VoteBodySchema = z.object({
+  // null — снять свой голос.
+  activityId: z
+    .string({ error: "За что голосуешь?" })
+    .min(1, "За что голосуешь?")
+    .nullable(),
+});
+
+const DecideBodySchema = z.object({
+  method: z.enum(["random", "vote", "owner"], {
+    error: "Как решаем: барабан, голосование или выбор организатора?",
+  }),
+  // Для vote и owner. У random результат выбирает сервер.
+  activityId: z.string().min(1).optional(),
+  // Когда идём. Без него экран и .ics берут ближайшую субботу 12:00.
+  scheduledFor: IsoDateSchema.optional(),
+});
+
+const RuleBodySchema = z.object({
+  matchRule: z.enum(["all", "majority"], { error: "Какое правило?" }),
+});
+
+const AddActivitiesBodySchema = z.object({
+  activityIds: z
+    .array(z.string().min(1))
+    .min(1, "Выбери хотя бы одно занятие")
+    .max(20, "Не больше 20 занятий за раз"),
+  // Только «До даты»: новая дата нового круга.
+  deadline: IsoDateSchema.optional(),
+});
+
+type DecideBody = z.infer<typeof DecideBodySchema>;
+
+const requireOwner = (plan: PlanSession, user: User, message: string) => {
+  if (plan.ownerId !== user.id) throw forbidden(message);
+};
+
+const requireResults = (plan: PlanSession) => {
+  if (plan.status === "decided") {
+    throw conflict("Решение уже принято — сначала отмени его");
+  }
+  if (plan.status !== "results") {
+    throw conflict("Результатов ещё нет — сначала досвайпайте колоду");
+  }
+};
+
+// Голоса только за нынешние варианты: после смены правила часть занятий
+// перестаёт быть совпадением, и голос за них уже ничего не значит.
+const keepValidVotes = (plan: PlanSession, deck: Activity[]) => {
+  const allowed = new Set(voteCandidates(plan, deck));
+  plan.votes = Object.fromEntries(
+    Object.entries(plan.votes).filter(([, id]) => allowed.has(id)),
+  );
+};
+
+// POST /plans/:id/votes { activityId | null } — «Выбрать самим»: у каждого
+// участника один голос, повторный заменяет прежний, null снимает. Голосуют
+// за совпадения, нет их — за «почти», нет и их — за любое занятие колоды.
+export const votePlan: Handler = async (ctx, { params, body }) => {
+  const input = parseInput(VoteBodySchema, body);
+  const catalog = await ctx.catalog.activities();
+  const view = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    requireParticipant(plan, user);
+    requireResults(plan);
+    const others = Object.entries(plan.votes).filter(([id]) => id !== user.id);
+    if (input.activityId !== null) {
+      const candidates = voteCandidates(plan, deckOf(db, plan, catalog));
+      if (!candidates.includes(input.activityId)) {
+        throw validation("За это занятие голосовать нельзя");
+      }
+      others.push([user.id, input.activityId]);
+    }
+    plan.votes = Object.fromEntries(others);
+    return viewOf(db, plan, catalog);
+  });
+  changed(ctx, view.plan.id);
+  return view;
+};
+
+const chooseActivity = (
+  ctx: HandlerContext,
+  plan: PlanSession,
+  deck: Activity[],
+  input: DecideBody,
+): string => {
+  if (input.method === "random") {
+    const { pool } = decisionCandidates(plan, deck);
+    if (pool.length === 0) {
+      throw conflict(
+        "Совпадений нет — посчитайте по большинству или добавьте занятий",
+      );
+    }
+    return ctx.random.pick(pool);
+  }
+  if (!input.activityId) throw validation("Какое занятие выбрали?");
+  if (input.method === "vote") {
+    const { leaders } = tallyVotes(plan, deck);
+    if (leaders.length === 0) throw conflict("Пока никто не проголосовал");
+    if (!leaders.includes(input.activityId)) {
+      throw conflict("Утвердить можно то, за что больше всех голосов");
+    }
+    return input.activityId;
+  }
+  if (!deck.some((activity) => activity.id === input.activityId)) {
+    throw validation("Этого занятия нет в колоде");
+  }
+  return input.activityId;
+};
+
+// POST /plans/:id/decide — решение принимает организатор (TECH_SPEC §6):
+// { method: "random" } — барабан, итог выбирает сервер через ctx.random
+// ДО анимации, и все вкладки останавливают барабан на нём (TASKS T15).
+// Крутит только организатор: двое, нажавшие одновременно, получили бы два
+// разных итога. { method: "vote", activityId } — «Утвердить» лидера
+// голосования; { method: "owner", activityId } — организатор выбрал сам.
+// Отдельного события нет: по db:changed экраны перечитывают план и видят
+// новое decision (method: "random" — повод крутить барабан).
+export const decidePlan: Handler = async (ctx, { params, body }) => {
+  const input = parseInput(DecideBodySchema, body);
+  const catalog = await ctx.catalog.activities();
+  const view = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    requireOwner(plan, user, "Решение принимает организатор");
+    // Решённый план второй раз не крутится: «Крутить ещё раз» нет, иначе
+    // барабан перестаёт быть честным (DESIGN.md §8.7).
+    requireResults(plan);
+    const activityId = chooseActivity(
+      ctx,
+      plan,
+      deckOf(db, plan, catalog),
+      input,
+    );
+    plan.status = "decided";
+    plan.decision = {
+      activityId,
+      method: input.method,
+      decidedAt: nowIso(ctx.clock),
+      ...(input.scheduledFor ? { scheduledFor: input.scheduledFor } : {}),
+    };
+    return viewOf(db, plan, catalog);
+  });
+  changed(ctx, view.plan.id);
+  return view;
+};
+
+// POST /plans/:id/decide/cancel — «Отменить решение»: только организатор.
+// Все снова на экране результатов, голоса — заново. Остальным людям —
+// тост (боты тостов не читают).
+export const cancelPlanDecision: Handler = async (ctx, { params }) => {
+  const catalog = await ctx.catalog.activities();
+  const result = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    requireOwner(plan, user, "Отменить решение может только организатор");
+    if (plan.status !== "decided") throw conflict("Решения ещё нет");
+    plan.status = "results";
+    delete plan.decision;
+    plan.votes = {};
+    const notify = plan.participantIds.filter((id) => {
+      const other = db.users[id];
+      return id !== user.id && other !== undefined && !other.isBot;
+    });
+    return { notify, view: viewOf(db, plan, catalog) };
+  });
+  changed(ctx, result.view.plan.id);
+  for (const forUserId of result.notify) {
+    ctx.realtime.publish({
+      type: "toast",
+      text: "Организатор отменил решение",
+      forUserId,
+    });
+  }
+  return result.view;
+};
+
+// POST /plans/:id/rule { matchRule } — «Считать по большинству» на экране
+// «Совпадений нет» (TECH_SPEC §6, «computeMatches»). Расширение TECH_SPEC
+// §6: в таблице маршрутов его нет. Только организатор, только на
+// результатах.
+export const setPlanRule: Handler = async (ctx, { params, body }) => {
+  const { matchRule } = parseInput(RuleBodySchema, body);
+  const catalog = await ctx.catalog.activities();
+  const view = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    requireOwner(plan, user, "Правило меняет организатор");
+    requireResults(plan);
+    plan.matchRule = matchRule;
+    keepValidVotes(plan, deckOf(db, plan, catalog));
+    return viewOf(db, plan, catalog);
+  });
+  changed(ctx, view.plan.id);
+  return view;
+};
+
+// POST /plans/:id/activities { activityIds, deadline? } — «Добавить ещё
+// занятий»: занятия каталога или свои (POST /activities) — в конец колоды,
+// и все снова свайпают, уже только новые карточки. Расширение TECH_SPEC §6.
+// plan:started — повторно: боты досвайпывают новое. «До даты» с прошедшей
+// датой получает новую: из тела или +1 день от «сейчас».
+export const addPlanActivities: Handler = async (ctx, { params, body }) => {
+  const input = parseInput(AddActivitiesBodySchema, body);
+  const now = ctx.clock.now();
+  if (input.deadline && Date.parse(input.deadline) <= now) {
+    throw validation("Эта дата уже прошла");
+  }
+  const catalog = await ctx.catalog.activities();
+  const catalogIds = new Set(catalog.map((activity) => activity.id));
+  const view = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    requireOwner(plan, user, "Добавлять занятия может только организатор");
+    requireResults(plan);
+    const inDeck = new Set(plan.deck);
+    const added: string[] = [];
+    for (const id of unique(input.activityIds)) {
+      if (inDeck.has(id)) continue;
+      if (!catalogIds.has(id)) {
+        const custom = db.customActivities[id];
+        if (!custom) throw validation("Такого занятия нет");
+        if (custom.createdBy !== user.id) {
+          throw validation("Своё занятие не найдено — добавь его заново");
+        }
+        if (!plan.customActivityIds.includes(id)) {
+          plan.customActivityIds.push(id);
+        }
+      }
+      added.push(id);
+    }
+    if (added.length === 0) throw validation("Эти занятия уже есть в колоде");
+    plan.deck = [...plan.deck, ...added];
+    plan.status = "swiping";
+    plan.votes = {};
+    // Новые карточки не свайпал никто — «закончил» пересчитываем по колоде.
+    const deckIds = deckIdsOf(db, plan, catalog);
+    plan.finishedIds = plan.participantIds.filter((id) => {
+      const { done, total } = progressOf(plan, id, deckIds);
+      return done >= total;
+    });
+    if (
+      plan.mode === "deadline" &&
+      (input.deadline || isPastDeadline(plan, now))
+    ) {
+      plan.deadline =
+        input.deadline ?? new Date(now + EXTRA_ROUND_MS).toISOString();
+    }
+    return viewOf(db, plan, catalog);
+  });
+  changed(ctx, view.plan.id);
+  trigger(ctx, "plan:started", view.plan.id);
+  return view;
+};
+
+// План «До даты» пора закрыть: наступила дата или ждать уже некого.
+const isDue = (plan: PlanSession, now: number) =>
+  plan.mode === "deadline" &&
+  plan.status === "swiping" &&
+  (isPastDeadline(plan, now) || allFinished(plan));
+
+// Планировщик дедлайнов (TECH_SPEC §7 «Часы»): все планы «До даты», у
+// которых наступила дата по ctx.clock (с перемоткой), — к результатам.
+// Сначала чтение: планировщик зовёт это каждые 15 с из каждой вкладки, и
+// пустой проход не должен ничего записывать.
+export const expireDuePlans = async (
+  ctx: HandlerContext,
+): Promise<string[]> => {
+  const now = ctx.clock.now();
+  const current = await ctx.db.read();
+  if (!Object.values(current.plans).some((plan) => isDue(plan, now))) {
+    return [];
+  }
+  const expired = await ctx.db.write((db) => {
+    const due = Object.values(db.plans).filter((plan) => isDue(plan, now));
+    for (const plan of due) plan.status = "results";
+    return due.map((plan) => plan.id);
+  });
+  for (const id of expired) changed(ctx, id);
+  return expired;
+};
+
+// POST /plans/expire — тот же проход по запросу. Расширение TECH_SPEC §6:
+// клиентский планировщик зовёт его раз в 15 с и при возвращении во вкладку,
+// LAN-сервер — сам по таймеру. Пользователь не нужен: правило зависит
+// только от часов.
+export const expirePlans: Handler = async (ctx) => ({
+  expired: await expireDuePlans(ctx),
+});

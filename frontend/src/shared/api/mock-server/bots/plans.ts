@@ -14,6 +14,38 @@ const READY_DELAY_MS: [number, number] = [1_000, 4_000];
 // 0.3–0.75 с × темп — это и есть «Быстро 0.3–0.8 с» из спецификации.
 const CARD_DELAY_MS: [number, number] = [1_000, 2_500];
 
+// «До даты» (TECH_SPEC §7): бот «заходит» в план не сразу и свайпает
+// неспешно — 5–30 с до первой карточки, 4–15 с на карточку (× скорость и
+// темп). Таймеры настоящие и перемотку часов не догоняют: перемотали за
+// дедлайн — планировщик закроет план с тем, что боты успели, а следующий
+// свайп бота сервер отклонит.
+const DEADLINE_START_MS: [number, number] = [5_000, 30_000];
+const DEADLINE_CARD_DELAY_MS: [number, number] = [4_000, 15_000];
+
+type Pace = { card: [number, number]; start: [number, number] };
+
+const LIVE_PACE: Pace = { start: CARD_DELAY_MS, card: CARD_DELAY_MS };
+const DEADLINE_PACE: Pace = {
+  start: DEADLINE_START_MS,
+  card: DEADLINE_CARD_DELAY_MS,
+};
+
+// Поколение цепочки свайпов бота в плане. «Добавить ещё занятий» шлёт
+// plan:started повторно: новая цепочка берёт следующий номер, а старая (бот
+// мог быть посреди колоды) на ближайшем шаге видит, что устарела, и
+// останавливается — иначе бот свайпал бы вдвое быстрее. Номер, а не набор
+// «бегущих»: цепочку молча обрывает выключение ботов, и запись о ней не
+// должна мешать следующей. По api — у каждого движка свой счёт.
+const chains = new WeakMap<BotApi, Map<string, number>>();
+
+const claimChain = (api: BotApi, key: string) => {
+  const generations = chains.get(api) ?? new Map<string, number>();
+  chains.set(api, generations);
+  const generation = (generations.get(key) ?? 0) + 1;
+  generations.set(key, generation);
+  return () => generations.get(key) === generation;
+};
+
 // Шансы лайка: база бота, +0.35 за любимую категорию (TECH_SPEC §5
 // BotProfile), немного — за «Недорого». Потолок — чтобы и любимое иногда
 // уходило влево, а совпадения не были гарантированы.
@@ -44,10 +76,13 @@ const swipeDeck = (
   bot: User,
   planId: string,
   cards: Activity[],
+  pace: Pace,
 ) => {
   const path = `/plans/${encodeURIComponent(planId)}`;
-  const step = () =>
-    api.schedule(bot, CARD_DELAY_MS, async () => {
+  const isCurrent = claimChain(api, `${planId}:${bot.id}`);
+  const step = (range: [number, number]) =>
+    api.schedule(bot, range, async () => {
+      if (!isCurrent()) return;
       const db = await api.db.read();
       const plan = db.plans[planId];
       // План перешёл к результатам или бота убрали — свайпать нечего.
@@ -72,9 +107,9 @@ const swipeDeck = (
         );
         return;
       }
-      step();
+      step(pace.card);
     });
-  step();
+  step(pace.start);
 };
 
 export const plansBehavior: BotBehavior = {
@@ -105,15 +140,13 @@ export const plansBehavior: BotBehavior = {
       });
     }
   },
-  // «Прямо сейчас»: каждый бот-участник свайпает колоду в своём темпе.
+  // Каждый бот-участник свайпает колоду в своём темпе: «Прямо сейчас» —
+  // бодро, «До даты» — неспешно. Повторный plan:started («Добавить ещё
+  // занятий») — бот досвайпывает новые карточки.
   "plan:started": async (api, event) => {
     const db = await api.db.read();
     const plan = db.plans[event.id];
     if (!plan || plan.status !== "swiping") return;
-    // TODO(T15): «До даты» — боты проходят колоду в случайные моменты до
-    // дедлайна в масштабе перемотки часов (TECH_SPEC §7). POST /plans уже
-    // шлёт plan:started для этого режима.
-    if (plan.mode !== "live") return;
     const bots = plan.participantIds
       .map((id) => db.users[id])
       .filter((user): user is User => Boolean(user?.isBot));
@@ -125,6 +158,9 @@ export const plansBehavior: BotBehavior = {
       method: "GET",
       path: `/plans/${encodeURIComponent(plan.id)}`,
     });
-    for (const bot of bots) swipeDeck(api, bot, plan.id, view.activities);
+    const pace = plan.mode === "live" ? LIVE_PACE : DEADLINE_PACE;
+    for (const bot of bots) {
+      swipeDeck(api, bot, plan.id, view.activities, pace);
+    }
   },
 };

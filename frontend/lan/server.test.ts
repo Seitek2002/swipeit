@@ -133,6 +133,12 @@ describe("LAN-сервер", () => {
     expect(response.status).toBe(400);
   });
 
+  it("POST /api/plans/expire — проход по дедлайнам без профиля", async () => {
+    const { status, data } = await api("POST", "/plans/expire");
+    expect(status).toBe(200);
+    expect(data).toEqual({ expired: [] });
+  });
+
   it("гостевые маршруты работают без профиля", async () => {
     const { status } = await fetch(
       `${base}/api/reservations?ownerId=u_azamat`,

@@ -3,7 +3,9 @@ import { getTransport } from "../transport";
 import type {
   CreatePlanInput,
   CustomActivityInput,
+  DecidePlanInput,
   PlanFilters,
+  PlanSession,
   PlanSummary,
   PlanView,
 } from "./types";
@@ -66,3 +68,51 @@ export const createCustomActivity = (
   input: CustomActivityInput,
 ): Promise<Activity> =>
   getTransport().request<Activity>("POST", "/activities", input);
+
+// ── Результаты и решение (T15) ──
+
+// Голос в «Выбрать самим»; null — снять свой голос.
+export const votePlan = (
+  id: string,
+  activityId: null | string,
+): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/votes`, {
+    activityId,
+  });
+
+// Решение организатора. У барабана итог выбирает сервер — экран узнаёт его
+// из ответа и только потом крутит анимацию.
+export const decidePlan = (
+  id: string,
+  input: DecidePlanInput,
+): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/decide`, input);
+
+export const cancelPlanDecision = (id: string): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/decide/cancel`);
+
+// «Считать по большинству» на экране «Совпадений нет».
+export const setPlanRule = (
+  id: string,
+  matchRule: PlanSession["matchRule"],
+): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/rule`, {
+    matchRule,
+  });
+
+// «Добавить ещё занятий»: каталог или свои (createCustomActivity) — план
+// снова в свайпе. deadline — новая дата для «До даты» (без неё, если
+// прежняя прошла, сервер даёт ещё сутки).
+export const addPlanActivities = (
+  id: string,
+  activityIds: string[],
+  deadline?: string,
+): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/activities`, {
+    activityIds,
+    deadline,
+  });
+
+// Планировщик дедлайнов: закрыть планы «До даты», у которых наступила дата.
+export const expirePlans = (): Promise<{ expired: string[] }> =>
+  getTransport().request<{ expired: string[] }>("POST", "/plans/expire");

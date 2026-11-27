@@ -136,3 +136,9 @@ export type PlanSummary = {
   // До 3 занятий для превью; у решённого плана первым идёт решение.
   preview: Activity[];
 };
+
+// Тело POST /plans/:id/decide. scheduledFor — когда идём (ISO); без него
+// экран и .ics берут ближайшую субботу 12:00.
+export type DecidePlanInput =
+  | { activityId: string; method: "owner" | "vote"; scheduledFor?: string }
+  | { method: "random"; scheduledFor?: string };

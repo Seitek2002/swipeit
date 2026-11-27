@@ -43,6 +43,8 @@ const UPLOAD_LIMIT = 5 * 1024 * 1024;
 const RANDOM_ERROR_RATE = 0.1;
 const UPLOAD_KEY = /^[A-Za-z0-9_-]{1,64}$/;
 const METHODS = new Set<string>(["DELETE", "GET", "PATCH", "POST"]);
+// Планировщик дедлайнов (TECH_SPEC §7 «Часы»): раз в 15 секунд.
+const EXPIRE_EVERY_MS = 15_000;
 
 export type LanServerOptions = {
   // Боты на сервере (TECH_SPEC §7). В тестах выключаем — им нужны таймеры.
@@ -409,6 +411,16 @@ export const createLanServer = async ({
     await realtime.close();
     throw error;
   });
+  // Планы «До даты» закрываются по часам сервера, даже когда все телефоны
+  // спят: вкладки зовут тот же маршрут, только когда открыты. unref — чтобы
+  // таймер не держал процесс (тесты, Ctrl+C).
+  const expiry = setInterval(() => {
+    mock
+      .handle({ method: "POST", path: "/plans/expire", userId: null })
+      .catch(() => undefined);
+  }, EXPIRE_EVERY_MS);
+  expiry.unref();
+
   const address = server.address();
   const actualPort =
     typeof address === "object" && address ? address.port : port;
@@ -416,6 +428,7 @@ export const createLanServer = async ({
   let closing: null | Promise<void> = null;
   const close = () => {
     closing ??= (async () => {
+      clearInterval(expiry);
       engine.stop();
       await realtime.close();
       await new Promise<void>((resolve) => {

@@ -30,15 +30,21 @@ import {
   importPickAnswer,
 } from "./handlers/pick";
 import {
+  addPlanActivities,
+  cancelPlanDecision,
   createPlan,
+  decidePlan,
+  expirePlans,
   finishPlan,
   getPlan,
   joinPlan,
   listPlans,
+  setPlanRule,
   setReady,
   startPlan,
   swipePlan,
   undoPlanSwipe,
+  votePlan,
 } from "./handlers/plans";
 import { createSwipe, restartSwipes, undoSwipe } from "./handlers/swipes";
 import {
@@ -127,6 +133,8 @@ export const ROUTE_TABLE: Route[] = [
   { method: "POST", pattern: "/pick-answers", handler: importPickAnswer },
   { method: "GET", pattern: "/plans", handler: listPlans },
   { method: "POST", pattern: "/plans", handler: createPlan },
+  // До /plans/:id/* — чтобы "expire" не читался как id плана.
+  { method: "POST", pattern: "/plans/expire", handler: expirePlans },
   { method: "GET", pattern: "/plans/:id", handler: getPlan },
   { method: "POST", pattern: "/plans/:id/join", handler: joinPlan },
   { method: "POST", pattern: "/plans/:id/ready", handler: setReady },
@@ -138,6 +146,19 @@ export const ROUTE_TABLE: Route[] = [
     handler: undoPlanSwipe,
   },
   { method: "POST", pattern: "/plans/:id/finish", handler: finishPlan },
+  { method: "POST", pattern: "/plans/:id/votes", handler: votePlan },
+  { method: "POST", pattern: "/plans/:id/decide", handler: decidePlan },
+  {
+    method: "POST",
+    pattern: "/plans/:id/decide/cancel",
+    handler: cancelPlanDecision,
+  },
+  { method: "POST", pattern: "/plans/:id/rule", handler: setPlanRule },
+  {
+    method: "POST",
+    pattern: "/plans/:id/activities",
+    handler: addPlanActivities,
+  },
   { method: "GET", pattern: "/activities", handler: listActivities },
   { method: "POST", pattern: "/activities", handler: createCustomActivity },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },

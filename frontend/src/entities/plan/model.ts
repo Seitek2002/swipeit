@@ -10,7 +10,11 @@ import { formatDayMonth } from "@/shared/lib/format";
 // computeMatches — чистая функция (TECH_SPEC §6). Живёт в shared/api: её же
 // зовёт мок-сервер, чтобы разослать plan:match, а ему нельзя импортировать
 // entities (FSD). Для интерфейса — отсюда.
-export { computeMatches } from "@/shared/api";
+export {
+  computeMatches,
+  decisionCandidates,
+  voteCandidates,
+} from "@/shared/api";
 
 export type {
   PlanMatches,
