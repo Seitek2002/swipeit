@@ -136,6 +136,14 @@ export const PhotoDeckCard = ({
   const animations = useRef<AnimationPlaybackControls[]>([]);
   const suppressClick = useRef(false);
   const committed = useRef(false);
+  // Флаг занятости колоды выставила эта карточка — снять его при
+  // размонтировании: остановленная анимация не завершает свой Promise, и
+  // иначе колода перестала бы отвечать на жесты, кнопки и клавиши.
+  const ownsBusy = useRef(false);
+  const setBusy = (busy: boolean) => {
+    ownsBusy.current = busy;
+    isBusyRef.current = busy;
+  };
 
   const stopAnimations = () => {
     animations.current.forEach((animation) => animation.stop());
@@ -149,13 +157,13 @@ export const PhotoDeckCard = ({
   const commit = (direction: SwipeDirection) => {
     if (committed.current) return;
     committed.current = true;
-    isBusyRef.current = false;
+    setBusy(false);
     onCommit(direction);
   };
 
   const fly = (direction: SwipeDirection) => {
     stopAnimations();
-    isBusyRef.current = true;
+    setBusy(true);
     vibrate(15);
     if (direction === "up") up.set(1);
 
@@ -226,22 +234,31 @@ export const PhotoDeckCard = ({
     if (!enterFrom || reducedMotion) return;
     if (enterFrom === "up") y.set(PHOTO_FLY_Y);
     else x.set(enterFrom === "right" ? PHOTO_FLY_X : -PHOTO_FLY_X);
-    isBusyRef.current = true;
+    setBusy(true);
     animations.current = [
       animate(x, 0, SPRING_PHOTO_ENTER),
       animate(y, 0, SPRING_PHOTO_ENTER),
     ];
-    Promise.all(animations.current).then(() => {
-      isBusyRef.current = false;
-    });
+    Promise.all(animations.current).then(() => setBusy(false));
     // Только при появлении верхней — повторный запуск сбил бы анимацию.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTop]);
 
-  useEffect(() => () => stopAnimations(), []);
+  useEffect(
+    () => () => {
+      stopAnimations();
+      if (ownsBusy.current) isBusyRef.current = false;
+    },
+    // Только при размонтировании.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (!isTop || disabled || isBusyRef.current || event.button > 0) return;
+    // Клик после перетаскивания на таче часто не приходит — флаг не должен
+    // съесть следующий настоящий тап.
+    suppressClick.current = false;
     stopAnimations();
     dragRef.current = {
       id: event.pointerId,
@@ -261,8 +278,10 @@ export const PhotoDeckCard = ({
       drag.axis = lockAxis(dx - x.get(), event.clientY - drag.startY);
       if (drag.axis === null) return;
       if (drag.axis === "y") {
-        // Прокрутка: карточку не трогаем до конца касания.
+        // Прокрутка: карточку не тянем; если её поймали на возврате —
+        // довозвращаем.
         dragRef.current = null;
+        if (x.get() !== 0) springBack();
         return;
       }
       // Захват — только с началом перетаскивания: тап по фото и по названию
@@ -291,7 +310,11 @@ export const PhotoDeckCard = ({
     if (!drag || drag.id !== event.pointerId) return;
     dragRef.current = null;
     ref.current?.removeAttribute("data-dragging");
-    if (drag.axis !== "x") return;
+    if (drag.axis !== "x") {
+      // Тап по карточке на возврате остановил пружину — довозвращаем.
+      if (x.get() !== 0) springBack();
+      return;
+    }
     suppressClick.current = true;
     const direction = decidePhotoDirection(x.get(), velocityOf(drag.samples).x);
     if (direction) fly(direction);

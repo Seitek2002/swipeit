@@ -324,6 +324,17 @@ export const SwipeDeck = <T,>({
             {empty}
           </div>
         )}
+        {/* У фото-колоды «Вернуть» живёт в карточке — на пустом столе без
+            этой кнопки последний свайп на телефоне не вернуть. */}
+        {isPhoto && !top && onUndo && canUndo && (
+          <div className="absolute bottom-4 left-5">
+            <SwipeActionButton
+              action="undo"
+              disabled={disabled}
+              onClick={undo}
+            />
+          </div>
+        )}
       </div>
 
       {!isPhoto && (

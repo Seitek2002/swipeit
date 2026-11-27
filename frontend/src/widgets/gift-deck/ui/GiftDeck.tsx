@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
+import { defaultChoice } from "@/features/product-details";
 import {
   SwipeDeck,
   type SwipeDeckHandle,
@@ -198,7 +199,11 @@ export const GiftDeck = ({
       setLikes((count) => (count ?? summary.likeCount) + 1);
       onLike?.(product, direction);
     }
-    const variantChoice = variants.current[product.id];
+    // Подробности карточки показывают первый вариант выбранным («Мне
+    // подойдёт: чёрный, M») — его и сохраняем, если человек ничего не менял.
+    const variantChoice =
+      variants.current[product.id] ??
+      (product.variants?.length ? defaultChoice(product.variants) : undefined);
     enqueue(() =>
       createSwipe({
         productId: product.id,
@@ -237,6 +242,9 @@ export const GiftDeck = ({
     const last = history[history.length - 1];
     if (!last) return null;
     setHistory((current) => current.slice(0, -1));
+    // Вернувшаяся карточка показывает вариант по умолчанию — и сохранится он
+    // же, а не выбранный до свайпа.
+    delete variants.current[last.product.id];
     setQueue((current) => [last.product, ...current]);
     if (isLike(last.direction))
       setLikes((count) => Math.max(0, (count ?? 1) - 1));
