@@ -71,6 +71,11 @@ const byOrder = (a: WishlistItem, b: WishlistItem) => a.order - b.order;
 export const WishlistPage = () => {
   const { data, isLoading, isError, refetch } = useMyWishlist();
   const friends = useFriends();
+  // Список — вместе с карточкой дня рождения друга (auto-tasks V02): друзья
+  // приходили позже вишлиста, карточка вставала сверху, и список прыгал
+  // (CLS 0,3 на 360×640). Пока друзья грузятся впервые — скелетон.
+  const waitingFriends = friends.fetchStatus === "fetching" && !friends.data;
+  const ready = Boolean(data) && !waitingFriends;
   const reorder = useReorder();
   const updateItem = useUpdateItem();
   const deleteItem = useDeleteItem();
@@ -252,7 +257,7 @@ export const WishlistPage = () => {
           ]}
         />
 
-        {isLoading && (
+        {(isLoading || (data && waitingFriends)) && (
           <div className="flex flex-col gap-2.5 px-5 pt-4">
             {Array.from({ length: 4 }, (_, index) => (
               <Skeleton
@@ -276,7 +281,7 @@ export const WishlistPage = () => {
           />
         )}
 
-        {data && tab === "want" && active.length > 0 && (
+        {ready && data && tab === "want" && active.length > 0 && (
           <ReservationNote data={data} />
         )}
         {/* «Отправить вишлист» в баннере — только когда отправка открыта
@@ -301,7 +306,7 @@ export const WishlistPage = () => {
             </div>
           )}
         {/* День рождения друга — ниже своего напоминания (auto-tasks P03). */}
-        {data && tab === "want" && (
+        {ready && data && tab === "want" && (
           <FriendBirthdayCard
             className="mx-5 mt-3"
             onPick={(friend) =>
@@ -313,11 +318,11 @@ export const WishlistPage = () => {
             }
           />
         )}
-        {data && tab === "want" && (
+        {ready && data && tab === "want" && (
           <GivenHintBanner data={data} onGiven={setHintItem} />
         )}
 
-        {data && tab === "want" && (
+        {ready && data && tab === "want" && (
           <div className="flex flex-col gap-2.5 px-5 pt-4">
             {active.length === 0 ? (
               <EmptyState
@@ -349,7 +354,7 @@ export const WishlistPage = () => {
           </div>
         )}
 
-        {data && tab === "given" && (
+        {ready && data && tab === "given" && (
           <div className="px-5 pt-4">
             {given.length === 0 ? (
               <EmptyState

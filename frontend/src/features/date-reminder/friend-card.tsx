@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 import Link from "next/link";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Cake } from "lucide-react";
+import { Cake, X } from "lucide-react";
 
 import { useFriends, useMe } from "@/entities/user";
 
@@ -18,7 +18,7 @@ import {
   nearestFriendBirthday,
 } from "@/shared/lib/friend-birthday";
 import { cn } from "@/shared/lib/utils";
-import { Button, buttonClassName, toast } from "@/shared/ui";
+import { Button, IconButton, buttonClassName, toast } from "@/shared/ui";
 
 import { useDismissReminder } from "./api";
 import { reminderWhen } from "./model";
@@ -64,7 +64,10 @@ export const FriendBirthdayCard = ({ onPick, className }: Props) => {
     <section
       aria-label="День рождения друга"
       aria-describedby={textId}
-      className={cn("paper rounded-paper shadow-paper px-4 py-3.5", className)}
+      className={cn(
+        "paper rounded-paper shadow-paper relative px-4 py-3.5 pr-11",
+        className,
+      )}
     >
       <div className="flex items-start gap-3">
         <Cake
@@ -90,18 +93,20 @@ export const FriendBirthdayCard = ({ onPick, className }: Props) => {
           </p>
         </div>
       </div>
-      {/* relative z-[1]: кнопки над зерном бумаги (::after у .paper). */}
-      <div className="relative z-[1] mt-3 ml-9 flex flex-wrap items-center gap-1">
+      {/* relative z-[1]: кнопки над зерном бумаги (::after у .paper). Две
+          кнопки в одну строку — на 360×640 карточка не съедает первый экран
+          (V02); «Скрыть» — крестиком в углу. */}
+      <div className="relative z-[1] mt-2 ml-9 flex items-center gap-1">
         <Link
           href={ROUTES.FRIEND_PROFILE(reminder.friendId)}
           // Мандарин на экране один (DESIGN.md §7): под карточкой бывает
           // своя главная кнопка — здесь мандарин-чернила без заливки.
           className={cn(
             buttonClassName({ size: "sm", variant: "ghost" }),
-            "text-mandarin-ink",
+            "text-mandarin-ink -ml-3.5",
           )}
         >
-          Посмотреть вишлист
+          Вишлист
         </Link>
         <Button
           size="sm"
@@ -111,16 +116,16 @@ export const FriendBirthdayCard = ({ onPick, className }: Props) => {
         >
           Предложить выбрать
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-ink-soft"
-          loading={dismiss.isPending}
-          onClick={hide}
-        >
-          Скрыть
-        </Button>
       </div>
+      <IconButton
+        label="Скрыть до следующего года"
+        tone="on-paper"
+        className="absolute top-1.5 right-1.5 z-[1]"
+        disabled={dismiss.isPending}
+        onClick={hide}
+      >
+        <X aria-hidden size={18} strokeWidth={2} />
+      </IconButton>
     </section>
   );
 };
