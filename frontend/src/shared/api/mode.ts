@@ -55,6 +55,8 @@ const probe = async (): Promise<Environment> => {
 
 // Один раз на вкладку: GET /api/health с таймаутом 800 ms. Ответил
 // LAN-сервер SwipeIt — режим lan, иначе local.
+// На статическом хостинге (GitHub Pages, `next dev`) отвечает файл
+// public/api/health с mode "static" — без 404 в консоли браузера.
 export const detectEnvironment = (): Promise<Environment> => {
   detection ??= probe().then((environment) => {
     current = environment.mode;
