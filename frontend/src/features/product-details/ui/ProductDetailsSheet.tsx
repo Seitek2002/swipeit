@@ -9,9 +9,16 @@ import { formatPrice } from "@/shared/lib/format";
 import { usePreloadImages } from "@/shared/lib/image-cache";
 import { BottomSheet } from "@/shared/ui";
 
-import { ProductDetailsSections, defaultChoice } from "./DetailsSections";
+import { ProductDetailsSections } from "./DetailsSections";
+
+const EMPTY_CHOICE: Record<string, string> = {};
 
 type Props = {
+  // Выбор владельца желания или друга («мне — белый»). Шторка — только
+  // посмотреть: её открывают гость и автор ссылки-фильтра (auto-tasks U03).
+  choice?: Record<string, string>;
+  // Подпись выбора: «В вишлисте», «Выбрано».
+  choiceCaption?: string;
   hidePrices?: boolean;
   onClose: () => void;
   product: null | Product;
@@ -25,6 +32,8 @@ type Selection = { choice: Record<string, string>; id: string; photo: number };
 export const ProductDetailsSheet = ({
   product,
   onClose,
+  choice = EMPTY_CHOICE,
+  choiceCaption = "В вишлисте",
   hidePrices = false,
 }: Props) => {
   // Последний открытый товар держим, пока шторка уезжает вниз, — иначе она
@@ -37,7 +46,17 @@ export const ProductDetailsSheet = ({
     shown && selection?.id === shown.id
       ? selection
       : shown
-        ? { id: shown.id, choice: defaultChoice(shown.variants), photo: 0 }
+        ? {
+            id: shown.id,
+            choice,
+            // Фото выбранного цвета, если оно есть.
+            photo: Math.max(
+              0,
+              shown.images.findIndex((image) =>
+                Object.values(choice).includes(image.variantOptionId ?? ""),
+              ),
+            ),
+          }
         : null;
 
   return (
@@ -52,6 +71,7 @@ export const ProductDetailsSheet = ({
           product={shown}
           hidePrices={hidePrices}
           choice={active.choice}
+          choiceCaption={choiceCaption}
           photo={active.photo}
           onChange={(next) => setSelection({ ...active, ...next })}
         />
@@ -62,6 +82,7 @@ export const ProductDetailsSheet = ({
 
 type DetailsProps = {
   choice: Record<string, string>;
+  choiceCaption: string;
   hidePrices: boolean;
   onChange: (next: { choice?: Record<string, string>; photo?: number }) => void;
   photo: number;
@@ -72,6 +93,7 @@ const Details = ({
   product,
   hidePrices,
   choice,
+  choiceCaption,
   photo,
   onChange,
 }: DetailsProps) => {
@@ -122,6 +144,7 @@ const Details = ({
           hidePrices={hidePrices}
           choice={choice}
           onChoose={choose}
+          readOnlyCaption={choiceCaption}
         />
       </div>
     </div>

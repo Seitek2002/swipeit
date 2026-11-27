@@ -64,7 +64,7 @@ const PickCard = ({
   pick,
   onOpen,
 }: {
-  onOpen: (product: Product) => void;
+  onOpen: (product: Product, choice?: Record<string, string>) => void;
   pick: Pick;
 }) => {
   const { data: product, isError } = useProduct(pick.productId);
@@ -79,7 +79,7 @@ const PickCard = ({
       <article className="paper rounded-paper px-3 pt-3 pb-2">
         <button
           type="button"
-          onClick={() => onOpen(product)}
+          onClick={() => onOpen(product, pick.variantChoice)}
           aria-label={`Подробнее: ${product.title}`}
           className="bg-paper-2 relative grid aspect-[16/10] w-full place-items-center overflow-hidden rounded-[14px]"
         >
@@ -146,7 +146,10 @@ const PickCard = ({
 
 const AnswerContent = () => {
   const encoded = useSearchParams()?.get("d") ?? "";
-  const [details, setDetails] = useState<null | Product>(null);
+  const [details, setDetails] = useState<{
+    choice?: Record<string, string>;
+    product: Product;
+  } | null>(null);
   const isValid = decodePickAnswer(encoded) !== null;
   const imported = useQuery({
     queryKey: pickKeys.answer(encoded),
@@ -202,7 +205,11 @@ const AnswerContent = () => {
       </div>
       <ul className="flex flex-col gap-4 px-5 pt-[18px] pb-6">
         {answer.picks.map((pick) => (
-          <PickCard key={pick.productId} pick={pick} onOpen={setDetails} />
+          <PickCard
+            key={pick.productId}
+            pick={pick}
+            onOpen={(product, choice) => setDetails({ product, choice })}
+          />
         ))}
       </ul>
       <div className="px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+12px)] text-center">
@@ -213,7 +220,12 @@ const AnswerContent = () => {
           К подаркам
         </Link>
       </div>
-      <ProductDetailsSheet product={details} onClose={() => setDetails(null)} />
+      <ProductDetailsSheet
+        product={details?.product ?? null}
+        choice={details?.choice}
+        choiceCaption="Выбрано"
+        onClose={() => setDetails(null)}
+      />
     </>
   );
 };

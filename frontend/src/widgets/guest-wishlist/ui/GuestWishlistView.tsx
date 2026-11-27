@@ -82,7 +82,7 @@ const GuestWishCard = ({
   afterReserve?: ReactNode;
   item: Item;
   nameGuard: NameGuard;
-  onOpen: (product: Product) => void;
+  onOpen: (product: Product, choice?: Record<string, string>) => void;
   onReserved: () => void;
   ownerId: string;
   readOnly: boolean;
@@ -105,7 +105,7 @@ const GuestWishCard = ({
         <button
           type="button"
           disabled={!product}
-          onClick={() => product && onOpen(product)}
+          onClick={() => product && onOpen(product, item.variantChoice)}
           aria-label={product ? `Подробнее: ${title}` : title}
           className="bg-paper-2 relative grid aspect-[16/10] w-full place-items-center overflow-hidden rounded-[14px]"
         >
@@ -179,7 +179,10 @@ export const GuestWishlistView = ({
   renderAfterReserve,
   titleAs: Title = "h1",
 }: Props) => {
-  const [details, setDetails] = useState<null | Product>(null);
+  const [details, setDetails] = useState<{
+    choice?: Record<string, string>;
+    product: Product;
+  } | null>(null);
   // Карточка первой брони на этой странице и «Не сейчас».
   const [promoKey, setPromoKey] = useState<null | string>(null);
   const [promoDismissed, setPromoDismissed] = useState(false);
@@ -214,7 +217,7 @@ export const GuestWishlistView = ({
               ownerId={ownerId}
               readOnly={readOnly}
               nameGuard={requireName}
-              onOpen={setDetails}
+              onOpen={(product, choice) => setDetails({ product, choice })}
               onReserved={() => setPromoKey((key) => key ?? item.key)}
               afterReserve={promoKey === item.key ? promo : null}
             />
@@ -222,7 +225,11 @@ export const GuestWishlistView = ({
         </ul>
       )}
       {footer}
-      <ProductDetailsSheet product={details} onClose={() => setDetails(null)} />
+      <ProductDetailsSheet
+        product={details?.product ?? null}
+        choice={details?.choice}
+        onClose={() => setDetails(null)}
+      />
       {requireName.sheet}
     </>
   );

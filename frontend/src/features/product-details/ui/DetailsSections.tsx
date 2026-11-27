@@ -98,6 +98,10 @@ type Props = {
   hidePrices?: boolean;
   onChoose: (group: VariantGroup, optionId: string) => void;
   product: Product;
+  // Чужой выбор — только посмотреть (гость, ответ друга; auto-tasks U03):
+  // чипы не нажимаются, подпись «{readOnlyCaption}: Белый» без «Друзья
+  // увидят…», которое обращено к владельцу.
+  readOnlyCaption?: string;
   tone?: Tone;
 };
 
@@ -109,8 +113,19 @@ export const ProductDetailsSections = ({
   choice,
   onChoose,
   hidePrices = false,
+  readOnlyCaption,
   tone = "card",
 }: Props) => {
+  const readOnly = readOnlyCaption !== undefined;
+  // Названия как в каталоге («Chroma Indigo»), без строчных — для подписи
+  // чужого выбора.
+  const chosenLabels = (product.variants ?? [])
+    .map(
+      (group) =>
+        group.options.find((option) => option.id === choice[group.id])?.label,
+    )
+    .filter(Boolean)
+    .join(", ");
   const paragraphs = product.description.split(/\n{2,}/).filter(Boolean);
   const groups = product.variants ?? [];
   const chosen = describeVariant(product, choice);
@@ -157,7 +172,9 @@ export const ProductDetailsSections = ({
                 <Chip
                   key={option.id}
                   selected={choice[group.id] === option.id}
-                  onClick={() => onChoose(group, option.id)}
+                  disabled={readOnly && choice[group.id] !== option.id}
+                  aria-disabled={readOnly || undefined}
+                  onClick={() => !readOnly && onChoose(group, option.id)}
                   icon={
                     option.hex ? (
                       <i
@@ -172,11 +189,18 @@ export const ProductDetailsSections = ({
                 </Chip>
               ))}
             </div>
-            {position === groups.length - 1 && chosen && (
-              <p className="text-caption text-rose mt-2.5">
-                Мне подойдёт: {chosen}. Друзья увидят это в вишлисте.
-              </p>
-            )}
+            {position === groups.length - 1 &&
+              (readOnly
+                ? chosenLabels && (
+                    <p className="text-caption text-rose mt-2.5">
+                      {readOnlyCaption}: {chosenLabels}
+                    </p>
+                  )
+                : chosen && (
+                    <p className="text-caption text-rose mt-2.5">
+                      Мне подойдёт: {chosen}. Друзья увидят это в вишлисте.
+                    </p>
+                  ))}
           </Section>
         );
       })}
