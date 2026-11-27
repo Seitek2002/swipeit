@@ -38,6 +38,9 @@ export const PlanSessionSchema = z.object({
   deck: z.array(z.string()),
   swipes: z.record(z.string(), z.record(z.string(), z.enum(["like", "pass"]))),
   finishedIds: z.array(z.string()),
+  // Организатор показал итоги, не дождавшись всех (auto-tasks P04): итоги
+  // считаются по долиставшим.
+  closedEarly: z.boolean().optional(),
   votes: z.record(z.string(), z.string()),
   decision: z
     .object({

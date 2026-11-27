@@ -44,6 +44,7 @@ import {
 import {
   addPlanActivities,
   cancelPlanDecision,
+  closePlan,
   createPlan,
   decidePlan,
   expirePlans,
@@ -185,6 +186,7 @@ export const ROUTE_TABLE: Route[] = [
   },
   { method: "POST", pattern: "/plans/:id/finish", handler: finishPlan },
   { method: "POST", pattern: "/plans/:id/votes", handler: votePlan },
+  { method: "POST", pattern: "/plans/:id/close", handler: closePlan },
   { method: "POST", pattern: "/plans/:id/decide", handler: decidePlan },
   {
     method: "POST",

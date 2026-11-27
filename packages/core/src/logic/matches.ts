@@ -19,7 +19,18 @@ export type PlanMatches = {
 type MatchInput = Pick<
   PlanSession,
   "deck" | "matchRule" | "participantIds" | "swipes"
->;
+> &
+  Partial<Pick<PlanSession, "closedEarly" | "finishedIds">>;
+
+// Чьи свайпы считаются: все участники, а после «Показать итоги сейчас» —
+// только долиставшие (auto-tasks P04): бросивший колоду не тянет «Все за»
+// вниз.
+export const countedParticipants = (plan: MatchInput): string[] => {
+  const participants = [...new Set(plan.participantIds)];
+  if (!plan.closedEarly) return participants;
+  const finished = new Set(plan.finishedIds ?? []);
+  return participants.filter((id) => finished.has(id));
+};
 
 const isMajority = (likes: number, participants: number) =>
   likes > participants / 2;
@@ -36,7 +47,7 @@ export const computeMatches = (
   const deck = [...new Set(plan.deck)].filter(
     (id) => !available || available.has(id),
   );
-  const participants = [...new Set(plan.participantIds)];
+  const participants = countedParticipants(plan);
   const total = participants.length;
 
   const likesById: Record<string, number> = {};

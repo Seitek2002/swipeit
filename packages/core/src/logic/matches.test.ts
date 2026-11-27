@@ -161,3 +161,33 @@ describe("варианты решения", () => {
     ).toEqual(["x3"]);
   });
 });
+
+describe("«Показать итоги сейчас» (P04)", () => {
+  // a, b, c долистали и все лайкнули x1; d бросил колоду на первой карточке.
+  const swipes = fromRows({ a: "LLP", b: "LPP", c: "LLP", d: "P" });
+
+  it("до закрытия «Все за» считает и бросившего — совпадения нет", () => {
+    expect(computeMatches(plan("all", swipes)).matches).toEqual([]);
+  });
+
+  it("после закрытия считаются только долиставшие", () => {
+    const closed = {
+      ...plan("all", swipes),
+      closedEarly: true,
+      finishedIds: ["a", "b", "c"],
+    };
+    expect(computeMatches(closed).matches).toEqual([
+      { activityId: "x1", likes: 3 },
+    ]);
+    // «Почти»: x2 — 2 из 3, большинство.
+    expect(computeMatches(closed).almost).toEqual([
+      { activityId: "x2", likes: 2 },
+    ]);
+    expect(decisionCandidates(closed).pool).toEqual(["x1"]);
+  });
+
+  it("без closedEarly finishedIds не влияет", () => {
+    const open = { ...plan("all", swipes), finishedIds: ["a", "b", "c"] };
+    expect(computeMatches(open).matches).toEqual([]);
+  });
+});

@@ -624,6 +624,40 @@ export const decidePlan: Handler = async (ctx, { params, body }) => {
   return view;
 };
 
+// Сколько должны долистать, чтобы организатор мог показать итоги, не
+// дожидаясь остальных (auto-tasks P04): с одним «совпадение» — это просто
+// его лайки.
+const MIN_FINISHED_TO_CLOSE = 2;
+
+// POST /plans/:id/close — «Показать итоги сейчас»: кто-то бросил колоду, а
+// ждать вечно нельзя (PRD §6.3). Итоги — по долиставшим (closedEarly);
+// недолиставшие тоже видят итоги, их колода закрыта. Повтор ничего не
+// меняет.
+export const closePlan: Handler = async (ctx, { params }) => {
+  const catalog = await ctx.catalog.activities();
+  const result = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    requireOwner(plan, user, "Показать итоги может только организатор");
+    if (plan.status === "results" || plan.status === "decided") {
+      return { changed: false, view: viewOf(db, plan, catalog) };
+    }
+    if (plan.status !== "swiping") throw conflict("План ещё не начался");
+    const finished = plan.participantIds.filter((id) =>
+      plan.finishedIds.includes(id),
+    );
+    if (finished.length < MIN_FINISHED_TO_CLOSE) {
+      throw conflict("Показать итоги можно, когда долистают хотя бы двое");
+    }
+    plan.closedEarly = !allFinished(plan);
+    plan.status = "results";
+    plan.votes = {};
+    return { changed: true, view: viewOf(db, plan, catalog) };
+  });
+  if (result.changed) changed(ctx, result.view.plan.id);
+  return result.view;
+};
+
 // POST /plans/:id/decide/cancel — «Отменить решение»: только организатор.
 // Все снова на экране результатов, голоса — заново. Остальным людям —
 // тост (боты тостов не читают).
@@ -712,6 +746,8 @@ export const addPlanActivities: Handler = async (ctx, { params, body }) => {
     plan.deck = [...plan.deck, ...added];
     plan.status = "swiping";
     plan.votes = {};
+    // Новый раунд — снова ждём всех.
+    delete plan.closedEarly;
     // Новые карточки не свайпал никто — «закончил» пересчитываем по колоде.
     const deckIds = deckIdsOf(db, plan, catalog);
     plan.finishedIds = plan.participantIds.filter((id) => {

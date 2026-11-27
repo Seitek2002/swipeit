@@ -82,6 +82,10 @@ export const votePlan = (
 
 // Решение организатора. У барабана итог выбирает сервер — экран узнаёт его
 // из ответа и только потом крутит анимацию.
+// «Показать итоги сейчас» — организатор, не дожидаясь всех (P04).
+export const closePlan = (id: string): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/close`);
+
 export const decidePlan = (
   id: string,
   input: DecidePlanInput,

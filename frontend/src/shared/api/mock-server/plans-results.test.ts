@@ -5,7 +5,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { RealtimeEvent } from "@/shared/lib/realtime/types";
 
 import type { Activity } from "../catalog/types";
-import { decisionCandidates, voteCandidates } from "../plans/matches";
+import {
+  computeMatches,
+  decisionCandidates,
+  voteCandidates,
+} from "../plans/matches";
 import type { PlanSummary, PlanView } from "../plans/types";
 import type { User } from "../users/types";
 import {
@@ -762,5 +766,46 @@ describe("боты после результатов и «До даты»", () =
     }
     expect(last.plan.status).toBe("results");
     engine.stop();
+  });
+});
+
+describe("«Показать итоги сейчас» (auto-tasks P04)", () => {
+  const close = (id: string, userId: string) =>
+    call<PlanView>("POST", planPath(id, "/close"), userId);
+  const codeOf = (promise: Promise<unknown>) =>
+    promise.then(
+      () => "ok",
+      (error: { code?: string }) => error.code,
+    );
+
+  it("не организатор — FORBIDDEN; долистал меньше двух — CONFLICT", async () => {
+    const view = await startLive("all");
+    expect(await codeOf(close(view.plan.id, "u_azamat"))).toBe("FORBIDDEN");
+    await playDeck(view, {}, [DEMO_USER_ID]);
+    expect(await codeOf(close(view.plan.id, DEMO_USER_ID))).toBe("CONFLICT");
+  });
+
+  it("после close «Все за» считается среди долиставших; повтор ничего не меняет", async () => {
+    const view = await startLive("all");
+    // Айгерим и Азамат лайкнули первую карточку, Нурай тоже, Данияр бросил.
+    await playDeck(view, { [DEMO_USER_ID]: "L", u_azamat: "L", u_nurai: "L" }, [
+      DEMO_USER_ID,
+      "u_azamat",
+      "u_nurai",
+    ]);
+    const closed = await close(view.plan.id, DEMO_USER_ID);
+    expect(closed.plan).toMatchObject({ status: "results", closedEarly: true });
+    const first = view.plan.deck[0];
+    const { matches } = computeMatches(closed.plan);
+    expect(matches.map((m) => m.activityId)).toEqual([first]);
+    const again = await close(view.plan.id, DEMO_USER_ID);
+    expect(again.plan).toEqual(closed.plan);
+    // Недолиставший видит итоги: колода закрыта.
+    const forDaniyar = await call<PlanView>(
+      "GET",
+      planPath(view.plan.id),
+      "u_daniyar",
+    );
+    expect(forDaniyar.plan.status).toBe("results");
   });
 });

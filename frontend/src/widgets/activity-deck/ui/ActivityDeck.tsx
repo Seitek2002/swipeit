@@ -18,7 +18,7 @@ import {
   ActivityTicket,
   formatPerPerson,
 } from "@/entities/activity";
-import { type PlanView, computeMatches, formatDeadline } from "@/entities/plan";
+import { type PlanView, computeMatches } from "@/entities/plan";
 
 import { isApiError, planKeys, swipePlan, undoPlanSwipe } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
@@ -27,9 +27,11 @@ import { clock } from "@/shared/lib/clock";
 import { usePreloadImages } from "@/shared/lib/image-cache";
 import { useConnectionStatus } from "@/shared/lib/realtime";
 import { cn } from "@/shared/lib/utils";
-import { Countdown, EmptyState, toast } from "@/shared/ui";
+import { Countdown, toast } from "@/shared/ui";
 
+import { DeckEnd } from "./DeckEnd";
 import { ProgressRings } from "./ProgressRings";
+import { joinNames } from "./names";
 
 type Props = { meId: string; view: PlanView };
 
@@ -43,11 +45,6 @@ const ticketLabel = (activity: Activity) => {
     ? `${activity.title}, ${price} на человека`
     : `${activity.title}, ${price.toLowerCase()}`;
 };
-
-const joinNames = (names: string[]) =>
-  names.length <= 1
-    ? (names[0] ?? "")
-    : `${names.slice(0, -1).join(", ")} и ${names[names.length - 1]}`;
 
 // Колода билетиков плана (DESIGN.md §8.7 «Свайп»): шапка с «Выйти» и
 // счётчиком совпадений, участники с кольцами прогресса, колода в общем для
@@ -216,18 +213,7 @@ export const ActivityDeck = ({ view, meId }: Props) => {
             ? `Хочу: ${activity.title}`
             : `Мимо: ${activity.title}`
         }
-        empty={
-          <EmptyState
-            object="ticket"
-            // «До даты» — называем и дедлайн: итоги откроются раньше, если
-            // все закончат, но не позже него (auto-tasks U12).
-            title={
-              plan.mode === "deadline" && plan.deadline
-                ? `Колода закончилась. Ждём остальных — итоги откроются, когда закончат все, но не позже ${formatDeadline(plan.deadline).replace(/^До /, "")}.`
-                : "Колода закончилась. Ждём остальных — итоги откроются, когда закончат все."
-            }
-          />
-        }
+        empty={<DeckEnd view={view} meId={meId} swiping={swiping} />}
       />
     </div>
   );

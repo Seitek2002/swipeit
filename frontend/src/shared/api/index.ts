@@ -81,6 +81,7 @@ export {
   type VoteTally,
 } from "./plans/matches";
 export {
+  closePlan,
   addPlanActivities,
   cancelPlanDecision,
   createCustomActivity,
