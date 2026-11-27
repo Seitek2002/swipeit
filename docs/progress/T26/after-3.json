@@ -1,0 +1,144 @@
+{
+ "url": "https://seitek2002.github.io/swipeit/gifts/",
+ "preloaderGone": 14906,
+ "feedVisible": 18884,
+ "firstPhoto": 18884,
+ "photoAfterCard": 0,
+ "lcp": 19892,
+ "lcpNode": "IMG.absolute -inset-10 size-[calc(100%+80px)",
+ "firstTitle": "Аромадиффузор Homefish с эффектом пламени, 2 950 сом",
+ "photoSrc": "/swipeit/catalog/products/p_0049/1.webp",
+ "splashFramesAfterPreloader": 0,
+ "skeletonAfterPre": 14906,
+ "guideCoverRequestMs": 402,
+ "firstChunkRequestMs": 403,
+ "duplicatePhotos": [],
+ "nav": null,
+ "photoRequests": 3,
+ "requests": [
+  {
+   "url": "/catalog/products/p_0049/1.webp",
+   "ms": 402
+  },
+  {
+   "url": "/_next/static/chunks/3bf4t4lwjk57d.js",
+   "ms": 403
+  },
+  {
+   "url": "/_next/static/chunks/0toode_m3zx76.js",
+   "ms": 404
+  },
+  {
+   "url": "/_next/static/chunks/3b4cpi0yy1w3z.js",
+   "ms": 405
+  },
+  {
+   "url": "/_next/static/chunks/2qcmqmhga7wya.js",
+   "ms": 406
+  },
+  {
+   "url": "/_next/static/chunks/turbopack-073e6ld2z1h5p.js",
+   "ms": 406
+  },
+  {
+   "url": "/_next/static/chunks/04j8a1fiw237u.js",
+   "ms": 407
+  },
+  {
+   "url": "/_next/static/chunks/1-41p5a0yj6su.js",
+   "ms": 407
+  },
+  {
+   "url": "/_next/static/chunks/2dms8kcshdj6j.js",
+   "ms": 408
+  },
+  {
+   "url": "/_next/static/chunks/3z08wj34j97fy.js",
+   "ms": 409
+  },
+  {
+   "url": "/_next/static/chunks/2x7i9erjm68-s.js",
+   "ms": 409
+  },
+  {
+   "url": "/_next/static/chunks/3jgw4l6_0g893.js",
+   "ms": 410
+  },
+  {
+   "url": "/_next/static/chunks/10fc1_lhucx9o.js",
+   "ms": 411
+  },
+  {
+   "url": "/_next/static/chunks/3b0z2lphfkpkm.js",
+   "ms": 411
+  },
+  {
+   "url": "/_next/static/chunks/26dgbw15iq0a4.js",
+   "ms": 412
+  },
+  {
+   "url": "/_next/static/chunks/087g8liopobup.js",
+   "ms": 412
+  },
+  {
+   "url": "/_next/static/chunks/1lpsp_6qhanzw.js",
+   "ms": 412
+  },
+  {
+   "url": "/_next/static/chunks/3t7-cksxjsrb2.js",
+   "ms": 413
+  },
+  {
+   "url": "/_next/static/chunks/2nkn5gt1hb27k.js",
+   "ms": 414
+  },
+  {
+   "url": "/_next/static/chunks/1j-77g80nkx_w.js",
+   "ms": 415
+  },
+  {
+   "url": "/_next/static/chunks/0eri8wli3k6ka.js",
+   "ms": 13813
+  },
+  {
+   "url": "/_next/static/chunks/1qmcj0ntb1phb.js",
+   "ms": 13815
+  },
+  {
+   "url": "/catalog/products.json",
+   "ms": 13819
+  },
+  {
+   "url": "/_next/static/chunks/28w7ahq2clv-m.js",
+   "ms": 14534
+  },
+  {
+   "url": "/_next/static/chunks/1m2okuhlsmtvk.js",
+   "ms": 15342
+  },
+  {
+   "url": "/_next/static/chunks/3byfau9g_a0qf.js",
+   "ms": 17726
+  },
+  {
+   "url": "/_next/static/chunks/0vbn9bnm1y3k7.js",
+   "ms": 18008
+  },
+  {
+   "url": "/_next/static/chunks/231exxevdrvny.js",
+   "ms": 18011
+  },
+  {
+   "url": "/catalog/products/p_0049/2.webp",
+   "ms": 18931
+  },
+  {
+   "url": "/catalog/products/p_0003/1.webp",
+   "ms": 18932
+  },
+  {
+   "url": "/_next/static/chunks/0tf2a4m4a3xlx.js",
+   "ms": 18978
+  }
+ ]
+}

@@ -25,7 +25,6 @@ export { ShareActions } from "./share-actions";
 export { type SegmentOption, SegmentedControl } from "./segmented-control";
 export { ContentSkeleton, ScreenSkeleton, Skeleton } from "./skeleton";
 export { Spinner } from "./spinner";
-export { Splash } from "./splash";
 export { type SwipeAction, SwipeActionButton } from "./swipe-action-button";
 export { Switch } from "./switch";
 export { TextArea, TextField } from "./text-field";

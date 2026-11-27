@@ -1,0 +1,144 @@
+{
+ "url": "https://seitek2002.github.io/swipeit/gifts/",
+ "preloaderGone": 15974,
+ "feedVisible": 26413,
+ "firstPhoto": 32066,
+ "photoAfterCard": 5653,
+ "lcp": 32244,
+ "lcpNode": "IMG.absolute -inset-10 size-[calc(100%+80px)",
+ "firstTitle": "Геймпад Sony DualSense для PS5, 7 830 – 8 450 сом",
+ "photoSrc": "/swipeit/catalog/products/p_0025/1.webp",
+ "splashFramesAfterPreloader": 2088,
+ "splashFrom": 15974,
+ "splashTo": 25119,
+ "skeletonAfterPre": 25251,
+ "guideCoverRequestMs": null,
+ "firstChunkRequestMs": 643,
+ "duplicatePhotos": [],
+ "requests": [
+  {
+   "url": "/_next/static/chunks/3bf4t4lwjk57d.js",
+   "ms": 643
+  },
+  {
+   "url": "/_next/static/chunks/0toode_m3zx76.js",
+   "ms": 643
+  },
+  {
+   "url": "/_next/static/chunks/3b4cpi0yy1w3z.js",
+   "ms": 643
+  },
+  {
+   "url": "/_next/static/chunks/2qcmqmhga7wya.js",
+   "ms": 644
+  },
+  {
+   "url": "/_next/static/chunks/turbopack-073e6ld2z1h5p.js",
+   "ms": 644
+  },
+  {
+   "url": "/_next/static/chunks/3tx4wymmtgssl.js",
+   "ms": 644
+  },
+  {
+   "url": "/_next/static/chunks/3fs42qb-mt974.js",
+   "ms": 644
+  },
+  {
+   "url": "/_next/static/chunks/27_n0z4qtw24l.js",
+   "ms": 644
+  },
+  {
+   "url": "/_next/static/chunks/1q28aa4o8ytqo.js",
+   "ms": 645
+  },
+  {
+   "url": "/_next/static/chunks/27gut8frwlws7.js",
+   "ms": 645
+  },
+  {
+   "url": "/_next/static/chunks/097th7eq1fy10.js",
+   "ms": 645
+  },
+  {
+   "url": "/_next/static/chunks/3u9kh1rt_ybfl.js",
+   "ms": 645
+  },
+  {
+   "url": "/_next/static/chunks/0ettl7k6p587l.js",
+   "ms": 646
+  },
+  {
+   "url": "/_next/static/chunks/3qe6bhl9-q38o.js",
+   "ms": 646
+  },
+  {
+   "url": "/_next/static/chunks/3t7-cksxjsrb2.js",
+   "ms": 646
+  },
+  {
+   "url": "/_next/static/chunks/0htyy64wy56yl.js",
+   "ms": 646
+  },
+  {
+   "url": "/_next/static/chunks/0w0124vgh7azm.js",
+   "ms": 15479
+  },
+  {
+   "url": "/_next/static/chunks/1j-77g80nkx_w.js",
+   "ms": 15481
+  },
+  {
+   "url": "/_next/static/chunks/1i1fa5yu2_w4d.js",
+   "ms": 15485
+  },
+  {
+   "url": "/catalog/products.json",
+   "ms": 15490
+  },
+  {
+   "url": "/_next/static/chunks/0n2b3an2b30fv.js",
+   "ms": 15618
+  },
+  {
+   "url": "/_next/static/chunks/3fyk-iob4br6g.js",
+   "ms": 16348
+  },
+  {
+   "url": "/_next/static/chunks/0t_qt489ma81s.js",
+   "ms": 16350
+  },
+  {
+   "url": "/catalog/products/p_0025/1.webp",
+   "ms": 26500
+  },
+  {
+   "url": "/catalog/products/p_0025/2.webp",
+   "ms": 26501
+  },
+  {
+   "url": "/_next/static/chunks/369nd3l-qytb6.js",
+   "ms": 30741
+  },
+  {
+   "url": "/_next/static/chunks/290970vetia-x.js",
+   "ms": 31019
+  },
+  {
+   "url": "/_next/static/chunks/3471bit2xhpz0.js",
+   "ms": 31022
+  },
+  {
+   "url": "/catalog/products/p_0094/1.webp",
+   "ms": 32064
+  },
+  {
+   "url": "/catalog/products/p_0025/3.webp",
+   "ms": 32736
+  },
+  {
+   "url": "/_next/static/chunks/2sajwzkn42rjn.js",
+   "ms": 32982
+  }
+ ]
+}
