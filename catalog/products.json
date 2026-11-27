@@ -3260,78 +3260,78 @@
   },
   {
     "id": "p_0068",
-    "title": "Триммер для бороды Rowenta TN3841",
-    "description": "Триммер для бороды с титановыми лезвиями: 39 установок длины от 0,5 до 20 мм, в комплекте насадки и чехол.",
+    "title": "Парфюмерная вода Lattafa Asad, 100 мл",
+    "description": "Восточный аромат от парфюмерного дома Lattafa из ОАЭ: в начале ананас, чёрный перец и табак, в сердце ирис, кофе и пачули, в базе амбра и ваниль.\n\nНа Wildberries — витрина бренда LATTAFA, рейтинг 4.8 и почти 2 тысячи оценок.",
     "category": "beauty",
     "interests": [
       "beauty"
     ],
     "audience": "male",
-    "priceMin": 5350,
-    "priceMax": 5350,
+    "priceMin": 3430,
+    "priceMax": 3430,
     "images": [
       {
         "src": "/catalog/products/p_0068/1.webp",
-        "alt": "Триммер Rowenta TN3841 с насадками",
-        "sourceUrl": "https://www.kivano.kg/images/product/110621/full/1662459774_24683800.png"
+        "alt": "Флакон Lattafa Asad",
+        "sourceUrl": "https://basket-11.wbcontent.net/vol1607/part160791/160791884/images/big/4.webp"
       },
       {
         "src": "/catalog/products/p_0068/2.webp",
-        "alt": "Триммер Rowenta TN3841",
-        "sourceUrl": "https://www.kivano.kg/images/product/110621/166245976516280_full.png"
+        "alt": "Lattafa Asad: флакон и коробка",
+        "sourceUrl": "https://basket-11.wbcontent.net/vol1607/part160791/160791884/images/big/7.webp"
       },
       {
         "src": "/catalog/products/p_0068/3.webp",
-        "alt": "Лезвие триммера крупно",
-        "sourceUrl": "https://www.kivano.kg/images/product/110621/166245976552539_full.png"
+        "alt": "Коробка Lattafa Asad",
+        "sourceUrl": "https://basket-11.wbcontent.net/vol1607/part160791/160791884/images/big/5.webp"
       }
     ],
     "offers": [
       {
-        "marketplace": "other",
-        "url": "https://www.kivano.kg/product/view/trimmer-rowenta-tn3841f4",
-        "price": 5350,
-        "originalPrice": 5350,
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/160791884/detail.aspx",
+        "price": 3430,
+        "originalPrice": 3430,
         "originalCurrency": "KGS",
         "checkedAt": "2026-11-27"
       }
     ],
-    "popularity": 0.45
+    "popularity": 0.55
   },
   {
     "id": "p_0069",
-    "title": "Машинка для стрижки Rowenta TN5243",
-    "description": "Машинка для стрижки с самозатачивающимися лезвиями, работает от сети и от аккумулятора. В комплекте насадки и футляр.",
+    "title": "Набор для бороды Barbaro в деревянной коробке",
+    "description": "Подарочный набор Barbaro Eastern Sandal в коробке из сосны с верёвочной ручкой: мыло для лица и бороды, масло с пипеткой, крем-бальзам и щётка из бука с натуральной щетиной. Сделано в России.\n\nНа Wildberries — рейтинг 4.7.",
     "category": "beauty",
     "interests": [
       "beauty"
     ],
     "audience": "male",
-    "priceMin": 7670,
-    "priceMax": 7670,
+    "priceMin": 7010,
+    "priceMax": 7010,
     "images": [
       {
         "src": "/catalog/products/p_0069/1.webp",
-        "alt": "Машинка Rowenta TN5243",
-        "sourceUrl": "https://www.kivano.kg/images/product/110241/full/1661491027_16753400.png"
+        "alt": "Набор Barbaro в деревянной коробке",
+        "sourceUrl": "https://basket-02.wbcontent.net/vol160/part16065/16065335/images/big/2.webp"
       },
       {
         "src": "/catalog/products/p_0069/2.webp",
-        "alt": "Машинка Rowenta с насадками и футляром",
-        "sourceUrl": "https://www.kivano.kg/images/product/110241/166149102499906_full.png"
+        "alt": "Масло, бальзам, мыло и щётка Barbaro",
+        "sourceUrl": "https://basket-02.wbcontent.net/vol160/part16065/16065335/images/big/1.webp"
       }
     ],
     "offers": [
       {
-        "marketplace": "other",
-        "url": "https://www.kivano.kg/product/view/mashinka-dlya-strizhki-rowenta-tn-5243",
-        "price": 7670,
-        "originalPrice": 7670,
+        "marketplace": "wildberries",
+        "url": "https://www.wildberries.kg/catalog/16065335/detail.aspx",
+        "price": 7010,
+        "originalPrice": 7011,
         "originalCurrency": "KGS",
         "checkedAt": "2026-11-27"
       }
     ],
-    "popularity": 0.4
+    "popularity": 0.5
   },
   {
     "id": "p_0070",
@@ -4521,33 +4521,34 @@
   },
   {
     "id": "p_0100",
-    "title": "Электробритва Philips S1151",
-    "description": "Роторная электробритва Philips Series 1000 с плавающими головками для сухого бритья.",
+    "title": "Мужской набор для лица BarbarossA",
+    "description": "Три средства для ежедневного ухода за мужской кожей: гель для умывания, тоник и крем для лица по 100 мл в подарочной коробке. Сделано в России.\n\nНа Wildberries — рейтинг 4.9 и больше тысячи оценок.",
     "category": "beauty",
     "interests": [
-      "gadgets"
+      "beauty",
+      "wellness"
     ],
     "audience": "male",
-    "priceMin": 3940,
-    "priceMax": 3940,
+    "priceMin": 4630,
+    "priceMax": 4630,
     "images": [
       {
         "src": "/catalog/products/p_0100/1.webp",
-        "alt": "Электробритва Philips S1151",
-        "sourceUrl": "https://basket-25.wbcontent.net/vol4381/part438193/438193084/images/big/6.webp"
+        "alt": "Гель, тоник и крем BarbarossA с коробкой",
+        "sourceUrl": "https://basket-18.wbcontent.net/vol2921/part292195/292195366/images/big/3.webp"
       },
       {
         "src": "/catalog/products/p_0100/2.webp",
-        "alt": "Коробка электробритвы Philips",
-        "sourceUrl": "https://basket-25.wbcontent.net/vol4381/part438193/438193084/images/big/5.webp"
+        "alt": "Подарочная коробка BarbarossA",
+        "sourceUrl": "https://basket-18.wbcontent.net/vol2921/part292195/292195366/images/big/8.webp"
       }
     ],
     "offers": [
       {
         "marketplace": "wildberries",
-        "url": "https://www.wildberries.kg/catalog/438193084/detail.aspx",
-        "price": 3940,
-        "originalPrice": 3942,
+        "url": "https://www.wildberries.kg/catalog/292195366/detail.aspx",
+        "price": 4630,
+        "originalPrice": 4633,
         "originalCurrency": "KGS",
         "checkedAt": "2026-11-27"
       }
