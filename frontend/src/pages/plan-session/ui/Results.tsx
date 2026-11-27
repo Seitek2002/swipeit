@@ -12,6 +12,7 @@ import {
   type PlanView,
   computeMatches,
   decisionCandidates,
+  tallyVotes,
   voteCandidates,
 } from "@/entities/plan";
 
@@ -78,7 +79,12 @@ export const Results = ({ view, meId }: Props) => {
   const { matches, almost } = computeMatches(plan, activities);
   const candidates = decisionCandidates(plan, activities);
   const votable = voteCandidates(plan, activities);
-  const [voting, setVoting] = useState(Object.keys(plan.votes).length > 0);
+  const tally = tallyVotes(plan, activities);
+  // Голосование у всех, как только кто-то проголосовал: «Выбрать самим»
+  // нажимают на одном телефоне, а голосовать должны все.
+  const hasVotes = Object.keys(tally.counts).length > 0;
+  const [votingToggle, setVoting] = useState(false);
+  const voting = votingToggle || hasVotes;
   const [customOpen, setCustomOpen] = useState(false);
 
   const onSuccess = (next: PlanView) => {
@@ -113,13 +119,10 @@ export const Results = ({ view, meId }: Props) => {
     onError,
   });
 
-  // Голоса: activityId → сколько.
-  const votes = new Map<string, number>();
-  for (const activityId of Object.values(plan.votes)) {
-    votes.set(activityId, (votes.get(activityId) ?? 0) + 1);
-  }
+  // Голоса — тем же подсчётом, что у сервера: только нынешние участники и
+  // только за варианты; ничья — несколько лидеров.
+  const votes = new Map(Object.entries(tally.counts));
   const myVote = plan.votes[meId];
-  const leader = [...votes.entries()].sort((a, b) => b[1] - a[1])[0];
 
   const header = (
     <div>
@@ -139,10 +142,14 @@ export const Results = ({ view, meId }: Props) => {
           title={
             isOwner
               ? "Совпадений нет. Добавь ещё занятий — все досвайпают новые — или выберите сами."
-              : "Совпадений нет. Ждём, что решит организатор."
+              : "Совпадений нет. Организатор может добавить занятий — или выберите сами."
           }
           action={
-            isOwner ? (
+            !isOwner ? (
+              <Button variant="secondary" onClick={() => setVoting(true)}>
+                Выбрать самим
+              </Button>
+            ) : isOwner ? (
               <div className="flex flex-col gap-2">
                 <Button
                   variant="secondary"
@@ -234,6 +241,7 @@ export const Results = ({ view, meId }: Props) => {
                 size="sm"
                 variant={myVote === row.activity.id ? "primary" : "secondary"}
                 aria-pressed={myVote === row.activity.id}
+                aria-label={`Голос за: ${row.activity.title}`}
                 loading={vote.isPending && vote.variables === row.activity.id}
                 onClick={() => vote.mutate(row.activity.id)}
               >
@@ -246,16 +254,28 @@ export const Results = ({ view, meId }: Props) => {
       <div className="flex flex-col gap-2">
         {voting ? (
           isOwner && (
-            <Button
-              size="lg"
-              disabled={!leader}
-              loading={approve.isPending}
-              onClick={() => leader && approve.mutate(leader[0])}
-            >
-              {leader
-                ? `Утвердить: ${byId.get(leader[0])?.title ?? ""}`
-                : "Утвердить"}
-            </Button>
+            <>
+              {tally.leaders.length === 0 && (
+                <p className="text-caption text-rose text-center">
+                  Пока никто не проголосовал
+                </p>
+              )}
+              {tally.leaders.length > 1 && (
+                <p className="text-caption text-rose text-center">
+                  Ничья — утверди любого из лидеров
+                </p>
+              )}
+              {tally.leaders.map((id) => (
+                <Button
+                  key={id}
+                  size="lg"
+                  loading={approve.isPending && approve.variables === id}
+                  onClick={() => approve.mutate(id)}
+                >
+                  Утвердить: {byId.get(id)?.title ?? ""}
+                </Button>
+              ))}
+            </>
           )
         ) : isOwner ? (
           <Button
@@ -270,13 +290,15 @@ export const Results = ({ view, meId }: Props) => {
             Барабан крутит организатор — все увидят, что выпало.
           </p>
         )}
-        <Button
-          size="lg"
-          variant="secondary"
-          onClick={() => setVoting(!voting)}
-        >
-          {voting ? "Назад к совпадениям" : "Выбрать самим"}
-        </Button>
+        {!(voting && hasVotes) && (
+          <Button
+            size="lg"
+            variant="secondary"
+            onClick={() => setVoting(!voting)}
+          >
+            {voting ? "Назад к совпадениям" : "Выбрать самим"}
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -94,11 +94,19 @@ const swipeDeck = (
       if (!card) return;
       const decision =
         api.random.next() < likeChance(bot, card) ? "like" : "pass";
-      const view = await api.as<PlanView>(bot.id, {
-        method: "POST",
-        path: `${path}/swipes`,
-        body: { activityId: card.id, decision },
-      });
+      let view: PlanView;
+      try {
+        view = await api.as<PlanView>(bot.id, {
+          method: "POST",
+          path: `${path}/swipes`,
+          body: { activityId: card.id, decision },
+        });
+      } catch {
+        // Сбой одного свайпа не обрывает цепочку: следующий шаг попробует
+        // снова, а если план уже закрыт — остановится на проверке выше.
+        step(pace.card);
+        return;
+      }
       // В ленту — только итог, а не каждый свайп: иначе она тонет.
       if (view.plan.finishedIds.includes(bot.id)) {
         api.report(
@@ -112,55 +120,87 @@ const swipeDeck = (
   step(pace.start);
 };
 
-export const plansBehavior: BotBehavior = {
-  "plan:created": async (api, event) => {
-    const db = await api.db.read();
-    const plan = db.plans[event.id];
-    // «До даты» лобби не имеет — там боты начинают с plan:started.
-    if (!plan || plan.status !== "lobby") return;
-    const bots = plan.participantIds
-      .map((id) => db.users[id])
-      .filter(
-        (user): user is User =>
-          Boolean(user?.isBot) && !plan.readyIds.includes(user?.id ?? ""),
-      );
-    for (const bot of bots) {
-      api.schedule(bot, READY_DELAY_MS, async () => {
-        // План могли запустить или удалить, пока бот «думал», — тогда
-        // обработчик ответит ошибкой, и строки в ленте не будет.
-        await api.as(bot.id, {
-          method: "POST",
-          path: `/plans/${encodeURIComponent(plan.id)}/ready`,
-          body: { ready: true },
-        });
-        api.report(
-          bot.id,
-          `${bot.name} ${readyWord(bot)} в плане «${plan.title}»`,
-        );
+// Каждый бот-участник, который ещё не досвайпал, свайпает колоду в своём
+// темпе: «Прямо сейчас» — бодро, «До даты» — неспешно. Повторный старт
+// («Добавить ещё занятий», продолжение после перезапуска) берёт новое
+// поколение цепочки — старая сама остановится.
+const startSwiping = async (api: BotApi, planId: string) => {
+  const db = await api.db.read();
+  const plan = db.plans[planId];
+  if (!plan || plan.status !== "swiping") return;
+  const bots = plan.participantIds
+    .map((id) => db.users[id])
+    .filter(
+      (user): user is User =>
+        Boolean(user?.isBot) && !plan.finishedIds.includes(user?.id ?? ""),
+    );
+  const first = bots[0];
+  if (!first) return;
+  // Колода с данными занятий (категория, метки) — через тот же GET, что
+  // у людей: каталога в базе нет. Порядок общий, поэтому запрос один.
+  const view = await api.as<PlanView>(first.id, {
+    method: "GET",
+    path: `/plans/${encodeURIComponent(plan.id)}`,
+  });
+  const pace = plan.mode === "live" ? LIVE_PACE : DEADLINE_PACE;
+  for (const bot of bots) {
+    swipeDeck(api, bot, plan.id, view.activities, pace);
+  }
+};
+
+// Боты-участники лобби жмут «Готов» через 1–4 с.
+const readyUp = async (api: BotApi, planId: string) => {
+  const db = await api.db.read();
+  const plan = db.plans[planId];
+  // «До даты» лобби не имеет — там боты начинают с plan:started.
+  if (!plan || plan.status !== "lobby") return;
+  const bots = plan.participantIds
+    .map((id) => db.users[id])
+    .filter(
+      (user): user is User =>
+        Boolean(user?.isBot) && !plan.readyIds.includes(user?.id ?? ""),
+    );
+  for (const bot of bots) {
+    api.schedule(bot, READY_DELAY_MS, async () => {
+      // Уже готов (повторное продолжение после смены лидера или настроек)
+      // — второй строки в ленте не нужно.
+      const now = (await api.db.read()).plans[plan.id];
+      if (now?.status !== "lobby" || now.readyIds.includes(bot.id)) return;
+      // План могли запустить или удалить, пока бот «думал», — тогда
+      // обработчик ответит ошибкой, и строки в ленте не будет.
+      await api.as(bot.id, {
+        method: "POST",
+        path: `/plans/${encodeURIComponent(plan.id)}/ready`,
+        body: { ready: true },
       });
-    }
-  },
+      api.report(
+        bot.id,
+        `${bot.name} ${readyWord(bot)} в плане «${plan.title}»`,
+      );
+    });
+  }
+};
+
+export const plansBehavior: BotBehavior = {
+  "plan:created": (api, event) => readyUp(api, event.id),
   // Каждый бот-участник свайпает колоду в своём темпе: «Прямо сейчас» —
   // бодро, «До даты» — неспешно. Повторный plan:started («Добавить ещё
   // занятий») — бот досвайпывает новые карточки.
-  "plan:started": async (api, event) => {
+  "plan:started": (api, event) => startSwiping(api, event.id),
+  // Движок запустился заново или боты снова включены — досвайпать начатые
+  // планы (цепочки в таймерах прошлого лидера потерялись).
+  resume: async (api) => {
     const db = await api.db.read();
-    const plan = db.plans[event.id];
-    if (!plan || plan.status !== "swiping") return;
-    const bots = plan.participantIds
-      .map((id) => db.users[id])
-      .filter((user): user is User => Boolean(user?.isBot));
-    const first = bots[0];
-    if (!first) return;
-    // Колода с данными занятий (категория, метки) — через тот же GET, что
-    // у людей: каталога в базе нет. Порядок общий, поэтому запрос один.
-    const view = await api.as<PlanView>(first.id, {
-      method: "GET",
-      path: `/plans/${encodeURIComponent(plan.id)}`,
-    });
-    const pace = plan.mode === "live" ? LIVE_PACE : DEADLINE_PACE;
-    for (const bot of bots) {
-      swipeDeck(api, bot, plan.id, view.activities, pace);
+    for (const plan of Object.values(db.plans)) {
+      if (plan.status === "lobby") {
+        await readyUp(api, plan.id).catch(() => undefined);
+        continue;
+      }
+      if (plan.status !== "swiping") continue;
+      const unfinished = plan.participantIds.some(
+        (id) => db.users[id]?.isBot && !plan.finishedIds.includes(id),
+      );
+      if (unfinished) await startSwiping(api, plan.id).catch(() => undefined);
     }
   },
 };

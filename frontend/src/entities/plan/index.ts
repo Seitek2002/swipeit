@@ -10,5 +10,6 @@ export {
   type PlanSummary,
   type PlanView,
   planStatus,
+  tallyVotes,
   voteCandidates,
 } from "./model";

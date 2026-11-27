@@ -724,6 +724,43 @@ describe("боты в колоде", () => {
     engine.stop();
   });
 
+  it("лидер сменился посреди колоды — новый движок досвайпывает за ботов", async () => {
+    const first = startBots();
+    const { view } = await createLivePlan();
+    const id = view.plan.id;
+    await tick();
+    await first.manual.drain();
+    await call("POST", planPath(id, "/start"), DEMO_USER_ID);
+    await tick();
+    // Старый лидер успел только запланировать первые карточки — и закрылся.
+    first.engine.stop();
+    const second = startBots();
+    await tick();
+    await second.manual.drain();
+    const after = await call<PlanView>("GET", planPath(id), DEMO_USER_ID);
+    expect(new Set(after.plan.finishedIds)).toEqual(new Set(BOTS));
+    second.engine.stop();
+  });
+
+  it("боты снова включены — продолжают с того места", async () => {
+    const { engine, manual } = startBots();
+    const { view } = await createLivePlan();
+    const id = view.plan.id;
+    await tick();
+    await manual.drain();
+    settings.update({ botSpeed: "off" });
+    await call("POST", planPath(id, "/start"), DEMO_USER_ID);
+    await tick();
+    expect(manual.tasks).toHaveLength(0);
+    settings.update({ botSpeed: "normal" });
+    bus.publish({ type: "db:changed", scope: ["settings"], by: "test" });
+    await tick();
+    await manual.drain();
+    const after = await call<PlanView>("GET", planPath(id), DEMO_USER_ID);
+    expect(new Set(after.plan.finishedIds)).toEqual(new Set(BOTS));
+    engine.stop();
+  });
+
   it("«Выкл» — боты не свайпают", async () => {
     const { engine, manual } = startBots();
     const { view } = await createLivePlan();

@@ -109,10 +109,42 @@ export {
   planKeys,
   SCOPE_KEYS,
   reservationKeys,
+  santaKeys,
   userKeys,
   wishlistKeys,
 } from "./query-keys";
-export { type SantaGame } from "./santa/types";
+export {
+  drawAssignments,
+  drawIssueOf,
+  MIN_SANTA_PARTICIPANTS,
+} from "./santa/draw";
+export {
+  createSantaGame,
+  drawSantaGame,
+  getSantaGame,
+  getSantaGames,
+  joinSantaGame,
+  openSantaEnvelope,
+  setSantaBought,
+  tickSanta,
+  updateSantaGame,
+} from "./santa/requests";
+export {
+  type CreateSantaInput,
+  CreateSantaInputSchema,
+  type SantaEnvelopeState,
+  type SantaGame,
+  type SantaGamePublic,
+  type SantaMe,
+  type SantaMember,
+  type SantaSummary,
+  type SantaTickResult,
+  type SantaView,
+  type SantaWard,
+  type SantaWardItem,
+  type UpdateSantaInput,
+  UpdateSantaInputSchema,
+} from "./santa/types";
 export {
   getTransport,
   type HttpMethod,

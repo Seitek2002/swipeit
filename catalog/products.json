@@ -1580,13 +1580,13 @@
     "images": [
       {
         "src": "/catalog/products/p_0028/1.webp",
-        "alt": "Налобный фонарь Sofirn SP40 с креплением",
-        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sa08ce0b7a4b74c04b39bccb4febc40a0L.jpg"
+        "alt": "Налобный фонарь Sofirn SP40 на кепке",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S3dd8e42e250a4bb7ac0921a58a4fb25bp.jpg"
       },
       {
         "src": "/catalog/products/p_0028/2.webp",
-        "alt": "Фонарь Sofirn SP40 на кепке",
-        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/S3dd8e42e250a4bb7ac0921a58a4fb25bp.jpg"
+        "alt": "Луч фонаря Sofirn SP40 ночью в лесу",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Se7f3cd5318e047848745590477969b1fU.jpg"
       }
     ],
     "offers": [
@@ -2696,72 +2696,51 @@
   },
   {
     "id": "p_0054",
-    "title": "Электронная книга PocketBook 634 Verse Pro",
-    "description": "Ридер с 6-дюймовым экраном E Ink Carta высокого разрешения, 16 ГБ памяти, Wi-Fi и Bluetooth — можно слушать аудиокниги в наушниках.",
+    "title": "Экшн-камера GoPro MAX",
+    "description": "Камера 360° от GoPro: снимает сферическое видео в 5,6K, а в приложении из него можно вырезать обычный ролик под любой ракурс. Можно снимать и как обычной экшн-камерой.\n\nСенсорный экран, шесть микрофонов, вес 154 г. В Sulpak — в наличии в Бишкеке.",
     "category": "tech",
     "interests": [
-      "reading",
+      "photo",
+      "travel",
       "gadgets",
-      "travel"
+      "mountains"
     ],
     "audience": "all",
-    "priceMin": 20290,
-    "priceMax": 20290,
+    "priceMin": 53990,
+    "priceMax": 53990,
     "images": [
       {
         "src": "/catalog/products/p_0054/1.webp",
-        "alt": "PocketBook 634 Verse Pro",
-        "sourceUrl": "https://www.kivano.kg/images/product/134633/full/1710493284_55715900.png"
+        "alt": "Экшн-камера GoPro MAX",
+        "sourceUrl": "https://object.pscloud.io/cms/cms/Photo/img_0_647_41_0.webp"
       },
       {
         "src": "/catalog/products/p_0054/2.webp",
-        "alt": "PocketBook 634 Verse Pro, красный, вид сзади",
-        "variantOptionId": "red",
-        "sourceUrl": "https://www.kivano.kg/images/product/134633/171049326739657_full.png"
+        "alt": "GoPro MAX: экран на задней стороне",
+        "sourceUrl": "https://object.pscloud.io/cms/cms/Photo/img_0_647_41_2.webp"
       },
       {
         "src": "/catalog/products/p_0054/3.webp",
-        "alt": "PocketBook 634 Verse Pro, синий, вид сзади",
-        "variantOptionId": "azure",
-        "sourceUrl": "https://www.kivano.kg/images/product/134635/171049356086880_full.png"
+        "alt": "GoPro MAX сбоку",
+        "sourceUrl": "https://object.pscloud.io/cms/cms/Photo/img_0_647_41_4.webp"
       },
       {
         "src": "/catalog/products/p_0054/4.webp",
-        "alt": "PocketBook 634 Verse Pro сбоку",
-        "variantOptionId": "red",
-        "sourceUrl": "https://www.kivano.kg/images/product/134633/171049326744274_full.png"
-      }
-    ],
-    "variants": [
-      {
-        "id": "color",
-        "kind": "color",
-        "label": "Цвет",
-        "options": [
-          {
-            "id": "red",
-            "label": "Красный",
-            "hex": "#A8323A"
-          },
-          {
-            "id": "azure",
-            "label": "Синий",
-            "hex": "#22344F"
-          }
-        ]
+        "alt": "GoPro MAX с экраном и объективом",
+        "sourceUrl": "https://object.pscloud.io/cms/cms/Photo/img_0_647_41_3.webp"
       }
     ],
     "offers": [
       {
         "marketplace": "other",
-        "url": "https://www.kivano.kg/product/view/elektronnaya-kniga-pocketbook-634-verse-pro-red",
-        "price": 20290,
-        "originalPrice": 20290,
+        "url": "https://www.sulpak.kg/g/kamera_gopro_chdhz_201_rw_max_647_41",
+        "price": 53990,
+        "originalPrice": 53990,
         "originalCurrency": "KGS",
         "checkedAt": "2026-11-27"
       }
     ],
-    "popularity": 0.6
+    "popularity": 0.5
   },
   {
     "id": "p_0055",
@@ -2848,44 +2827,49 @@
   },
   {
     "id": "p_0057",
-    "title": "Клавиатура Razer DeathStalker V2",
-    "description": "Низкопрофильная оптомеханическая клавиатура Razer на 105 клавиш с переключателями Red и подсветкой.",
+    "title": "Игровая мышь Razer Viper V3 Pro",
+    "description": "Лёгкая беспроводная мышь Razer для киберспорта: сенсор до 35 000 dpi, пять кнопок и до 95 часов работы на одном заряде.",
     "category": "tech",
     "interests": [
       "gaming",
       "gadgets"
     ],
     "audience": "all",
-    "priceMin": 19220,
-    "priceMax": 19220,
+    "priceMin": 16460,
+    "priceMax": 16460,
     "images": [
       {
         "src": "/catalog/products/p_0057/1.webp",
-        "alt": "Клавиатура Razer DeathStalker V2",
-        "sourceUrl": "https://www.kivano.kg/images/product/121366/full/1684745159_22859800.png"
+        "alt": "Мышь Razer Viper V3 Pro",
+        "sourceUrl": "https://www.kivano.kg/images/product/158471/17619892717866_full.jpg"
       },
       {
         "src": "/catalog/products/p_0057/2.webp",
-        "alt": "Подсветка Razer DeathStalker V2",
-        "sourceUrl": "https://www.kivano.kg/images/product/121366/168474515637207_full.png"
+        "alt": "Мышь Razer Viper V3 Pro сверху",
+        "sourceUrl": "https://www.kivano.kg/images/product/158471/full/1761989271_80865300.jpg"
       },
       {
         "src": "/catalog/products/p_0057/3.webp",
-        "alt": "Razer DeathStalker V2 сбоку",
-        "sourceUrl": "https://www.kivano.kg/images/product/121366/168474515690223_full.png"
+        "alt": "USB-приёмник мыши Razer",
+        "sourceUrl": "https://www.kivano.kg/images/product/158471/176198927056764_full.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0057/4.webp",
+        "alt": "Мышь Razer Viper V3 Pro снизу",
+        "sourceUrl": "https://www.kivano.kg/images/product/158471/176198927026018_full.jpg"
       }
     ],
     "offers": [
       {
         "marketplace": "other",
-        "url": "https://www.kivano.kg/product/view/klaviatura-razer-deathstalker-v2-red-switch",
-        "price": 19220,
-        "originalPrice": 19220,
+        "url": "https://www.kivano.kg/product/view/mysh-razer-viper-v3-pro-black",
+        "price": 16460,
+        "originalPrice": 16460,
         "originalCurrency": "KGS",
         "checkedAt": "2026-11-27"
       }
     ],
-    "popularity": 0.45
+    "popularity": 0.5
   },
   {
     "id": "p_0058",
@@ -2930,44 +2914,44 @@
   },
   {
     "id": "p_0059",
-    "title": "Гарнитура HyperX Cloud III",
-    "description": "Игровая гарнитура HyperX со съёмным микрофоном и кабелем 1,2 м.",
+    "title": "Игровой руль Defender Challenge Mini",
+    "description": "Компактный игровой руль для гонок на ПК: подключается по USB, есть 10 кнопок, вибрация и 8-позиционный переключатель.",
     "category": "games",
     "interests": [
       "gaming",
-      "music"
+      "cars"
     ],
     "audience": "all",
-    "priceMin": 9230,
-    "priceMax": 9230,
+    "priceMin": 8100,
+    "priceMax": 8100,
     "images": [
       {
         "src": "/catalog/products/p_0059/1.webp",
-        "alt": "Гарнитура HyperX Cloud III",
-        "sourceUrl": "https://www.kivano.kg/images/product/125705/full/1693560534_46623200.jpg"
+        "alt": "Игровой руль Defender Challenge Mini",
+        "sourceUrl": "https://www.kivano.kg/images/product/69195/69195_full.png"
       },
       {
         "src": "/catalog/products/p_0059/2.webp",
-        "alt": "HyperX Cloud III без микрофона",
-        "sourceUrl": "https://www.kivano.kg/images/product/125705/169356053342473_full.jpg"
+        "alt": "Руль Defender сбоку",
+        "sourceUrl": "https://www.kivano.kg/images/product/69195/155903762625309_full.jpg"
       },
       {
         "src": "/catalog/products/p_0059/3.webp",
-        "alt": "Амбушюры HyperX Cloud III",
-        "sourceUrl": "https://www.kivano.kg/images/product/125705/169356053351007_full.jpg"
+        "alt": "Руль Defender сзади",
+        "sourceUrl": "https://www.kivano.kg/images/product/69195/155903762622569_full.png"
       }
     ],
     "offers": [
       {
         "marketplace": "other",
-        "url": "https://www.kivano.kg/product/view/naushniki-hp-hyperx-cloud-iii-progame-black-red",
-        "price": 9230,
-        "originalPrice": 9230,
+        "url": "https://www.kivano.kg/product/view/igrovoy-rul-defender-challenge-mini-le-usb",
+        "price": 8100,
+        "originalPrice": 8100,
         "originalCurrency": "KGS",
         "checkedAt": "2026-11-27"
       }
     ],
-    "popularity": 0.6
+    "popularity": 0.4
   },
   {
     "id": "p_0060",
@@ -3804,12 +3788,17 @@
     "images": [
       {
         "src": "/catalog/products/p_0081/1.webp",
-        "alt": "Термопринтер MMN на столе",
-        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sfdd8bd13dfdd4458a2a18f98dea593d9K.jpg"
+        "alt": "Мини-термопринтер MMN печатает на термобумаге",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sca5e9521d23f4c53b05ea6784816434fY.jpg"
       },
       {
         "src": "/catalog/products/p_0081/2.webp",
-        "alt": "Мини-термопринтер MMN с разных сторон",
+        "alt": "Термопринтер MMN с напечатанным фото",
+        "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sca5e9521d23f4c53b05ea6784816434fY.jpg"
+      },
+      {
+        "src": "/catalog/products/p_0081/3.webp",
+        "alt": "Термопринтер MMN закрытый",
         "sourceUrl": "https://ae-pic-a1.aliexpress-media.com/kf/Sca5e9521d23f4c53b05ea6784816434fY.jpg"
       }
     ],
@@ -3912,6 +3901,11 @@
         "src": "/catalog/products/p_0084/1.webp",
         "alt": "Обложка книги Дейла Карнеги «Как завоевывать друзей и оказывать влияние на людей»",
         "sourceUrl": "https://imo10.labirint.ru/books/709478/cover.jpg/2048-0"
+      },
+      {
+        "src": "/catalog/products/p_0084/2.webp",
+        "alt": "Страница из книги Карнеги: «Как и почему была написана эта книга»",
+        "sourceUrl": "https://imo10.labirint.ru/books/709478/ph_07.jpg/2048-0"
       }
     ],
     "offers": [
@@ -4193,6 +4187,11 @@
         "src": "/catalog/products/p_0091/1.webp",
         "alt": "Набор Gillette Mach3: коробка, станок и гель для бритья",
         "sourceUrl": "https://basket-16.wbcontent.net/vol2621/part262104/262104508/images/big/2.webp"
+      },
+      {
+        "src": "/catalog/products/p_0091/2.webp",
+        "alt": "Подарочная коробка Gillette Mach3",
+        "sourceUrl": "https://basket-16.wbcontent.net/vol2621/part262104/262104508/images/big/3.webp"
       }
     ],
     "offers": [
@@ -4221,13 +4220,18 @@
     "images": [
       {
         "src": "/catalog/products/p_0092/1.webp",
-        "alt": "Палетка теней Vivienne Sabo Croissant",
-        "sourceUrl": "https://basket-33.wbcontent.net/vol6870/part687084/687084796/images/big/7.webp"
+        "alt": "Открытая палетка теней Vivienne Sabo Croissant, тон 01",
+        "sourceUrl": "https://viviennesabo.ru/upload/dev2fun.imagecompress/webp/iblock/f88/qmo1c6q4506eix5rnq08l7wr1cq6245e.webp"
       },
       {
         "src": "/catalog/products/p_0092/2.webp",
-        "alt": "Оттенки палетки Croissant",
-        "sourceUrl": "https://basket-33.wbcontent.net/vol6870/part687084/687084796/images/big/3.webp"
+        "alt": "Палетка Croissant в закрытом футляре",
+        "sourceUrl": "https://viviennesabo.ru/upload/dev2fun.imagecompress/webp/iblock/6f6/t0x020kwflf4i98ksvxip0ws4glyysr4.webp"
+      },
+      {
+        "src": "/catalog/products/p_0092/3.webp",
+        "alt": "Палетки Croissant в четырёх тонах",
+        "sourceUrl": "https://viviennesabo.ru/upload/dev2fun.imagecompress/webp/iblock/5d3/ge2odv4iwp3txk3jkyz652vbdiu9czb8.webp"
       }
     ],
     "offers": [

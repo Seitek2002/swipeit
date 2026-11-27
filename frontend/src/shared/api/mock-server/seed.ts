@@ -111,7 +111,9 @@ const BOTS: BotSeed[] = [
     likeProbability: 0.4,
     speedFactor: 1.4,
     birthday: "09-30",
-    wishCount: 6,
+    // У Тимура и Бекзата вишлиста пока нет (~70% ботов с вишлистом, TECH_SPEC
+    // §7): в Тайном Санте они «собирают» его на глазах (T16).
+    wishCount: 0,
   },
   {
     id: "u_bekzat",
@@ -123,7 +125,7 @@ const BOTS: BotSeed[] = [
     likeProbability: 0.35,
     speedFactor: 1.1,
     birthday: "01-17",
-    wishCount: 8,
+    wishCount: 0,
   },
   {
     id: "u_alina",
@@ -249,7 +251,9 @@ export const createSeedDb = ({
     const meta: WishlistMeta = {
       ownerId: bot.id,
       hideReservationCount: false,
-      shareUnlockedAt: createdAt,
+      // Пустой вишлист отправлять нечего — откроется на 5-м «Хочу», как у
+      // человека.
+      ...(items.length > 0 ? { shareUnlockedAt: createdAt } : {}),
     };
     if (isDemoUser) {
       // Демо-вход: вишлист «к Новому году» — главный сезон демо.

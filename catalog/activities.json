@@ -1129,5 +1129,144 @@
       "src": "/catalog/activities/a_045.webp",
       "alt": "Массажный стол в кабинете"
     }
+  },
+  {
+    "id": "a_046",
+    "title": "Новогодняя ярмарка",
+    "description": "Погулять между домиками с гирляндами, выпить горячего чая или глинтвейна, купить мелочи к праздникам и сделать фото у ёлки. Ярмарки обычно открываются во второй половине декабря.",
+    "category": "chill",
+    "tags": [
+      "outdoor",
+      "evening",
+      "date",
+      "cheap",
+      "kids_ok",
+      "big_group"
+    ],
+    "pricePerPersonMin": 200,
+    "pricePerPersonMax": 1000,
+    "durationMin": 60,
+    "durationMax": 150,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 1,
+      "max": null
+    },
+    "image": {
+      "src": "/catalog/activities/a_046.webp",
+      "alt": "Ярмарочные домики с гирляндами вечером"
+    }
+  },
+  {
+    "id": "a_047",
+    "title": "Прогулка на снегоходе",
+    "description": "Прокатиться на снегоходе по заснеженным склонам с инструктором. Права не нужны — маршрут и скорость подскажут на месте.",
+    "category": "active",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "date"
+    ],
+    "pricePerPersonMin": 3000,
+    "pricePerPersonMax": 7000,
+    "durationMin": 30,
+    "durationMax": 90,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 1,
+      "max": 6
+    },
+    "distanceNote": "в горах под Бишкеком",
+    "image": {
+      "src": "/catalog/activities/a_047.webp",
+      "alt": "Снегоход едет по снегу между елями"
+    }
+  },
+  {
+    "id": "a_048",
+    "title": "Выходные на лыжах в Караколе",
+    "description": "Уехать на два-три дня на горнолыжную базу «Каракол»: длинные трассы, лес вдоль склонов и вечер у Иссык-Куля. Ехать лучше компанией и с ночёвкой в Караколе.",
+    "category": "active",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "big_group"
+    ],
+    "pricePerPersonMin": 15000,
+    "pricePerPersonMax": 35000,
+    "durationMin": 2880,
+    "durationMax": 4320,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "place": "Горнолыжная база «Каракол»",
+    "distanceNote": "6–7 часов от города",
+    "image": {
+      "src": "/catalog/activities/a_048.webp",
+      "alt": "Заснеженный горнолыжный склон в Кыргызстане"
+    }
+  },
+  {
+    "id": "a_049",
+    "title": "Мастер-класс по ёлочным игрушкам",
+    "description": "Расписать ёлочные шары или сделать игрушки своими руками под руководством мастера. Готовые игрушки забираете с собой — для своей ёлки или в подарок.",
+    "category": "chill",
+    "tags": [
+      "indoor",
+      "date",
+      "kids_ok",
+      "evening"
+    ],
+    "pricePerPersonMin": 1000,
+    "pricePerPersonMax": 2500,
+    "durationMin": 90,
+    "durationMax": 150,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 1,
+      "max": 10
+    },
+    "image": {
+      "src": "/catalog/activities/a_049.webp",
+      "alt": "Расписные ёлочные шары ручной работы в корзинке"
+    }
+  },
+  {
+    "id": "a_050",
+    "title": "Поход на снегоступах",
+    "description": "Пройтись по глубокому снегу туда, куда в обычной обуви не добраться: снегоступы не дают проваливаться. Удобно идти с турклубом, который выдаёт снегоступы и ведёт по маршруту.",
+    "category": "nature",
+    "tags": [
+      "outdoor",
+      "weekend",
+      "big_group"
+    ],
+    "pricePerPersonMin": 1500,
+    "pricePerPersonMax": 4000,
+    "durationMin": 240,
+    "durationMax": 420,
+    "seasons": [
+      "winter"
+    ],
+    "groupSize": {
+      "min": 2,
+      "max": null
+    },
+    "place": "Ала-Арча, Кегети",
+    "distanceNote": "40–90 минут от города",
+    "image": {
+      "src": "/catalog/activities/a_050.webp",
+      "alt": "Двое идут на снегоступах среди елей и гор"
+    }
   }
 ]

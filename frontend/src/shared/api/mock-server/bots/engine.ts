@@ -33,7 +33,13 @@ export type BotApi = {
 // допишутся в T14 и T17 своими поведениями.
 export type BotBehavior = Partial<
   Record<BotTrigger, (api: BotApi, event: TriggerEvent) => Promise<void> | void>
->;
+> & {
+  // Продолжить начатое: движок запустился (вкладка стала лидером, сервер
+  // перезапущен) или боты снова включены. Цепочки действий живут в таймерах
+  // и при этом теряются — без продолжения план «Прямо сейчас» ждал бы
+  // ботов вечно.
+  resume?: (api: BotApi) => Promise<void> | void;
+};
 
 export type TriggerEvent = Extract<RealtimeEvent, { type: "trigger" }>;
 
@@ -96,7 +102,21 @@ export const createBotEngine = (deps: BotEngineDeps): BotEngine => {
     },
   };
 
+  const resumeAll = () => {
+    for (const behavior of deps.behaviors) {
+      if (!behavior.resume) continue;
+      Promise.resolve(behavior.resume(api)).catch(() => undefined);
+    }
+  };
+
   const onEvent = (event: RealtimeEvent) => {
+    // Поменяли настройки демо и боты не «Выкл» — продолжить начатое (после
+    // «Выкл» цепочки оборвались). Повторный запуск безопасен: у цепочек
+    // поколения, старая сама остановится.
+    if (event.type === "db:changed" && event.scope.includes("settings")) {
+      if (SPEED[deps.settings.get().botSpeed] !== null) resumeAll();
+      return;
+    }
     if (event.type !== "trigger") return;
     for (const behavior of deps.behaviors) {
       const hook = behavior[event.name];
@@ -109,6 +129,7 @@ export const createBotEngine = (deps: BotEngineDeps): BotEngine => {
     start() {
       if (unsubscribe) return;
       unsubscribe = deps.subscribe(onEvent);
+      resumeAll();
     },
     stop() {
       unsubscribe?.();

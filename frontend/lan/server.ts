@@ -413,10 +413,14 @@ export const createLanServer = async ({
   });
   // Планы «До даты» закрываются по часам сервера, даже когда все телефоны
   // спят: вкладки зовут тот же маршрут, только когда открыты. unref — чтобы
-  // таймер не держал процесс (тесты, Ctrl+C).
+  // таймер не держал процесс (тесты, Ctrl+C). Тем же таймером — жеребьёвка
+  // Санты по дате (drawAt).
   const expiry = setInterval(() => {
     mock
       .handle({ method: "POST", path: "/plans/expire", userId: null })
+      .catch(() => undefined);
+    mock
+      .handle({ method: "POST", path: "/santa/tick", userId: null })
       .catch(() => undefined);
   }, EXPIRE_EVERY_MS);
   expiry.unref();

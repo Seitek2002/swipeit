@@ -16,7 +16,7 @@ import {
 import { type Activity, ActivityTicket } from "@/entities/activity";
 import { type PlanView, computeMatches } from "@/entities/plan";
 
-import { planKeys, swipePlan, undoPlanSwipe } from "@/shared/api";
+import { isApiError, planKeys, swipePlan, undoPlanSwipe } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { clock } from "@/shared/lib/clock";
 import { useConnectionStatus } from "@/shared/lib/realtime";
@@ -68,7 +68,14 @@ export const ActivityDeck = ({ view, meId }: Props) => {
     setHistory((current) => [...current, { activity, direction }]);
     enqueue(() =>
       swipePlan(plan.id, activity.id, direction === "right" ? "like" : "pass"),
-    ).then(refresh, () => {
+    ).then(refresh, (error: unknown) => {
+      // Сервер отказал по делу (время вышло, план уже у итогов) — карточку
+      // не возвращаем, а перечитываем план: экран сам перейдёт дальше.
+      if (isApiError(error) && error.code === "CONFLICT") {
+        toast(error.message, { tone: "info" });
+        refresh();
+        return;
+      }
       toast("Не получилось сохранить. Карточка вернулась", { tone: "error" });
       setQueue((current) => [activity, ...current]);
       setHistory((current) =>
@@ -82,20 +89,37 @@ export const ActivityDeck = ({ view, meId }: Props) => {
     if (!last) return null;
     setHistory((current) => current.slice(0, -1));
     setQueue((current) => [last.activity, ...current]);
-    enqueue(() => undoPlanSwipe(plan.id, last.activity.id)).then(refresh, () =>
-      toast("Не получилось вернуть", { tone: "error" }),
+    enqueue(() => undoPlanSwipe(plan.id, last.activity.id)).then(
+      refresh,
+      (error: unknown) => {
+        // Сервер свайп не отменил — убираем карточку обратно, иначе экран и
+        // сервер разошлись бы (а повторный свайп тихо заменил бы прежний).
+        toast(isApiError(error) ? error.message : "Не получилось вернуть", {
+          tone: "error",
+        });
+        setQueue((current) =>
+          current.filter((item) => item.id !== last.activity.id),
+        );
+        setHistory((current) => [...current, last]);
+        refresh();
+      },
     );
     return { key: last.activity.id, direction: last.direction };
   };
 
-  const total = plan.deck.length;
+  // Прогресс и совпадения — по доступной колоде, как считает сервер: занятие
+  // могло пропасть из каталога после обновления.
+  const available = new Set(activities.map((activity) => activity.id));
+  const total = available.size;
   const done = Object.fromEntries(
     participants.map((person) => [
       person.id,
-      Object.keys(plan.swipes[person.id] ?? {}).length,
+      Object.keys(plan.swipes[person.id] ?? {}).filter((id) =>
+        available.has(id),
+      ).length,
     ]),
   );
-  const matches = computeMatches(plan).matches.length;
+  const matches = computeMatches(plan, activities).matches.length;
   const others = participants.filter((person) => person.id !== meId);
   const swiping = others.filter((person) => (done[person.id] ?? 0) < total);
   const status =

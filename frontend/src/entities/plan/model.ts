@@ -13,6 +13,7 @@ import { formatDayMonth } from "@/shared/lib/format";
 export {
   computeMatches,
   decisionCandidates,
+  tallyVotes,
   voteCandidates,
 } from "@/shared/api";
 

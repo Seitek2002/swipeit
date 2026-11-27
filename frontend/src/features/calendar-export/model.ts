@@ -25,6 +25,31 @@ const escapeText = (value: string) =>
     .replace(/,/g, "\\,")
     .replace(/\r?\n/g, "\\n");
 
+// RFC 5545: строка не длиннее 75 октетов, продолжение — с новой строки и
+// пробела. Режем по символам, а не байтам: кириллица — 2 байта, и разрыв
+// посреди буквы сломал бы текст.
+const encoder = new TextEncoder();
+
+export const foldLine = (line: string): string => {
+  const parts: string[] = [];
+  let current = "";
+  let size = 0;
+  for (const char of line) {
+    const bytes = encoder.encode(char).length;
+    // У продолжения первый октет — пробел.
+    const limit = parts.length === 0 ? 75 : 74;
+    if (size + bytes > limit) {
+      parts.push(current);
+      current = "";
+      size = 0;
+    }
+    current += char;
+    size += bytes;
+  }
+  parts.push(current);
+  return parts.join("\r\n ");
+};
+
 // Ближайшая суббота 12:00 по местному времени (если сегодня суббота и ещё нет
 // полудня — сегодня).
 export const nextSaturdayNoon = (now: number): Date => {
@@ -53,7 +78,9 @@ export const buildIcs = (event: CalendarEvent, now: number): string => {
     "END:VEVENT",
     "END:VCALENDAR",
     "",
-  ].join("\r\n");
+  ]
+    .map(foldLine)
+    .join("\r\n");
 };
 
 // Скачать .ics: на телефоне файл открывается в календаре.

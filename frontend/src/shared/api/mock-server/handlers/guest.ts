@@ -53,7 +53,7 @@ const uniqueByKey = <T>(items: T[], keyOf: (item: T) => string) => {
 
 // Желания, которые видят друзья: только активные, «Очень хочу» сверху,
 // без повторов по ключу брони.
-const guestItems = (db: Db, ownerId: string) =>
+export const guestItems = (db: Db, ownerId: string) =>
   uniqueByKey(
     (db.wishlistItems[ownerId] ?? [])
       .filter((item) => item.status === "active")

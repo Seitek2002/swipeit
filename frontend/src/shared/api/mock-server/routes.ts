@@ -46,6 +46,17 @@ import {
   undoPlanSwipe,
   votePlan,
 } from "./handlers/plans";
+import {
+  createSantaGame,
+  drawSantaGame,
+  getSantaGame,
+  joinSantaGame,
+  listSantaGames,
+  openSantaEnvelope,
+  setSantaBought,
+  tickSanta,
+  updateSantaGame,
+} from "./handlers/santa";
 import { createSwipe, restartSwipes, undoSwipe } from "./handlers/swipes";
 import {
   createUser,
@@ -159,6 +170,16 @@ export const ROUTE_TABLE: Route[] = [
     pattern: "/plans/:id/activities",
     handler: addPlanActivities,
   },
+  { method: "GET", pattern: "/santa", handler: listSantaGames },
+  { method: "POST", pattern: "/santa", handler: createSantaGame },
+  // Планировщик жеребьёвки по дате — расширение TECH_SPEC §6.
+  { method: "POST", pattern: "/santa/tick", handler: tickSanta },
+  { method: "GET", pattern: "/santa/:id", handler: getSantaGame },
+  { method: "PATCH", pattern: "/santa/:id", handler: updateSantaGame },
+  { method: "POST", pattern: "/santa/:id/join", handler: joinSantaGame },
+  { method: "POST", pattern: "/santa/:id/draw", handler: drawSantaGame },
+  { method: "POST", pattern: "/santa/:id/open", handler: openSantaEnvelope },
+  { method: "POST", pattern: "/santa/:id/bought", handler: setSantaBought },
   { method: "GET", pattern: "/activities", handler: listActivities },
   { method: "POST", pattern: "/activities", handler: createCustomActivity },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },

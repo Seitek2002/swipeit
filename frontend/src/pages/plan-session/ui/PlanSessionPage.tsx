@@ -91,34 +91,33 @@ const SessionContent = () => {
     );
   }
 
-  if (view.plan.status === "lobby") {
-    return (
+  // Лобби → свайп (колода на весь экран, вместо таб-бара «Выйти»; в «До
+  // даты» в шапке обратный отсчёт) → итоги → «Решено».
+  const body =
+    view.plan.status === "lobby" ? (
       <Framed>
         <Lobby view={view} meId={meId} />
       </Framed>
+    ) : view.plan.status === "swiping" ? (
+      <ActivityDeck view={view} meId={meId} />
+    ) : (
+      <Framed>
+        {view.plan.status === "decided" ? (
+          <Decided view={view} meId={meId} />
+        ) : (
+          <Results view={view} meId={meId} />
+        )}
+      </Framed>
     );
-  }
 
-  // Свайп — колода на весь экран, вместо таб-бара «Выйти». В режиме «До
-  // даты» в шапке обратный отсчёт.
-  if (view.plan.status === "swiping") {
-    return (
-      <>
-        <ActivityDeck view={view} meId={meId} />
-        <MatchOverlay view={view} />
-      </>
-    );
-  }
-
+  // Оверлей «Совпадение» — на одном месте при любом статусе: последний
+  // свайп может и дать совпадение, и перевести план к итогам — оверлей не
+  // должен при этом пересоздаться и потерять событие.
   return (
-    <Framed>
-      {view.plan.status === "decided" ? (
-        <Decided view={view} meId={meId} />
-      ) : (
-        <Results view={view} meId={meId} />
-      )}
+    <>
+      {body}
       <MatchOverlay view={view} />
-    </Framed>
+    </>
   );
 };
 

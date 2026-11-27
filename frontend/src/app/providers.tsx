@@ -15,6 +15,7 @@ import {
   expirePlans,
   isApiError,
   startBrowserBots,
+  tickSanta,
 } from "@/shared/api";
 import { useTapHaptics } from "@/shared/lib/dom";
 import {
@@ -114,14 +115,18 @@ const ConnectionNotices = () => {
   return null;
 };
 
-// Дедлайны планов «До даты» (TECH_SPEC §7 «Часы»): раз в 15 секунд, при
+// Дедлайны планов «До даты» и жеребьёвка Санты по дате (TECH_SPEC §7 «Часы»): раз в 15 секунд, при
 // возвращении во вкладку и после перемотки часов — наступил дедлайн, план
 // переходит к итогам. Считает сервер (мок или ноутбук) по своим часам.
 const PlanDeadlines = () => {
   const userId = useSessionStore((state) => state.activeUserId);
   useEffect(() => {
     if (!userId) return;
-    const tick = () => void expirePlans().catch(() => undefined);
+    const tick = () => {
+      void expirePlans().catch(() => undefined);
+      // Тайный Санта: жеребьёвка по дате (drawAt) — тем же проходом.
+      void tickSanta().catch(() => undefined);
+    };
     const timer = setInterval(tick, 15_000);
     const onVisible = () => {
       if (document.visibilityState === "visible") tick();

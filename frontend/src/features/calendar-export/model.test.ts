@@ -1,8 +1,23 @@
 import { describe, expect, it } from "vitest";
 
-import { buildIcs, nextSaturdayNoon } from "./model";
+import { buildIcs, foldLine, nextSaturdayNoon } from "./model";
 
 describe("calendar-export", () => {
+  it("длинные строки сворачиваются по 75 октетов, не разрывая букв", () => {
+    const line = `DESCRIPTION:${"Айгерим, Азамат, Нурай, ".repeat(8)}`;
+    const lines = foldLine(line).split("\r\n");
+    const encoder = new TextEncoder();
+    expect(lines.length).toBeGreaterThan(1);
+    for (const part of lines) {
+      expect(encoder.encode(part).length).toBeLessThanOrEqual(75);
+    }
+    expect(lines.slice(1).every((part) => part.startsWith(" "))).toBe(true);
+    const joined = lines
+      .map((part, index) => (index === 0 ? part : part.slice(1)))
+      .join("");
+    expect(joined).toBe(line);
+  });
+
   it("ближайшая суббота 12:00", () => {
     // Пятница 27.11.2026 10:00 → суббота 28.11 12:00.
     const friday = new Date(2026, 10, 27, 10).getTime();

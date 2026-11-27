@@ -254,6 +254,17 @@
   }
 }
 
+/* Печать конверта Санты «дышит», пока ждёт удержания (reference.html). */
+@keyframes seal-breathe {
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+.seal-breathe {
+  animation: seal-breathe 2.4s ease-in-out infinite;
+}
+
 /* Бирки онбординга покачиваются на нитках (reference.html, .hang). */
 @keyframes hang-sway {
   from {

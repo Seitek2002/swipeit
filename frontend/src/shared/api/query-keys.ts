@@ -55,6 +55,12 @@ export const planKeys = {
   detail: (id: string) => [...planKeys.all, "detail", id] as const,
 };
 
+export const santaKeys = {
+  all: ["santa"] as const,
+  list: () => [...santaKeys.all, "list"] as const,
+  detail: (id: string) => [...santaKeys.all, "detail", id] as const,
+};
+
 // Занятия каталога (GET /activities). Каталог только для чтения, поэтому
 // в SCOPE_KEYS его нет.
 export const activityKeys = {
@@ -78,9 +84,11 @@ export const SCOPE_KEYS: Record<
 > = {
   users: [userKeys.all, friendKeys.all, demoKeys.all],
   swipes: [catalogKeys.all, pickKeys.all],
-  wishlist: [wishlistKeys.all],
+  // Санта — тоже: статус «вишлист готов» и вишлист подопечного зависят от
+  // чужих вишлистов, а их изменения приходят только с областью wishlist.
+  wishlist: [wishlistKeys.all, santaKeys.all],
   reservations: [reservationKeys.all, wishlistKeys.all],
   plans: [planKeys.all],
-  santa: [],
+  santa: [santaKeys.all],
   settings: [demoKeys.all],
 };
