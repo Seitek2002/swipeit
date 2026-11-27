@@ -59,6 +59,10 @@ type Props = {
   ownerId: string;
   // Владелец смотрит свою ссылку «как друзья»: бронировать своё нельзя.
   readOnly?: boolean;
+  // Следующий шаг гостя после первой брони — под этой карточкой, ниже
+  // «Купить на …» (auto-tasks P01). dismiss — «Не сейчас»: до конца
+  // страницы больше не показываем.
+  renderAfterReserve?: (dismiss: () => void) => ReactNode;
   // Под шапкой со своим h1 (профиль друга) — h2, на странице ссылки — h1.
   titleAs?: "h1" | "h2";
   wishlist: GuestWishlist;
@@ -72,10 +76,14 @@ const GuestWishCard = ({
   readOnly,
   nameGuard,
   onOpen,
+  onReserved,
+  afterReserve,
 }: {
+  afterReserve?: ReactNode;
   item: Item;
   nameGuard: NameGuard;
   onOpen: (product: Product) => void;
+  onReserved: () => void;
   ownerId: string;
   readOnly: boolean;
 }) => {
@@ -148,7 +156,9 @@ const GuestWishCard = ({
                 itemKey={item.key}
                 nameGuard={nameGuard}
                 buy={buyLinkOf(item, product)}
+                onReserved={onReserved}
               />
+              {afterReserve && <div className="mt-2.5">{afterReserve}</div>}
             </div>
           )}
         </div>
@@ -166,9 +176,17 @@ export const GuestWishlistView = ({
   footer,
   headerAction,
   readOnly = false,
+  renderAfterReserve,
   titleAs: Title = "h1",
 }: Props) => {
   const [details, setDetails] = useState<null | Product>(null);
+  // Карточка первой брони на этой странице и «Не сейчас».
+  const [promoKey, setPromoKey] = useState<null | string>(null);
+  const [promoDismissed, setPromoDismissed] = useState(false);
+  const promo =
+    renderAfterReserve && !promoDismissed
+      ? renderAfterReserve(() => setPromoDismissed(true))
+      : null;
   // Бронь от профиля без имени: одна NameSheet на весь список (DESIGN.md
   // §8.5). Гость без профиля называется только для брони — в ReserveControl.
   const requireName = useRequireName(NAME_CAPTIONS.reserve);
@@ -197,6 +215,8 @@ export const GuestWishlistView = ({
               readOnly={readOnly}
               nameGuard={requireName}
               onOpen={setDetails}
+              onReserved={() => setPromoKey((key) => key ?? item.key)}
+              afterReserve={promoKey === item.key ? promo : null}
             />
           ))}
         </ul>

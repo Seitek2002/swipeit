@@ -36,6 +36,9 @@ type Props = {
   // Профиль без имени — NameSheet, имя сохраняется в профиль (DESIGN.md
   // §8.5); бронь продолжается сама. NAME_REQUIRED от сервера — та же шторка.
   nameGuard: NameGuard;
+  // Бронь прошла — виджет показывает следующий шаг гостя («А что хочешь
+  // ты?», auto-tasks P01).
+  onReserved?: () => void;
   ownerId: string;
 };
 
@@ -44,7 +47,13 @@ type Props = {
 // у других гостей — «Кто-то уже выбрал»; подаренное желание у
 // забронировавшего — «Уже подарено». Тексты без рода: гость может быть кем
 // угодно (UX-аудит, L4).
-export const ReserveControl = ({ ownerId, itemKey, nameGuard, buy }: Props) => {
+export const ReserveControl = ({
+  ownerId,
+  itemKey,
+  nameGuard,
+  buy,
+  onReserved,
+}: Props) => {
   const reserver = useReserver();
   const reservations = useReservations(ownerId);
   const reserve = useReserve(ownerId);
@@ -61,6 +70,7 @@ export const ReserveControl = ({ ownerId, itemKey, nameGuard, buy }: Props) => {
     reserve.mutate(
       { itemKey, name: guestName },
       {
+        onSuccess: () => onReserved?.(),
         onError: (error) =>
           nameGuard.handleError(error, () => reserveAs(guestName)),
       },
