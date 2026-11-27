@@ -70,9 +70,12 @@ export const DeckGuide = ({ x, onMore, plaque }: Props) => {
             type="button"
             tabIndex={-1}
             onClick={onMore}
-            className="text-paper pointer-events-auto absolute inset-x-0 top-[52%] bottom-0 flex flex-col items-center gap-2 pt-7"
+            // Низкий экран (360×640): меньше отступ и иконка, чтобы
+            // «Подробнее о подарке» не слипалось с подсказкой снизу
+            // (auto-tasks U17).
+            className="text-paper pointer-events-auto absolute inset-x-0 top-[52%] bottom-0 flex flex-col items-center gap-2 pt-7 [@media(max-height:700px)]:gap-1 [@media(max-height:700px)]:pt-3"
           >
-            <GuideScroll className="block h-[54px] w-20" />
+            <GuideScroll className="block h-[54px] w-20 [@media(max-height:700px)]:h-10 [@media(max-height:700px)]:w-16" />
             <span className="text-body-lg font-semibold">
               Подробнее о подарке
             </span>
