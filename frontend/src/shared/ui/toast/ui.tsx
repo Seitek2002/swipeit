@@ -68,7 +68,9 @@ export const Toaster = () => {
               <span className="text-mandarin-ink flex-none">
                 {ICONS[item.tone]}
               </span>
-              <span className="line-clamp-2 min-w-0">{item.text}</span>
+              {/* До трёх строк: тост вкуса с двумя интересами и кнопкой
+                  «Поправить» не должен обрываться многоточием (UX-аудит M2). */}
+              <span className="line-clamp-3 min-w-0">{item.text}</span>
               {item.action && (
                 <button
                   type="button"

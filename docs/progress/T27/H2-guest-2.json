@@ -1,0 +1,17 @@
+{
+ "url": "https://seitek2002.github.io/swipeit/w/?d=N4IgbiBcCMA0IGsogO…",
+ "header": 14445,
+ "cards": 17924,
+ "framesWithoutMotionAfterPreloader": 0,
+ "preloaderGone": 14254,
+ "feedVisible": 17924,
+ "firstPhoto": 17924,
+ "photoAfterCard": 0,
+ "lcp": 18716,
+ "lcpNode": "IMG.absolute inset-0 size-full object-cover",
+ "guideCoverRequestMs": 17078,
+ "firstChunkRequestMs": 524,
+ "duplicatePhotos": [],
+ "nav": null,
+ "photoRequests": 5
+}

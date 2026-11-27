@@ -272,7 +272,12 @@ export const GiftDeck = ({
           )
           .filter(Boolean);
         if (labels.length === 0) return;
-        toast(`Подстроили ленту под твои «Хочу»: ${labels.join(" и ")}`, {
+        // «гаджеты и мода»; если в названии уже есть «и» («кофе и чай») —
+        // через запятую: «уют дома, кофе и чай».
+        const joiner = labels.some((label) => label?.includes(" и "))
+          ? ", "
+          : " и ";
+        toast(`Подстроили ленту под твои «Хочу»: ${labels.join(joiner)}`, {
           tone: "info",
           // Ниже ленты «Ещё N — и можно отправить»: не закрывать её.
           below: showRibbon ? RIBBON_HEIGHT : undefined,
