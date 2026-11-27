@@ -134,9 +134,7 @@ const PRESET_PHRASES: Record<string, string> = IMPORTANT_DATE_PRESET_PHRASES;
 // ссылку не попадает. Старый custom — его подпись как есть.
 export const occasionLabel = (occasion?: OccasionLike): string => {
   if (!occasion) return "";
-  // Пока с обычным пробелом: эти строки сверяют тесты mock-server
-  // (important-dates.test.ts) — неразрывный переводить вместе с ними.
-  const date = occasion.date ? dayMonthOf(occasion.date, " ") : "";
+  const date = occasion.date ? formatDayMonth(occasion.date) : "";
   if (occasion.kind === "important") {
     const phrase = occasion.preset ? PRESET_PHRASES[occasion.preset] : "";
     if (phrase) return [phrase, date].filter(Boolean).join(", ");

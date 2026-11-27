@@ -305,7 +305,7 @@ describe("повод important в ссылке", () => {
       date: "2027-06-02",
       preset: "housewarming",
     });
-    expect(occasionLabel(decoded?.occasion)).toBe("на новоселье, 2 июня");
+    expect(occasionLabel(decoded?.occasion)).toBe("на новоселье, 2 июня");
     expect(decompressFromEncodedURIComponent(encoded)).not.toContain(own.id);
   });
 
@@ -321,7 +321,7 @@ describe("повод important в ссылке", () => {
       kind: "important",
       date: "2027-06-02",
     });
-    expect(occasionLabel(decoded?.occasion)).toBe("к 2 июня");
+    expect(occasionLabel(decoded?.occasion)).toBe("к 2 июня");
     const raw = decompressFromEncodedURIComponent(encoded) ?? "";
     expect(raw).not.toContain("Защита диплома");
     expect(raw).not.toContain(own.id);
@@ -332,7 +332,7 @@ describe("повод important в ссылке", () => {
     const own = await addDate(userId, { date: "06-02" });
     await setOccasion(userId, { kind: "important", dateId: own.id });
     const { encoded, decoded } = await share(userId);
-    expect(occasionLabel(decoded?.occasion)).toBe("к 2 июня");
+    expect(occasionLabel(decoded?.occasion)).toBe("к 2 июня");
     expect(decompressFromEncodedURIComponent(encoded)).not.toContain(
       "Значимая дата",
     );
@@ -347,7 +347,7 @@ describe("повод important в ссылке", () => {
     await call("PATCH", "/me", userId, { birthday: "03-14" });
     await setOccasion(userId, { kind: "birthday" });
     expect(occasionLabel((await share(userId)).decoded?.occasion)).toBe(
-      "на день рождения, 14 марта",
+      "на день рождения, 14 марта",
     );
   });
 
@@ -372,7 +372,7 @@ describe("повод important в ссылке", () => {
       kind: "custom",
       label: "Защита диплома",
     });
-    expect(occasionLabel(decoded?.occasion)).toBe("Защита диплома, 2 июня");
+    expect(occasionLabel(decoded?.occasion)).toBe("Защита диплома, 2 июня");
   });
 });
 
