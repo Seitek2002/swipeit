@@ -20,6 +20,13 @@ const OG_IMAGE = `${SITE_URL}/og.png`;
 export const metadata: Metadata = {
   title: "SwipeIt",
   description: SITE_DESCRIPTION,
+  // Установка на iOS: «На экран „Домой“» открывает без панелей Safari
+  // (TECH_SPEC §11). Иконка — app/apple-icon.png.
+  appleWebApp: {
+    capable: true,
+    title: "SwipeIt",
+    statusBarStyle: "black-translucent",
+  },
   openGraph: {
     type: "website",
     url: `${SITE_URL}/`,

@@ -17,6 +17,7 @@ import {
   startBrowserBots,
   tickSanta,
 } from "@/shared/api";
+import { withBasePath } from "@/shared/lib/base-path";
 import { useTapHaptics } from "@/shared/lib/dom";
 import {
   getConnectionStatus,
@@ -147,6 +148,23 @@ const PlanDeadlines = () => {
   return null;
 };
 
+// Service worker (TECH_SPEC §11): только в режиме local, только в собранной
+// версии и только в безопасном контексте (HTTPS или localhost). В «Локальной
+// сети» по http он не нужен и недоступен.
+const ServiceWorker = () => {
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") return;
+    if (!("serviceWorker" in navigator) || !window.isSecureContext) return;
+    void detectMode().then((mode) => {
+      if (mode !== "local") return;
+      navigator.serviceWorker
+        .register(withBasePath("/sw.js"), { scope: withBasePath("/") })
+        .catch(() => undefined);
+    });
+  }, []);
+  return null;
+};
+
 // Боты (TECH_SPEC §7): в local их исполняет одна вкладка-лидер, в lan —
 // сервер, и вкладки их не запускают.
 const BotsLeader = () => {
@@ -228,6 +246,7 @@ export const Providers = ({ children }: { children: ReactNode }) => {
         <SessionCacheReset />
         <ConnectionNotices />
         <BotsLeader />
+        <ServiceWorker />
         <PlanDeadlines />
         {children}
       </EnvironmentGate>
