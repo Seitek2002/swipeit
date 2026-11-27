@@ -2,10 +2,10 @@
 
 import type { ReactNode } from "react";
 
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 
 import { AppShell } from "@/widgets/app-shell";
-import { DemoPanel } from "@/widgets/demo-panel";
 import { TabBar } from "@/widgets/tab-bar";
 
 import { useSantaGames } from "@/entities/santa-game";
@@ -15,6 +15,13 @@ import { useAppReady, useAppStatus } from "@/shared/lib/app-status";
 import { Button, EmptyState, Splash } from "@/shared/ui";
 
 import { SessionGate } from "./session-gate";
+
+// Демо-панель (шторка на motion) нужна только после готовности окружения —
+// не тянем её в стартовый бандл.
+const DemoPanel = dynamic(
+  () => import("@/widgets/demo-panel").then((module) => module.DemoPanel),
+  { ssr: false },
+);
 
 // Конверт Санты ждёт вскрытия — точка на табе «Санта» (reference.html).
 const AppTabBar = () => {

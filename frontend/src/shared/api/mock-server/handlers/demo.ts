@@ -1,6 +1,7 @@
 import { ALL_SCOPES } from "@/shared/lib/realtime/types";
 
-import { DEFAULT_DEMO_SETTINGS, DemoSettingsSchema } from "../../demo/types";
+import { DEFAULT_DEMO_SETTINGS } from "../../demo/constants";
+import { DemoSettingsSchema } from "../../demo/types";
 import type { Handler, HandlerContext } from "../context";
 import { applyNewYearScenario } from "../scenarios/new-year";
 import { DEMO_USER_ID, buildSeedDb, createSeedDb } from "../seed";

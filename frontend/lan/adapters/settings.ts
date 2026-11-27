@@ -1,11 +1,8 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
-import {
-  DEFAULT_DEMO_SETTINGS,
-  type DemoSettings,
-  DemoSettingsSchema,
-} from "@/shared/api/demo/types";
+import { DEFAULT_DEMO_SETTINGS } from "@/shared/api/demo/constants";
+import { type DemoSettings, DemoSettingsSchema } from "@/shared/api/demo/types";
 import type { SettingsAccess } from "@/shared/api/mock-server/context";
 
 import { writeFileAtomic } from "./atomic-file";

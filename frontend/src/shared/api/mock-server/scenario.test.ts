@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import type { RealtimeEvent } from "@/shared/lib/realtime/types";
 
-import { DEFAULT_DEMO_SETTINGS } from "../demo/types";
+import { DEFAULT_DEMO_SETTINGS } from "../demo/constants";
 import { computeMatches } from "../plans/matches";
 import type { PlanView } from "../plans/types";
 import type { SantaView } from "../santa/types";

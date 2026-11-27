@@ -2,8 +2,8 @@ import { z } from "zod";
 
 import { toDateKey } from "@/shared/lib/format";
 
+import { EMPTY_FILTERS } from "../../catalog/constants";
 import {
-  EMPTY_FILTERS,
   type FeedResponse,
   type ProductFilters,
   ProductFiltersSchema,

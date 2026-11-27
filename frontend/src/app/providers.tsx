@@ -2,6 +2,8 @@
 
 import { type ReactNode, useEffect, useState } from "react";
 
+import dynamic from "next/dynamic";
+
 import {
   QueryClient,
   QueryClientProvider,
@@ -27,9 +29,17 @@ import {
   useConnectionStatus,
 } from "@/shared/lib/realtime";
 import { useSessionStore } from "@/shared/store";
-import { Toaster, toast, useCurrentToast } from "@/shared/ui";
+import { toast, useCurrentToast } from "@/shared/ui";
 
 import { startEnvironment } from "./environment";
+
+// Тосты появляются только по событию — их UI с motion (≈50 КБ) грузим после
+// первого кадра, а не в стартовом бандле (Lighthouse, T20). Очередь тостов
+// живёт в сторе: показанный до загрузки тост не потеряется.
+const Toaster = dynamic(
+  () => import("@/shared/ui/toast").then((module) => module.Toaster),
+  { ssr: false },
+);
 
 // Подписчик шины реального времени (TECH_SPEC §7): по db:changed перечитывает
 // нужные запросы, по toast показывает тост. Компоненты сами на шину не

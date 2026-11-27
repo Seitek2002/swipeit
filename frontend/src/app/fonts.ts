@@ -7,12 +7,12 @@ import { Cormorant_Garamond, Onest } from "next/font/google";
 // `subsets` в next/font решает только, какие файлы ПРЕДЗАГРУЖАТЬ: @font-face
 // с unicode-range в CSS попадают для всех поднаборов семейства, и браузер
 // сам докачает cyrillic-ext, как только на экране появится ү/ө/ң. Поэтому
-// предзагружаем только то, что есть на первом экране почти любой страницы:
-// latin (пробел, цифры, знаки и слово «swipeit» в логотипе) и cyrillic.
-// Раньше предзагружалось 9 файлов (~250 КБ), они спорили за канал с CSS и
-// JS первого экрана; кыргызские буквы в интерфейсе редки (имена, каталог).
+// предзагружаем только cyrillic — основной текст любого экрана. latin
+// (цифры, знаки, «swipeit» в логотипе) браузер докачает по unicode-range,
+// как только он понадобится. Раньше предзагружалось 9, потом 6 файлов: они
+// спорили за канал с JS первого экрана и тянули вниз LCP в Lighthouse (T20).
 export const cormorant = Cormorant_Garamond({
-  subsets: ["latin", "cyrillic"],
+  subsets: ["cyrillic"],
   weight: ["500", "600", "700"],
   // Курсив нужен на первом экране: логотип «swipeit» — Cormorant italic.
   style: ["normal", "italic"],
@@ -21,7 +21,7 @@ export const cormorant = Cormorant_Garamond({
 });
 
 export const onest = Onest({
-  subsets: ["latin", "cyrillic"],
+  subsets: ["cyrillic"],
   variable: "--font-onest",
   display: "swap",
 });

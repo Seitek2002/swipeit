@@ -1,10 +1,8 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import {
-  DEFAULT_DEMO_SETTINGS,
-  type DemoSettings,
-} from "@/shared/api/demo/types";
+import { DEFAULT_DEMO_SETTINGS } from "@/shared/api/demo/constants";
+import type { DemoSettings } from "@/shared/api/demo/types";
 
 type DemoSettingsState = {
   // «Режим демонстрации» из профиля: показывает кнопку демо-панели (T12).

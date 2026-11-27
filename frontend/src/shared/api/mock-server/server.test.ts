@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { FeedResponse, Product } from "../catalog/types";
-import { DEFAULT_DEMO_SETTINGS } from "../demo/types";
+import { DEFAULT_DEMO_SETTINGS } from "../demo/constants";
 import type { FriendSummary, User } from "../users/types";
 import {
   createFixedClock,

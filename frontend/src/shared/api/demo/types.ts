@@ -21,10 +21,3 @@ export type NewYearScenarioResult = {
   planId: string;
   santaId: string;
 };
-
-export const DEFAULT_DEMO_SETTINGS: DemoSettings = {
-  botSpeed: "normal",
-  noDelays: false,
-  randomErrors: false,
-  clockOffsetMs: 0,
-};

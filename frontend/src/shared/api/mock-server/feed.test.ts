@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { EMPTY_FILTERS } from "../catalog/constants";
 import type { Product } from "../catalog/types";
-import { EMPTY_FILTERS } from "../catalog/types";
 import {
   contextKey,
   diversify,

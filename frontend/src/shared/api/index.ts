@@ -11,7 +11,6 @@ export {
   type Activity,
   ActivitySchema,
   type CatalogMeta,
-  EMPTY_FILTERS,
   type FeedResponse,
   type Offer,
   type PhotoCredit,
@@ -23,6 +22,7 @@ export {
   type VariantGroup,
   type VariantOption,
 } from "./catalog/types";
+export { EMPTY_FILTERS } from "./catalog/constants";
 export {
   getDemoSettings,
   getDemoUsers,
@@ -31,11 +31,11 @@ export {
   updateDemoSettings,
 } from "./demo/requests";
 export {
-  DEFAULT_DEMO_SETTINGS,
   type DemoSettings,
   DemoSettingsSchema,
   type NewYearScenarioResult,
 } from "./demo/types";
+export { DEFAULT_DEMO_SETTINGS } from "./demo/constants";
 // Боты режима local: запуск во вкладке-лидере и признак лидерства для
 // демо-панели. Сам движок — внутри мок-сервера и грузится вместе с ним.
 export {

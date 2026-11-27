@@ -1,7 +1,8 @@
 import type { RealtimeEvent } from "@/shared/lib/realtime/types";
 
 import type { Activity, CatalogMeta, Product } from "../../catalog/types";
-import { DEFAULT_DEMO_SETTINGS, type DemoSettings } from "../../demo/types";
+import { DEFAULT_DEMO_SETTINGS } from "../../demo/constants";
+import type { DemoSettings } from "../../demo/types";
 import type {
   CatalogAccess,
   Clock,

@@ -137,11 +137,5 @@ export type PhotoCredit = z.infer<typeof PhotoCreditSchema>;
 export type CatalogMeta = z.infer<typeof CatalogMetaSchema>;
 export type ProductFilters = z.infer<typeof ProductFiltersSchema>;
 
-export const EMPTY_FILTERS: ProductFilters = {
-  budget: { min: 0, max: null },
-  categories: [],
-  marketplaces: [],
-};
-
 // Ответ ленты: порция карточек и сколько всего осталось в этих фильтрах.
 export type FeedResponse = { items: Product[]; total: number };

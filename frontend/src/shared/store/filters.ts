@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { EMPTY_FILTERS, type ProductFilters } from "@/shared/api/catalog/types";
+import { EMPTY_FILTERS } from "@/shared/api/catalog/constants";
+import type { ProductFilters } from "@/shared/api/catalog/types";
 
 type GiftFiltersState = {
   filters: ProductFilters;
