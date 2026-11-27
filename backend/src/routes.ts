@@ -36,6 +36,12 @@ import {
   shareWishlist,
 } from "./domains/guest/handlers";
 import {
+  answerPickRequest,
+  createPickRequest,
+  getMyPicks,
+  importPickAnswer,
+} from "./domains/pick/handlers";
+import {
   createSwipe,
   restartSwipes,
   undoSwipe,
@@ -106,6 +112,10 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "GET /reservations": getReservations,
   "POST /reservations": createReservation,
   "DELETE /reservations/:id": deleteReservation,
+  "POST /pick-requests": createPickRequest,
+  "GET /pick-requests/:id/picks": getMyPicks,
+  "POST /pick-requests/:id/answer": answerPickRequest,
+  "POST /pick-answers": importPickAnswer,
 };
 
 export type RouteDeps = {

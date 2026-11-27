@@ -36,6 +36,7 @@ import {
   users,
 } from "../../db/schema";
 import { datesOf } from "../dates/handlers";
+import { pickShare } from "../pick/handlers";
 import { areFriends, makeFriends } from "../friends/handlers";
 import { lockMe, readMe, readUser, type UserRow } from "../users/queries";
 import {
@@ -216,9 +217,12 @@ export const getShare: ServerHandler = async (ctx, { params }) => {
       return { kind: "plan", planId: link.targetId };
     case "santa":
       return { kind: "santa", gameId: link.targetId };
-    default:
-      // Ссылка-фильтр и ответ на неё — B09.
-      throw notFound("Ссылка больше не работает");
+    default: {
+      // «Выбери подарок сам» — ссылка-фильтр и ответ (B09).
+      const view = await pickShare(ctx, link);
+      if (!view) throw notFound("Ссылка больше не работает");
+      return view;
+    }
   }
 };
 

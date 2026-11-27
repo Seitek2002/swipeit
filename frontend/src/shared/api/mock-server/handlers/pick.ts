@@ -1,5 +1,8 @@
+import {
+  PickAnswerImportSchema,
+  PickRequestInputSchema,
+} from "@swipeit/core/api/pick/inputs";
 import { nanoid } from "nanoid";
-import { z } from "zod";
 
 import {
   decodePickAnswer,
@@ -7,28 +10,16 @@ import {
   encodePickRequest,
 } from "@/shared/lib/share-codec";
 
-import { ProductFiltersSchema } from "../../catalog/types";
 import type { PickAnswer, PickRequest } from "../../pick/types";
 import { type Handler, nowIso } from "../context";
 import type { Db } from "../db";
 import { validation } from "../errors";
 import { normalizeOccasion, publicOccasion } from "../occasion";
 import { parseInput, requireNamedUser, requireUser } from "./common";
-import { OccasionInputSchema } from "./guest";
 
 // «Выбери подарок сам» (TECH_SPEC §6, §8; DESIGN.md §8.6). Ссылка-фильтр
 // уходит другу, друг свайпает в контексте pick — эти свайпы не трогают его
 // вишлист, — и возвращает ссылку-ответ с выбранными подарками.
-
-const CreateBodySchema = z.object({
-  toName: z.string().trim().max(40, "Имя — до 40 символов").optional(),
-  filters: ProductFiltersSchema,
-  hidePrices: z.boolean(),
-  occasion: OccasionInputSchema.optional(),
-  message: z.string().trim().max(200, "Сообщение — до 200 символов").optional(),
-});
-
-const ImportBodySchema = z.object({ encoded: z.string().min(1) });
 
 const isLike = (decision: string) =>
   decision === "like" || decision === "superlike";
@@ -53,7 +44,7 @@ const picksOf = (db: Db, userId: string, requestId: string) =>
 // POST /pick-requests — ссылка-фильтр. Путь относительный, адрес сайта
 // добавляет клиент (как у /wishlist/share).
 export const createPickRequest: Handler = async (ctx, { body }) => {
-  const input = parseInput(CreateBodySchema, body);
+  const input = parseInput(PickRequestInputSchema, body);
   const request = await ctx.db.write((db): PickRequest => {
     // Друг увидит «Азамат хочет подарить тебе подарок» — без имени нельзя.
     const user = requireNamedUser(ctx, db);
@@ -123,7 +114,7 @@ export const answerPickRequest: Handler = async (ctx, { params }) => {
 // друзья различаются по id профиля, а не по имени) и, если запрос был
 // создан на этом устройстве, отдаём его — там повод и скрытие цен.
 export const importPickAnswer: Handler = async (ctx, { body }) => {
-  const { encoded } = parseInput(ImportBodySchema, body);
+  const { encoded } = parseInput(PickAnswerImportSchema, body);
   const decoded = decodePickAnswer(encoded);
   if (!decoded) throw validation("Ссылка повреждена");
   const at = nowIso(ctx.clock);
