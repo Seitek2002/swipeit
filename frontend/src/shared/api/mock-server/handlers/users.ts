@@ -1,28 +1,20 @@
 import { nanoid } from "nanoid";
-import { z } from "zod";
 
+import { AVATAR_COLORS } from "@/shared/config";
 import { daysUntilBirthday } from "@/shared/lib/format";
 
 import {
   type FriendSummary,
+  MarkHintInputSchema,
+  type MeResponse,
   NewUserInputSchema,
   UpdateMeInputSchema,
   type User,
 } from "../../users/types";
-import { type Handler, nowIso } from "../context";
+import { type Handler, type HandlerContext, nowIso } from "../context";
 import { notFound } from "../errors";
 import { BOT_IDS, DEMO_USER_ID } from "../seed";
 import { parseInput, requireUser } from "./common";
-
-const NAME_MAX = 40;
-
-const NewUserBodySchema = NewUserInputSchema.extend({
-  name: z.string().trim().min(1, "Напиши имя").max(NAME_MAX),
-});
-
-const UpdateMeBodySchema = UpdateMeInputSchema.extend({
-  name: z.string().trim().min(1, "Напиши имя").max(NAME_MAX).optional(),
-});
 
 const addFriends = (
   friends: Record<string, string[]>,
@@ -40,12 +32,32 @@ const addFriends = (
   friends[userId] = [...own];
 };
 
-// POST /users — профиль из онбординга. Новичку сразу добавляются демо-друзья.
+const usersChanged = (ctx: HandlerContext, id: string) =>
+  ctx.realtime.publish({ type: "db:changed", scope: ["users"], id, by: id });
+
+// Ответ GET /me и всех маршрутов, что меняют свой профиль. Вычисляемые поля
+// (выведенные интересы — T23) добавляются здесь, в базе их нет.
+export const toMe = (user: User): MeResponse => user;
+
+// Профиль без имени — «человек, которого никто не узнает»: его не
+// показываем другим в «В этой сети», /presence и плашке сети (TECH_SPEC
+// §7a). Боты всегда с именем.
+export const isNamelessHuman = (user: User) => !user.isBot && !user.name;
+
+// POST /users — профиль создаётся сам при первом входе, без анкеты (DESIGN
+// §8.1): без имени, со случайным фоном аватара, без интересов, «всем».
+// Тело необязательное — поля оставлены для совместимости со старыми
+// клиентами и тестами. Новичку сразу добавляются демо-друзья.
 export const createUser: Handler = async (ctx, { body }) => {
-  const input = parseInput(NewUserBodySchema, body);
+  const input = parseInput(NewUserInputSchema, body ?? {});
   const user: User = {
-    ...input,
     id: `u_${nanoid(10)}`,
+    ...(input.name ? { name: input.name } : {}),
+    // Через ctx.random: в тестах цвет предсказуем, в бою — crypto.
+    avatarColor: input.avatarColor ?? ctx.random.pick(AVATAR_COLORS),
+    ...(input.birthday ? { birthday: input.birthday } : {}),
+    interests: input.interests ?? [],
+    audience: input.audience ?? "all",
     isBot: false,
     createdAt: nowIso(ctx.clock),
   };
@@ -62,13 +74,8 @@ export const createUser: Handler = async (ctx, { body }) => {
       BOT_IDS.filter((id) => db.users[id]),
     );
   });
-  ctx.realtime.publish({
-    type: "db:changed",
-    scope: ["users"],
-    id: user.id,
-    by: user.id,
-  });
-  return user;
+  usersChanged(ctx, user.id);
+  return toMe(user);
 };
 
 // POST /auth/demo — войти как «Айгерим» с готовым вишлистом. Она перестаёт
@@ -81,32 +88,55 @@ export const loginDemo: Handler = async (ctx) => {
     demo.isBot = false;
     return demo;
   });
-  ctx.realtime.publish({
-    type: "db:changed",
-    scope: ["users"],
-    id: user.id,
-    by: user.id,
-  });
-  return user;
+  usersChanged(ctx, user.id);
+  return toMe(user);
 };
 
 export const getMe: Handler = async (ctx) =>
-  requireUser(ctx, await ctx.db.read());
+  toMe(requireUser(ctx, await ctx.db.read()));
 
+// PATCH /me — имя и фон аватара в любой момент (NameSheet, профиль).
 export const updateMe: Handler = async (ctx, { body }) => {
-  const patch = parseInput(UpdateMeBodySchema, body);
+  const patch = parseInput(UpdateMeInputSchema, body);
   const user = await ctx.db.write((db) => {
     const me = requireUser(ctx, db);
-    Object.assign(me, patch);
+    if (patch.name !== undefined) me.name = patch.name;
+    if (patch.avatarColor !== undefined) me.avatarColor = patch.avatarColor;
+    if (patch.birthday !== undefined) me.birthday = patch.birthday;
+    if (patch.interests !== undefined)
+      me.interests = [...new Set(patch.interests)];
+    if (patch.audience !== undefined) me.audience = patch.audience;
     return me;
   });
-  ctx.realtime.publish({
-    type: "db:changed",
-    scope: ["users"],
-    id: user.id,
-    by: user.id,
+  usersChanged(ctx, user.id);
+  return toMe(user);
+};
+
+// POST /me/hints { id } — подсказка показана (обучающая карточка, тост
+// «вкус сложился»). Повтор ничего не меняет.
+export const markHintSeen: Handler = async (ctx, { body }) => {
+  const { id } = parseInput(MarkHintInputSchema, body);
+  const user = await ctx.db.write((db) => {
+    const me = requireUser(ctx, db);
+    const seen = new Set(me.seenHints ?? []);
+    seen.add(id);
+    me.seenHints = [...seen];
+    return me;
   });
-  return user;
+  usersChanged(ctx, user.id);
+  return toMe(user);
+};
+
+// POST /demo/hints/reset — «Показать обучение снова» в демо-панели: снять
+// отметки, обучающая карточка снова первая.
+export const resetHints: Handler = async (ctx) => {
+  const user = await ctx.db.write((db) => {
+    const me = requireUser(ctx, db);
+    delete me.seenHints;
+    return me;
+  });
+  usersChanged(ctx, user.id);
+  return toMe(user);
 };
 
 export const getUser: Handler = async (ctx, { params }) => {
@@ -115,6 +145,9 @@ export const getUser: Handler = async (ctx, { params }) => {
   if (!user) throw notFound("Профиль не найден");
   return user;
 };
+
+const byName = (a: User, b: User) =>
+  (a.name ?? "").localeCompare(b.name ?? "", "ru");
 
 // GET /friends — ближайшие дни рождения сверху, без даты — в конце по имени.
 export const listFriends: Handler = async (ctx) => {
@@ -129,16 +162,20 @@ export const listFriends: Handler = async (ctx) => {
       : (db.friends[me.id] ?? []);
   const friends: FriendSummary[] = ids
     .map((id) => db.users[id])
-    .filter((user): user is User => Boolean(user))
+    // Безымянного никто не узнает — в «В этой сети» его нет, пока он не
+    // назовётся (DESIGN §8.11).
+    .filter(
+      (user): user is User => user !== undefined && !isNamelessHuman(user),
+    )
     .map((user) => ({
-      user,
+      user: { ...user, name: user.name ?? "" },
       daysToBirthday: user.birthday
         ? daysUntilBirthday(user.birthday, now)
         : null,
     }));
   return friends.sort((a, b) => {
     if (a.daysToBirthday === null && b.daysToBirthday === null) {
-      return a.user.name.localeCompare(b.user.name, "ru");
+      return byName(a.user, b.user);
     }
     if (a.daysToBirthday === null) return 1;
     if (b.daysToBirthday === null) return -1;

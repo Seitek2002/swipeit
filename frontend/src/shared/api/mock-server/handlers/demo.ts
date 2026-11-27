@@ -6,6 +6,7 @@ import type { Handler, HandlerContext } from "../context";
 import { applyNewYearScenario } from "../scenarios/new-year";
 import { DEMO_USER_ID, buildSeedDb, createSeedDb } from "../seed";
 import { parseInput } from "./common";
+import { isNamelessHuman } from "./users";
 
 // «Сбросить всё» — и часы, и скорость ботов, и ошибки API: иначе следующая
 // группа начала бы с перемотанным временем (в lan настройки общие). До
@@ -57,9 +58,21 @@ export const loadNewYearScenario: Handler = async (ctx) => {
 // сначала люди, потом боты. Расширение контракта TECH_SPEC §6 (только демо).
 export const listDemoUsers: Handler = async (ctx) => {
   const db = await ctx.db.read();
-  return Object.values(db.users).sort((a, b) =>
-    a.isBot === b.isBot ? a.name.localeCompare(b.name, "ru") : a.isBot ? 1 : -1,
-  );
+  // В lan чужие профили без имени не показываем: плашка сети считает по
+  // этому списку «Здесь уже 3 человека», а безымянного никто не узнает
+  // (TECH_SPEC §7a). Свой профиль — всегда (для «Смотреть как»).
+  return Object.values(db.users)
+    .filter(
+      (user) =>
+        ctx.mode !== "lan" || user.id === ctx.userId || !isNamelessHuman(user),
+    )
+    .sort((a, b) =>
+      a.isBot === b.isBot
+        ? (a.name ?? "").localeCompare(b.name ?? "", "ru")
+        : a.isBot
+          ? 1
+          : -1,
+    );
 };
 
 export const getSettings: Handler = async (ctx) => ctx.settings.get();

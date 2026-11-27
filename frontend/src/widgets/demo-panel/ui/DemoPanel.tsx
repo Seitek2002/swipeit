@@ -79,7 +79,7 @@ const WatchAs = ({ onPicked }: { onPicked: () => void }) => {
                   )}
                 >
                   <Avatar
-                    name={user.name}
+                    name={user.name ?? ""}
                     color={user.avatarColor}
                     size={48}
                     decorative

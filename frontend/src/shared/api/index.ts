@@ -28,6 +28,7 @@ export {
   getDemoUsers,
   loadNewYearScenario,
   resetDemo,
+  resetDemoHints,
   updateDemoSettings,
 } from "./demo/requests";
 export {
@@ -43,7 +44,12 @@ export {
   startBrowserBots,
   subscribeBotLeader,
 } from "./browser-bots";
-export { type ApiErrorCode, ApiError, isApiError } from "./mock-server/errors";
+export {
+  type ApiErrorCode,
+  ApiError,
+  isApiError,
+  isNameRequired,
+} from "./mock-server/errors";
 export { httpTransport } from "./http-transport";
 export {
   type ApiMode,
@@ -160,11 +166,16 @@ export {
   getMe,
   getUser,
   loginDemoFn,
+  markHintSeen,
   updateMe,
 } from "./users/requests";
 export {
   type BotProfile,
   type FriendSummary,
+  HINT_IDS,
+  type HintId,
+  type MeResponse,
+  type NamedUser,
   type NewUserInput,
   type UpdateMeInput,
   type User,

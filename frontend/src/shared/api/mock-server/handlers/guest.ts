@@ -17,9 +17,9 @@ import type {
 import { OccasionSchema } from "../../wishlist/types";
 import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
-import { ApiError, notFound } from "../errors";
+import { ApiError, notFound, validation } from "../errors";
 import { hashString } from "../random";
-import { parseInput, requireUser } from "./common";
+import { parseInput, requireNamed, requireUser } from "./common";
 import { itemKeyOf } from "./wishlist";
 
 const changed = (
@@ -100,11 +100,13 @@ export const updateMeta: Handler = async (ctx, { body }) => {
 // адрес сайта (и basePath) добавляет клиент.
 export const shareWishlist: Handler = async (ctx) => {
   const db = await ctx.db.read();
-  const user = requireUser(ctx, db);
-  const meta = db.wishlistMeta[user.id];
+  const profile = requireUser(ctx, db);
+  const meta = db.wishlistMeta[profile.id];
   if (!meta?.shareUnlockedAt) {
     throw new ApiError(403, "FORBIDDEN", "Отправить можно после 5 «Хочу»");
   }
+  // Имя — после проверки порога: до 5 «Хочу» спрашивать его рано.
+  const user = requireNamed(profile);
   const items = guestItems(db, user.id);
   const encoded = encodeWishlist({
     owner: {
@@ -231,7 +233,9 @@ export const getUserWishlist: Handler = async (ctx, { params }) => {
   const meta = db.wishlistMeta[owner.id];
   const view: GuestWishlist = {
     owner: {
-      name: owner.name,
+      // Профиль друга без имени сюда не попадает (его нет в друзьях), но
+      // по прямому id — пустая строка, а не undefined.
+      name: owner.name ?? "",
       avatarColor: owner.avatarColor,
       userId: owner.id,
     },
@@ -315,7 +319,9 @@ export const getReservations: Handler = async (ctx, { query }) => {
 const ReserveBodySchema = z.object({
   ownerId: z.string().min(1),
   itemKey: z.string().min(1),
-  name: z.string().trim().min(1, "Напиши, как тебя зовут").max(40),
+  // Имя нужно только гостю без профиля — «имя только для брони». У профиля
+  // имя берётся из него самого.
+  name: z.string().trim().max(40, "Имя — до 40 символов").optional(),
   guestId: GuestIdSchema.optional(),
 });
 
@@ -328,6 +334,13 @@ export const createReservation: Handler = async (ctx, { body }) => {
     throw new ApiError(403, "FORBIDDEN", "Это твой вишлист — бронируют друзья");
   }
   const reservation = await ctx.db.write((db): Reservation => {
+    // Бронь от профиля — под его именем; профиль без имени получает
+    // NAME_REQUIRED, и клиент сохраняет имя в профиль (DESIGN §8.5). Гость
+    // без профиля (или со старой сессией, которой нет в базе) называется
+    // только для брони.
+    const profile = ctx.userId ? db.users[ctx.userId] : undefined;
+    const name = profile ? requireNamed(profile).name : input.name;
+    if (!name) throw validation("Напиши, как тебя зовут");
     const taken = db.reservations.find(
       (entry) =>
         entry.ownerId === input.ownerId &&
@@ -341,7 +354,7 @@ export const createReservation: Handler = async (ctx, { body }) => {
       id: `rs_${nanoid(10)}`,
       ownerId: input.ownerId,
       itemKey: input.itemKey,
-      reserver: { userId: me, name: input.name },
+      reserver: { userId: me, name },
       at: nowIso(ctx.clock),
     };
     db.reservations.push(created);

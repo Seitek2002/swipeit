@@ -24,7 +24,7 @@ import type { WishlistItem } from "../../wishlist/types";
 import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, isApiError, notFound, validation } from "../errors";
-import { parseInput, requireUser } from "./common";
+import { parseInput, requireNamedUser, requireUser } from "./common";
 import { guestItems } from "./guest";
 import { itemKeyOf } from "./wishlist";
 
@@ -83,7 +83,7 @@ const genderOf = (user: undefined | User) =>
 // «Азамату некому дарить» — имя в дательном падеже для текста ошибки.
 const describeIn = (db: Db) => (id: string) => {
   const user = db.users[id];
-  return user ? dative(user.name, genderOf(user)) : "Кому-то";
+  return user?.name ? dative(user.name, genderOf(user)) : "Кому-то";
 };
 
 const profileOf = ({
@@ -91,7 +91,7 @@ const profileOf = ({
   name,
   avatarColor,
   isBot,
-}: User): PlanParticipant => ({ id, name, avatarColor, isBot });
+}: User): PlanParticipant => ({ id, name: name ?? "", avatarColor, isBot });
 
 // «Вишлист готов» — есть хотя бы одно активное желание.
 const hasWishlist = (db: Db, userId: string) =>
@@ -356,12 +356,15 @@ export const createSantaGame: Handler = async (ctx, { body }) => {
   checkDates(ctx, input.exchangeDate, drawAt);
   const products = await productMap(ctx);
   const view = await ctx.db.write((db): SantaView => {
-    const owner = requireUser(ctx, db);
+    // Имя участника — на конверте Санты: без него игру не начать.
+    const owner = requireNamedUser(ctx, db);
     const invited = unique(input.participantIds).filter(
       (id) => id !== owner.id,
     );
     for (const id of invited) {
-      if (!db.users[id]) throw validation("Такого друга нет");
+      // Безымянного никто не узнает — в списке друзей его нет (§7a).
+      const friend = db.users[id];
+      if (!friend || !friend.name) throw validation("Такого друга нет");
       if (!isFriend(ctx, db, owner.id, id)) {
         throw validation(
           "Позвать можно только друзей — остальным отправь ссылку",
@@ -437,8 +440,9 @@ export const updateSantaGame: Handler = async (ctx, { params, body }) => {
 export const joinSantaGame: Handler = async (ctx, { params }) => {
   const products = await productMap(ctx);
   const { joined, view } = await ctx.db.write((db) => {
-    const user = requireUser(ctx, db);
+    // Сначала — есть ли игра: на битую ссылку имя спрашивать незачем.
     const game = findGame(db, params.id);
+    const user = requireNamedUser(ctx, db);
     const already = game.participantIds.includes(user.id);
     if (!already) {
       if (game.status !== "gathering") {

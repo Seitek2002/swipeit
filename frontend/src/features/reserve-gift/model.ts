@@ -23,7 +23,7 @@ export const useReserver = () => {
   const guestId = useGuestStore((state) => state.guestId);
   const guestName = useGuestStore((state) => state.name);
   return me
-    ? { name: me.name, guestId: undefined, needsName: false }
+    ? { name: me.name ?? "", guestId: undefined, needsName: false }
     : { name: guestName, guestId, needsName: !guestName };
 };
 

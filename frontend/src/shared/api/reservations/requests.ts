@@ -10,10 +10,12 @@ export const getReservations = (
     guestId,
   });
 
+// name нужен только гостю без профиля. От профиля сервер берёт его имя, а
+// профиль без имени получает NAME_REQUIRED (TECH_SPEC §6).
 export const createReservation = (input: {
   guestId?: string;
   itemKey: string;
-  name: string;
+  name?: string;
   ownerId: string;
 }): Promise<Reservation> =>
   getTransport().request<Reservation>("POST", "/reservations", input);

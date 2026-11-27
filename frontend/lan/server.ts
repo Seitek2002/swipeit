@@ -16,6 +16,7 @@ import sirv from "sirv";
 import { createDefaultBotEngine } from "@/shared/api/mock-server/bots";
 import type { ServerDeps } from "@/shared/api/mock-server/context";
 import { ApiError, isApiError } from "@/shared/api/mock-server/errors";
+import { isNamelessHuman } from "@/shared/api/mock-server/handlers/users";
 import { createCryptoRandom } from "@/shared/api/mock-server/random";
 import type { HttpMethod } from "@/shared/api/mock-server/routes";
 import { buildSeedDb } from "@/shared/api/mock-server/seed";
@@ -247,8 +248,15 @@ export const createLanServer = async ({
       return;
     }
     if (method === "GET" && apiPath === "/presence") {
+      // Профили без имени в «В этой сети» не показываем — их никто не
+      // узнает (TECH_SPEC §7a). devices — все открытые вкладки, это
+      // счётчик устройств демо-панели, а не людей.
+      const { users } = await db.read();
       sendJson(res, 200, {
-        online: realtime.online(),
+        online: realtime.online().filter((id) => {
+          const user = users[id];
+          return user !== undefined && !isNamelessHuman(user);
+        }),
         devices: realtime.devices(),
       });
       return;

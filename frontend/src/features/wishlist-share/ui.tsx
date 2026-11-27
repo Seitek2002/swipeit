@@ -130,7 +130,7 @@ export const WishlistShareSheet = ({ open, onClose, wishlist }: Props) => {
           <div className="flex items-center gap-2">
             {me && (
               <Avatar
-                name={me.name}
+                name={me.name ?? ""}
                 color={me.avatarColor}
                 size={28}
                 decorative

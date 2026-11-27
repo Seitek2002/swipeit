@@ -60,7 +60,7 @@ export const EMPTY_DRAFT: ProfileDraft = {
 export const draftFromUser = (user: User): ProfileDraft => {
   const { day, month } = fromBirthday(user.birthday);
   return {
-    name: user.name,
+    name: user.name ?? "",
     avatarColor: user.avatarColor,
     birthdayDay: day,
     birthdayMonth: month,
