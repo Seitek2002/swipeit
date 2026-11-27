@@ -37,7 +37,12 @@ import {
 import { INTEREST_LABELS, ROUTES } from "@/shared/config";
 import { withBasePath } from "@/shared/lib/base-path";
 import { formatPrice } from "@/shared/lib/format";
-import { usePreloaderHold } from "@/shared/lib/preloader";
+import {
+  preloadPlan,
+  useImageStatus,
+  usePreloadImages,
+} from "@/shared/lib/image-cache";
+import { usePreloaderDone, usePreloaderHold } from "@/shared/lib/preloader";
 import { useConnectionStatus } from "@/shared/lib/realtime";
 import { Button, EmptyState, toast } from "@/shared/ui";
 
@@ -70,6 +75,14 @@ const contextKeyOf = (context: SwipeContext) =>
   context.kind === "self" ? "self" : `pick:${context.requestId}`;
 
 const isLike = (direction: SwipeDirection) => direction !== "left";
+
+// «Экономия трафика» в браузере — окно предзагрузки уже (TECH_SPEC §6).
+const saveData = () =>
+  typeof navigator !== "undefined" &&
+  Boolean(
+    (navigator as Navigator & { connection?: { saveData?: boolean } })
+      .connection?.saveData,
+  );
 
 // Колода подарков (TASKS T07) на движке SwipeDeck: лента из /catalog/feed с
 // дозагрузкой, решения в /swipes, «Вернуть», конец колоды, лента вишлиста.
@@ -193,37 +206,40 @@ export const GiftDeck = ({
 
   // Прелоадер уходит, когда первая карточка готова целиком — с декодированным
   // фото, без «мигания» пустой рамки (DESIGN.md §6). Пустая порция или ошибка
-  // тоже отпускают: экран покажет своё состояние.
+  // тоже отпускают: экран покажет своё состояние. Фото — из того же кеша, что
+  // и карточка: одна загрузка.
   const firstImage = queue[0]?.images[0]?.src;
-  const [decodedImage, setDecodedImage] = useState<null | string>(null);
-  useEffect(() => {
-    if (!firstImage || decodedImage) return;
-    let cancelled = false;
-    const image = new Image();
-    image.src = withBasePath(firstImage);
-    image
-      .decode()
-      .catch(() => undefined)
-      .then(() => {
-        if (!cancelled) setDecodedImage(firstImage);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [firstImage, decodedImage]);
+  const firstStatus = useImageStatus(
+    firstImage ? withBasePath(firstImage) : undefined,
+  );
+  const [firstScreenShown, setFirstScreenShown] = useState(false);
   const firstScreenReady =
-    decodedImage !== null ||
+    firstScreenShown ||
+    firstStatus === "ready" ||
+    firstStatus === "error" ||
     status === "error" ||
     (status === "exhausted" && queue.length === 0);
+  if (firstScreenReady && !firstScreenShown) setFirstScreenShown(true);
   usePreloaderHold("feed", !firstScreenReady);
 
-  // Картинки двух следующих карточек — заранее (TECH_SPEC §6, п. 4).
-  useEffect(() => {
-    queue.slice(1, 3).forEach((product) => {
-      const src = product.images[0]?.src;
-      if (src) new Image().src = withBasePath(src);
-    });
-  }, [queue]);
+  // Окно предзагрузки фото (TECH_SPEC §6 «Предзагрузка фото колоды»): верхняя
+  // карточка — все фото, две следующие — по два первых, последняя
+  // свайпнутая — в памяти для «Вернуть». Пока виден прелоадер — только
+  // обложка первой карточки.
+  const preloaderDone = usePreloaderDone();
+  const [topPhoto, setTopPhoto] = useState<{ id: string; index: number }>();
+  const topIndex = topPhoto?.id === top?.id ? (topPhoto?.index ?? 0) : 0;
+  const plan = preloaderDone
+    ? preloadPlan(queue, topIndex, saveData())
+    : firstImage
+      ? [firstImage]
+      : [];
+  const lastSwiped = history[history.length - 1]?.product;
+  usePreloadImages(
+    "deck",
+    plan.map((src) => withBasePath(src)),
+    lastSwiped?.images.map((item) => withBasePath(item.src)) ?? [],
+  );
 
   // Свой вишлист или счётчик выбора по ссылке-фильтру — что задел свайп.
   const refreshAfterSwipe = () =>
@@ -420,6 +436,7 @@ export const GiftDeck = ({
             product={product}
             guide={product.id === guideId}
             hidePrices={hidePrices}
+            onPhotoChange={(index) => setTopPhoto({ id: product.id, index })}
             onVariantChange={(choice) => {
               variants.current[product.id] = choice;
             }}

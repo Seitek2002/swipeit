@@ -7,11 +7,17 @@
 <!--
   Эталон карточки подарка в ленте (DESIGN.md §7 «GiftCard», TASKS T19b).
   Поведение повторяет ../tap-tap/src/pages/feed/ui/swipe-card.tsx,
-  цвета и шрифты — токены SwipeIt. Четыре состояния: сверху, начало
+  цвета и шрифты — токены SwipeIt. Кадры 1–4: сверху, начало
   прокрутки, подробности, карточку тянут вправо. Карточки живые:
   их можно прокручивать, листать фото тапом по краям, тап по названию
   прокручивает к подробностям. Жест свайпа здесь не сделан — его физика
   описана в DESIGN.md §6 и есть в tap-tap.
+
+  Кадры 5–8 и переключатель «Сеть» сверху — смена и загрузка фото
+  (DESIGN.md §7 GiftCard «Смена и загрузка фото», TECH_SPEC §6
+  «Предзагрузка фото колоды»): 100 ms — перелив, 400 ms — бант,
+  ошибка — «Фото не загрузилось». Переключатель меняет сеть во всех
+  живых карточках, в том числе «Как было до правки» для сравнения.
 -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +31,7 @@
     --mint: #8fe3c6; --champagne: #ffd27a;
     --display: "Cormorant Garamond", "Times New Roman", serif;
     --sans: "Onest", system-ui, sans-serif;
+    --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -135,6 +142,63 @@
   .b.s { width: 44px; height: 44px; }
   .b.l { width: 56px; height: 56px; backdrop-filter: blur(30px); box-shadow: inset 2px -1px 2px rgb(255 255 255 / 0.16); }
   .b[disabled] { opacity: 0.4; }
+
+  /* ── Загрузка фото (DESIGN §7 GiftCard «Смена и загрузка фото») ── */
+  .photo { background: var(--velvet-2); }
+  .photo[data-state="wave"] .pic, .photo[data-state="bow"] .pic, .photo[data-state="error"] .pic { opacity: 0; }
+  .photo[data-cover] .fill { opacity: 0; }
+  .pic.fade, .fill.fade { transition: opacity 160ms var(--ease-out-soft); }
+  .load { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+  .photo[data-state="wave"] .load, .photo[data-state="bow"] .load, .photo[data-state="error"] .load { opacity: 1; }
+  /* Вуаль: на белых фото без неё перелив не виден. */
+  .load .veil { position: absolute; inset: 0; background: rgb(42 16 36 / 0.28); }
+  .photo[data-cover] .load .veil { background: none; }
+  .photo[data-state="error"] .load .veil { background: rgb(42 16 36 / 0.55); }
+  .load .wave { position: absolute; inset: 0; overflow: hidden; }
+  .load .wave::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.35), transparent); animation: wave 1.4s ease-in-out infinite; }
+  .photo[data-state="error"] .load .wave { display: none; }
+  @keyframes wave { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+  /* Бант из прелоадера на маленькой бумажной плашке. */
+  .lbow { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; opacity: 0; transform: scale(0.85); transition: opacity 200ms var(--ease-out-soft), transform 200ms var(--ease-out-soft); }
+  .photo[data-state="bow"] .lbow { opacity: 1; transform: scale(1); }
+  .lbow-b { position: absolute; inset: 0; animation: breathe 1.6s ease-in-out infinite; }
+  .lbow-b > i { position: absolute; inset: 0; border-radius: 16px; }
+  .lbow-shadow { box-shadow: 0 10px 24px -8px rgb(10 0 8 / 0.5), 0 2px 6px rgb(10 0 8 / 0.25); }
+  .lbow-glow { box-shadow: 0 0 18px rgb(255 138 61 / 0.4); opacity: 0; animation: glow 1.6s ease-in-out infinite; }
+  .lbow-plate { display: grid; place-items: center; background: var(--paper); box-shadow: 0 1px 0 rgb(255 255 255 / 0.6) inset; }
+  .lbow-plate svg { display: block; width: 36px; height: 25px; overflow: visible; animation: sway 1.4s ease-in-out infinite; }
+  .bow-g { fill: var(--mandarin); stroke: var(--mandarin); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .bow-g .tail { fill: none; stroke-width: 4; }
+  .bow-g .fold { fill: none; stroke: var(--mandarin-ink); stroke-width: 1.6; }
+  @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  @keyframes glow { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+  @keyframes sway { 0%, 100% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(-4deg) scale(1.06); } }
+
+  .err { position: absolute; left: 50%; top: 50%; z-index: 4; transform: translate(-50%, -50%); width: 220px; display: none; flex-direction: column; align-items: center; gap: 8px; text-align: center; color: var(--paper); }
+  .photo[data-state="error"] .err { display: flex; }
+  .err p { margin: 0; font-size: 13px; line-height: 18px; font-weight: 500; }
+  .retry { pointer-events: auto; position: relative; margin-top: 4px; height: 36px; padding: 0 14px; border: 0; border-radius: 12px; background: var(--velvet-3); color: var(--paper); font: 600 15px/20px var(--sans); cursor: pointer; }
+  .retry::before { content: ""; position: absolute; inset: -4px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .load .wave::after, .lbow-b, .lbow-glow, .lbow-plate svg { animation: none !important; }
+    .lbow, .pic.fade, .fill.fade { transition: none !important; }
+  }
+
+  /* ── Панель сверху: сеть и шкала времени ───────────────── */
+  .panel { flex: 0 0 100%; max-width: 1650px; display: flex; flex-direction: column; gap: 14px; }
+  .panel h2 { margin: 0; font: 600 26px/30px var(--display); }
+  .net { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .net span { font-size: 15px; font-weight: 600; margin-right: 4px; }
+  .net button { height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--velvet-3); color: var(--paper); font: 500 14px/20px var(--sans); cursor: pointer; }
+  .net button[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
+  .hint { margin: 0; max-width: 78ch; font-size: 14px; line-height: 20px; color: var(--rose); }
+  .steps { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; row-gap: 18px; }
+  .steps li { position: relative; min-width: 160px; padding: 14px 18px 0 0; border-top: 2px solid var(--velvet-3); font-size: 14px; line-height: 20px; }
+  .steps li::before { content: ""; position: absolute; top: -6px; left: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--rose); }
+  .steps li.ok::before { background: var(--mint); }
+  .steps b { display: block; font-weight: 600; color: var(--rose); font-variant-numeric: tabular-nums; }
 </style>
 </head>
 <body>
@@ -155,6 +219,7 @@
   <svg data-i="gift" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
   <svg data-i="ticket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/></svg>
   <svg data-i="mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+  <svg data-i="img-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="22" y1="2" y2="22"/><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"/><line x1="13.5" x2="6" y1="13.5" y2="21"/><line x1="18" x2="21" y1="12" y2="15"/><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"/><path d="M21 15V5a2 2 0 0 0-2-2H9"/></svg>
   <svg data-i="heart-o" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
 </template>
 
@@ -187,11 +252,23 @@ const icon = (name, size) => {
   return svg.outerHTML;
 };
 
+/* Бант — знак SwipeIt, как в прелоадере (quick-start.html, frontend/src/shared/ui/bow) */
+const BOW = `<svg viewBox="0 0 64 44" aria-hidden="true"><g class="bow-g">
+  <path d="M32 20C24 5 5 2 5 14s19 11 27 6z"/><path d="M32 20c8-15 27-18 27-6s-19 11-27 6z"/>
+  <path class="tail" d="M30 23c-4 8-8 13-14 19"/><path class="tail" d="M34 23c4 8 8 13 14 19"/>
+  <path class="fold" d="M30 19c-6-6-14-8-18-6M34 19c6-6 14-8 18-6"/><circle cx="32" cy="20" r="5"/></g></svg>`;
+
 const cardHTML = (p, under) => `
   <div class="card${under ? " under" : ""}">
     <div class="photo">
       <img class="fill" alt="" src="${IMG(p.id, 1)}">
-      <div class="pic-area"><img class="pic" alt="${p.title}" src="${IMG(p.id, 1)}"></div>
+      <div class="pic-area"><img class="pic" alt="${p.title}" src="${IMG(p.id, 1)}">
+        <div class="load">
+          <i class="veil" aria-hidden="true"></i><i class="wave" aria-hidden="true"></i>
+          <span class="lbow" aria-hidden="true"><span class="lbow-b"><i class="lbow-shadow"></i><i class="lbow-glow"></i><i class="lbow-plate">${BOW}</i></span></span>
+          <div class="err">${icon("img-off", 32)}<p>Фото не загрузилось</p><button class="retry">Повторить</button></div>
+        </div>
+      </div>
       <div class="scrim-top"></div>
       <div class="segs-photo">${Array.from({ length: p.photos }, (_, i) => `<i class="${i ? "" : "on"}"></i>`).join("")}</div>
       <button class="tap l" aria-label="Предыдущее фото"></button>
@@ -270,10 +347,75 @@ const applyProgress = (card, p) => {
     }
   });
 };
-const wire = (card, p) => {
-  let index = 0;
-  const pics = card.querySelectorAll(".pic, .fill"), segs = card.querySelectorAll(".segs-photo i");
-  const show = (i) => { index = Math.max(0, Math.min(p.photos - 1, i)); pics.forEach((im) => (im.src = IMG(p.id, index + 1))); segs.forEach((s, j) => s.classList.toggle("on", j === index)); };
+/* Имитация сети. Файлы локальные и грузятся мгновенно, поэтому задержку
+   и ошибку изображаем таймерами. Уже показанное фото — «в кеше»: второй раз
+   появляется сразу. В приложении ошибка — по ответу сети или через 8 с. */
+const NET = { mode: "preloaded" };
+const MODES = [
+  ["preloaded", "С предзагрузкой"],
+  ["slow", "Медленная сеть"],
+  ["error", "Ошибка сети"],
+  ["old", "Как было до правки"],
+];
+const SLOW_MS = 2000, FAIL_MS = 1600, RETRY_MS = 1200;
+const cache = new Set();
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// start: { index, from, state, cover } — кадр, застывший в состоянии загрузки.
+const wire = (card, p, start = {}) => {
+  let index = start.index ?? 0;
+  const photo = card.querySelector(".photo");
+  const pic = card.querySelector(".pic"), fill = card.querySelector(".fill");
+  const segs = card.querySelectorAll(".segs-photo i");
+  let timers = [], attempt = 0;
+  // Новый тап отменяет всё, что ждало прошлое фото, в том числе его decode().
+  const stop = () => { attempt++; timers.forEach(clearTimeout); timers = []; };
+  const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+  const setState = (s) => {
+    photo.dataset.state = s;
+    photo.setAttribute("aria-busy", String(s === "wave" || s === "bow"));
+  };
+  const put = (src) => { pic.src = src; fill.src = src; cache.add(src); delete photo.dataset.cover; };
+  // Фото пришло и декодировано → проявляется за 160 ms вместе с размытой копией.
+  const reveal = (src) => {
+    put(src);
+    const mine = attempt;
+    let shown = false;
+    const done = () => {
+      if (shown || mine !== attempt) return; // успел новый тап — это фото уже не нужно
+      shown = true;
+      if (!reduce) { pic.classList.add("fade"); fill.classList.add("fade"); }
+      setState("");
+      at(220, () => { pic.classList.remove("fade"); fill.classList.remove("fade"); });
+    };
+    pic.decode().then(done, done);
+    at(300, done); // запасной путь, если decode() не ответит
+  };
+  const load = (src, ok, ms) => {
+    at(100, () => setState("wave")); // первые 100 ms держим прежнее фото
+    at(400, () => setState("bow"));
+    at(ms, () => (ok ? reveal(src) : setState("error")));
+  };
+  const show = (i) => {
+    const next = Math.max(0, Math.min(p.photos - 1, i));
+    if (next === index) return;
+    index = next;
+    segs.forEach((s, j) => s.classList.toggle("on", j === index)); // сегмент — сразу, 0 ms
+    stop();
+    const src = IMG(p.id, index + 1);
+    if (NET.mode === "preloaded" || cache.has(src)) { put(src); setState(""); return; }
+    if (NET.mode === "old") { setState(""); at(SLOW_MS, () => put(src)); return; } // прежнее фото висит
+    load(src, NET.mode === "slow", NET.mode === "slow" ? SLOW_MS : FAIL_MS);
+  };
+  card.querySelector(".retry").onclick = (e) => {
+    e.stopPropagation(); stop(); setState("wave");
+    at(400, () => setState("bow"));
+    at(RETRY_MS, () => reveal(IMG(p.id, index + 1)));
+  };
+  if (start.from) { pic.src = IMG(p.id, start.from); fill.src = IMG(p.id, start.from); }
+  segs.forEach((s, j) => s.classList.toggle("on", j === index));
+  if (start.cover) photo.dataset.cover = "";
+  setState(start.state ?? "");
   card.querySelector(".tap.l").onclick = () => show(index - 1);
   card.querySelector(".tap.r").onclick = () => show(index + 1);
   card.querySelector(".info-btn").onclick = () => card.scrollTo({ top: card.clientHeight, behavior: "smooth" });
@@ -287,12 +429,41 @@ const FRAMES = [
   { cap: "2. Прокрутка вниз: кнопки перетекают в бумагу", top: "bag", next: "jbl", scroll: 70 },
   { cap: "3. Подробности: шапка прилипла", top: "bag", next: "jbl", scroll: "details" },
   { cap: "4. Тянешь вправо: «Хочу»", top: "engine", next: "jbl", scroll: 0, drag: 96 },
+  { cap: "5. Фото не готово: с 100 ms перелив", top: "jbl", next: "bag", scroll: 0, start: { index: 1, from: 1, state: "wave" } },
+  { cap: "6. Дольше 400 ms: бант", top: "bag", next: "engine", scroll: 0, start: { index: 2, from: 2, state: "bow" } },
+  { cap: "7. Не загрузилось: «Повторить»", top: "engine", next: "bag", scroll: 0, start: { index: 1, from: 1, state: "error" } },
+  { cap: "8. Обложка не успела: свайпать можно", top: "jbl", next: "engine", scroll: 0, start: { index: 0, state: "bow", cover: true } },
 ];
-document.body.innerHTML = FRAMES.map((f) => `<figure>${phoneHTML(cardHTML(PRODUCTS[f.next], true) + cardHTML(PRODUCTS[f.top]))}<figcaption>${f.cap}</figcaption></figure>`).join("");
+
+const PANEL = `
+  <section class="panel">
+    <h2>Смена и загрузка фото</h2>
+    <div class="net" role="group" aria-label="Сеть в живых карточках"><span>Сеть:</span>
+      ${MODES.map(([m, label]) => `<button data-mode="${m}" aria-pressed="${m === NET.mode}">${label}</button>`).join("")}
+    </div>
+    <p class="hint">Тапай по правой половине фото в любой карточке. «С предзагрузкой» — так должно быть почти всегда: фото меняется в тот же кадр. «Медленная сеть» — новое фото приходит через 2 с, уже показанное — сразу. «Ошибка сети» — через 1,6 с сеть ответила ошибкой, «Повторить» срабатывает. «Как было до правки» — сегмент переключился, а прежнее фото висит 2 с. Смена режима очищает кеш.</p>
+    <ol class="steps">
+      <li><b>0 ms</b>сегмент переключился</li>
+      <li><b>до 100 ms</b>прежнее фото</li>
+      <li><b>100 ms</b>перелив</li>
+      <li><b>400 ms</b>бант</li>
+      <li class="ok"><b>фото пришло</b>проявление за 160 ms</li>
+      <li><b>ошибка или 8 с</b>«Фото не загрузилось»</li>
+    </ol>
+  </section>`;
+
+document.body.innerHTML = PANEL + FRAMES.map((f) => `<figure>${phoneHTML(cardHTML(PRODUCTS[f.next], true) + cardHTML(PRODUCTS[f.top]))}<figcaption>${f.cap}</figcaption></figure>`).join("");
+document.querySelectorAll(".net button").forEach((b) => (b.onclick = () => {
+  NET.mode = b.dataset.mode;
+  document.querySelectorAll(".net button").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
+  cache.clear();
+  // То, что сейчас на экране, уже скачано.
+  document.querySelectorAll(".photo:not([data-state='wave']):not([data-state='bow']):not([data-state='error']) .pic").forEach((im) => cache.add(im.getAttribute("src")));
+}));
 document.querySelectorAll(".phone").forEach((phone, i) => {
   const f = FRAMES[i];
   const [under, top] = phone.querySelectorAll(".card");
-  wire(top, PRODUCTS[f.top]); applyProgress(under, 0);
+  wire(top, PRODUCTS[f.top], f.start); applyProgress(under, 0);
   requestAnimationFrame(() => {
     top.scrollTop = f.scroll === "details" ? top.clientHeight + 140 : f.scroll;
     applyProgress(top, Math.min(top.scrollTop / 120, 1));

@@ -4,7 +4,9 @@ import { useState } from "react";
 
 import { GiftPhoto, type Product, type VariantGroup } from "@/entities/product";
 
+import { withBasePath } from "@/shared/lib/base-path";
 import { formatPrice } from "@/shared/lib/format";
+import { usePreloadImages } from "@/shared/lib/image-cache";
 import { BottomSheet } from "@/shared/ui";
 
 import { ProductDetailsSections, defaultChoice } from "./DetailsSections";
@@ -75,6 +77,12 @@ const Details = ({
 }: DetailsProps) => {
   const images = product.images;
   const current = images[photo] ?? images[0];
+  // Все фото товара — сразу при открытии, тем же кешем, что и колода
+  // (TECH_SPEC §6): листание в шторке без ожидания.
+  usePreloadImages(
+    "details",
+    images.map((image) => withBasePath(image.src)),
+  );
 
   const choose = (group: VariantGroup, optionId: string) => {
     // Выбор цвета показывает его фото, если оно есть.

@@ -315,3 +315,102 @@
     animation: none;
   }
 }
+
+/* Смена и загрузка фото (DESIGN.md §7 GiftCard, эталон — кадры 5–8 в
+   docs/design/gift-card.html): фото проявляется за 160ms (только opacity);
+   бант ожидания — как в прелоадере (§6): плашка «Бумага» 56px «дышит»,
+   светится, бант покачивается. Плашка появляется за 200ms. */
+@keyframes photo-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.photo-in {
+  animation: photo-in 160ms ease-out;
+}
+
+@keyframes photo-bow-breathe {
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes photo-bow-glow {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes photo-bow-sway {
+  50% {
+    transform: rotate(-4deg) scale(1.06);
+  }
+}
+
+.photo-bow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  opacity: 0;
+  transform: scale(0.85);
+  transition:
+    opacity 200ms var(--ease-out-soft),
+    transform 200ms var(--ease-out-soft);
+  &[data-shown] {
+    opacity: 1;
+    transform: scale(1);
+  }
+  & > span {
+    position: absolute;
+    inset: 0;
+    animation: photo-bow-breathe 1.6s ease-in-out infinite;
+  }
+  & i {
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+  }
+  & .photo-bow-shadow {
+    box-shadow:
+      0 10px 24px -8px rgb(10 0 8 / 0.5),
+      0 2px 6px rgb(10 0 8 / 0.25);
+  }
+  & .photo-bow-glow {
+    box-shadow: 0 0 18px rgb(255 138 61 / 0.4);
+    opacity: 0;
+    animation: photo-bow-glow 1.6s ease-in-out infinite;
+  }
+  & .photo-bow-plate {
+    display: grid;
+    place-items: center;
+    background: var(--color-paper);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.6) inset;
+  }
+  & svg {
+    width: 36px;
+    height: 25px;
+    animation: photo-bow-sway 1.4s ease-in-out infinite;
+  }
+}
+
+/* prefers-reduced-motion: перелив неподвижный, бант без «дыхания»,
+   плашка и фото появляются сразу. */
+@media (prefers-reduced-motion: reduce) {
+  .photo-wait::after,
+  .photo-bow > span,
+  .photo-bow .photo-bow-glow,
+  .photo-bow svg {
+    animation: none !important;
+  }
+  .photo-bow {
+    transition: none !important;
+  }
+}

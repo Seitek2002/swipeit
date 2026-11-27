@@ -28,6 +28,9 @@ type Props = {
   // Обучающая карточка (DESIGN.md §7 DeckGuide): слой поверх фото.
   guide?: boolean;
   hidePrices?: boolean;
+  // Открытое фото — колоде для окна предзагрузки (saveData: «следующее после
+  // текущего»).
+  onPhotoChange?: (index: number) => void;
   // Выбор варианта уходит в желание при «Хочу» (как раньше из шторки).
   onVariantChange: (choice: Record<string, string>) => void;
   product: Product;
@@ -64,10 +67,15 @@ export const GiftCard = ({
   product,
   hidePrices = false,
   guide = false,
+  onPhotoChange,
   onVariantChange,
 }: Props) => {
   const state = usePhotoCard();
-  const [photo, setPhoto] = useState(0);
+  const [photo, setPhotoState] = useState(0);
+  const setPhoto = (index: number) => {
+    setPhotoState(index);
+    onPhotoChange?.(index);
+  };
   const [choice, setChoice] = useState(() => defaultChoice(product.variants));
   const image = product.images[photo] ?? product.images[0];
 
@@ -88,6 +96,7 @@ export const GiftCard = ({
         product={product}
         image={image}
         index={photo}
+        active={state.isTop}
         onIndexChange={setPhoto}
       >
         {state.isTop && (

@@ -1,0 +1,182 @@
+{
+ "mode": "f4g",
+ "preloaderGoneMs": 3727,
+ "requests": [
+  {
+   "url": "products/p_0003/1.webp",
+   "ms": 3182,
+   "whilePreloader": true
+  },
+  {
+   "url": "products/p_0003/2.webp",
+   "ms": 3730,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0089/1.webp",
+   "ms": 3731,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0089/2.webp",
+   "ms": 3836,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0039/1.webp",
+   "ms": 3918,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0039/2.webp",
+   "ms": 4000,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0089/3.webp",
+   "ms": 6831,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0089/4.webp",
+   "ms": 6831,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0012/1.webp",
+   "ms": 6932,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0012/2.webp",
+   "ms": 7046,
+   "whilePreloader": false
+  }
+ ],
+ "duplicates": [],
+ "duringPreloader": [
+  "products/p_0003/1.webp"
+ ],
+ "steps": [
+  {
+   "label": "tap-2nd",
+   "atMs": 4814,
+   "frames": [
+    {
+     "dt": 11,
+     "seg": 0,
+     "sharp": "p_0003/1.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": true
+    },
+    {
+     "dt": 45,
+     "seg": 1,
+     "sharp": "p_0003/2.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": false
+    }
+   ]
+  },
+  {
+   "label": "tap-3rd",
+   "atMs": 5523,
+   "frames": [
+    {
+     "dt": 4,
+     "seg": 1,
+     "sharp": "p_0003/2.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": false
+    }
+   ]
+  },
+  {
+   "label": "swipe-like",
+   "atMs": 6247,
+   "frames": [
+    {
+     "dt": 5,
+     "seg": 1,
+     "sharp": "p_0003/2.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": false
+    },
+    {
+     "dt": 592,
+     "seg": 0,
+     "sharp": "p_0089/1.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": true
+    }
+   ]
+  },
+  {
+   "label": "new-top-tap-2nd",
+   "atMs": 7456,
+   "frames": [
+    {
+     "dt": 3,
+     "seg": 0,
+     "sharp": "p_0089/1.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": true
+    },
+    {
+     "dt": 15,
+     "seg": 1,
+     "sharp": "p_0089/2.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": false
+    }
+   ]
+  },
+  {
+   "label": "undo",
+   "atMs": 8178,
+   "frames": [
+    {
+     "dt": 6,
+     "seg": 1,
+     "sharp": "p_0089/2.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": false
+    },
+    {
+     "dt": 57,
+     "seg": 0,
+     "sharp": "p_0003/1.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": false
+    }
+   ]
+  }
+ ]
+}

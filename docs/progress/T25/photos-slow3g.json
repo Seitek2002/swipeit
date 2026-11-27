@@ -1,0 +1,143 @@
+{
+ "mode": "s3g",
+ "preloaderGoneMs": 24359,
+ "requests": [
+  {
+   "url": "products/p_0003/1.webp",
+   "ms": 38916,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0003/2.webp",
+   "ms": 38916,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0047/1.webp",
+   "ms": 42143,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0047/2.webp",
+   "ms": 42476,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0040/1.webp",
+   "ms": 49179,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0047/3.webp",
+   "ms": 49231,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0040/2.webp",
+   "ms": 52947,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0012/1.webp",
+   "ms": 56683,
+   "whilePreloader": false
+  },
+  {
+   "url": "products/p_0012/2.webp",
+   "ms": 57280,
+   "whilePreloader": false
+  }
+ ],
+ "duplicates": [],
+ "duringPreloader": [],
+ "steps": [
+  {
+   "label": "s3g-swipe",
+   "atMs": 42150,
+   "frames": [
+    {
+     "dt": 99,
+     "seg": 0,
+     "sharp": "p_0003/1.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": true
+    },
+    {
+     "dt": 321,
+     "seg": 0,
+     "sharp": null,
+     "painted": false,
+     "busy": true,
+     "shimmer": true,
+     "error": false,
+     "revealing": false
+    }
+   ]
+  },
+  {
+   "label": "s3g-tap-2nd",
+   "atMs": 49185,
+   "frames": [
+    {
+     "dt": 5,
+     "seg": 1,
+     "sharp": "p_0047/1.webp",
+     "painted": true,
+     "busy": true,
+     "shimmer": false,
+     "error": false,
+     "revealing": false
+    },
+    {
+     "dt": 46,
+     "seg": 1,
+     "sharp": "p_0047/2.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": false
+    }
+   ]
+  },
+  {
+   "label": "s3g-tap-3rd",
+   "atMs": 49368,
+   "frames": [
+    {
+     "dt": 4,
+     "seg": 2,
+     "sharp": "p_0047/2.webp",
+     "painted": true,
+     "busy": true,
+     "shimmer": false,
+     "error": false,
+     "revealing": false
+    },
+    {
+     "dt": 112,
+     "seg": 2,
+     "sharp": null,
+     "painted": false,
+     "busy": true,
+     "shimmer": true,
+     "error": false,
+     "revealing": false
+    },
+    {
+     "dt": 7312,
+     "seg": 2,
+     "sharp": "p_0047/3.webp",
+     "painted": true,
+     "busy": false,
+     "shimmer": false,
+     "error": false,
+     "revealing": true
+    }
+   ]
+  }
+ ]
+}
