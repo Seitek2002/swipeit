@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useRouter } from "next/navigation";
+
 import { useQueryClient } from "@tanstack/react-query";
 
 import { DECK_GUIDE_DESCRIPTION, useDeckGuide } from "@/features/deck-guide";
@@ -24,11 +26,15 @@ import {
   type SwipeDecision,
   createSwipe,
   getFeed,
+  getMe,
+  markHintSeen,
   pickKeys,
   restartSwipes,
   undoSwipe,
+  userKeys,
   wishlistKeys,
 } from "@/shared/api";
+import { INTEREST_LABELS, ROUTES } from "@/shared/config";
 import { withBasePath } from "@/shared/lib/base-path";
 import { formatPrice } from "@/shared/lib/format";
 import { usePreloaderHold } from "@/shared/lib/preloader";
@@ -80,6 +86,7 @@ export const GiftDeck = ({
   onLike,
 }: Props) => {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const summary = useWishlistSummary();
   const deckRef = useRef<SwipeDeckHandle>(null);
   // Нет связи с ноутбуком (lan) — колода неактивна, чтобы ни один свайп не
@@ -223,6 +230,38 @@ export const GiftDeck = ({
       queryKey: context.kind === "self" ? wishlistKeys.all : pickKeys.all,
     });
 
+  // Тост «вкус сложился» (DESIGN.md §8.2) — один раз, когда из лайков
+  // впервые вывелись хотя бы 2 интереса. Колода при этом не перемешивается:
+  // новый порядок начнётся со следующей порции.
+  const showTasteToast = () => {
+    void queryClient
+      .fetchQuery({ queryKey: userKeys.me(), queryFn: getMe, staleTime: 0 })
+      .then((me) => {
+        const labels = me.inferredInterests
+          .slice(0, 3)
+          .map((id) =>
+            (INTEREST_LABELS as Record<string, string | undefined>)[
+              id
+            ]?.toLocaleLowerCase("ru"),
+          )
+          .filter(Boolean);
+        if (labels.length === 0) return;
+        toast(`Подстроили ленту под твои «Хочу»: ${labels.join(", ")}`, {
+          tone: "info",
+          action: {
+            label: "Поправить",
+            onClick: () => router.push(`${ROUTES.PROFILE}#likes`),
+          },
+        });
+        markHintSeen("taste_toast").then(
+          (user) => queryClient.setQueryData(userKeys.me(), user),
+          // Отметка не дошла — тост мог бы повториться, свайп не страдает.
+          () => undefined,
+        );
+      })
+      .catch(() => undefined);
+  };
+
   const handleNeedMore = () => {
     if (status === "idle") void loadMore(queue);
   };
@@ -253,6 +292,9 @@ export const GiftDeck = ({
     ).then(
       (response) => {
         setLikes(response.likeCount);
+        if (response.tasteJustFormed && context.kind === "self") {
+          showTasteToast();
+        }
         if (response.shareJustUnlocked && !hideRibbon) {
           setDrawingBow(true);
           bowTimer.current = setTimeout(() => {

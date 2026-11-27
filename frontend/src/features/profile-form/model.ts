@@ -1,17 +1,18 @@
 import type { NewUserInput, User } from "@/entities/user";
 
-import type { Audience, AvatarColor } from "@/shared/config";
+import type { AvatarColor } from "@/shared/config";
 
 export const NAME_MAX = 40;
 
 // Поля профиля в форме. День рождения — два отдельных поля без года: так
-// его удобно выбрать на телефоне, а в базу уходит "MM-DD".
+// его удобно выбрать на телефоне, а в базу уходит "MM-DD". Интересов и
+// аудитории здесь нет (TASKS T23): «Мне нравится» сохраняется сразу
+// (features/taste-edit), а «Показывать подарки» — тот же стор, что фильтры
+// ленты. Иначе «Сохранить» затирал бы их старыми значениями из черновика.
 export type ProfileDraft = {
-  audience: Audience;
   avatarColor: AvatarColor;
   birthdayDay: string;
   birthdayMonth: string;
-  interests: string[];
   name: string;
 };
 
@@ -51,8 +52,6 @@ export const EMPTY_DRAFT: ProfileDraft = {
   avatarColor: "mandarin",
   birthdayDay: "",
   birthdayMonth: "",
-  interests: [],
-  audience: "all",
 };
 
 export const draftFromUser = (user: User): ProfileDraft => {
@@ -62,8 +61,6 @@ export const draftFromUser = (user: User): ProfileDraft => {
     avatarColor: user.avatarColor,
     birthdayDay: day,
     birthdayMonth: month,
-    interests: user.interests,
-    audience: user.audience,
   };
 };
 
@@ -72,13 +69,10 @@ export const toProfileInput = (draft: ProfileDraft): NewUserInput => ({
   name: draft.name.trim() || undefined,
   avatarColor: draft.avatarColor,
   birthday: toBirthday(draft.birthdayDay, draft.birthdayMonth),
-  interests: draft.interests,
-  audience: draft.audience,
 });
 
 export type ProfileErrors = {
   birthday?: string;
-  interests?: string;
   name?: string;
 };
 

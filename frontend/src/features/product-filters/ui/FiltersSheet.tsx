@@ -7,13 +7,21 @@ import { Send } from "lucide-react";
 import { EMPTY_FILTERS, type ProductFilters } from "@/entities/product";
 
 import {
+  AUDIENCES,
+  AUDIENCE_LABELS,
   CATEGORY_IDS,
   CATEGORY_LABELS,
   MARKETPLACE_IDS,
   MARKETPLACE_LABELS,
 } from "@/shared/config";
 import { plural } from "@/shared/lib/format";
-import { BottomSheet, Button, Chip, RangeSlider } from "@/shared/ui";
+import {
+  BottomSheet,
+  Button,
+  Chip,
+  RangeSlider,
+  SegmentedControl,
+} from "@/shared/ui";
 
 import { useFilterCount } from "../model";
 
@@ -97,6 +105,25 @@ export const FiltersSheet = ({
           value={draft.budget}
           onChange={(budget) => setDraft((current) => ({ ...current, budget }))}
         />
+        {/* Переехал из бывшего онбординга (DESIGN.md §8.2): лента и так
+            сдвигается к тому, что нравится, здесь — явный выбор. */}
+        <div>
+          <p className="text-label mb-3">Показывать подарки</p>
+          <SegmentedControl
+            label="Показывать подарки"
+            value={draft.audience ?? "all"}
+            options={AUDIENCES.map((audience) => ({
+              value: audience,
+              label: AUDIENCE_LABELS[audience],
+            }))}
+            onChange={(audience) =>
+              setDraft((current) => ({
+                ...current,
+                audience: audience === "all" ? undefined : audience,
+              }))
+            }
+          />
+        </div>
         <div>
           <p className="text-label mb-3">Категории</p>
           <div

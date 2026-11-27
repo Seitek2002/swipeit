@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,16 +11,15 @@ import { AppHeader } from "@/widgets/app-header";
 
 import { ResetDemoButton } from "@/features/demo-reset";
 import {
-  AudiencePicker,
   AvatarColorPicker,
   BirthdayPicker,
-  InterestsPicker,
   NAME_MAX,
   type ProfileDraft,
   draftFromUser,
   toProfileInput,
   validateProfile,
 } from "@/features/profile-form";
+import { TasteEdit } from "@/features/taste-edit";
 
 import {
   type User,
@@ -30,23 +29,30 @@ import {
   useUpdateMe,
 } from "@/entities/user";
 
-import { ROUTES } from "@/shared/config";
+import {
+  AUDIENCES,
+  AUDIENCE_LABELS,
+  type Audience,
+  ROUTES,
+} from "@/shared/config";
 import { plural } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
-import { useDemoSettingsStore } from "@/shared/store";
+import { useDemoSettingsStore, useGiftFiltersStore } from "@/shared/store";
 import {
   Avatar,
   Button,
   Screen,
   ScreenBody,
+  SegmentedControl,
   Skeleton,
   Switch,
   TextField,
   toast,
 } from "@/shared/ui";
 
-// Профиль (DESIGN.md §8.9): те же поля, что в онбординге, «Друзья»,
-// «Режим демонстрации» и «Сбросить демо-данные».
+// Профиль (DESIGN.md §8.9, quick-start.html кадр 7): имя и аватар,
+// «Мне нравится», «Показывать подарки», «Друзья», «Режим демонстрации»,
+// «Сбросить демо-данные».
 export const ProfilePage = () => {
   const me = useMe();
 
@@ -69,6 +75,50 @@ export const ProfilePage = () => {
   );
 };
 
+// Якорь «Мне нравится»: кнопка «Поправить» в тосте «Подстроили ленту под
+// твои „Хочу“» ведёт на /profile/#likes (TASKS T23).
+const LIKES_ANCHOR = "likes";
+
+// Next сам прокручивает к #якорю при переходе, но раздел появляется позже —
+// когда загрузился профиль. Поэтому прокручиваем, когда форма смонтирована.
+const useScrollToHash = () => {
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id) return;
+    document.getElementById(id)?.scrollIntoView({ block: "start" });
+  }, []);
+};
+
+// «Показывать подарки» (DESIGN.md §8.9) — то же значение, что в шторке
+// фильтров ленты: один стор gift-filters, а не поле профиля. Меняется сразу.
+const AudienceSection = () => {
+  const filters = useGiftFiltersStore((state) => state.filters);
+  const setFilters = useGiftFiltersStore((state) => state.setFilters);
+  const value: Audience = filters.audience ?? "all";
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="text-label text-paper mb-1">Показывать подарки</h2>
+      <SegmentedControl
+        label="Показывать подарки"
+        value={value}
+        onChange={(audience) =>
+          // «всем» храним отсутствием поля — так же читаются старые фильтры
+          // и ссылки (TECH_SPEC §5 ProductFilters.audience).
+          setFilters({
+            ...filters,
+            audience: audience === "all" ? undefined : audience,
+          })
+        }
+        options={AUDIENCES.map((audience) => ({
+          value: audience,
+          label: AUDIENCE_LABELS[audience],
+        }))}
+      />
+    </section>
+  );
+};
+
 const sameDraft = (a: ProfileDraft, b: ProfileDraft) =>
   JSON.stringify(a) === JSON.stringify(b);
 
@@ -81,6 +131,7 @@ const ProfileForm = ({ user }: { user: User }) => {
   const setDemoMode = useDemoSettingsStore((state) => state.setDemoMode);
   const [saved, setSaved] = useState(() => draftFromUser(user));
   const [draft, setDraft] = useState(saved);
+  useScrollToHash();
 
   const errors = validateProfile(draft, Boolean(user.name?.trim()));
   const isDirty = !sameDraft(draft, saved);
@@ -146,17 +197,10 @@ const ProfileForm = ({ user }: { user: User }) => {
           update({ birthdayDay: day, birthdayMonth: month })
         }
       />
-      <div className="flex flex-col gap-2">
-        <p className="text-caption text-rose">Интересы</p>
-        <InterestsPicker
-          value={draft.interests}
-          onChange={(interests) => update({ interests })}
-        />
-      </div>
-      <AudiencePicker
-        value={draft.audience}
-        onChange={(audience) => update({ audience })}
-      />
+      {/* «Мои даты» — T24. Обе секции ниже сохраняются сразу, без
+          «Сохранить»: это не анкета, а поправка ленты. */}
+      <TasteEdit id={LIKES_ANCHOR} />
+      <AudienceSection />
 
       {isDirty && (
         // Липкий футер над таб-баром (reference.html, .sticky-foot): поля

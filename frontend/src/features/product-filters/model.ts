@@ -8,6 +8,7 @@ import type { ProductFilters } from "@/entities/product";
 
 import { catalogKeys, getCatalogCount } from "@/shared/api";
 import {
+  AUDIENCE_LABELS,
   CATEGORY_LABELS,
   type CategoryId,
   MARKETPLACE_LABELS,
@@ -41,6 +42,20 @@ export const activeFilterChips = (filters: ProductFilters): FilterChip[] => [
           }),
         },
       ]),
+  // «Показывать подарки: для неё / для него» (DESIGN.md §8.2); «всем» —
+  // не фильтр, чипа нет.
+  ...(filters.audience && filters.audience !== "all"
+    ? [
+        {
+          id: "audience",
+          label: AUDIENCE_LABELS[filters.audience],
+          remove: (current: ProductFilters) => ({
+            ...current,
+            audience: undefined,
+          }),
+        },
+      ]
+    : []),
   ...filters.categories.map((category: CategoryId) => ({
     id: `category:${category}`,
     label: CATEGORY_LABELS[category],
@@ -109,6 +124,9 @@ export const describeFilters = (
   );
   if (categories.length === 1) parts.push(`в категории ${categories[0]}`);
   if (categories.length > 1) parts.push(`в категориях ${joinAnd(categories)}`);
+  if (filters.audience && filters.audience !== "all") {
+    parts.push(AUDIENCE_LABELS[filters.audience]);
+  }
   if (!hidePrices && !isDefaultBudget(filters)) {
     parts.push(formatBudget(filters.budget.min, filters.budget.max));
   }
