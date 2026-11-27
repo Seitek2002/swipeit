@@ -286,7 +286,14 @@ export const PlanCreatePage = () => {
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
   const [mode, setMode] = useState<Mode>("live");
-  const [deadline, setDeadline] = useState("");
+  // «До даты» — сразу «завтра, 20:00» (auto-tasks U13): пустое поле с
+  // ошибкой «Выбери время позже…» на «Дальше» было лишним шагом.
+  const [deadline, setDeadline] = useState(() => {
+    const date = new Date(clock.now());
+    date.setDate(date.getDate() + 1);
+    date.setHours(20, 0, 0, 0);
+    return toLocalInput(date.getTime());
+  });
   const [deadlineError, setDeadlineError] = useState<string>();
   const [participants, setParticipants] = useState<string[]>([]);
   const [matchRule, setMatchRule] = useState<MatchRule>("all");
@@ -363,7 +370,11 @@ export const PlanCreatePage = () => {
             mode={mode}
             onMode={setMode}
             deadline={deadline}
-            onDeadline={setDeadline}
+            onDeadline={(value) => {
+              setDeadline(value);
+              // Поправил время — старая ошибка больше не про него.
+              setDeadlineError(undefined);
+            }}
             error={deadlineError}
           />
         )}
