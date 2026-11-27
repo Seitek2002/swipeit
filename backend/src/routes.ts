@@ -9,6 +9,16 @@ import type { ServerCatalog } from "./catalog/load";
 import type { Clock, ServerHandler } from "./context";
 import type { Db } from "./db/client";
 import {
+  createDate,
+  deleteDate,
+  dismissReminder,
+  listDates,
+  listReminders,
+  updateDate,
+} from "./domains/dates/handlers";
+import { getUser, listFriends } from "./domains/friends/handlers";
+import { deleteMe } from "./domains/users/delete";
+import {
   createUser,
   getMe,
   logout,
@@ -25,6 +35,15 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "PATCH /me": updateMe,
   "POST /me/hints": markHintSeen,
   "POST /auth/logout": logout,
+  "DELETE /me": deleteMe,
+  "GET /me/dates": listDates,
+  "POST /me/dates": createDate,
+  "PATCH /me/dates/:id": updateDate,
+  "DELETE /me/dates/:id": deleteDate,
+  "GET /me/reminders": listReminders,
+  "POST /me/reminders/:id/dismiss": dismissReminder,
+  "GET /users/:id": getUser,
+  "GET /friends": listFriends,
 };
 
 export type RouteDeps = {

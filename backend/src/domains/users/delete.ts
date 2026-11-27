@@ -1,0 +1,168 @@
+import { AVATAR_COLORS } from "@swipeit/core/config";
+import { eq, or, sql } from "drizzle-orm";
+
+import type { ServerHandler, Tx } from "../../context";
+import {
+  customActivities,
+  friendships,
+  identities,
+  importantDates,
+  pickAnswers,
+  pickRequests,
+  planSwipes,
+  planVotes,
+  productSwipes,
+  reservations,
+  sessions,
+  shareLinks,
+  uploads,
+  users,
+  wishlistItems,
+  wishlistMeta,
+} from "../../db/schema";
+import { lockMe } from "./queries";
+
+// DELETE /me (BACKEND.md §3.4): удалить человека и его данные — желания,
+// свайпы, даты, сессии, привязки, фото, ссылки, брони, дружбы.
+//
+// В чужих планах и играх он остаётся строкой «Удалённый профиль» без имени:
+// строка участника, пара Санты после жеребьёвки. Его свайпы и голоса в
+// планах удаляются. Свой план или своя игра, где больше никого нет, —
+// удаляются целиком; где есть другие — остаются им, организатор — тот же
+// обезличенный профиль.
+//
+// Профиль, на который больше ничего не ссылается, удаляется физически;
+// иначе остаётся строка users без личного (deleted_at). Строки базы — без
+// внешних ключей с каскадом на участников, поэтому всё это делает код.
+
+// Свои планы и игры, где нет никого, кроме владельца.
+const deleteLonelyOwned = async (tx: Tx, id: string) => {
+  await tx.execute(sql`
+    delete from plans p where p.owner_id = ${id} and not exists (
+      select 1 from plan_participants pp
+      where pp.plan_id = p.id and pp.user_id <> ${id}
+    )
+  `);
+  await tx.execute(sql`
+    delete from santa_games g where g.owner_id = ${id} and not exists (
+      select 1 from santa_members m
+      where m.game_id = g.id and m.user_id <> ${id}
+    )
+  `);
+};
+
+// Чужой план, который ещё идёт, и чужая игра до жеребьёвки: участника
+// больше нет — его строку убираем, иначе план ждал бы его «Готов» и «Всё», а
+// жеребьёвка выдала бы кому-то пустого подопечного. Строка «Удалённый
+// профиль» остаётся там, где всё уже случилось: итоги плана, пары Санты.
+const leaveActive = async (tx: Tx, id: string) => {
+  await tx.execute(sql`
+    delete from plan_participants pp using plans p
+    where pp.plan_id = p.id and pp.user_id = ${id} and p.owner_id <> ${id}
+      and p.status in ('lobby', 'swiping')
+  `);
+  await tx.execute(sql`
+    delete from santa_members m using santa_games g
+    where m.game_id = g.id and m.user_id = ${id} and g.owner_id <> ${id}
+      and g.status = 'gathering'
+  `);
+};
+
+// Свои занятия, которых нет ни в одном оставшемся плане. Занятия в чужих
+// планах остаются (без них колода плана сломается), но без фото.
+const deleteOwnActivities = async (tx: Tx, id: string) => {
+  await tx.execute(sql`
+    delete from custom_activities a where a.created_by = ${id} and not exists (
+      select 1 from plans p where a.id = any(p.custom_activity_ids)
+    )
+  `);
+  const kept = await tx
+    .select({ id: customActivities.id, activity: customActivities.activity })
+    .from(customActivities)
+    .where(eq(customActivities.createdBy, id));
+  for (const row of kept) {
+    const activity = { ...(row.activity as Record<string, unknown>) };
+    delete activity.imageKey;
+    delete activity.image;
+    await tx
+      .update(customActivities)
+      .set({ activity, imageKey: null })
+      .where(eq(customActivities.id, row.id));
+  }
+};
+
+// Осталось ли что-то, что ссылается на профиль (чужие планы и игры).
+const isStillReferenced = async (tx: Tx, id: string) => {
+  const { rows } = await tx.execute<{ found: boolean }>(sql`
+    select
+      exists (select 1 from plans where owner_id = ${id})
+      or exists (select 1 from plan_participants where user_id = ${id})
+      or exists (select 1 from santa_games where owner_id = ${id})
+      or exists (select 1 from santa_members where user_id = ${id})
+      or exists (
+        select 1 from santa_assignments
+        where santa_id = ${id} or ward_id = ${id}
+      )
+      or exists (select 1 from custom_activities where created_by = ${id})
+      as found
+  `);
+  return Boolean(rows[0]?.found);
+};
+
+export const deleteMe: ServerHandler = async (ctx) => {
+  const me = await lockMe(ctx);
+  const { tx } = ctx;
+  const id = me.id;
+
+  await deleteLonelyOwned(tx, id);
+  await leaveActive(tx, id);
+  await tx.delete(planSwipes).where(eq(planSwipes.userId, id));
+  await tx.delete(planVotes).where(eq(planVotes.userId, id));
+  await deleteOwnActivities(tx, id);
+
+  // Своё — целиком. Брони: и его брони у других, и брони на его вишлист.
+  await tx
+    .delete(reservations)
+    .where(or(eq(reservations.reserverId, id), eq(reservations.ownerRef, id)));
+  await tx.delete(shareLinks).where(eq(shareLinks.ownerId, id));
+  await tx.delete(pickAnswers).where(eq(pickAnswers.byUserId, id));
+  await tx.delete(pickRequests).where(eq(pickRequests.fromUserId, id));
+  await tx.delete(productSwipes).where(eq(productSwipes.userId, id));
+  await tx.delete(wishlistItems).where(eq(wishlistItems.ownerId, id));
+  await tx.delete(wishlistMeta).where(eq(wishlistMeta.ownerId, id));
+  await tx.delete(importantDates).where(eq(importantDates.ownerId, id));
+  await tx
+    .delete(friendships)
+    .where(or(eq(friendships.userId, id), eq(friendships.friendId, id)));
+  await tx.delete(uploads).where(eq(uploads.ownerId, id));
+  await tx.delete(identities).where(eq(identities.userId, id));
+  await tx.delete(sessions).where(eq(sessions.userId, id));
+
+  if (await isStillReferenced(tx, id)) {
+    await tx
+      .update(users)
+      .set({
+        name: null,
+        // Фон — первый из списка, чтобы и он ничего не говорил о человеке.
+        avatarColor: AVATAR_COLORS[0],
+        birthday: null,
+        interests: [],
+        mutedInterests: [],
+        audience: "all",
+        taste: null,
+        seenHints: [],
+        dismissedReminders: [],
+        deletedAt: new Date(ctx.clock.now()),
+      })
+      .where(eq(users.id, id));
+  } else {
+    await tx.delete(users).where(eq(users.id, id));
+  }
+
+  // Друзьям и соучастникам — перечитать (B12 разошлёт адресатам).
+  ctx.events.publish({
+    type: "db:changed",
+    scope: ["users", "plans", "santa"],
+  });
+  return { ok: true };
+};
