@@ -12,6 +12,7 @@ import { matchesAudience } from "../feed";
 import { matchesPlanFilters } from "../handlers/activities";
 import { type Random, createSeededRandom } from "../random";
 import { DEMO_USER_ID } from "../seed";
+import { computeTaste } from "../taste";
 
 // Сценарий «Новый год» (TASKS T19, кнопка в демо-панели — DESIGN.md §8.10):
 // поверх свежего сида — всё, что нужно для показа за 7 минут. Айгерим с
@@ -146,6 +147,11 @@ const buildWishlist = (db: Db, { now, products }: ScenarioInput) => {
     ...db.productSwipes.filter((swipe) => swipe.userId !== DEMO_USER_ID),
     ...swipes,
   ];
+  // Вкус — по новым свайпам: «Похоже, тебе нравится» в профиле Айгерим
+  // должно совпадать с её вишлистом.
+  const taste = computeTaste(swipes, byId);
+  if (taste) owner.taste = taste;
+  else delete owner.taste;
 
   const year = new Date(now).getFullYear();
   db.wishlistMeta[DEMO_USER_ID] = {

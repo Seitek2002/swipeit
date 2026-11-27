@@ -177,6 +177,7 @@ export {
   type MeResponse,
   type NamedUser,
   type NewUserInput,
+  type Taste,
   type UpdateMeInput,
   type User,
 } from "./users/types";

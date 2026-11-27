@@ -16,6 +16,7 @@ import type { CatalogAccess, Clock } from "./context";
 import { type Db, createEmptyDb } from "./db";
 import { matchesAudience } from "./feed";
 import { type Random, createSeededRandom } from "./random";
+import { computeTaste } from "./taste";
 
 // Демо-пользователь «Айгерим» (TECH_SPEC §6, POST /auth/demo): готовый профиль
 // с вишлистом. Это тот же человек, что и бот-подруга Айгерим, — при демо-входе
@@ -247,6 +248,11 @@ export const createSeedDb = ({
       at: item.addedAt,
     }));
     db.productSwipes.push(...swipes);
+    // Вкус из тех же свайпов — как если бы их сделал человек (TECH_SPEC §6
+    // «Вкус»): у Айгерим в профиле сразу есть «Похоже, тебе нравится».
+    const taste = computeTaste(swipes, products);
+    const seeded = db.users[bot.id];
+    if (taste && seeded) seeded.taste = taste;
 
     const meta: WishlistMeta = {
       ownerId: bot.id,

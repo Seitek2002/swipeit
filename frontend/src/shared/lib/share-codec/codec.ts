@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import {
   AVATAR_COLORS,
+  type Audience,
   CATEGORY_IDS,
   type CategoryId,
   MARKETPLACE_IDS,
@@ -222,6 +223,9 @@ const PickRequestShort = z.object({
     // Неизвестная категория — ссылка от более новой версии: считаем битой.
     c: z.array(z.enum(CATEGORY_IDS)).max(CATEGORY_IDS.length),
     m: z.array(z.enum(MARKETPLACE_IDS)).max(MARKETPLACE_IDS.length),
+    // «Показывать подарки»: f — для неё, m — для него. Нет — «всем»: так
+    // открываются и старые ссылки, где поля ещё не было.
+    a: GenderShort.optional(),
   }),
   h: z.literal(1).optional(),
   oc: OccasionShort.optional(),
@@ -230,6 +234,8 @@ const PickRequestShort = z.object({
 
 export type SharedPickRequest = {
   filters: {
+    // Нет — «всем».
+    audience?: Audience;
     budget: { max: null | number; min: number };
     categories: CategoryId[];
     marketplaces: MarketplaceId[];
@@ -261,6 +267,11 @@ export const encodePickRequest = (request: SharedPickRequest): string =>
       b: [request.filters.budget.min, request.filters.budget.max],
       c: request.filters.categories,
       m: request.filters.marketplaces,
+      a: fromGender(
+        request.filters.audience === "all"
+          ? undefined
+          : request.filters.audience,
+      ),
     },
     h: request.hidePrices ? 1 : undefined,
     oc: request.occasion
@@ -291,6 +302,7 @@ export const decodePickRequest = (
       budget: { min: short.fl.b[0], max: short.fl.b[1] },
       categories: short.fl.c,
       marketplaces: short.fl.m,
+      audience: toGender(short.fl.a),
     },
     hidePrices: short.h === 1,
     occasion: short.oc

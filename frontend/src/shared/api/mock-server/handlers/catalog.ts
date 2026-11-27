@@ -12,6 +12,7 @@ import type { Handler, HandlerContext } from "../context";
 import type { Db } from "../db";
 import { notFound, validation } from "../errors";
 import { contextKey, parseContextKey, rankProducts } from "../feed";
+import { tasteOf } from "../taste";
 import { parseInput, requireUser } from "./common";
 
 const DEFAULT_LIMIT = 10;
@@ -42,20 +43,30 @@ const rankForUser = async (
   query: z.infer<typeof FeedQuerySchema>,
 ) => {
   const user = requireUser(ctx, db);
+  const products = await ctx.catalog.products();
   const context = parseContextKey(query.context);
   const key = contextKey(context);
-  const swiped = db.productSwipes
-    .filter(
-      (swipe) => swipe.userId === user.id && contextKey(swipe.context) === key,
-    )
+  const own = db.productSwipes.filter((swipe) => swipe.userId === user.id);
+  const swiped = own
+    .filter((swipe) => contextKey(swipe.context) === key)
     .map((swipe) => swipe.productId);
   const extra = query.exclude ? query.exclude.split(",").filter(Boolean) : [];
   return rankProducts({
-    products: await ctx.catalog.products(),
+    products,
+    // Аудитория — из фильтров (TECH_SPEC §5 ProductFilters.audience), а не
+    // из профиля: User.audience устарело с этапа 7.
     filters: parseFilters(query.filters),
-    audience: user.audience,
-    interests: user.interests,
+    profile: {
+      interests: user.interests,
+      mutedInterests: user.mutedInterests,
+      taste: tasteOf(user, own, products),
+    },
     excludeIds: new Set([...swiped, ...extra]),
+    // Разведка — только в своей ленте и только пока в ней нет ни одного
+    // свайпа: в ленте по ссылке-фильтру вкус не узнаём.
+    explore:
+      context.kind === "self" &&
+      !own.some((swipe) => swipe.context.kind === "self"),
     userId: user.id,
     dateKey: toDateKey(ctx.clock.now()),
   });
