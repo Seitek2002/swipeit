@@ -5,3 +5,4 @@ export {
   FRIEND_REMINDER_WINDOW_DAYS,
   nearestFriendBirthday,
 } from "@swipeit/core/logic/dates";
+export { birthdayOccasionOf } from "@swipeit/core/logic/occasion";

@@ -2,6 +2,7 @@ import {
   PickAnswerImportSchema,
   PickRequestInputSchema,
 } from "@swipeit/core/api/pick/inputs";
+import { pickOccasionFrom } from "@swipeit/core/logic/occasion";
 import { nanoid } from "nanoid";
 
 import {
@@ -14,7 +15,6 @@ import type { PickAnswer, PickRequest } from "../../pick/types";
 import { type Handler, nowIso } from "../context";
 import type { Db } from "../db";
 import { validation } from "../errors";
-import { normalizeOccasion, publicOccasion } from "../occasion";
 import { parseInput, requireNamedUser, requireUser } from "./common";
 
 // «Выбери подарок сам» (TECH_SPEC §6, §8; DESIGN.md §8.6). Ссылка-фильтр
@@ -59,12 +59,10 @@ export const createPickRequest: Handler = async (ctx, { body }) => {
       toName: input.toName || undefined,
       filters: input.filters,
       hidePrices: input.hidePrices,
-      // В ссылку другу — как в ссылку вишлиста: у значимой даты только
-      // дата и готовый повод.
+      // Повод — праздник получателя: свои даты и день рождения отправителя
+      // не подставляем (auto-tasks U01).
       occasion: input.occasion
-        ? publicOccasion(
-            normalizeOccasion(db, user, input.occasion, ctx.clock.now()),
-          )
+        ? pickOccasionFrom(input.occasion, ctx.clock.now())
         : undefined,
       message: input.message || undefined,
       createdAt: nowIso(ctx.clock),

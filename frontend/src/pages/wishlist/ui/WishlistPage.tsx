@@ -81,7 +81,10 @@ export const WishlistPage = () => {
   const [customOpen, setCustomOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   // «Предложить выбрать» из карточки дня рождения друга (P03).
-  const [pickFriend, setPickFriend] = useState<null | string>(null);
+  const [pickFriend, setPickFriend] = useState<{
+    birthday: string;
+    name: string;
+  } | null>(null);
   // Повод напоминания: «Отправить вишлист» в баннере открывает шторку сразу
   // с ним (DESIGN.md §7 ReminderBanner).
   const [shareOccasion, setShareOccasion] = useState<Occasion | undefined>();
@@ -301,7 +304,13 @@ export const WishlistPage = () => {
         {data && tab === "want" && (
           <FriendBirthdayCard
             className="mx-5 mt-3"
-            onPick={(friend) => setPickFriend(friend.name)}
+            onPick={(friend) =>
+              setPickFriend({
+                name: friend.name,
+                // "YYYY-MM-DD" ближайшего наступления → "MM-DD".
+                birthday: friend.date.slice(5),
+              })
+            }
           />
         )}
         {data && tab === "want" && (
@@ -409,7 +418,8 @@ export const WishlistPage = () => {
       <CustomWishSheet open={customOpen} onClose={() => setCustomOpen(false)} />
       {pickFriend !== null && (
         <FriendPickSheet
-          friendName={pickFriend}
+          friendName={pickFriend.name}
+          friendBirthday={pickFriend.birthday}
           open
           onClose={() => setPickFriend(null)}
         />

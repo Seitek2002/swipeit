@@ -84,6 +84,29 @@ describe.each(CLIENTS)("«Выбери подарок сам» — %s", (_name, 
     });
   });
 
+  it("повод — праздник получателя: день рождения отправителя не подставляется (U01)", async () => {
+    const sender = await person({ name: "Айгерим", birthday: "03-14" });
+    const send = (occasion: Record<string, unknown>) =>
+      api.call<{ request: PickRequest }>(sender, "POST", "/pick-requests", {
+        filters: FILTERS,
+        hidePrices: false,
+        occasion,
+      });
+    expect((await send({ kind: "birthday" })).request.occasion).toEqual({
+      kind: "birthday",
+    });
+    expect(
+      (await send({ kind: "birthday", date: "2026-12-03" })).request.occasion,
+    ).toEqual({ kind: "birthday", date: "2026-12-03" });
+    expect((await send({ kind: "new_year" })).request.occasion).toEqual({
+      kind: "new_year",
+      date: "2026-12-31",
+    });
+    await expect(
+      send({ kind: "important", dateId: "d_любая" }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
+  });
+
   it("лента друга — в рамках фильтров; «Хочу» не попадает в его вишлист и вкус", async () => {
     const friend = await person({ name: "Айжан", audience: "female" });
     const requestId = "pk_test";

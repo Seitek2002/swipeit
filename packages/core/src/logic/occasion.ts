@@ -52,6 +52,30 @@ export const normalizeOccasionFrom = (
   }
 };
 
+// Повод ссылки-фильтра (auto-tasks U01): это праздник получателя, а не
+// отправителя. Своих дат и дня рождения отправителя не подставляем: день
+// рождения — только с датой из запроса (день рождения друга), значимая дата
+// — только своя, в ссылке другу её нет. Ни названия, ни dateId наружу.
+export const pickOccasionFrom = (input: Occasion, now: number): Occasion => {
+  if (input.kind === "important") {
+    throw validation("Значимая дата — только для своего вишлиста");
+  }
+  return (
+    publicOccasion(normalizeOccasionFrom({ dates: [] }, input, now)) ?? {
+      kind: "just_because",
+    }
+  );
+};
+
+// «День рождения, 3 декабря» друга — для шторки «Предложить выбрать».
+export const birthdayOccasionOf = (
+  birthday: string,
+  now: number,
+): Occasion => ({
+  kind: "birthday",
+  date: nextOccurrence(birthday, now),
+});
+
 // Повод значимой даты — по самой дате на момент чтения: прошло время — и
 // ближайшее наступление уже другое; дату удалили — «Просто так».
 export const freshOccasionFrom = (

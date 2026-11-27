@@ -246,6 +246,7 @@ export const FriendsPage = () => {
       {soon && (
         <FriendPickSheet
           friendName={soon.user.name}
+          friendBirthday={soon.user.birthday}
           open={pickOpen}
           onClose={() => setPickOpen(false)}
         />

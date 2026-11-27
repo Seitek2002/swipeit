@@ -10,7 +10,7 @@ import {
   occasionFromDraft,
 } from "@/entities/wishlist";
 
-import { createPickRequest } from "@/shared/api";
+import { type Occasion, createPickRequest } from "@/shared/api";
 import { absoluteUrl } from "@/shared/lib/dom";
 import {
   BottomSheet,
@@ -23,6 +23,10 @@ import {
 type Props = {
   // Условия словами — их показывает экран, который открыл шторку.
   conditions: string;
+  // Повод заранее — день рождения друга, если шторку открыли с его профиля
+  // или из карточки «Через 5 дней у …» (auto-tasks U01). Читается при
+  // монтировании, как «Кому».
+  defaultOccasion?: Occasion;
   // «Кому» заполнено заранее — шторку открыли с профиля друга или из
   // баннера его дня рождения (DESIGN.md §8.6 «Где начать»). Читается при
   // монтировании: другому другу — своя шторка (key).
@@ -49,13 +53,14 @@ export const PickRequestSheet = ({
   filters,
   conditions,
   defaultToName = "",
+  defaultOccasion,
   nameStep,
   onShareError,
 }: Props) => {
   const { data: me } = useMe();
   const askName = Boolean(nameStep);
   const [toName, setToName] = useState(defaultToName);
-  const [draft, setDraft] = useState(() => occasionDraftOf());
+  const [draft, setDraft] = useState(() => occasionDraftOf(defaultOccasion));
   const [message, setMessage] = useState("");
   const [hidePrices, setHidePrices] = useState(false);
   const created = useRef<{ key: string; url: Promise<string> } | null>(null);

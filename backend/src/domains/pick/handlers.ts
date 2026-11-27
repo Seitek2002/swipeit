@@ -6,10 +6,7 @@ import {
 import type { PickAnswer, PickRequest } from "@swipeit/core/api/pick/types";
 import type { Occasion } from "@swipeit/core/api/wishlist/types";
 import { nameRequired, validation } from "@swipeit/core/errors";
-import {
-  normalizeOccasionFrom,
-  publicOccasion,
-} from "@swipeit/core/logic/occasion";
+import { pickOccasionFrom } from "@swipeit/core/logic/occasion";
 import { parseInput } from "@swipeit/core/parse-input";
 import { decodePickAnswer, encodePickAnswer } from "@swipeit/core/share-codec";
 import { and, asc, eq, inArray } from "drizzle-orm";
@@ -17,9 +14,8 @@ import { nanoid } from "nanoid";
 
 import type { ServerContext, ServerHandler, Tx } from "../../context";
 import { pickAnswers, pickRequests, productSwipes } from "../../db/schema";
-import { datesOf } from "../dates/handlers";
 import { ensureShareLink, type ShareLinkRow } from "../share/links";
-import { readMe, readUser, rowToUser, type UserRow } from "../users/queries";
+import { readMe, readUser, type UserRow } from "../users/queries";
 
 // «Выбери подарок сам» (BACKEND.md B09): ссылка-фильтр и ответ — короткими
 // ссылками, ответ хранится (один на друга, повтор заменяет). Свайпы друга по
@@ -71,17 +67,10 @@ export const createPickRequest: ServerHandler = async (ctx, { body }) => {
   const input = parseInput(PickRequestInputSchema, body);
   const me = await readMe(ctx);
   if (!me.name) throw nameRequired();
+  // Повод — праздник получателя: свои даты и день рождения отправителя не
+  // подставляем (auto-tasks U01).
   const occasion = input.occasion
-    ? publicOccasion(
-        normalizeOccasionFrom(
-          {
-            birthday: rowToUser(me).birthday,
-            dates: await datesOf(ctx.tx, me.id),
-          },
-          input.occasion,
-          ctx.clock.now(),
-        ),
-      )
+    ? pickOccasionFrom(input.occasion, ctx.clock.now())
     : undefined;
   const [row] = await ctx.tx
     .insert(pickRequests)

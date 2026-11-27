@@ -90,6 +90,7 @@ const ProfileContent = ({ id }: { id?: string }) => {
       />
       <FriendPickSheet
         friendName={user.data.name ?? ""}
+        friendBirthday={user.data.birthday}
         open={pickOpen}
         onClose={() => setPickOpen(false)}
       />
