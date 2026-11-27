@@ -139,6 +139,7 @@ const takePage = (
   tail: readonly CategoryId[],
   isUntried: (product: Product) => boolean,
   isLiked: (category: CategoryId) => boolean,
+  isMuted: (product: Product) => boolean,
 ): Product[] => {
   const page: Product[] = [];
   const recent = [...tail];
@@ -154,12 +155,15 @@ const takePage = (
     const fits = (product: Product) =>
       allowed(product) &&
       !(run >= MAX_IN_A_ROW && product.category === previous);
-    let index = pool.findIndex(fits);
+    // «Не моё» — только когда других кандидатов нет совсем: даже третий
+    // подряд товар одной категории лучше приглушённого (TECH_SPEC §6, T23).
+    const clean = (product: Product) => fits(product) && !isMuted(product);
+    let index = pool.findIndex(clean);
     if (index !== -1 && previous && pool[index]?.category === previous) {
       // Повтор уступает другой любимой категории, а на местах разведки —
       // любой другой: две разведочные карточки — это две разные категории.
       const other = (product: Product) =>
-        fits(product) &&
+        clean(product) &&
         product.category !== previous &&
         (isLiked(product.category) || mustExplore);
       const alternative = pool.findIndex(other);
@@ -167,6 +171,12 @@ const takePage = (
     }
     // Остались только карточки той же категории — лучше показать их, чем
     // оборвать ленту.
+    if (index === -1) {
+      index = pool.findIndex(
+        (product) => allowed(product) && !isMuted(product),
+      );
+    }
+    if (index === -1) index = pool.findIndex(fits);
     if (index === -1) index = pool.findIndex(allowed);
     if (index === -1) index = 0;
     const [next] = pool.splice(index, 1);
@@ -275,6 +285,7 @@ export const rankProducts = ({
         result.slice(-MAX_IN_A_ROW).map((product) => product.category),
         isUntried,
         isLiked,
+        (product) => hasMuted(product, muted),
       ),
     );
   }

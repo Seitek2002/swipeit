@@ -412,3 +412,33 @@ describe("контекст свайпа", () => {
     expect(parseContextKey(undefined)).toEqual({ kind: "self" });
   });
 });
+
+describe("«Не моё» и правило повторов", () => {
+  it("уход от повтора категории не вытаскивает «Не моё» вперёд", () => {
+    // Любимая категория — техника, но в ней остался только товар с «Не моё»;
+    // красота не любимая. Вместо повтора красоты лента не должна ставить
+    // приглушённую колонку второй.
+    const products = [
+      product({ id: "b1", category: "beauty", popularity: 0.9 }),
+      product({ id: "b2", category: "beauty", popularity: 0.8 }),
+      product({ id: "b3", category: "beauty", popularity: 0.7 }),
+      product({ id: "t_muted", category: "tech", interests: ["music"] }),
+    ];
+    const ranked = rankProducts({
+      ...base,
+      products,
+      profile: {
+        interests: [],
+        mutedInterests: ["music"],
+        taste: {
+          interests: {},
+          categories: { tech: 3 },
+          audience: { female: 0, male: 0 },
+          likes: 3,
+          updatedAt: "2026-11-26T00:00:00.000Z",
+        },
+      },
+    });
+    expect(ranked.at(-1)?.id).toBe("t_muted");
+  });
+});

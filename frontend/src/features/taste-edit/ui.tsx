@@ -58,7 +58,12 @@ export const TasteEdit = ({ id, className }: Props) => {
 
       {inferred.length > 0 && (
         <>
-          <p className="text-caption text-rose mt-4 mb-2.5">
+          <p
+            className={cn(
+              "text-caption text-rose mb-2.5",
+              own.length > 0 && "mt-4",
+            )}
+          >
             Похоже, тебе нравится — по твоим «Хочу»
           </p>
           <ChipWrap role="group" aria-label="Похоже, тебе нравится">
