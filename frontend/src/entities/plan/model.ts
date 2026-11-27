@@ -1,4 +1,5 @@
 import type {
+  PlanMatches,
   PlanParticipant,
   PlanSession,
   PlanSummary,
@@ -6,7 +7,18 @@ import type {
 } from "@/shared/api";
 import { formatDayMonth } from "@/shared/lib/format";
 
-export type { PlanParticipant, PlanSession, PlanSummary, PlanView };
+// computeMatches — чистая функция (TECH_SPEC §6). Живёт в shared/api: её же
+// зовёт мок-сервер, чтобы разослать plan:match, а ему нельзя импортировать
+// entities (FSD). Для интерфейса — отсюда.
+export { computeMatches } from "@/shared/api";
+
+export type {
+  PlanMatches,
+  PlanParticipant,
+  PlanSession,
+  PlanSummary,
+  PlanView,
+};
 
 const time = (iso: string) =>
   new Date(iso).toLocaleTimeString("ru", {

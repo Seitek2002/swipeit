@@ -59,14 +59,22 @@ export {
 } from "./pick/requests";
 export { type PickAnswer, type PickRequest } from "./pick/types";
 export {
+  computeMatches,
+  type PlanMatch,
+  type PlanMatches,
+} from "./plans/matches";
+export {
   createCustomActivity,
   createPlan,
+  finishPlan,
   getActivities,
   getPlan,
   getPlans,
   joinPlan,
   setPlanReady,
   startPlan,
+  swipePlan,
+  undoPlanSwipe,
 } from "./plans/requests";
 export {
   type CreatePlanInput,

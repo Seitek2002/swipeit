@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { BotTrigger } from "@/shared/lib/realtime/types";
 
 import type { Activity } from "../../catalog/types";
+import { computeMatches } from "../../plans/matches";
 import {
   CreatePlanInputSchema,
   type PlanParticipant,
@@ -18,14 +19,19 @@ import { ApiError, notFound, validation } from "../errors";
 import { matchesPlanFilters } from "./activities";
 import { parseInput, requireUser } from "./common";
 
-// «Че делать будем?» — список, создание, вступление и лобби (TECH_SPEC §5,
-// §6; DESIGN.md §8.7). Свайп колоды, совпадения и решение — T14/T15.
+// «Че делать будем?» — список, создание, вступление, лобби, свайп колоды и
+// совпадения (TECH_SPEC §5, §6; DESIGN.md §8.7). Результаты и решение — T15.
 
 // Сколько готовых нужно, чтобы организатор мог нажать «Поехали».
 const MIN_READY = 2;
 const PREVIEW_SIZE = 3;
 
 const ReadyBodySchema = z.object({ ready: z.boolean().default(true) });
+
+const SwipeBodySchema = z.object({
+  activityId: z.string().min(1, "Какое занятие?"),
+  decision: z.enum(["like", "pass"]),
+});
 
 const forbidden = (message: string) => new ApiError(403, "FORBIDDEN", message);
 const conflict = (message: string) => new ApiError(409, "CONFLICT", message);
@@ -294,4 +300,147 @@ export const startPlan: Handler = async (ctx, { params }) => {
   changed(ctx, view.plan.id);
   trigger(ctx, "plan:started", view.plan.id);
   return view;
+};
+
+// ── Свайп колоды (T14) ──────────────────────────────────────────────
+
+const UndoBodySchema = z.object({
+  activityId: z.string().min(1, "Какое занятие?"),
+});
+
+// Карточки, которые участник реально может свайпнуть: колода без занятий,
+// пропавших из каталога. По ним же считаются прогресс и «закончил».
+const deckIdsOf = (db: Db, plan: PlanSession, catalog: Activity[]) =>
+  deckOf(db, plan, catalog).map((activity) => activity.id);
+
+const progressOf = (plan: PlanSession, userId: string, deckIds: string[]) => {
+  const mine = plan.swipes[userId] ?? {};
+  return {
+    done: deckIds.filter((id) => mine[id] !== undefined).length,
+    total: deckIds.length,
+  };
+};
+
+const matchIdsOf = (plan: PlanSession, deck: Activity[]) =>
+  new Set(computeMatches(plan, deck).matches.map((m) => m.activityId));
+
+const requireSwiping = (plan: PlanSession) => {
+  if (plan.status === "lobby") throw conflict("План ещё не начался");
+  if (plan.status !== "swiping") throw conflict("Выбор уже закончился");
+};
+
+const markFinished = (plan: PlanSession, userId: string) => {
+  if (!plan.finishedIds.includes(userId)) plan.finishedIds.push(userId);
+};
+
+// «Прямо сейчас»: закончили все — сразу к результатам. «До даты» ждёт
+// дедлайна или всех — это переход T15 (по часам), здесь только live.
+const completeIfAllFinished = (plan: PlanSession) => {
+  if (plan.mode !== "live" || plan.status !== "swiping") return;
+  if (plan.participantIds.every((id) => plan.finishedIds.includes(id))) {
+    plan.status = "results";
+  }
+};
+
+const progressEvent = (
+  ctx: HandlerContext,
+  planId: string,
+  userId: string,
+  progress: { done: number; total: number },
+) =>
+  ctx.realtime.publish({ type: "plan:progress", planId, userId, ...progress });
+
+// POST /plans/:id/swipes { activityId, decision } — решение по карточке.
+// Повторный свайп той же карточки заменяет прежний. Последняя карточка —
+// участник «закончил» сам, без отдельного /finish (боты и люди не обязаны
+// его звать). plan:match — только для занятий, которые стали совпадением
+// именно этим свайпом: оверлей не всплывает дважды.
+export const swipePlan: Handler = async (ctx, { params, body }) => {
+  const input = parseInput(SwipeBodySchema, body);
+  const catalog = await ctx.catalog.activities();
+  const result = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    requireParticipant(plan, user);
+    requireSwiping(plan);
+    const deck = deckOf(db, plan, catalog);
+    const deckIds = deck.map((activity) => activity.id);
+    if (!deckIds.includes(input.activityId)) {
+      throw validation("Этого занятия нет в колоде");
+    }
+    const before = matchIdsOf(plan, deck);
+    plan.swipes[user.id] = {
+      ...plan.swipes[user.id],
+      [input.activityId]: input.decision,
+    };
+    const after = matchIdsOf(plan, deck);
+    const progress = progressOf(plan, user.id, deckIds);
+    if (progress.done >= progress.total) markFinished(plan, user.id);
+    completeIfAllFinished(plan);
+    return {
+      newMatches: [...after].filter((id) => !before.has(id)),
+      progress,
+      userId: user.id,
+      view: viewOf(db, plan, catalog),
+    };
+  });
+  const planId = result.view.plan.id;
+  changed(ctx, planId);
+  progressEvent(ctx, planId, result.userId, result.progress);
+  for (const activityId of result.newMatches) {
+    ctx.realtime.publish({ type: "plan:match", planId, activityId });
+  }
+  return result.view;
+};
+
+// POST /plans/:id/swipes/undo { activityId } — «Вернуть карточку»
+// (reference.html). Расширение TECH_SPEC §6. Совпадение, которое пропало
+// из-за отмены, событием не «отзывается»: экраны пересчитывают его сами
+// через computeMatches.
+export const undoPlanSwipe: Handler = async (ctx, { params, body }) => {
+  const input = parseInput(UndoBodySchema, body);
+  const catalog = await ctx.catalog.activities();
+  const result = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    requireParticipant(plan, user);
+    requireSwiping(plan);
+    const { [input.activityId]: removed, ...rest } = plan.swipes[user.id] ?? {};
+    if (removed === undefined) {
+      throw conflict("Эту карточку ты ещё не свайпал");
+    }
+    plan.swipes[user.id] = rest;
+    const progress = progressOf(plan, user.id, deckIdsOf(db, plan, catalog));
+    // Карточка снова в колоде — значит, колода не досвайпана.
+    if (progress.done < progress.total) {
+      plan.finishedIds = plan.finishedIds.filter((id) => id !== user.id);
+    }
+    return { progress, userId: user.id, view: viewOf(db, plan, catalog) };
+  });
+  const planId = result.view.plan.id;
+  changed(ctx, planId);
+  progressEvent(ctx, planId, result.userId, result.progress);
+  return result.view;
+};
+
+// POST /plans/:id/finish — участник закончил колоду. Повторный вызов и
+// вызов после перехода к результатам ничего не меняют. Не требует свайпов
+// всех карточек: клиент мог не увидеть часть колоды (занятие пропало из
+// каталога), и застрять из-за этого нельзя.
+export const finishPlan: Handler = async (ctx, { params }) => {
+  const catalog = await ctx.catalog.activities();
+  const result = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    requireParticipant(plan, user);
+    if (plan.finishedIds.includes(user.id) || plan.status !== "swiping") {
+      if (plan.status === "lobby") throw conflict("План ещё не начался");
+      return { changed: false, view: viewOf(db, plan, catalog) };
+    }
+    markFinished(plan, user.id);
+    completeIfAllFinished(plan);
+    return { changed: true, view: viewOf(db, plan, catalog) };
+  });
+  if (result.changed) changed(ctx, result.view.plan.id);
+  return result.view;
 };

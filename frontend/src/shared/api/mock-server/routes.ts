@@ -31,11 +31,14 @@ import {
 } from "./handlers/pick";
 import {
   createPlan,
+  finishPlan,
   getPlan,
   joinPlan,
   listPlans,
   setReady,
   startPlan,
+  swipePlan,
+  undoPlanSwipe,
 } from "./handlers/plans";
 import { createSwipe, restartSwipes, undoSwipe } from "./handlers/swipes";
 import {
@@ -128,6 +131,13 @@ export const ROUTE_TABLE: Route[] = [
   { method: "POST", pattern: "/plans/:id/join", handler: joinPlan },
   { method: "POST", pattern: "/plans/:id/ready", handler: setReady },
   { method: "POST", pattern: "/plans/:id/start", handler: startPlan },
+  { method: "POST", pattern: "/plans/:id/swipes", handler: swipePlan },
+  {
+    method: "POST",
+    pattern: "/plans/:id/swipes/undo",
+    handler: undoPlanSwipe,
+  },
+  { method: "POST", pattern: "/plans/:id/finish", handler: finishPlan },
   { method: "GET", pattern: "/activities", handler: listActivities },
   { method: "POST", pattern: "/activities", handler: createCustomActivity },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },

@@ -1,6 +1,8 @@
 export { usePlan, usePlans } from "./api";
 export {
+  computeMatches,
   formatDeadline,
+  type PlanMatches,
   type PlanParticipant,
   type PlanSession,
   type PlanStatusView,

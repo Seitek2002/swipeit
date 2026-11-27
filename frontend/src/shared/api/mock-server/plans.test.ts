@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { RealtimeEvent } from "@/shared/lib/realtime/types";
 
 import type { Activity, CatalogMeta } from "../catalog/types";
+import { computeMatches } from "../plans/matches";
 import type { PlanSummary, PlanView } from "../plans/types";
 import type { User } from "../users/types";
 import {
@@ -25,7 +26,7 @@ import { DEMO_USER_ID, createSeedDb } from "./seed";
 import { type MockServer, createMockServer } from "./server";
 
 // «Че делать будем?»: создание плана, вступление, лобби, старт и колода,
-// боты в лобби, авторы фото.
+// свайп и совпадения, боты в лобби и в колоде, авторы фото.
 const readStub = (file: string): unknown =>
   JSON.parse(
     readFileSync(
@@ -77,13 +78,21 @@ const createManualScheduler = () => {
       };
     },
   };
+  const runAll = async () => {
+    const due = tasks.splice(0);
+    due.forEach((entry) => entry.task());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  };
   return {
     scheduler,
     tasks,
-    runAll: async () => {
-      const due = tasks.splice(0);
-      due.forEach((entry) => entry.task());
-      await new Promise((resolve) => setTimeout(resolve, 20));
+    runAll,
+    // Цепочки (бот планирует следующую карточку после ответа на прошлую) —
+    // гоняем, пока задачи не кончатся.
+    drain: async () => {
+      for (let round = 0; round < 100 && tasks.length > 0; round += 1) {
+        await runAll();
+      }
     },
   };
 };
@@ -429,6 +438,309 @@ describe("боты в лобби", () => {
       DEMO_USER_ID,
     );
     expect(started.plan.status).toBe("swiping");
+    engine.stop();
+  });
+});
+
+const startLivePlan = async (extra: Record<string, unknown> = {}) => {
+  const { view } = await createLivePlan(extra);
+  await call("POST", planPath(view.plan.id, "/ready"), "u_azamat");
+  return call<PlanView>("POST", planPath(view.plan.id, "/start"), DEMO_USER_ID);
+};
+
+const swipe = (
+  id: string,
+  userId: string,
+  activityId: string,
+  decision: "like" | "pass" = "like",
+) =>
+  call<PlanView>("POST", planPath(id, "/swipes"), userId, {
+    activityId,
+    decision,
+  });
+
+const eventsOf = <T extends RealtimeEvent["type"]>(type: T) =>
+  bus.events.filter(
+    (event): event is Extract<RealtimeEvent, { type: T }> =>
+      event.type === type,
+  );
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+const DEADLINE_PLAN = {
+  title: "На выходных",
+  mode: "deadline",
+  deadline: new Date(NOW + 2 * 24 * 3600_000).toISOString(),
+  filters: FILTERS,
+};
+
+describe("свайп колоды", () => {
+  it("только участник, только во время свайпа, только карточки колоды", async () => {
+    const { view } = await createLivePlan();
+    const id = view.plan.id;
+    const someCard = view.activities[0]?.id ?? "";
+    await expect(swipe(id, DEMO_USER_ID, someCard)).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    await call("POST", planPath(id, "/ready"), "u_azamat");
+    const started = await call<PlanView>(
+      "POST",
+      planPath(id, "/start"),
+      DEMO_USER_ID,
+    );
+    const card = started.plan.deck[0] ?? "";
+    const stranger = await newUser("Айжан");
+    await expect(swipe(id, stranger.id, card)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await expect(swipe(id, DEMO_USER_ID, "a_999")).rejects.toMatchObject({
+      code: "VALIDATION",
+    });
+    await expect(
+      call("POST", planPath(id, "/swipes"), DEMO_USER_ID, {
+        activityId: card,
+        decision: "superlike",
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
+    // Повторный свайп заменяет прежний.
+    await swipe(id, DEMO_USER_ID, card, "pass");
+    const again = await swipe(id, DEMO_USER_ID, card, "like");
+    expect(again.plan.swipes[DEMO_USER_ID]).toEqual({ [card]: "like" });
+  });
+
+  it("прогресс у всех, plan:match — один раз, когда набралось большинство", async () => {
+    const started = await startLivePlan();
+    const id = started.plan.id;
+    const card = started.plan.deck[0] ?? "";
+    bus.events.length = 0;
+    await swipe(id, DEMO_USER_ID, card);
+    expect(eventsOf("plan:progress")).toEqual([
+      {
+        type: "plan:progress",
+        planId: id,
+        userId: DEMO_USER_ID,
+        done: 1,
+        total: 6,
+      },
+    ]);
+    expect(eventsOf("db:changed")).toContainEqual(
+      expect.objectContaining({ scope: ["plans"], id }),
+    );
+    // 2 из 4 — ровно половина, ещё не большинство.
+    await swipe(id, "u_azamat", card);
+    expect(eventsOf("plan:match")).toHaveLength(0);
+    await swipe(id, "u_nurai", card);
+    expect(eventsOf("plan:match")).toEqual([
+      { type: "plan:match", planId: id, activityId: card },
+    ]);
+    // Уже совпадение: ни четвёртый лайк, ни повтор не шлют событие снова.
+    await swipe(id, "u_daniyar", card);
+    await swipe(id, "u_nurai", card);
+    expect(eventsOf("plan:match")).toHaveLength(1);
+  });
+
+  it("правило «все»: совпадение только после лайка последнего", async () => {
+    const started = await startLivePlan({ matchRule: "all" });
+    const id = started.plan.id;
+    const card = started.plan.deck[1] ?? "";
+    bus.events.length = 0;
+    for (const userId of [DEMO_USER_ID, "u_azamat", "u_nurai"]) {
+      await swipe(id, userId, card);
+    }
+    expect(eventsOf("plan:match")).toHaveLength(0);
+    await swipe(id, "u_daniyar", card);
+    expect(eventsOf("plan:match")).toHaveLength(1);
+  });
+
+  it("последняя карточка — «закончил», закончили все — результаты", async () => {
+    const started = await startLivePlan();
+    const id = started.plan.id;
+    const { deck } = started.plan;
+    const everyone = [DEMO_USER_ID, ...BOTS];
+    let last = started;
+    for (const [index, userId] of everyone.entries()) {
+      for (const card of deck) last = await swipe(id, userId, card, "pass");
+      expect(last.plan.finishedIds).toContain(userId);
+      if (index < everyone.length - 1) {
+        expect(last.plan.status).toBe("swiping");
+      }
+    }
+    expect(last.plan.status).toBe("results");
+    expect(last.plan.finishedIds).toEqual(everyone);
+    await expect(swipe(id, DEMO_USER_ID, deck[0] ?? "")).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    // /finish после результатов ничего не ломает.
+    const finished = await call<PlanView>(
+      "POST",
+      planPath(id, "/finish"),
+      DEMO_USER_ID,
+    );
+    expect(finished.plan.status).toBe("results");
+  });
+
+  it("/finish: повторный вызов ничего не меняет, закончили все — результаты", async () => {
+    const started = await startLivePlan();
+    const id = started.plan.id;
+    await expect(
+      call("POST", planPath("pl_nope", "/finish"), DEMO_USER_ID),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    const once = await call<PlanView>(
+      "POST",
+      planPath(id, "/finish"),
+      DEMO_USER_ID,
+    );
+    expect(once.plan.finishedIds).toEqual([DEMO_USER_ID]);
+    bus.events.length = 0;
+    const twice = await call<PlanView>(
+      "POST",
+      planPath(id, "/finish"),
+      DEMO_USER_ID,
+    );
+    expect(twice.plan.finishedIds).toEqual([DEMO_USER_ID]);
+    expect(eventsOf("db:changed")).toHaveLength(0);
+    let last = twice;
+    for (const userId of BOTS) {
+      last = await call<PlanView>("POST", planPath(id, "/finish"), userId);
+    }
+    expect(last.plan.status).toBe("results");
+  });
+
+  it("«До даты»: закончили все — план ждёт дедлайна (переход — T15)", async () => {
+    const view = await call<PlanView>("POST", "/plans", DEMO_USER_ID, {
+      ...DEADLINE_PLAN,
+      participantIds: ["u_azamat"],
+    });
+    const id = view.plan.id;
+    let last = view;
+    for (const userId of [DEMO_USER_ID, "u_azamat"]) {
+      for (const card of view.plan.deck) last = await swipe(id, userId, card);
+    }
+    expect(last.plan.finishedIds).toEqual([DEMO_USER_ID, "u_azamat"]);
+    expect(last.plan.status).toBe("swiping");
+  });
+
+  it("«Вернуть карточку»: свайп удаляется, «закончил» снимается", async () => {
+    const started = await startLivePlan();
+    const id = started.plan.id;
+    const { deck } = started.plan;
+    for (const card of deck) await swipe(id, DEMO_USER_ID, card);
+    const lastCard = deck.at(-1) ?? "";
+    bus.events.length = 0;
+    const undone = await call<PlanView>(
+      "POST",
+      planPath(id, "/swipes/undo"),
+      DEMO_USER_ID,
+      { activityId: lastCard },
+    );
+    expect(undone.plan.swipes[DEMO_USER_ID]?.[lastCard]).toBeUndefined();
+    expect(undone.plan.finishedIds).toEqual([]);
+    expect(eventsOf("plan:progress")).toEqual([
+      expect.objectContaining({ userId: DEMO_USER_ID, done: 5, total: 6 }),
+    ]);
+    expect(eventsOf("db:changed")).toHaveLength(1);
+    // Отменять нечего — второй раз и чужой карточки.
+    await expect(
+      call("POST", planPath(id, "/swipes/undo"), DEMO_USER_ID, {
+        activityId: lastCard,
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      call("POST", planPath(id, "/swipes/undo"), "u_azamat", {
+        activityId: lastCard,
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+});
+
+describe("боты в колоде", () => {
+  const startBots = () => {
+    const manual = createManualScheduler();
+    const engine = createDefaultBotEngine({
+      clock: server.deps.clock,
+      db: server.deps.db,
+      handle: (request) => server.handle(request),
+      publish: bus.publish,
+      random: createSeededRandom("bots"),
+      scheduler: manual.scheduler,
+      settings,
+      subscribe: bus.subscribe,
+    });
+    engine.start();
+    return { engine, manual };
+  };
+
+  it("каждый бот свайпает всю колоду по карточке, человек закончил — результаты", async () => {
+    const { engine, manual } = startBots();
+    const { view } = await createLivePlan();
+    const id = view.plan.id;
+    await tick();
+    await manual.drain();
+    const started = await call<PlanView>(
+      "POST",
+      planPath(id, "/start"),
+      DEMO_USER_ID,
+    );
+    const { deck } = started.plan;
+    await tick();
+    // По первой карточке на бота; «Нормально»: 1–2.5 с × темп (0.7–1.4).
+    expect(manual.tasks).toHaveLength(3);
+    for (const { ms } of manual.tasks) {
+      expect(ms).toBeGreaterThanOrEqual(1_000 * 0.7);
+      expect(ms).toBeLessThanOrEqual(2_500 * 1.4);
+    }
+    bus.events.length = 0;
+    await manual.drain();
+    const mid = await call<PlanView>("GET", planPath(id), DEMO_USER_ID);
+    for (const bot of BOTS) {
+      expect(Object.keys(mid.plan.swipes[bot] ?? {}).sort()).toEqual(
+        [...deck].sort(),
+      );
+    }
+    expect(new Set(mid.plan.finishedIds)).toEqual(new Set(BOTS));
+    // Человек ещё свайпает — результатов нет.
+    expect(mid.plan.status).toBe("swiping");
+    expect(eventsOf("plan:progress")).toHaveLength(3 * deck.length);
+    // В ленту — по строке на бота, не на каждый свайп.
+    const reports = eventsOf("bot:action").map((event) => event.text);
+    expect(reports).toHaveLength(3);
+    expect(reports).toContain(
+      "Азамат досвайпал колоду в плане «Пятница вечером»",
+    );
+    expect(reports).toContain(
+      "Нурай досвайпала колоду в плане «Пятница вечером»",
+    );
+
+    let last = mid;
+    for (const card of deck) last = await swipe(id, DEMO_USER_ID, card);
+    expect(last.plan.status).toBe("results");
+    // Никто не передумывал — каждое итоговое совпадение объявлено ровно раз.
+    const matched = eventsOf("plan:match").map((event) => event.activityId);
+    expect(matched.sort()).toEqual(
+      computeMatches(last.plan, last.activities)
+        .matches.map((m) => m.activityId)
+        .sort(),
+    );
+    engine.stop();
+  });
+
+  it("«Выкл» — боты не свайпают; «До даты» — пока без ботов (T15)", async () => {
+    const { engine, manual } = startBots();
+    const { view } = await createLivePlan();
+    await tick();
+    await manual.drain();
+    settings.update({ botSpeed: "off" });
+    await call("POST", planPath(view.plan.id, "/start"), DEMO_USER_ID);
+    await tick();
+    expect(manual.tasks).toHaveLength(0);
+
+    settings.update({ botSpeed: "normal" });
+    await call("POST", "/plans", DEMO_USER_ID, {
+      ...DEADLINE_PLAN,
+      participantIds: BOTS,
+    });
+    await tick();
+    expect(manual.tasks).toHaveLength(0);
     engine.stop();
   });
 });

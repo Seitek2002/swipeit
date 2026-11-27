@@ -28,6 +28,31 @@ export const setPlanReady = (id: string, ready = true): Promise<PlanView> =>
 export const startPlan = (id: string): Promise<PlanView> =>
   getTransport().request<PlanView>("POST", `${planPath(id)}/start`);
 
+// Решение по карточке колоды; повторный свайп той же карточки заменяет его.
+export const swipePlan = (
+  id: string,
+  activityId: string,
+  decision: "like" | "pass",
+): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/swipes`, {
+    activityId,
+    decision,
+  });
+
+// «Вернуть карточку» — отменить свой свайп этого занятия.
+export const undoPlanSwipe = (
+  id: string,
+  activityId: string,
+): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/swipes/undo`, {
+    activityId,
+  });
+
+// Участник закончил колоду. Последний свайп отмечает это и сам — вызов
+// нужен, когда часть карточек недоступна.
+export const finishPlan = (id: string): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/finish`);
+
 // Занятия каталога; с фильтрами — те, что попадут в колоду плана.
 export const getActivities = (filters?: PlanFilters): Promise<Activity[]> =>
   getTransport().request<Activity[]>(
