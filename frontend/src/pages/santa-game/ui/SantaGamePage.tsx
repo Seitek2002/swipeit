@@ -73,7 +73,7 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
               {member.id === meId ? "Ты" : member.name}
             </span>
             {!member.joined ? (
-              <span className="text-caption text-rose">ещё не вступил(а)</span>
+              <span className="text-caption text-rose">ещё не в игре</span>
             ) : member.hasWishlist ? (
               <span className="text-caption text-mint inline-flex items-center gap-1">
                 <Check aria-hidden size={16} strokeWidth={2.25} />
