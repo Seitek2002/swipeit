@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Plus, Share2 } from "lucide-react";
 import { Reorder } from "motion/react";
@@ -99,6 +100,23 @@ export const WishlistPage = () => {
   const byId = new Map(active.map((item) => [item.id, item]));
 
   const unlocked = Boolean(data?.meta.shareUnlockedAt);
+
+  // «Отправить вишлист» из «Вишлист готов» ведёт сюда с ?share=1 — шторка
+  // отправки открывается сразу (PRD §7, сценарий 2). Параметр снимаем, чтобы
+  // «Назад» и перезагрузка не открывали её снова.
+  const router = useRouter();
+  const shareRequested = useSearchParams()?.get("share") === "1";
+  const [shareHandled, setShareHandled] = useState(false);
+  if (shareRequested && data && !shareHandled) {
+    setShareHandled(true);
+    if (unlocked) {
+      setShareOccasion(undefined);
+      setShareOpen(true);
+    }
+  }
+  useEffect(() => {
+    if (shareRequested && shareHandled) router.replace(ROUTES.WISHLIST);
+  }, [shareRequested, shareHandled, router]);
   const likesLeft = Math.max(0, UNLOCK_WISHES - (data?.wishCount ?? 0));
   // «Без даты» — строки повода нет (DESIGN.md §8.3, §8.4).
   const occasion =

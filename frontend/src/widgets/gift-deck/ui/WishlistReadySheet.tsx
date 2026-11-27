@@ -12,8 +12,8 @@ type Props = {
   open: boolean;
 };
 
-// «Вишлист готов» — после банта на 5-м «Хочу» (DESIGN.md §6). Отправка
-// откроется на экране вишлиста (шторка отправки — T09).
+// «Вишлист готов» — после банта на 5-м желании (DESIGN.md §6). «Отправить
+// вишлист» открывает экран вишлиста сразу со шторкой отправки (?share=1).
 export const WishlistReadySheet = ({ open, count, onClose }: Props) => {
   const router = useRouter();
   return (
@@ -23,7 +23,10 @@ export const WishlistReadySheet = ({ open, count, onClose }: Props) => {
       ariaLabel="Вишлист готов"
       footer={
         <>
-          <Button size="lg" onClick={() => router.push(ROUTES.WISHLIST)}>
+          <Button
+            size="lg"
+            onClick={() => router.push(`${ROUTES.WISHLIST}?share=1`)}
+          >
             Отправить вишлист
           </Button>
           <Button variant="ghost" onClick={onClose}>

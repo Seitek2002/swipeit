@@ -329,10 +329,16 @@ export const WishlistShareSheet = ({
 
   const current: ShareStep = nameStep ? "name" : step;
   // Кнопка, по которой перешли на шаг, исчезает вместе с ним — фокус падал
-  // на <body>, и Escape больше не закрывал шторку. Переводим его в шаг.
+  // на <body>, и Escape больше не закрывал шторку. Переводим его в шаг —
+  // а на шаге имени — в поле («поле с автофокусом», DESIGN §7 NameSheet).
+  // На шаге отправки поле сообщения фокус не получает: не нужна клавиатура.
   const stepRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (open) stepRef.current?.focus({ preventScroll: true });
+    if (!open) return;
+    const step = stepRef.current;
+    const field =
+      current === "name" ? step?.querySelector<HTMLElement>("input") : null;
+    (field ?? step)?.focus({ preventScroll: true });
   }, [open, current]);
   const back = BACK[current];
   const busy = pending !== null;
@@ -365,15 +371,6 @@ export const WishlistShareSheet = ({
       onClose={onClose}
       title={title}
       height={current === "send" ? "full" : "auto"}
-      footer={
-        current === "send" ? (
-          <ShareActions
-            getPayload={getPayload}
-            onError={onShareError}
-            qrLabel="QR-код ссылки на вишлист"
-          />
-        ) : undefined
-      }
     >
       <div ref={stepRef} tabIndex={-1} className="outline-none">
         {current === "name" && nameStep}
@@ -549,7 +546,7 @@ export const WishlistShareSheet = ({
                     <button
                       type="button"
                       onClick={() => setRenaming(saved.label ?? "")}
-                      className="text-mandarin relative underline underline-offset-2 before:absolute before:-inset-y-3 before:content-['']"
+                      className="text-mandarin relative underline underline-offset-2 before:absolute before:-inset-y-[13px] before:content-['']"
                     >
                       Переименовать
                     </button>
@@ -611,6 +608,14 @@ export const WishlistShareSheet = ({
               maxLength={200}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
+            />
+
+            {/* Кнопки — в конце шага, а не в липком футере: пять строк по
+                48px закрывали превью и сообщение на 360px (QA T25, D3). */}
+            <ShareActions
+              getPayload={getPayload}
+              onError={onShareError}
+              qrLabel="QR-код ссылки на вишлист"
             />
           </div>
         )}
