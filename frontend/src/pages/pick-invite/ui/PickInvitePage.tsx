@@ -46,7 +46,11 @@ const TopBar = ({ onBack }: { onBack?: () => void }) => (
         <ChevronLeft aria-hidden size={26} strokeWidth={1.75} />
       </IconButton>
     )}
-    <Link href={ROUTES.HOME} aria-label="SwipeIt">
+    <Link
+      href={ROUTES.HOME}
+      aria-label="SwipeIt"
+      className="inline-flex min-h-11 items-center"
+    >
       <Brand size="sm" />
     </Link>
   </div>

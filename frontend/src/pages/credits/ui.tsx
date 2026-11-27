@@ -14,6 +14,7 @@ import {
   getActivities,
   getCatalogMeta,
 } from "@/shared/api";
+import { useAppReady } from "@/shared/lib/app-status";
 import { withBasePath } from "@/shared/lib/base-path";
 import { Button, EmptyState, Screen, ScreenBody, Skeleton } from "@/shared/ui";
 
@@ -28,6 +29,13 @@ const CreditRow = ({ row }: { row: Row }) => {
       <img
         src={withBasePath(activity.image?.src ?? "")}
         alt=""
+        // Миниатюра 56×36, а файл — полноразмерное фото занятия (1280×800,
+        // ~200 КБ): строк ~45, и сразу все они весили бы ~7 МБ. Грузим только
+        // те, до которых долистали; размеры — чтобы строка не прыгала.
+        width={56}
+        height={36}
+        loading="lazy"
+        decoding="async"
         className="h-9 w-14 flex-none rounded-lg object-cover"
       />
       <div className="min-w-0 flex-1">
@@ -35,23 +43,30 @@ const CreditRow = ({ row }: { row: Row }) => {
           href={credit.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-body text-paper block truncate before:absolute before:inset-0 before:content-['']"
+          className="text-body text-paper flex min-h-11 items-center before:absolute before:inset-0 before:content-['']"
         >
-          {activity.title}
+          {/* Многоточие — у вложенного блока: у flex-контейнера text-overflow
+              не срабатывает, длинное название просто срезалось бы. */}
+          <span className="min-w-0 truncate">{activity.title}</span>
         </a>
-        <p className="text-caption text-rose truncate">
-          {credit.author} ·{" "}
+        {/* Обрезается только автор: лицензию показывать обязательно (CC BY),
+            поэтому она не сжимается и всегда видна целиком. */}
+        <p className="text-caption text-rose flex min-w-0 items-center gap-1 whitespace-nowrap">
+          <span className="min-w-0 truncate">{credit.author}</span>
+          <span aria-hidden className="flex-none">
+            ·
+          </span>
           {credit.licenseUrl ? (
             <a
               href={credit.licenseUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative z-[1] underline underline-offset-2"
+              className="relative z-[1] flex-none underline underline-offset-2"
             >
               {credit.license}
             </a>
           ) : (
-            credit.license
+            <span className="flex-none">{credit.license}</span>
           )}
         </p>
       </div>
@@ -63,15 +78,21 @@ const CreditRow = ({ row }: { row: Row }) => {
 // Wikimedia Commons под CC BY и CC BY-SA, без указания авторов их
 // показывать нельзя. Без таб-бара и без анимаций.
 export const CreditsPage = () => {
+  // Экран рисуется до запуска вкладки — текст есть уже в статическом HTML
+  // (shared/config rendersBeforeReady). Список — через API, а транспорт
+  // (мок или ноутбук) выбран только после запуска: до него ждём.
+  const ready = useAppReady();
   const meta = useQuery({
     queryKey: catalogKeys.meta(),
     queryFn: getCatalogMeta,
     staleTime: Infinity,
+    enabled: ready,
   });
   const activities = useQuery({
     queryKey: activityKeys.list(),
     queryFn: () => getActivities(),
     staleTime: Infinity,
+    enabled: ready,
   });
 
   const credits = new Map(

@@ -31,6 +31,8 @@ type Props = {
   ownerId: string;
   // Владелец смотрит свою ссылку «как друзья»: бронировать своё нельзя.
   readOnly?: boolean;
+  // Под шапкой со своим h1 (профиль друга) — h2, на странице ссылки — h1.
+  titleAs?: "h1" | "h2";
   wishlist: GuestWishlist;
 };
 
@@ -134,6 +136,7 @@ export const GuestWishlistView = ({
   ownerGender,
   footer,
   readOnly = false,
+  titleAs: Title = "h1",
 }: Props) => {
   const [details, setDetails] = useState<null | Product>(null);
   const occasion = occasionLabel(wishlist.meta.occasion);
@@ -146,9 +149,9 @@ export const GuestWishlistView = ({
           color={wishlist.owner.avatarColor}
           size={56}
         />
-        <h1 className="text-title-1 mt-3.5">
+        <Title className="text-title-1 mt-3.5">
           Вишлист {genitive(wishlist.owner.name, ownerGender)}
-        </h1>
+        </Title>
         {occasion && (
           <p className="text-title-3 text-rose mt-0.5">{occasion}</p>
         )}

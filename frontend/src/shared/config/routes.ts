@@ -80,3 +80,14 @@ const GUEST_PATHS = new Set([
 
 export const requiresProfile = (pathname: null | string): boolean =>
   !GUEST_PATHS.has(normalize(pathname));
+
+// Экраны, которые рисуются до запуска вкладки (app/environment.ts): их первый
+// кадр не зависит от данных, режима и сессии, поэтому он есть уже в
+// статическом HTML — человек видит экран сразу, а не заставку, пока грузится
+// JS. Данные, мутации и плашку режима они сами включают по useAppReady().
+// Экраны с профилем сюда не добавлять: до чтения сессии они увели бы в
+// онбординг уже вошедшего человека.
+const BEFORE_READY_PATHS = new Set(["/onboarding", "/credits"]);
+
+export const rendersBeforeReady = (pathname: null | string): boolean =>
+  BEFORE_READY_PATHS.has(normalize(pathname));

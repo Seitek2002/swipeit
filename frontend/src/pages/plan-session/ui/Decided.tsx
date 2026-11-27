@@ -125,7 +125,7 @@ export const Decided = ({ view, meId }: Props) => {
     <div className="flex flex-col gap-5 pb-6">
       <div>
         <p className="text-title-3 text-rose">{plan.title}</p>
-        <h1 className="text-display mt-1">Решено: {activity.title}</h1>
+        <h2 className="text-display mt-1">Решено: {activity.title}</h2>
         <p className="text-body text-paper mt-2 first-letter:uppercase">
           {whenText}
         </p>

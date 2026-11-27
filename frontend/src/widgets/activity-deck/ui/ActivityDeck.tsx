@@ -13,7 +13,11 @@ import {
   type SwipeDirection,
 } from "@/features/swipe-deck";
 
-import { type Activity, ActivityTicket } from "@/entities/activity";
+import {
+  type Activity,
+  ActivityTicket,
+  formatPerPerson,
+} from "@/entities/activity";
 import { type PlanView, computeMatches } from "@/entities/plan";
 
 import { isApiError, planKeys, swipePlan, undoPlanSwipe } from "@/shared/api";
@@ -28,6 +32,15 @@ import { ProgressRings } from "./ProgressRings";
 type Props = { meId: string; view: PlanView };
 
 const DIRECTIONS = ["left", "right"] as const;
+
+// Подпись билета для экранного диктора (DESIGN.md §10): название и цена,
+// как на самом билете — «… сом на человека» или «бесплатно».
+const ticketLabel = (activity: Activity) => {
+  const price = formatPerPerson(activity);
+  return activity.pricePerPersonMax > 0
+    ? `${activity.title}, ${price} на человека`
+    : `${activity.title}, ${price.toLowerCase()}`;
+};
 
 const joinNames = (names: string[]) =>
   names.length <= 1
@@ -177,7 +190,7 @@ export const ActivityDeck = ({ view, meId }: Props) => {
         items={queue}
         directions={DIRECTIONS}
         getKey={(activity) => activity.id}
-        getLabel={(activity) => activity.title}
+        getLabel={ticketLabel}
         renderCard={(activity, { isTop }) => (
           <ActivityTicket activity={activity} fill isTop={isTop} />
         )}

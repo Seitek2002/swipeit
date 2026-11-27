@@ -21,9 +21,10 @@ import {
 
 import { useCreateUser, useLoginDemo, useMe } from "@/entities/user";
 
-import { getMode } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { useAppMode } from "@/shared/lib/app-status";
 import { takeReturnTo } from "@/shared/lib/dom";
+import { cn } from "@/shared/lib/utils";
 import {
   Brand,
   Button,
@@ -56,6 +57,11 @@ export const OnboardingPage = () => {
   const createUser = useCreateUser();
   const loginDemo = useLoginDemo();
   const [step, setStep] = useState<Step>("welcome");
+  // Приветствие рисуется до запуска вкладки — уже в статическом HTML
+  // (shared/config rendersBeforeReady). Режим до запуска неизвестен, а
+  // транспорт не выбран: входы, которые пишут в API, ждут готовности.
+  const mode = useAppMode();
+  const ready = mode !== null;
   // Куда вести после знакомства (приглашение в план и т. п.). Забираем один
   // раз при открытии: навигаций несколько, и вторая получила бы пустоту.
   const [afterOnboarding] = useState(() => takeReturnTo() ?? ROUTES.GIFTS);
@@ -73,12 +79,14 @@ export const OnboardingPage = () => {
   const update = (patch: Partial<ProfileDraft>) =>
     setDraft((current) => ({ ...current, ...patch }));
 
-  const handleDemo = () =>
+  const handleDemo = () => {
+    if (!ready) return;
     loginDemo.mutate(undefined, {
       onSuccess: () => router.replace(afterOnboarding),
       onError: () =>
         toast("Не получилось войти. Попробуй ещё раз", { tone: "error" }),
     });
+  };
 
   const handleNameNext = () => {
     setNameTouched(true);
@@ -87,7 +95,7 @@ export const OnboardingPage = () => {
   };
 
   const handleFinish = () => {
-    if (Object.keys(errors).length > 0) return;
+    if (!ready || Object.keys(errors).length > 0) return;
     createUser.mutate(toProfileInput(draft), {
       onSuccess: () => router.replace(afterOnboarding),
       onError: () =>
@@ -120,13 +128,21 @@ export const OnboardingPage = () => {
               size="lg"
               variant="ghost"
               loading={loginDemo.isPending}
+              disabled={!ready}
               onClick={handleDemo}
             >
               Войти как демо-пользователь
             </Button>
           </div>
-          <p className="text-caption text-rose px-2 text-center">
-            {getMode() === "lan"
+          {/* До запуска режим неизвестен: место под подпись держим (без
+              сдвига вёрстки), а текст показываем, когда ясно, какой он. */}
+          <p
+            className={cn(
+              "text-caption text-rose px-2 text-center",
+              !ready && "invisible",
+            )}
+          >
+            {mode === "lan"
               ? "Это демо в локальной сети: данные хранятся на ноутбуке ведущего"
               : "Это демо: всё хранится только в твоём браузере, а друзья внутри — демо-боты"}
           </p>
@@ -144,7 +160,11 @@ export const OnboardingPage = () => {
         >
           <ChevronLeft aria-hidden size={24} strokeWidth={1.75} />
         </IconButton>
-        <ProgressDots count={3} current={STEP_INDEX[step]} />
+        <ProgressDots
+          count={3}
+          current={STEP_INDEX[step]}
+          label="Шаги знакомства"
+        />
       </div>
 
       {step === "name" ? (
@@ -214,7 +234,7 @@ export const OnboardingPage = () => {
               size="lg"
               onClick={handleFinish}
               loading={createUser.isPending}
-              disabled={draft.interests.length < MIN_INTERESTS}
+              disabled={!ready || draft.interests.length < MIN_INTERESTS}
             >
               Показать подарки
             </Button>

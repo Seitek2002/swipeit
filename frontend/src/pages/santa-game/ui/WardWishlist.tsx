@@ -46,6 +46,7 @@ const WardRow = ({ item }: { item: SantaWardItem }) => {
         <p className="text-title-3 line-clamp-2">
           {item.priority === "top" && (
             <Star
+              role="img"
               aria-label="Очень хочу"
               size={14}
               strokeWidth={1.75}

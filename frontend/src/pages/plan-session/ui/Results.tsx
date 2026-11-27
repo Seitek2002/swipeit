@@ -126,7 +126,7 @@ export const Results = ({ view, meId }: Props) => {
 
   const header = (
     <div>
-      <h1 className="text-title-1">{plan.title}</h1>
+      <h2 className="text-title-1">{plan.title}</h2>
       <p className="text-title-3 text-rose mt-0.5">
         Совпало {matches.length} из {plan.deck.length}
       </p>
@@ -241,7 +241,7 @@ export const Results = ({ view, meId }: Props) => {
                 size="sm"
                 variant={myVote === row.activity.id ? "primary" : "secondary"}
                 aria-pressed={myVote === row.activity.id}
-                aria-label={`Голос за: ${row.activity.title}`}
+                aria-label={`${myVote === row.activity.id ? "Мой голос" : "Голос"} за: ${row.activity.title}`}
                 loading={vote.isPending && vote.variables === row.activity.id}
                 onClick={() => vote.mutate(row.activity.id)}
               >

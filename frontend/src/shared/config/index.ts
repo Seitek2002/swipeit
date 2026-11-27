@@ -24,6 +24,7 @@ export {
 export {
   getActiveTab,
   hasTabBar,
+  rendersBeforeReady,
   requiresProfile,
   ROUTES,
   type TabId,

@@ -69,7 +69,9 @@ export const AppShell = ({ children, overlay, tabBar }: Props) => {
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-[200] bg-(image:--grain) opacity-5 mix-blend-overlay"
         />
-        <div className="relative h-full">{children}</div>
+        {/* Ориентир для скринридера: всё содержимое экрана — main, таб-бар —
+            nav, шторки и тосты — поверх. */}
+        <main className="relative h-full">{children}</main>
         {tabBar}
         {overlay}
         {/* Сюда порталами попадают шторки, диалоги и тосты (T03) */}

@@ -39,11 +39,13 @@ export const SegmentedControl = <T extends string>({
           aria-pressed={isSelected}
           onClick={() => onChange(option.value)}
           className={cn(
-            "text-label rounded-chip ease-out-soft relative h-9 min-w-0 flex-1 truncate px-2 transition-[background-color,color] duration-200 before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']",
+            "text-label rounded-chip ease-out-soft relative h-9 min-w-0 flex-1 px-2 transition-[background-color,color] duration-200 before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']",
             isSelected ? "bg-velvet-3 text-paper" : "text-rose",
           )}
         >
-          {option.label}
+          {/* Обрезаем подпись, а не кнопку: overflow-hidden на самой кнопке
+              срезал бы псевдоэлемент, растягивающий зону нажатия до 44 px. */}
+          <span className="block truncate">{option.label}</span>
         </button>
       );
     })}

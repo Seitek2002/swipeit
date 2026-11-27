@@ -140,13 +140,17 @@ export const DemoPanel = () => {
 
   return (
     <>
+      {/* Язычок у правого края на 45% высоты, а не круг над таб-баром: внизу
+          живут кнопки колоды и главные кнопки экранов, сверху — действия шапки.
+          Видимая часть 18 px помещается в боковое поле экрана (20 px), а зона
+          нажатия ~46×48 добирается псевдоэлементом влево. */}
       <button
         type="button"
         aria-label="Демо-панель"
         onClick={() => setOpen(true)}
-        className="bg-velvet-3 text-champagne border-line shadow-lift absolute right-4 bottom-[calc(var(--tabbar-space)+8px)] z-[60] grid size-11 place-items-center rounded-full border"
+        className="bg-velvet-3 text-champagne border-line shadow-lift absolute top-[45%] right-0 z-[60] grid h-12 w-[18px] -translate-y-1/2 place-items-center rounded-l-[14px] border border-r-0 before:absolute before:inset-y-0 before:right-0 before:-left-[28px] before:content-['']"
       >
-        <Sparkles aria-hidden size={20} strokeWidth={1.75} />
+        <Sparkles aria-hidden size={14} strokeWidth={1.75} />
       </button>
       <BottomSheet
         open={open}

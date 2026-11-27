@@ -5,14 +5,22 @@ type Props = {
   count: number;
   // Номер текущего шага с нуля.
   current: number;
+  // Имя для скринридера — что за шаги («Шаги знакомства»).
+  label?: string;
 };
 
 // Прогресс-точки потока из нескольких шагов (создание плана, DESIGN.md §8.7).
 // Текущий шаг — вытянутая бумажная таблетка, пройденные — бумага, впереди —
 // бархат-3. Мандарин не тратим: на экране он у главной кнопки.
-export const ProgressDots = ({ count, current, className }: Props) => (
+export const ProgressDots = ({
+  count,
+  current,
+  className,
+  label = "Шаги",
+}: Props) => (
   <div
     role="progressbar"
+    aria-label={label}
     aria-valuemin={1}
     aria-valuemax={count}
     aria-valuenow={current + 1}

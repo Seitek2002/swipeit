@@ -23,6 +23,10 @@ export const Lobby = ({ view, meId }: { meId: string; view: PlanView }) => {
   const isOwner = plan.ownerId === meId;
   const isReady = plan.readyIds.includes(meId);
   const readyCount = plan.readyIds.length;
+  // Главная кнопка лобби — «Поехали» у организатора и «Готов» у участника;
+  // отправка приглашения становится главной, только когда участник уже
+  // готов и внизу осталось вторичное «Отменить» (DESIGN.md §1: мандарин один).
+  const shareIsMain = !isOwner && isReady;
 
   const onSuccess = (next: PlanView) => {
     queryClient.setQueryData(planKeys.detail(plan.id), next);
@@ -54,7 +58,7 @@ export const Lobby = ({ view, meId }: { meId: string; view: PlanView }) => {
   return (
     <div className="flex flex-col gap-6 pb-4">
       <div>
-        <h1 className="text-title-1">{plan.title}</h1>
+        <h2 className="text-title-1">{plan.title}</h2>
         <p className="text-title-3 text-rose mt-0.5">
           Прямо сейчас ·{" "}
           {pluralize(activities.length, ["занятие", "занятия", "занятий"])} в
@@ -118,6 +122,7 @@ export const Lobby = ({ view, meId }: { meId: string; view: PlanView }) => {
         <ShareActions
           getPayload={getPayload}
           qrLabel="QR-код приглашения в план"
+          secondary={!shareIsMain}
         />
       </section>
 

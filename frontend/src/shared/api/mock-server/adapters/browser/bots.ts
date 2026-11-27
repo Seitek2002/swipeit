@@ -1,5 +1,6 @@
 import { getRealtime } from "@/shared/lib/realtime";
 
+import { setBotLeader } from "../../../browser-bots";
 import { createDefaultBotEngine } from "../../bots";
 import { getBrowserMockServer } from "./index";
 
@@ -9,18 +10,9 @@ import { getBrowserMockServer } from "./index";
 // каждое действие ботов.
 const LOCK_NAME = "swipeit-bots";
 
+// Признак лидерства — в shared/api/browser-bots: демо-панель читает его,
+// не загружая мок-сервер.
 let started = false;
-let leader = false;
-const listeners = new Set<() => void>();
-
-export const isBotLeader = () => leader;
-
-export const subscribeBotLeader = (listener: () => void) => {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-};
 
 export const startBrowserBots = () => {
   if (started || typeof window === "undefined") return;
@@ -39,8 +31,7 @@ export const startBrowserBots = () => {
     subscribe: (handler) => realtime.subscribe(handler),
   });
   const becomeLeader = () => {
-    leader = true;
-    listeners.forEach((listener) => listener());
+    setBotLeader(true);
     engine.start();
   };
   if (!navigator.locks) {

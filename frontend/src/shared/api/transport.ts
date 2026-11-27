@@ -1,5 +1,6 @@
 import { getActiveUserId } from "@/shared/store";
 
+import { onMockServerLoaded } from "./browser-bots";
 import { ApiError } from "./mock-server/errors";
 import type { HttpMethod } from "./mock-server/routes";
 
@@ -31,9 +32,11 @@ export const mockTransport: Transport = {
     body?: unknown,
     query?: Record<string, unknown>,
   ) {
-    const { getBrowserMockServer } =
-      await import("./mock-server/adapters/browser");
-    const server = getBrowserMockServer();
+    const mockServer = await import("./mock-server/adapters/browser");
+    const server = mockServer.getBrowserMockServer();
+    // Боты local живут рядом с мок-сервером и стартуют с первым запросом к
+    // нему (browser-bots.ts): так мок не грузится на экранах без данных.
+    onMockServerLoaded(mockServer);
     const settings = server.deps.settings.get();
     if (!settings.noDelays)
       await sleep(MIN_DELAY + Math.random() * DELAY_SPREAD);

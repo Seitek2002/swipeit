@@ -9,6 +9,10 @@ import { type MockServer, createMockServer } from "../../server";
 import { createFetchCatalog } from "./fetch-catalog";
 import { createLocalStorageDb } from "./local-db";
 
+// Боты грузятся вместе с мок-сервером: их запускает транспорт при первом
+// запросе (shared/api/browser-bots).
+export { startBrowserBots } from "./bots";
+
 // Мок-сервер режима local: те же обработчики, что и на LAN-сервере, поверх
 // браузерных адаптеров. Создаётся один раз на вкладку.
 let server: MockServer | null = null;

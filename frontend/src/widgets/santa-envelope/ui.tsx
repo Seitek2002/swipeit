@@ -182,61 +182,9 @@ export const SantaEnvelope = ({ state, letter, onOpen }: Props) => {
             }}
           />
         </div>
-        <button
-          type="button"
-          aria-label={
-            state === "ready"
-              ? "Печать: удерживай, чтобы открыть письмо"
-              : state === "sealed"
-                ? "Печать: письмо откроется после жеребьёвки"
-                : "Печать сломана"
-          }
-          disabled={opened}
-          onPointerDown={(event) => {
-            try {
-              event.currentTarget.setPointerCapture(event.pointerId);
-            } catch {
-              // Синтетические события без захвата — удержание всё равно идёт.
-            }
-            holdStart();
-          }}
-          onPointerUp={holdEnd}
-          onPointerCancel={holdEnd}
-          onPointerLeave={holdEnd}
-          onKeyDown={onKeyDown}
-          onKeyUp={onKeyUp}
-          onContextMenu={(event) => event.preventDefault()}
-          className="absolute top-[64%] left-1/2 z-[5] -mt-14 -ml-[50px] grid size-[100px] touch-none place-items-center rounded-full select-none"
-        >
-          <svg
-            viewBox="0 0 100 100"
-            aria-hidden
-            className={cn(
-              "pointer-events-none absolute inset-0 -rotate-90",
-              state !== "ready" && "opacity-0",
-            )}
-          >
-            <circle
-              cx="50"
-              cy="50"
-              r="46"
-              fill="none"
-              strokeWidth={4}
-              stroke="rgb(184 70 14 / 0.16)"
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r="46"
-              fill="none"
-              strokeWidth={4}
-              stroke="var(--color-mandarin-ink)"
-              strokeLinecap="round"
-              pathLength={1}
-              strokeDasharray={1}
-              strokeDashoffset={1 - progress}
-            />
-          </svg>
+        {/* Монограмма — снаружи кнопки: у кнопки только aria-label, без
+            видимого текста «S», иначе имя и содержимое расходятся (axe). */}
+        <div className="absolute top-[64%] left-1/2 z-[5] -mt-14 -ml-[50px] size-[100px]">
           <span
             aria-hidden
             className={cn(
@@ -267,7 +215,63 @@ export const SantaEnvelope = ({ state, letter, onOpen }: Props) => {
               </i>
             ))}
           </span>
-        </button>
+          <button
+            type="button"
+            aria-label={
+              state === "ready"
+                ? "Печать: удерживай, чтобы открыть письмо"
+                : state === "sealed"
+                  ? "Печать: письмо откроется после жеребьёвки"
+                  : "Печать сломана"
+            }
+            disabled={opened}
+            onPointerDown={(event) => {
+              try {
+                event.currentTarget.setPointerCapture(event.pointerId);
+              } catch {
+                // Синтетические события без захвата — удержание всё равно идёт.
+              }
+              holdStart();
+            }}
+            onPointerUp={holdEnd}
+            onPointerCancel={holdEnd}
+            onPointerLeave={holdEnd}
+            onKeyDown={onKeyDown}
+            onKeyUp={onKeyUp}
+            onContextMenu={(event) => event.preventDefault()}
+            className="absolute inset-0 touch-none rounded-full select-none"
+          >
+            <svg
+              viewBox="0 0 100 100"
+              aria-hidden
+              className={cn(
+                "pointer-events-none absolute inset-0 -rotate-90",
+                state !== "ready" && "opacity-0",
+              )}
+            >
+              <circle
+                cx="50"
+                cy="50"
+                r="46"
+                fill="none"
+                strokeWidth={4}
+                stroke="rgb(184 70 14 / 0.16)"
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r="46"
+                fill="none"
+                strokeWidth={4}
+                stroke="var(--color-mandarin-ink)"
+                strokeLinecap="round"
+                pathLength={1}
+                strokeDasharray={1}
+                strokeDashoffset={1 - progress}
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );

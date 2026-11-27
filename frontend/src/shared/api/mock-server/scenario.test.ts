@@ -215,6 +215,88 @@ describe("POST /demo/scenario/new-year", () => {
     ).toBe(true);
   });
 
+  it("план по DEMO.md: «Совпадение!» на 2-м свайпе вправо, к итогам — 2+ совпадения", async () => {
+    const { planId } = await loadScenario();
+    const { plan } = await call<PlanView>(
+      "GET",
+      `/plans/${planId}`,
+      DEMO_USER_ID,
+    );
+    const likedByBots = (id: string, bots: string[]) =>
+      bots.every((botId) => plan.swipes[botId]?.[id] === "like");
+    const bots = plan.participantIds.filter((id) => id !== DEMO_USER_ID);
+    const swiping = bots.filter((id) => !plan.finishedIds.includes(id));
+    expect(swiping).toHaveLength(1);
+    const unswiped = plan.deck.filter(
+      (id) => plan.swipes[swiping[0] ?? ""]?.[id] === undefined,
+    );
+    // Третий бот ещё в пути — но его живые свайпы итог не меняют: где он
+    // не свайпал, досвайпавшие оба «за» не бывают.
+    expect(unswiped.length).toBeGreaterThan(0);
+    for (const id of unswiped) {
+      expect(likedByBots(id, plan.finishedIds)).toBe(false);
+    }
+
+    // Айгерим свайпает вправо подряд: совпадение — на 2-й карточке.
+    const matchedAt: number[] = [];
+    for (const [index, activityId] of plan.deck.entries()) {
+      const before = computeMatches(
+        (memoryDb.snapshot() as Db).plans[planId] ?? plan,
+      ).matches.length;
+      const after = await call<PlanView>(
+        "POST",
+        `/plans/${planId}/swipes`,
+        DEMO_USER_ID,
+        { activityId, decision: "like" },
+      );
+      if (computeMatches(after.plan).matches.length > before) {
+        matchedAt.push(index + 1);
+      }
+    }
+    expect(matchedAt[0]).toBe(2);
+    expect(matchedAt.length).toBeGreaterThanOrEqual(2);
+    // Все совпадения — среди первых 5 карточек: «4–5 билетиков» хватает.
+    expect(matchedAt.every((position) => position <= 5)).toBe(true);
+  });
+
+  it("Санта: у любого подопечного 4+ желаний в рамках бюджета", async () => {
+    const { santaId } = await loadScenario();
+    const db = memoryDb.snapshot() as Db;
+    const game = db.santaGames[santaId];
+    const prices = new Map(products.map((p) => [p.id, p.priceMin]));
+    for (const id of game?.participantIds ?? []) {
+      if (id === DEMO_USER_ID) continue;
+      const fit = (db.wishlistItems[id] ?? []).filter(
+        (item) =>
+          item.status === "active" &&
+          item.source.kind === "product" &&
+          (prices.get(item.source.productId) ?? Infinity) <= 2000,
+      );
+      expect(fit.length).toBeGreaterThanOrEqual(4);
+      // Свайпы — под вишлист: у каждого желания есть свой «Хочу».
+      for (const item of db.wishlistItems[id] ?? []) {
+        if (item.source.kind !== "product") continue;
+        const productId = item.source.productId;
+        expect(
+          db.productSwipes.some(
+            (swipe) => swipe.userId === id && swipe.productId === productId,
+          ),
+        ).toBe(true);
+      }
+    }
+
+    await call("POST", `/santa/${santaId}/draw`, DEMO_USER_ID);
+    const view = await call<SantaView>(
+      "GET",
+      `/santa/${santaId}`,
+      DEMO_USER_ID,
+    );
+    const ward = view.me?.ward;
+    expect(ward).toBeTruthy();
+    const inBudget = ward?.wishlist.filter((item) => !item.overBudget) ?? [];
+    expect(inBudget.length).toBeGreaterThanOrEqual(4);
+  });
+
   it("Тайный Санта «Офис, Новый год»: 6 вступивших с вишлистами, можно жеребьёвку", async () => {
     const { santaId } = await loadScenario();
     const view = await call<SantaView>(
@@ -274,5 +356,44 @@ describe("POST /demo/scenario/new-year", () => {
     expect(plan?.finishedIds).not.toContain(DEMO_USER_ID);
     expect(plan?.status).toBe("swiping");
     expect(plan?.swipes[DEMO_USER_ID]).toBeUndefined();
+  });
+
+  it("итоги не зависят от третьего бота: те же совпадения, что и до его свайпов", async () => {
+    const { planId } = await loadScenario();
+    const initial = (memoryDb.snapshot() as Db).plans[planId];
+    // Айгерим — вправо на первые 5, как в DEMO.md.
+    for (const activityId of initial?.deck.slice(0, 5) ?? []) {
+      await call("POST", `/plans/${planId}/swipes`, DEMO_USER_ID, {
+        activityId,
+        decision: "like",
+      });
+    }
+    const expected = computeMatches(
+      (memoryDb.snapshot() as Db).plans[planId] ?? initial!,
+    ).matches.map((match) => match.activityId);
+    expect(expected.length).toBeGreaterThanOrEqual(2);
+
+    const { scheduler, drain } = createManualScheduler();
+    const engine = createDefaultBotEngine({
+      clock: server.deps.clock,
+      db: server.deps.db,
+      handle: (request) => server.handle(request),
+      publish: bus.publish,
+      random: createSeededRandom("other-bots"),
+      scheduler,
+      settings,
+      subscribe: bus.subscribe,
+    });
+    engine.start();
+    bus.publish({ type: "db:changed", scope: ["settings"], by: "test" });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await drain();
+    engine.stop();
+    const plan = (memoryDb.snapshot() as Db).plans[planId];
+    // Третий бот досвайпал сам (в заглушке колода короткая — Айгерим тоже).
+    expect(plan?.finishedIds).toContain("u_meerim");
+    expect(
+      computeMatches(plan!).matches.map((match) => match.activityId),
+    ).toEqual(expected);
   });
 });

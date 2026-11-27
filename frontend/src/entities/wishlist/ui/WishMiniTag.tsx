@@ -64,6 +64,7 @@ export const WishMiniTag = ({
       </div>
       {isTop && (
         <span
+          role="img"
           aria-label="Очень хочу"
           className="bg-velvet text-champagne absolute -top-1.5 -right-1.5 z-[3] grid size-[22px] place-items-center rounded-full"
         >

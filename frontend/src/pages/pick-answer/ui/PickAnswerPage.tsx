@@ -223,7 +223,11 @@ const AnswerContent = () => {
 export const PickAnswerPage = () => (
   <Screen>
     <div className="flex h-[52px] flex-none items-center px-5">
-      <Link href={ROUTES.HOME} aria-label="SwipeIt">
+      <Link
+        href={ROUTES.HOME}
+        aria-label="SwipeIt"
+        className="inline-flex min-h-11 items-center"
+      >
         <Brand size="sm" />
       </Link>
     </div>

@@ -2,14 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { demoKeys, getDemoUsers, getMode } from "@/shared/api";
+import { demoKeys, getDemoUsers } from "@/shared/api";
+import { useAppMode } from "@/shared/lib/app-status";
 import { pluralize } from "@/shared/lib/format";
 import { AvatarStack } from "@/shared/ui";
 
 // Плашка режима «Локальная сеть» на первом шаге онбординга (DESIGN.md
 // §8.11): сразу объясняет, зачем вводить имя, — здесь уже есть люди.
 export const LanPlaque = () => {
-  const isLan = getMode() === "lan";
+  // Режим — хуком: приветствие рисуется до запуска вкладки, плашка
+  // появляется, когда стало ясно, что это lan (и запрос уйдёт на ноутбук).
+  const isLan = useAppMode() === "lan";
   const users = useQuery({
     queryKey: demoKeys.users(),
     queryFn: getDemoUsers,

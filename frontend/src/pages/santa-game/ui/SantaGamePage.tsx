@@ -274,7 +274,7 @@ const GameContent = () => {
               loading={bought.isPending}
               onClick={() => bought.mutate()}
             >
-              Я купил подарок
+              Отметить покупку подарка
             </Button>
           )}
         </>
@@ -304,6 +304,9 @@ const GameContent = () => {
               url: absoluteUrl(ROUTES.SANTA_JOIN(view.game.id)),
             })}
             qrLabel="QR-код приглашения в игру"
+            // Выше уже главная кнопка — «Провести жеребьёвку» у организатора
+            // или «Вступить в игру» у приглашённого: мандарин один (DESIGN.md §1).
+            secondary={isOwner || view.role === "invited"}
           />
         </section>
       )}

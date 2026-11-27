@@ -2,11 +2,17 @@
 
 import type { ReactNode } from "react";
 
+import { usePathname } from "next/navigation";
+
 import { AppShell } from "@/widgets/app-shell";
 import { DemoPanel } from "@/widgets/demo-panel";
 import { TabBar } from "@/widgets/tab-bar";
 
 import { useSantaGames } from "@/entities/santa-game";
+
+import { rendersBeforeReady } from "@/shared/config";
+import { useAppReady, useAppStatus } from "@/shared/lib/app-status";
+import { Button, EmptyState, Splash } from "@/shared/ui";
 
 import { SessionGate } from "./session-gate";
 
@@ -19,11 +25,46 @@ const AppTabBar = () => {
   return <TabBar santaReady={ready} />;
 };
 
+// Пока вкладка не запустилась (app/environment.ts), большинство экранов
+// показывают заставку: им нужны сессия и данные. Экраны из
+// rendersBeforeReady рисуются сразу — их первый кадр есть уже в статическом
+// HTML, а к API они сами не обращаются до useAppReady().
+const EnvironmentGate = ({ children }: { children: ReactNode }) => {
+  const pathname = usePathname();
+  const { status } = useAppStatus();
+  if (status === "failed") {
+    return (
+      <EmptyState
+        className="h-full"
+        title="Не получилось запустить SwipeIt. Проверь связь и обнови страницу."
+        action={
+          <Button variant="secondary" onClick={() => window.location.reload()}>
+            Обновить
+          </Button>
+        }
+      />
+    );
+  }
+  if (status === "ready" || rendersBeforeReady(pathname)) return children;
+  return <Splash />;
+};
+
 // Каркас всего приложения: оболочка + таб-бар. Собирается здесь, в слое app:
 // виджеты одного слоя не импортируют друг друга (FSD), а корневой app/ steiger
 // не сканирует — так он видит, что оба виджета используются.
-export const AppFrame = ({ children }: { children: ReactNode }) => (
-  <AppShell tabBar={<AppTabBar />} overlay={<DemoPanel />}>
-    <SessionGate>{children}</SessionGate>
-  </AppShell>
-);
+//
+// Оболочка (бархат, рамка) рисуется сразу. Таб-бар и демо-панель читают
+// данные и шину — их подключаем только после запуска вкладки.
+export const AppFrame = ({ children }: { children: ReactNode }) => {
+  const ready = useAppReady();
+  return (
+    <AppShell
+      tabBar={ready ? <AppTabBar /> : null}
+      overlay={ready ? <DemoPanel /> : null}
+    >
+      <EnvironmentGate>
+        <SessionGate>{children}</SessionGate>
+      </EnvironmentGate>
+    </AppShell>
+  );
+};

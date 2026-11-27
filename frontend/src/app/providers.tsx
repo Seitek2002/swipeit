@@ -17,6 +17,7 @@ import {
   startBrowserBots,
   tickSanta,
 } from "@/shared/api";
+import { setAppStatus, useAppReady } from "@/shared/lib/app-status";
 import { withBasePath } from "@/shared/lib/base-path";
 import { useTapHaptics } from "@/shared/lib/dom";
 import {
@@ -26,14 +27,7 @@ import {
   useConnectionStatus,
 } from "@/shared/lib/realtime";
 import { useSessionStore } from "@/shared/store";
-import {
-  Button,
-  EmptyState,
-  Splash,
-  Toaster,
-  toast,
-  useCurrentToast,
-} from "@/shared/ui";
+import { Toaster, toast, useCurrentToast } from "@/shared/ui";
 
 import { startEnvironment } from "./environment";
 
@@ -180,39 +174,39 @@ const BotsLeader = () => {
   return null;
 };
 
-// Пока режим не определён, шина, транспорт и сессия ещё не настроены —
-// ничего, что ходит в API или слушает шину, не рендерим (TECH_SPEC §6).
-const EnvironmentGate = ({ children }: { children: ReactNode }) => {
-  const [state, setState] = useState<"failed" | "loading" | "ready">("loading");
+// Запуск вкладки (TECH_SPEC §6): режим, транспорт, шина, сессия. Итог —
+// во флаг готовности (shared/lib/app-status): по нему экран решает, что
+// рисовать, а подписчики шины ниже — когда подписываться.
+const EnvironmentStarter = () => {
   useEffect(() => {
-    let cancelled = false;
     startEnvironment().then(
-      () => {
-        if (!cancelled) setState("ready");
-      },
+      (mode) => setAppStatus({ status: "ready", mode }),
       (error: unknown) => {
         console.error("SwipeIt не запустился:", error);
-        if (!cancelled) setState("failed");
+        setAppStatus({ status: "failed" });
       },
     );
-    return () => {
-      cancelled = true;
-    };
   }, []);
-  if (state === "failed") {
-    return (
-      <EmptyState
-        className="h-full"
-        title="Не получилось запустить SwipeIt. Проверь связь и обнови страницу."
-        action={
-          <Button variant="secondary" onClick={() => window.location.reload()}>
-            Обновить
-          </Button>
-        }
-      />
-    );
-  }
-  return state === "ready" ? children : <Splash />;
+  return null;
+};
+
+// Всё, что ходит в API или слушает шину, — только после запуска: в lan
+// шина — WebSocket ноутбука, и подписка до запуска осталась бы на
+// заглушке, а запросы ушли бы в мок. Экран (children) рисуется сразу —
+// что показывать до готовности, решает app-frame.
+const ReadyBridges = () => {
+  const ready = useAppReady();
+  if (!ready) return null;
+  return (
+    <>
+      <RealtimeBridge />
+      <SessionCacheReset />
+      <ConnectionNotices />
+      <BotsLeader />
+      <ServiceWorker />
+      <PlanDeadlines />
+    </>
+  );
 };
 
 export const Providers = ({ children }: { children: ReactNode }) => {
@@ -241,15 +235,9 @@ export const Providers = ({ children }: { children: ReactNode }) => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <EnvironmentGate>
-        <RealtimeBridge />
-        <SessionCacheReset />
-        <ConnectionNotices />
-        <BotsLeader />
-        <ServiceWorker />
-        <PlanDeadlines />
-        {children}
-      </EnvironmentGate>
+      <EnvironmentStarter />
+      <ReadyBridges />
+      {children}
       <Toaster />
       {/* Кнопка devtools висит поверх экрана телефона и мешает проверять
           вёрстку — включается только по NEXT_PUBLIC_RQ_DEVTOOLS=1. */}

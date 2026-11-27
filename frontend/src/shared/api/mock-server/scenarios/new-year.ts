@@ -34,13 +34,19 @@ const WISH_NOTE = "Давно хочу такое";
 const WISH_MESSAGE = "С наступающим! Буду рада любому подарку из списка";
 
 // План: Айгерим и трое ботов. Азамат и Тимур уже досвайпали колоду,
-// Мээрим — на трети колоды и дальше свайпает сама (resume движка ботов).
+// Мээрим — на полпути и дальше свайпает сама (resume движка ботов): по
+// «Нормально» досвайпывает за 20–85 с после загрузки сценария или смены
+// настроек демо — строка «Мээрим досвайпала колоду» в ленте событий.
 const PLAN_FINISHED_BOTS = ["u_azamat", "u_timur"];
 const PLAN_SWIPING_BOT = "u_meerim";
 const PLAN_DECK_SIZE = 12;
-// Сколько занятий двое досвайпавших должны лайкнуть вместе: с «Хочу»
-// Айгерим это уже «почти совпадение» (3 из 4).
-const PLAN_COMMON_LIKES = 2;
+// Сколько карточек Мээрим свайпнула до показа.
+const PLAN_SWIPING_DONE = 6;
+// Где в колоде занятия, которые все трое ботов лайкнули (с нуля): 2-я, 4-я
+// и 5-я карточки. Свайпнул вправо 4–5 билетиков — «Совпадение!» на 2-м,
+// а к итогам 2–3 совпадения, и барабану есть из чего выбрать. Все — в
+// той части, что Мээрим уже прошла: её живые свайпы итог не меняют.
+const PLAN_MATCH_POSITIONS = [1, 3, 4];
 const PLAN_FILTERS: PlanFilters = {
   categories: ["active", "nature", "party"],
   budgetPerPerson: { min: 0, max: 3000 },
@@ -50,6 +56,9 @@ const PLAN_FILTERS: PlanFilters = {
 // Бекзата его нет — они «собирают» вишлист на глазах в своих играх).
 const SANTA_BOTS = ["u_azamat", "u_nurai", "u_daniyar", "u_meerim", "u_alina"];
 const SANTA_BUDGET = 2000;
+// Кто бы ни выпал в жеребьёвке, в его вишлисте должно быть из чего
+// выбрать в рамках бюджета: не меньше 4 желаний не дороже 2 000 сом.
+const SANTA_MIN_IN_BUDGET = 4;
 
 export type NewYearScenarioIds = { planId: string; santaId: string };
 
@@ -153,9 +162,9 @@ const buildWishlist = (db: Db, { now, products }: ScenarioInput) => {
 const fitsWinter = (activity: Activity) =>
   activity.seasons.length === 0 || activity.seasons.includes("winter");
 
-// Колода плана: активное, природа и повеселиться до 3 000 сом, что
+// Занятия плана: активное, природа и повеселиться до 3 000 сом, что
 // подходит зиме. Каталог маленький (заглушка) — берём, что есть.
-const deckFor = (activities: Activity[], random: Random) => {
+const cardsFor = (activities: Activity[], random: Random) => {
   const filtered = activities.filter((a) =>
     matchesPlanFilters(a, PLAN_FILTERS),
   );
@@ -168,54 +177,81 @@ const deckFor = (activities: Activity[], random: Random) => {
   return random.shuffle(pool).slice(0, PLAN_DECK_SIZE);
 };
 
-// Свайпы бота как в его поведении (bots/plans.ts): база + любимые
-// категории + «Недорого».
-const botSwipes = (
-  bot: User,
-  cards: Activity[],
-  random: Random,
-): Record<string, "like" | "pass"> =>
-  Object.fromEntries(
-    cards.map((card) => [
-      card.id,
-      random.next() < likeChance(bot, card) ? "like" : "pass",
-    ]),
+// Сколько ботам вместе «нравится» занятие — по шансам их поведения.
+const appealOf = (bots: User[], card: Activity) =>
+  bots.reduce((sum, bot) => sum + likeChance(bot, card), 0);
+
+// Колода: совпадения — самые привлекательные для ботов занятия, на своих
+// местах (PLAN_MATCH_POSITIONS), остальное — в перемешанном порядке.
+// Хотя бы одна карточка Мээрим — на показ: иначе она «досвайпала» бы
+// молча, без строки в ленте.
+const swipedBeforeShow = (deckSize: number) =>
+  Math.max(0, Math.min(PLAN_SWIPING_DONE, deckSize - 1));
+
+const deckFor = (cards: Activity[], bots: User[]) => {
+  // Совпадения — только там, где Мээрим уже свайпнула.
+  const positions = PLAN_MATCH_POSITIONS.filter(
+    (position) => position < swipedBeforeShow(cards.length),
   );
+  // sort стабильный: при равных шансах решает перемешанный порядок.
+  const matches = [...cards]
+    .sort((a, b) => appealOf(bots, b) - appealOf(bots, a))
+    .slice(0, positions.length);
+  const rest = cards.filter((card) => !matches.includes(card));
+  const deck: Activity[] = [];
+  for (let index = 0; index < cards.length; index += 1) {
+    const slot = positions.indexOf(index);
+    const card = slot >= 0 ? matches[slot] : rest.shift();
+    if (card) deck.push(card);
+  }
+  return { deck, matchIds: new Set(matches.map((card) => card.id)) };
+};
+
+// Свайп бота как в его поведении (bots/plans.ts): база + любимые
+// категории + «Недорого».
+const botSwipe = (bot: User, card: Activity, random: Random) =>
+  random.next() < likeChance(bot, card) ? "like" : "pass";
 
 const buildPlan = (
   db: Db,
   { activities, now }: ScenarioInput,
   random: Random,
 ): PlanSession => {
-  const deck = deckFor(activities, random);
   const finished = PLAN_FINISHED_BOTS.map((id) => requireUserIn(db, id));
   const swiping = requireUserIn(db, PLAN_SWIPING_BOT);
-  const swipes: PlanSession["swipes"] = {};
-  for (const bot of finished) swipes[bot.id] = botSwipes(bot, deck, random);
-
-  // Чтобы «почти совпадение» появилось от первого же «Хочу» Айгерим, у
-  // досвайпавших должно быть общее: не хватает — добавляем лайки на то,
-  // что обоим нравится больше всего.
-  const likedByAll = (id: string) =>
-    finished.every((bot) => swipes[bot.id]?.[id] === "like");
-  const byAppeal = [...deck].sort(
-    (a, b) =>
-      finished.reduce((sum, bot) => sum + likeChance(bot, b), 0) -
-      finished.reduce((sum, bot) => sum + likeChance(bot, a), 0),
+  const bots = [...finished, swiping];
+  const { deck, matchIds } = deckFor(cardsFor(activities, random), bots);
+  const started = new Set(
+    deck.slice(0, swipedBeforeShow(deck.length)).map((card) => card.id),
   );
-  let common = deck.filter((card) => likedByAll(card.id)).length;
-  for (const card of byAppeal) {
-    if (common >= Math.min(PLAN_COMMON_LIKES, deck.length)) break;
-    if (likedByAll(card.id)) continue;
-    for (const bot of finished) {
-      swipes[bot.id] = { ...swipes[bot.id], [card.id]: "like" };
-    }
-    common += 1;
-  }
 
-  // Мээрим «на трети колоды» — прогресс в плане виден сразу.
-  const started = deck.slice(0, Math.floor(deck.length / 3));
-  swipes[swiping.id] = botSwipes(swiping, started, random);
+  const swipes: Record<string, Record<string, "like" | "pass">> = {};
+  for (const bot of bots) swipes[bot.id] = {};
+  for (const card of deck) {
+    // Кто «голосует» по карточке до показа: досвайпавшие — за всю колоду,
+    // Мээрим — за начало.
+    const voters = started.has(card.id) ? bots : finished;
+    for (const bot of voters) {
+      const mine = swipes[bot.id] ?? {};
+      mine[card.id] = matchIds.has(card.id)
+        ? "like"
+        : botSwipe(bot, card, random);
+      swipes[bot.id] = mine;
+    }
+    if (matchIds.has(card.id)) continue;
+    // Не совпадение — значит, кто-то из ботов против. Там, где Мээрим ещё
+    // не свайпала, — кто-то из досвайпавших: иначе её живой лайк сделал бы
+    // совпадение, и итог показа зависел бы от случая. Отказывается тот,
+    // кому занятие нравится меньше.
+    if (voters.every((bot) => swipes[bot.id]?.[card.id] === "like")) {
+      const reluctant = [...voters].sort(
+        (a, b) => likeChance(a, card) - likeChance(b, card),
+      )[0];
+      if (reluctant) {
+        swipes[reluctant.id] = { ...swipes[reluctant.id], [card.id]: "pass" };
+      }
+    }
+  }
 
   return {
     id: NEW_YEAR_PLAN_ID,
@@ -235,6 +271,83 @@ const buildPlan = (
     votes: {},
     createdAt: new Date(now - DAY).toISOString(),
   };
+};
+
+// Вишлисты участников Санты: в сиде у кого-то почти всё дороже бюджета
+// (у Азамата — техника). Добираем желаниями в бюджете на место последних
+// обычных «дороже бюджета» — по интересам и популярности, без случая.
+// «Очень хочу» не трогаем. id желаний и свайпов остаются прежними.
+const fitSantaWishlists = (db: Db, { products }: ScenarioInput) => {
+  const byId = new Map(products.map((product) => [product.id, product]));
+  const priceOf = (item: WishlistItem) =>
+    item.source.kind === "product"
+      ? byId.get(item.source.productId)?.priceMin
+      : (item.source.custom.priceMin ?? item.source.custom.priceMax);
+  const inBudget = (item: WishlistItem) => {
+    const price = priceOf(item);
+    return price !== undefined && price <= SANTA_BUDGET;
+  };
+
+  for (const id of SANTA_BOTS) {
+    const bot = requireUserIn(db, id);
+    const items = db.wishlistItems[id] ?? [];
+    let missing =
+      SANTA_MIN_IN_BUDGET -
+      items.filter((item) => item.status === "active" && inBudget(item)).length;
+    if (missing <= 0) continue;
+    const taken = new Set(
+      items.flatMap((item) =>
+        item.source.kind === "product" ? [item.source.productId] : [],
+      ),
+    );
+    const candidates = products
+      .filter(
+        (product) =>
+          product.priceMin <= SANTA_BUDGET &&
+          !taken.has(product.id) &&
+          matchesAudience(product, bot.audience),
+      )
+      .map((product) => ({
+        product,
+        score:
+          2 *
+            product.interests.filter((interest) =>
+              bot.interests.includes(interest),
+            ).length +
+          product.popularity,
+      }))
+      .sort((a, b) => b.score - a.score)
+      .map(({ product }) => product);
+    for (let index = items.length - 1; index >= 0 && missing > 0; index -= 1) {
+      const item = items[index];
+      if (!item || item.status !== "active" || item.priority === "top") {
+        continue;
+      }
+      if (inBudget(item) || item.source.kind !== "product") continue;
+      const product = candidates.shift();
+      if (!product) break;
+      // Вариант был у прежнего товара — берём первый у нового (если есть).
+      const variantChoice = item.variantChoice
+        ? firstOptions(product)
+        : undefined;
+      items[index] = {
+        ...item,
+        source: { kind: "product", productId: product.id },
+        variantChoice:
+          variantChoice && Object.keys(variantChoice).length > 0
+            ? variantChoice
+            : undefined,
+      };
+      const previous = item.source.productId;
+      db.productSwipes = db.productSwipes.map((swipe) =>
+        swipe.userId === id && swipe.productId === previous
+          ? { ...swipe, productId: product.id }
+          : swipe,
+      );
+      missing -= 1;
+    }
+    db.wishlistItems[id] = items;
+  }
 };
 
 // Обмен — 27 декабря этого года, а если он уже прошёл — следующего.
@@ -274,6 +387,7 @@ export const applyNewYearScenario = (
   buildWishlist(db, input);
   const plan = buildPlan(db, input, random);
   db.plans[plan.id] = plan;
+  fitSantaWishlists(db, input);
   const game = buildSanta(db, input);
   db.santaGames[game.id] = game;
   return { planId: plan.id, santaId: game.id };

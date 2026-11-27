@@ -83,7 +83,7 @@ const StepBasics = ({
   title: string;
 }) => (
   <div className="flex flex-col gap-6">
-    <h1 className="text-title-1">Что за план?</h1>
+    <h2 className="text-title-1">Что за план?</h2>
     <TextField
       label="Название"
       placeholder="Пятница вечером"
@@ -137,7 +137,7 @@ const StepPeople = ({
   const friends = useFriends();
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-title-1">Кто идёт?</h1>
+      <h2 className="text-title-1">Кто идёт?</h2>
       <ul className="flex flex-col" aria-label="Друзья">
         {(friends.data ?? []).map(({ user }) => {
           const checked = selected.includes(user.id);
@@ -217,7 +217,7 @@ const StepActivities = ({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-title-1">Что выбираем?</h1>
+      <h2 className="text-title-1">Что выбираем?</h2>
       <div>
         <p className="text-label mb-3">Категории</p>
         <div className="flex flex-wrap gap-2">
@@ -342,7 +342,11 @@ export const PlanCreatePage = () => {
         showAvatar={false}
       />
       <div className="flex flex-none justify-center pb-2">
-        <ProgressDots count={STEPS} current={step} />
+        <ProgressDots
+          count={STEPS}
+          current={step}
+          label="Шаги создания плана"
+        />
       </div>
       <ScreenBody className="px-5 pt-2 pb-6">
         {step === 0 && (

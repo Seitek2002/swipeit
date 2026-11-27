@@ -69,6 +69,7 @@ const ProfileContent = () => {
       wishlist={wishlist.data}
       ownerId={user.data.id}
       ownerGender={audience === "all" ? undefined : audience}
+      titleAs="h2"
     />
   );
 };

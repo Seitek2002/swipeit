@@ -36,8 +36,19 @@ export function useFocusTrap(
       const first = preferred ?? getFocusables(root)[0];
       (first ?? root).focus({ preventScroll: true });
     });
+    // Контейнер — на момент открытия: к очистке реф уже обнулён.
+    const root = ref.current;
     return () => {
       cancelAnimationFrame(raf);
+      // Фокус уже увела другая шторка (одна закрылась, следующая открылась
+      // в том же клике: «Фильтры» → «Отправить этот фильтр другу») — не
+      // забираем его назад, иначе Escape и Tab в новой шторке не работают.
+      const current = document.activeElement;
+      const movedAway =
+        current instanceof HTMLElement &&
+        current !== document.body &&
+        !root?.contains(current);
+      if (movedAway) return;
       if (opener && document.contains(opener)) {
         opener.focus({ preventScroll: true });
       }

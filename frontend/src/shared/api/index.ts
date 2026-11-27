@@ -37,12 +37,12 @@ export {
   type NewYearScenarioResult,
 } from "./demo/types";
 // Боты режима local: запуск во вкладке-лидере и признак лидерства для
-// демо-панели. Сам движок — внутри мок-сервера.
+// демо-панели. Сам движок — внутри мок-сервера и грузится вместе с ним.
 export {
   isBotLeader,
   startBrowserBots,
   subscribeBotLeader,
-} from "./mock-server/adapters/browser/bots";
+} from "./browser-bots";
 export { type ApiErrorCode, ApiError, isApiError } from "./mock-server/errors";
 export { httpTransport } from "./http-transport";
 export {

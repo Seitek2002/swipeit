@@ -8,6 +8,7 @@ import { useMe } from "@/entities/user";
 
 import { isApiError } from "@/shared/api";
 import { ROUTES, requiresProfile } from "@/shared/config";
+import { useAppReady } from "@/shared/lib/app-status";
 import { useMounted } from "@/shared/lib/dom";
 import { useSessionStore } from "@/shared/store";
 import { Splash } from "@/shared/ui";
@@ -20,6 +21,9 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const router = useRouter();
   const mounted = useMounted();
+  // До запуска вкладки сессия ещё не прочитана (skipHydration): userId пуст
+  // у любого, и без этой проверки вошедшего увело бы в онбординг.
+  const ready = useAppReady();
   const userId = useSessionStore((state) => state.activeUserId);
   const setActiveUser = useSessionStore((state) => state.setActiveUser);
   const me = useMe();
@@ -31,9 +35,11 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
   }, [profileMissing, setActiveUser]);
 
   useEffect(() => {
-    if (mounted && needsProfile && !userId) router.replace(ROUTES.ONBOARDING);
-  }, [mounted, needsProfile, userId, router]);
+    if (ready && mounted && needsProfile && !userId) {
+      router.replace(ROUTES.ONBOARDING);
+    }
+  }, [ready, mounted, needsProfile, userId, router]);
 
-  if (needsProfile && (!mounted || !userId)) return <Splash />;
+  if (needsProfile && (!ready || !mounted || !userId)) return <Splash />;
   return children;
 };

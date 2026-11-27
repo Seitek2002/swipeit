@@ -23,13 +23,20 @@ type Props = {
   // сообщение и т. п.
   getPayload: () => Promise<SharePayload>;
   qrLabel: string;
+  // На экране уже есть своя главная кнопка (лобби: «Поехали» / «Готов») —
+  // тогда и первая кнопка отправки вторичная: мандарин один (DESIGN.md §1).
+  secondary?: boolean;
 };
 
 const ICON = { size: 20, strokeWidth: 1.75, "aria-hidden": true } as const;
 
 // Кнопки отправки (DESIGN.md §8.4): «Поделиться» (где есть системное),
 // Telegram, WhatsApp, «Скопировать ссылку», «Показать QR». Первая — главная.
-export const ShareActions = ({ getPayload, qrLabel }: Props) => {
+export const ShareActions = ({
+  getPayload,
+  qrLabel,
+  secondary = false,
+}: Props) => {
   const mounted = useMounted();
   const [busy, setBusy] = useState(false);
   const [qrUrl, setQrUrl] = useState<null | string>(null);
@@ -69,6 +76,7 @@ export const ShareActions = ({ getPayload, qrLabel }: Props) => {
       {native && (
         <Button
           size="lg"
+          variant={secondary ? "secondary" : "primary"}
           disabled={busy}
           icon={<Share2 {...ICON} />}
           onClick={() =>
@@ -80,7 +88,7 @@ export const ShareActions = ({ getPayload, qrLabel }: Props) => {
       )}
       <Button
         size="lg"
-        variant={native ? "secondary" : "primary"}
+        variant={native || secondary ? "secondary" : "primary"}
         disabled={busy}
         icon={<Send {...ICON} />}
         onClick={() => openMessenger(telegramUrl)}
