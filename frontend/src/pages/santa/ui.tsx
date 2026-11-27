@@ -29,12 +29,22 @@ import {
 const statusOf = (summary: SantaSummary) => {
   const joined = summary.members.filter((member) => member.joined).length;
   if (summary.game.status === "gathering") {
-    return summary.role === "invited"
-      ? { text: "Тебя позвали — вступи", accent: true }
-      : {
-          text: `Собираемся: ${joined} из ${summary.members.length}`,
-          accent: false,
-        };
+    if (summary.role === "invited") {
+      return { text: "Тебя позвали — вступи", accent: true };
+    }
+    // Все в сборе — организатору пора жеребьёвка (auto-tasks V09): «4 из 4»
+    // не говорило, что дальше его ход. Жеребьёвке нужно хотя бы трое.
+    if (
+      summary.role === "owner" &&
+      joined === summary.members.length &&
+      joined >= 3
+    ) {
+      return { text: "Все в сборе — проведи жеребьёвку", accent: true };
+    }
+    return {
+      text: `Собираемся: ${joined} из ${summary.members.length}`,
+      accent: false,
+    };
   }
   const me = summary.me;
   if (me?.envelope === "ready")
