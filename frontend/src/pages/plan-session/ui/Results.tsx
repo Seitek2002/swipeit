@@ -28,6 +28,8 @@ import { pluralize } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 import { Button, EmptyState, toast } from "@/shared/ui";
 
+import { drumLabels } from "../model";
+
 type Props = { meId: string; view: PlanView };
 
 // Мини-билетик строки итогов: фото, название, подпись «все 4 ✔︎ — «Все за»».
@@ -124,12 +126,16 @@ export const Results = ({ view, meId }: Props) => {
   const votes = new Map(Object.entries(tally.counts));
   const myVote = plan.votes[meId];
 
+  const labels = drumLabels(candidates.source);
   const header = (
     <div>
       <h2 className="text-title-1">{plan.title}</h2>
       <p className="text-title-3 text-rose mt-0.5">
         Совпало {matches.length} из {plan.deck.length}
       </p>
+      {labels.hint && !voting && (
+        <p className="text-body text-rose mt-1.5">{labels.hint}</p>
+      )}
     </div>
   );
 
@@ -286,11 +292,11 @@ export const Results = ({ view, meId }: Props) => {
             loading={spin.isPending}
             onClick={() => spin.mutate()}
           >
-            Крутить барабан
+            {labels.button}
           </Button>
         ) : (
           <p className="text-caption text-rose text-center">
-            Барабан крутит организатор — все увидят, что выпало.
+            {labels.forGuests}
           </p>
         )}
         {!(voting && hasVotes) && (
