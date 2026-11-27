@@ -1,1 +1,1 @@
-export { OnboardingPage } from "./ui/OnboardingPage";
+export { OnboardingRedirect } from "./ui/OnboardingRedirect";

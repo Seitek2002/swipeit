@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -16,12 +16,18 @@ import {
 import { shareWishlist, updateWishlistMeta, wishlistKeys } from "@/shared/api";
 import { withBasePath } from "@/shared/lib/base-path";
 import { absoluteUrl } from "@/shared/lib/dom";
-import { occasionLabel } from "@/shared/lib/format";
+import { genitive, occasionLabel } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 import { Avatar, BottomSheet, ShareActions, TextArea } from "@/shared/ui";
 
 type Props = {
+  // Шаг 1 «Имя» (DESIGN.md §8.4) — форму NameSheet даёт страница
+  // (features/ask-name): фичи друг друга не импортируют. Пока он есть,
+  // шторка показывает его; имя сохранилось — сама переходит к отправке.
+  nameStep?: ReactNode;
   onClose: () => void;
+  // NAME_REQUIRED от сервера: страница спрашивает имя и повторяет отправку.
+  onShareError?: (error: unknown, retry: () => void) => boolean;
   open: boolean;
   wishlist?: WishlistResponse;
 };
@@ -63,7 +69,13 @@ const PreviewPhoto = ({
 // Отправка вишлиста (DESIGN.md §8.4): повод, дата, сообщение, превью-открытка,
 // мессенджеры, ссылка и QR. Перед каждой отправкой повод сохраняется, и
 // снимок вишлиста собирается заново — в ссылке всегда свежее.
-export const WishlistShareSheet = ({ open, onClose, wishlist }: Props) => {
+export const WishlistShareSheet = ({
+  open,
+  onClose,
+  wishlist,
+  nameStep,
+  onShareError,
+}: Props) => {
   const queryClient = useQueryClient();
   const { data: me } = useMe();
   const meta = wishlist?.meta;
@@ -102,58 +114,71 @@ export const WishlistShareSheet = ({ open, onClose, wishlist }: Props) => {
     };
   };
 
+  const askName = Boolean(nameStep);
+
   return (
     <BottomSheet
       open={open}
       onClose={onClose}
-      title="Отправить вишлист"
-      height="full"
+      title={askName ? "Как тебя зовут?" : "Отправить вишлист"}
+      height={askName ? "auto" : "full"}
       footer={
-        <ShareActions
-          getPayload={getPayload}
-          qrLabel="QR-код ссылки на вишлист"
-        />
+        askName ? undefined : (
+          <ShareActions
+            getPayload={getPayload}
+            onError={onShareError}
+            qrLabel="QR-код ссылки на вишлист"
+          />
+        )
       }
     >
-      <div className="flex flex-col gap-5 pb-2">
-        {/* Превью ссылки — мини-открытка: бирки веером, имя и повод. */}
-        <div className="paper rounded-paper shadow-paper flex flex-col items-center gap-3 px-4 pt-5 pb-4">
-          <div className="relative h-24 w-full">
-            {photos.map((productId, index) => (
-              <PreviewPhoto
-                key={productId}
-                productId={productId}
-                index={index}
-              />
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            {me && (
-              <Avatar
-                name={me.name ?? ""}
-                color={me.avatarColor}
-                size={28}
-                decorative
-              />
+      {askName ? (
+        nameStep
+      ) : (
+        <div className="flex flex-col gap-5 pb-2">
+          {/* Превью ссылки — мини-открытка: бирки веером, имя и повод. */}
+          <div className="paper rounded-paper shadow-paper flex flex-col items-center gap-3 px-4 pt-5 pb-4">
+            <div className="relative h-24 w-full">
+              {photos.map((productId, index) => (
+                <PreviewPhoto
+                  key={productId}
+                  productId={productId}
+                  index={index}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              {me && (
+                <Avatar
+                  name={me.name ?? ""}
+                  color={me.avatarColor}
+                  size={28}
+                  decorative
+                />
+              )}
+              <p className="text-title-2">
+                {me?.name
+                  ? `Вишлист ${genitive(me.name, me.audience === "all" ? undefined : me.audience)}`
+                  : "Мой вишлист"}
+              </p>
+            </div>
+            {occasion && (
+              <p className="text-caption text-ink-soft -mt-2">
+                {occasionLabel(occasion)}
+              </p>
             )}
-            <p className="text-title-2">Вишлист {me?.name}</p>
           </div>
-          {occasion && (
-            <p className="text-caption text-ink-soft -mt-2">
-              {occasionLabel(occasion)}
-            </p>
-          )}
-        </div>
 
-        <OccasionFields value={draft} onChange={setDraft} />
-        <TextArea
-          label="Сообщение"
-          placeholder="Буду рада любому подарку из списка"
-          maxLength={200}
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-        />
-      </div>
+          <OccasionFields value={draft} onChange={setDraft} />
+          <TextArea
+            label="Сообщение"
+            placeholder="Буду рада любому подарку из списка"
+            maxLength={200}
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+          />
+        </div>
+      )}
     </BottomSheet>
   );
 };

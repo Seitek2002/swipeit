@@ -9,6 +9,7 @@ import { Check, Plus } from "lucide-react";
 
 import { AppHeader } from "@/widgets/app-header";
 
+import { NAME_CAPTIONS, useRequireName } from "@/features/ask-name";
 import { CustomActivitySheet } from "@/features/custom-activity";
 
 import { type Activity, ActivityTicket } from "@/entities/activity";
@@ -293,16 +294,21 @@ export const PlanCreatePage = () => {
   const [custom, setCustom] = useState<Activity[]>([]);
   const [customOpen, setCustomOpen] = useState(false);
 
+  // Нет имени — NameSheet по «Начать» (DESIGN.md §8.7), потом план
+  // создаётся сам; NAME_REQUIRED от сервера — та же шторка и повтор.
+  const requireName = useRequireName(NAME_CAPTIONS.plan);
   const create = useMutation({
     mutationFn: createPlan,
     onSuccess: (view) => router.replace(ROUTES.PLAN_SESSION(view.plan.id)),
-    onError: (error) =>
+    onError: (error, input) => {
+      if (requireName.handleError(error, () => create.mutate(input))) return;
       toast(
         isApiError(error)
           ? error.message
           : "Не получилось создать план. Попробуй ещё раз",
         { tone: "error" },
-      ),
+      );
+    },
   });
 
   const next = () => {
@@ -318,7 +324,7 @@ export const PlanCreatePage = () => {
       setStep(step + 1);
       return;
     }
-    create.mutate({
+    const input = {
       title: title.trim(),
       mode,
       deadline:
@@ -327,7 +333,8 @@ export const PlanCreatePage = () => {
       matchRule,
       filters,
       customActivityIds: custom.map((activity) => activity.id),
-    });
+    };
+    requireName.run(() => create.mutate(input));
   };
 
   const canNext = step !== 0 || title.trim().length > 0;
@@ -396,6 +403,7 @@ export const PlanCreatePage = () => {
         onClose={() => setCustomOpen(false)}
         onCreated={(activity) => setCustom((list) => [...list, activity])}
       />
+      {requireName.sheet}
     </Screen>
   );
 };

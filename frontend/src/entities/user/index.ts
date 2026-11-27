@@ -15,3 +15,4 @@ export type {
   UpdateMeInput,
   User,
 } from "./model";
+export { NetworkPlaque } from "./ui/NetworkPlaque";

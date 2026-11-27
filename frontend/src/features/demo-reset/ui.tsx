@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 
-import { useRouter } from "next/navigation";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { resetDemo } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { withBasePath } from "@/shared/lib/base-path";
 import { useSessionStore } from "@/shared/store";
 import { Button, ConfirmDialog, toast } from "@/shared/ui";
 
@@ -27,7 +26,6 @@ export const ResetDemoButton = ({
   label = "Сбросить демо-данные",
   network = false,
 }: Props) => {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const setActiveUser = useSessionStore((state) => state.setActiveUser);
   const [open, setOpen] = useState(false);
@@ -38,8 +36,9 @@ export const ResetDemoButton = ({
       setOpen(false);
       setActiveUser(null);
       queryClient.clear();
-      toast("Демо-данные сброшены");
-      router.replace(ROUTES.ONBOARDING);
+      // Полная перезагрузка: снова прелоадер, новый пустой профиль и
+      // обучающая карточка (DESIGN.md §8.1), а не остатки старого кэша.
+      window.location.assign(withBasePath(ROUTES.GIFTS));
     },
     onError: () =>
       toast("Не получилось сбросить. Попробуй ещё раз", { tone: "error" }),
@@ -67,8 +66,8 @@ export const ResetDemoButton = ({
         }
         description={
           network
-            ? "Профили, вишлисты, планы и игры удалятся на ноутбуке — у всех телефонов сети. Все начнут заново со знакомства."
-            : "Профиль, вишлист, планы и игры удалятся с этого устройства. Начнёшь заново со знакомства."
+            ? "Профили, вишлисты, планы и игры удалятся на ноутбуке — у всех телефонов сети. Все начнут заново с пустого профиля."
+            : "Профиль, вишлист, планы и игры удалятся с этого устройства. Начнёшь заново с пустого профиля и обучающей карточки."
         }
         confirmLabel="Сбросить"
       />

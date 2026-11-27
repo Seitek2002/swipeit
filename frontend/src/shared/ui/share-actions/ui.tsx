@@ -22,6 +22,9 @@ type Props = {
   // Ссылка собирается по требованию: перед отправкой сохраняется повод,
   // сообщение и т. п.
   getPayload: () => Promise<SharePayload>;
+  // Ошибку, которую экран разбирает сам (NAME_REQUIRED → спросить имя),
+  // он забирает себе: вернул true — тоста нет, retry повторяет нажатие.
+  onError?: (error: unknown, retry: () => void) => boolean;
   qrLabel: string;
   // На экране уже есть своя главная кнопка (лобби: «Поехали» / «Готов») —
   // тогда и первая кнопка отправки вторичная: мандарин один (DESIGN.md §1).
@@ -34,6 +37,7 @@ const ICON = { size: 20, strokeWidth: 1.75, "aria-hidden": true } as const;
 // Telegram, WhatsApp, «Скопировать ссылку», «Показать QR». Первая — главная.
 export const ShareActions = ({
   getPayload,
+  onError,
   qrLabel,
   secondary = false,
 }: Props) => {
@@ -45,15 +49,20 @@ export const ShareActions = ({
   const [qrUrl, setQrUrl] = useState<null | string>(null);
   const native = mounted && canNativeShare();
 
+  // fail — убрать то, что нажатие успело открыть; again — как повторить
+  // нажатие, когда экран разобрал ошибку сам (onError).
   const run = async (
     action: (payload: SharePayload) => Promise<void> | void,
+    { fail, again }: { again?: () => void; fail?: () => void } = {},
   ) => {
     if (busyRef.current) return;
     busyRef.current = true;
     setBusy(true);
     try {
       await action(await getPayload());
-    } catch {
+    } catch (error) {
+      fail?.();
+      if (onError?.(error, again ?? (() => void run(action)))) return;
       toast("Не получилось собрать ссылку. Попробуй ещё раз", {
         tone: "error",
       });
@@ -64,18 +73,22 @@ export const ShareActions = ({
   };
 
   // Мессенджер — в новой вкладке. Окно открываем до await: иначе браузер
-  // заблокирует его как всплывающее.
+  // заблокирует его как всплывающее. Ссылка не собралась — пустую вкладку
+  // закрываем, иначе человек остаётся в ней, а шторка с ошибкой — здесь.
   const openMessenger = (build: (payload: SharePayload) => string) => {
     if (busyRef.current) return;
     // Без "noopener" в параметрах: с ним window.open всегда возвращает null.
     // Связь с нашей вкладкой обрываем вручную.
     const opened = window.open("about:blank", "_blank");
     if (opened) opened.opener = null;
-    void run((payload) => {
-      const url = build(payload);
-      if (opened) opened.location.href = url;
-      else window.location.href = url;
-    });
+    void run(
+      (payload) => {
+        const url = build(payload);
+        if (opened && !opened.closed) opened.location.href = url;
+        else window.location.href = url;
+      },
+      { fail: () => opened?.close(), again: () => openMessenger(build) },
+    );
   };
 
   return (

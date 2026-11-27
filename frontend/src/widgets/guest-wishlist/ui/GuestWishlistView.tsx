@@ -4,8 +4,9 @@ import { type ReactNode, useState } from "react";
 
 import { ExternalLink, Gift } from "lucide-react";
 
+import { NAME_CAPTIONS, useRequireName } from "@/features/ask-name";
 import { ProductDetailsSheet } from "@/features/product-details";
-import { ReserveControl } from "@/features/reserve-gift";
+import { type NameGuard, ReserveControl } from "@/features/reserve-gift";
 
 import {
   type Product,
@@ -42,9 +43,11 @@ const GuestWishCard = ({
   item,
   ownerId,
   readOnly,
+  nameGuard,
   onOpen,
 }: {
   item: Item;
+  nameGuard: NameGuard;
   onOpen: (product: Product) => void;
   ownerId: string;
   readOnly: boolean;
@@ -119,7 +122,11 @@ const GuestWishCard = ({
           </div>
           {!readOnly && (
             <div className="mt-3.5">
-              <ReserveControl ownerId={ownerId} itemKey={item.key} />
+              <ReserveControl
+                ownerId={ownerId}
+                itemKey={item.key}
+                nameGuard={nameGuard}
+              />
             </div>
           )}
         </div>
@@ -140,6 +147,9 @@ export const GuestWishlistView = ({
 }: Props) => {
   const [details, setDetails] = useState<null | Product>(null);
   const occasion = occasionLabel(wishlist.meta.occasion);
+  // Бронь от профиля без имени: одна NameSheet на весь список (DESIGN.md
+  // §8.5). Гость без профиля называется только для брони — в ReserveControl.
+  const requireName = useRequireName(NAME_CAPTIONS.reserve);
 
   return (
     <>
@@ -150,7 +160,10 @@ export const GuestWishlistView = ({
           size={56}
         />
         <Title className="text-title-1 mt-3.5">
-          Вишлист {genitive(wishlist.owner.name, ownerGender)}
+          {/* Без имени (профиль, открытый по прямому id) — без «Вишлист ». */}
+          {wishlist.owner.name.trim()
+            ? `Вишлист ${genitive(wishlist.owner.name, ownerGender)}`
+            : "Вишлист"}
         </Title>
         {occasion && (
           <p className="text-title-3 text-rose mt-0.5">{occasion}</p>
@@ -173,6 +186,7 @@ export const GuestWishlistView = ({
               item={item}
               ownerId={ownerId}
               readOnly={readOnly}
+              nameGuard={requireName}
               onOpen={setDetails}
             />
           ))}
@@ -180,6 +194,7 @@ export const GuestWishlistView = ({
       )}
       {footer}
       <ProductDetailsSheet product={details} onClose={() => setDetails(null)} />
+      {requireName.sheet}
     </>
   );
 };

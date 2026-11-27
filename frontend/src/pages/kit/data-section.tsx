@@ -86,7 +86,7 @@ export const DataSection = () => {
         {me.data ? (
           <span className="flex items-center gap-3">
             <Avatar name={me.data.name ?? ""} color={me.data.avatarColor} />
-            Текущий пользователь: {me.data.name}
+            Текущий пользователь: {me.data.name || "без имени"}
           </span>
         ) : (
           !me.isLoading && (

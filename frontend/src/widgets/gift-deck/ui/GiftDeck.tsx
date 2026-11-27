@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
+import { DECK_GUIDE_DESCRIPTION, useDeckGuide } from "@/features/deck-guide";
 import { defaultChoice } from "@/features/product-details";
 import {
   SwipeDeck,
@@ -173,6 +174,15 @@ export const GiftDeck = ({
     return () => clearTimeout(timer);
   }, [loadMore]);
 
+  // Обучающая карточка (DESIGN.md §7 DeckGuide) — обычная первая карточка
+  // ленты, пока подсказка deck_guide не отмечена. Слой «приклеен» к товару:
+  // смена верхней карточки его не переносит.
+  const guide = useDeckGuide();
+  const [guideId, setGuideId] = useState<null | string>(null);
+  const top = queue[0];
+  if (guide.active && guideId === null && top) setGuideId(top.id);
+  if (!guide.active && guideId !== null) setGuideId(null);
+
   // Прелоадер уходит, когда первая карточка готова целиком — с декодированным
   // фото, без «мигания» пустой рамки (DESIGN.md §6). Пустая порция или ошибка
   // тоже отпускают: экран покажет своё состояние.
@@ -218,6 +228,8 @@ export const GiftDeck = ({
   };
 
   const handleDecision = (product: Product, direction: SwipeDirection) => {
+    // Обучающая карточка улетела в любую сторону — слоя больше нет нигде.
+    if (product.id === guideId) guide.done();
     setQueue((current) => current.filter((item) => item.id !== product.id));
     setHistory((current) => [...current, { product, direction }]);
     swipedRef.current = [...swipedRef.current, product];
@@ -357,9 +369,13 @@ export const GiftDeck = ({
             ? product.title
             : `${product.title}, ${formatPrice(product.priceMin, product.priceMax)}`
         }
+        getDescription={(product) =>
+          product.id === guideId ? DECK_GUIDE_DESCRIPTION : undefined
+        }
         renderPhotoCard={(product) => (
           <GiftCard
             product={product}
+            guide={product.id === guideId}
             hidePrices={hidePrices}
             onVariantChange={(choice) => {
               variants.current[product.id] = choice;

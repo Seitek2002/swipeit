@@ -7,6 +7,7 @@ import Link from "next/link";
 import { AppHeader } from "@/widgets/app-header";
 import { GiftDeck } from "@/widgets/gift-deck";
 
+import { NAME_CAPTIONS, NameForm, useRequireName } from "@/features/ask-name";
 import { PickRequestSheet } from "@/features/pick-request-create";
 import {
   ActiveFilterChips,
@@ -46,6 +47,9 @@ export const GiftsPage = () => {
   // Ссылка-фильтр уходит с тем черновиком, что сейчас в шторке фильтров.
   const [pickFilters, setPickFilters] = useState<ProductFilters>(filters);
   const [pickOpen, setPickOpen] = useState(false);
+  // Друг увидит «Азамат хочет подарить тебе подарок» (DESIGN.md §8.6): нет
+  // имени — NameSheet первым шагом шторки; NAME_REQUIRED — поверх и повтор.
+  const requireName = useRequireName(NAME_CAPTIONS.pick);
 
   return (
     <Screen>
@@ -87,7 +91,14 @@ export const GiftsPage = () => {
         filters={pickFilters}
         conditions={describeFilters(pickFilters)}
         onClose={() => setPickOpen(false)}
+        nameStep={
+          requireName.needsName ? (
+            <NameForm caption={NAME_CAPTIONS.pick} />
+          ) : undefined
+        }
+        onShareError={requireName.handleError}
       />
+      {requireName.sheet}
     </Screen>
   );
 };

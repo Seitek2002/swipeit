@@ -14,15 +14,25 @@ import {
   useReserver,
 } from "./model";
 
+// «Сначала имя, потом действие» от features/ask-name (useRequireName): его
+// даёт виджет — фичи друг друга не импортируют, а шторка на список одна.
+export type NameGuard = {
+  handleError: (error: unknown, retry: () => unknown) => boolean;
+  run: (action: () => unknown) => void;
+};
+
 type Props = {
   itemKey: string;
+  // Профиль без имени — NameSheet, имя сохраняется в профиль (DESIGN.md
+  // §8.5); бронь продолжается сама. NAME_REQUIRED от сервера — та же шторка.
+  nameGuard: NameGuard;
   ownerId: string;
 };
 
 // Бронь на карточке чужого вишлиста (DESIGN.md §8.5, reference .g-act):
 // «Забронирую я» → «Ты выбрал этот подарок» с «Отменить»; у других гостей —
 // «Кто-то уже выбрал»; подаренное желание у забронировавшего — «Уже подарено».
-export const ReserveControl = ({ ownerId, itemKey }: Props) => {
+export const ReserveControl = ({ ownerId, itemKey, nameGuard }: Props) => {
   const reserver = useReserver();
   const reservations = useReservations(ownerId);
   const reserve = useReserve(ownerId);
@@ -33,12 +43,24 @@ export const ReserveControl = ({ ownerId, itemKey }: Props) => {
 
   const { state, id } = reservations.stateOf(itemKey);
 
+  // Гость без профиля называется только для брони (как было), профиль —
+  // через NameSheet. Имя профиля сервер берёт сам.
+  const reserveAs = (guestName?: string) =>
+    reserve.mutate(
+      { itemKey, name: guestName },
+      {
+        onError: (error) =>
+          nameGuard.handleError(error, () => reserveAs(guestName)),
+      },
+    );
+
   const handleReserve = () => {
     if (reserver.needsName) {
       setAskName(true);
       return;
     }
-    reserve.mutate({ itemKey, name: reserver.name });
+    if (reserver.isGuest) reserveAs(reserver.name);
+    else nameGuard.run(() => reserveAs());
   };
 
   const handleName = () => {
@@ -46,7 +68,7 @@ export const ReserveControl = ({ ownerId, itemKey }: Props) => {
     if (!trimmed) return;
     setGuestName(trimmed);
     setAskName(false);
-    reserve.mutate({ itemKey, name: trimmed });
+    reserveAs(trimmed);
   };
 
   if (state === "closed") {

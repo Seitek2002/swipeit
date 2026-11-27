@@ -6,7 +6,6 @@ export {
   useCustomImageUrl,
 } from "./custom-images";
 export { vibrate } from "./haptics";
-export { setReturnTo, takeReturnTo } from "./return-to";
 export { compressImage } from "./image-compress";
 export { useFocusTrap } from "./useFocusTrap";
 export { useMounted } from "./useMounted";

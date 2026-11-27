@@ -7,11 +7,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { santaTerms, useSantaGame } from "@/entities/santa-game";
+import { NAME_CAPTIONS, useRequireName } from "@/features/ask-name";
 
-import { isApiError, joinSantaGame, santaKeys } from "@/shared/api";
+import { santaTerms, useSantaGame } from "@/entities/santa-game";
+import { useCreateUser } from "@/entities/user";
+
+import {
+  getSantaGame,
+  isApiError,
+  joinSantaGame,
+  santaKeys,
+} from "@/shared/api";
 import { ROUTES } from "@/shared/config";
-import { setReturnTo } from "@/shared/lib/dom";
 import { pluralize } from "@/shared/lib/format";
 import { useSessionStore } from "@/shared/store";
 import {
@@ -45,6 +52,38 @@ const NotHere = () => (
   />
 );
 
+// Гость без профиля: что за приглашение, и «Вступить» — профиль создастся
+// сам. Ошибка — под кнопкой, повтор — той же кнопкой.
+const GuestInvite = ({
+  title,
+  loading,
+  failed,
+  onJoin,
+}: {
+  failed: boolean;
+  loading: boolean;
+  onJoin: () => void;
+  title: string;
+}) => (
+  <EmptyState
+    className="h-full"
+    object="envelope"
+    title={title}
+    action={
+      <>
+        <Button size="lg" loading={loading} onClick={onJoin}>
+          Вступить
+        </Button>
+        {failed && (
+          <p role="alert" className="text-caption text-rose">
+            Не получилось. Проверь связь и попробуй ещё раз
+          </p>
+        )}
+      </>
+    }
+  />
+);
+
 const JoinContent = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -58,38 +97,58 @@ const JoinContent = () => {
     if (isMember) router.replace(ROUTES.SANTA_GAME(id));
   }, [isMember, id, router]);
 
+  // Нет имени — NameSheet «Так тебя увидят в игре» по «Вступить» (DESIGN.md
+  // §8.8), потом вступление само; NAME_REQUIRED от сервера — та же шторка.
+  const requireName = useRequireName(NAME_CAPTIONS.santa);
   const join = useMutation({
     mutationFn: () => joinSantaGame(id),
     onSuccess: (next) => {
       queryClient.setQueryData(santaKeys.detail(id), next);
       router.replace(ROUTES.SANTA_GAME(id));
     },
-    onError: (error) =>
+    onError: (error) => {
+      if (requireName.handleError(error, () => join.mutate())) return;
       toast(
         isApiError(error)
           ? error.message
           : "Не получилось вступить. Попробуй ещё раз",
         { tone: "error" },
-      ),
+      );
+    },
   });
 
-  // Без профиля — сначала познакомиться, потом вернуться сюда.
+  // Без профиля «Вступить» создаёт его сам (TECH_SPEC §10). Игру читаем уже
+  // от нового профиля: если вступить можно — NameSheet, потом вступление.
+  const createUser = useCreateUser();
+  const joinAsNew = () =>
+    createUser.mutate(undefined, {
+      onSuccess: async () => {
+        const next = await queryClient
+          .fetchQuery({
+            queryKey: santaKeys.detail(id),
+            queryFn: () => getSantaGame(id),
+          })
+          .catch(() => null);
+        // Не нашлась, жеребьёвка прошла или ты уже в игре — экран покажет сам.
+        if (
+          !next ||
+          next.role === "owner" ||
+          next.role === "participant" ||
+          next.game.status === "drawn"
+        ) {
+          return;
+        }
+        requireName.run(() => join.mutate());
+      },
+    });
+
   if (!meId) {
     return (
-      <EmptyState
-        className="h-full"
-        object="envelope"
-        title="Тебя зовут в Тайного Санту. Сначала представься — это займёт минуту."
-        action={
-          <Button
-            onClick={() => {
-              setReturnTo(ROUTES.SANTA_JOIN(id));
-              router.push(ROUTES.ONBOARDING);
-            }}
-          >
-            Познакомиться
-          </Button>
-        }
+      <GuestInvite
+        title="Тебя зовут в Тайного Санту: жеребьёвка решит, кто кому дарит."
+        loading={createUser.isPending}
+        failed={createUser.isError}
+        onJoin={joinAsNew}
       />
     );
   }
@@ -124,6 +183,7 @@ const JoinContent = () => {
 
   return (
     <div className="flex h-full flex-col">
+      {requireName.sheet}
       <div className="flex-1 px-5 pt-4">
         <p className="text-title-3 text-rose">
           {owner
@@ -162,7 +222,7 @@ const JoinContent = () => {
             size="lg"
             className="w-full"
             loading={join.isPending}
-            onClick={() => join.mutate()}
+            onClick={() => requireName.run(() => join.mutate())}
           >
             Вступить в игру
           </Button>

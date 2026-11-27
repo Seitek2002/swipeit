@@ -42,7 +42,7 @@ export const AvatarColorPicker = ({ name, value, onChange }: Props) => (
           className="grid size-11 place-items-center rounded-full"
         >
           <Avatar
-            name={name.trim() || "?"}
+            name={name}
             color={color}
             size={36}
             decorative

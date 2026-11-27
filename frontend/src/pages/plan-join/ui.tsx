@@ -7,11 +7,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { usePlan } from "@/entities/plan";
+import { NAME_CAPTIONS, useRequireName } from "@/features/ask-name";
 
-import { isApiError, joinPlan, planKeys } from "@/shared/api";
+import { usePlan } from "@/entities/plan";
+import { useCreateUser } from "@/entities/user";
+
+import { getPlan, isApiError, joinPlan, planKeys } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
-import { setReturnTo } from "@/shared/lib/dom";
 import { pluralize } from "@/shared/lib/format";
 import { useSessionStore } from "@/shared/store";
 import {
@@ -45,6 +47,38 @@ const NotHere = () => (
   />
 );
 
+// Гость без профиля: что за приглашение, и «Вступить» — профиль создастся
+// сам. Ошибка — под кнопкой, повтор — той же кнопкой.
+const GuestInvite = ({
+  title,
+  loading,
+  failed,
+  onJoin,
+}: {
+  failed: boolean;
+  loading: boolean;
+  onJoin: () => void;
+  title: string;
+}) => (
+  <EmptyState
+    className="h-full"
+    object="ticket"
+    title={title}
+    action={
+      <>
+        <Button size="lg" loading={loading} onClick={onJoin}>
+          Вступить
+        </Button>
+        {failed && (
+          <p role="alert" className="text-caption text-rose">
+            Не получилось. Проверь связь и попробуй ещё раз
+          </p>
+        )}
+      </>
+    }
+  />
+);
+
 const JoinContent = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -60,38 +94,58 @@ const JoinContent = () => {
     if (isMember) router.replace(ROUTES.PLAN_SESSION(id));
   }, [isMember, id, router]);
 
+  // Нет имени — NameSheet «Так тебя увидят в плане» по «Вступить» (DESIGN.md
+  // §8.7), потом вступление само; NAME_REQUIRED от сервера — та же шторка.
+  const requireName = useRequireName(NAME_CAPTIONS.plan);
   const join = useMutation({
     mutationFn: () => joinPlan(id),
     onSuccess: (next) => {
       queryClient.setQueryData(planKeys.detail(id), next);
       router.replace(ROUTES.PLAN_SESSION(id));
     },
-    onError: (error) =>
+    onError: (error) => {
+      if (requireName.handleError(error, () => join.mutate())) return;
       toast(
         isApiError(error)
           ? error.message
           : "Не получилось вступить. Попробуй ещё раз",
         { tone: "error" },
-      ),
+      );
+    },
   });
 
-  // Без профиля — сначала познакомиться, потом вернуться сюда.
+  // Без профиля «Вступить» создаёт его сам (TECH_SPEC §10). План читаем уже
+  // от нового профиля: если вступить можно — NameSheet, потом вступление.
+  const createUser = useCreateUser();
+  const joinAsNew = () =>
+    createUser.mutate(undefined, {
+      onSuccess: async (user) => {
+        const next = await queryClient
+          .fetchQuery({
+            queryKey: planKeys.detail(id),
+            queryFn: () => getPlan(id),
+          })
+          .catch(() => null);
+        // Не нашёлся, уже закрыт или ты в нём — экран покажет это сам.
+        if (
+          !next ||
+          next.plan.participantIds.includes(user.id) ||
+          next.plan.status === "results" ||
+          next.plan.status === "decided"
+        ) {
+          return;
+        }
+        requireName.run(() => join.mutate());
+      },
+    });
+
   if (!meId) {
     return (
-      <EmptyState
-        className="h-full"
-        object="ticket"
-        title="Тебя зовут в план. Сначала представься — это займёт минуту."
-        action={
-          <Button
-            onClick={() => {
-              setReturnTo(ROUTES.PLAN_JOIN(id));
-              router.push(ROUTES.ONBOARDING);
-            }}
-          >
-            Познакомиться
-          </Button>
-        }
+      <GuestInvite
+        title="Тебя зовут в план: вместе выбрать, чем заняться."
+        loading={createUser.isPending}
+        failed={createUser.isError}
+        onJoin={joinAsNew}
       />
     );
   }
@@ -128,6 +182,7 @@ const JoinContent = () => {
 
   return (
     <div className="flex h-full flex-col">
+      {requireName.sheet}
       <div className="flex-1 px-5 pt-4">
         <p className="text-title-3 text-rose">
           {owner ? `${owner.name} зовёт тебя` : "Тебя зовут"}
@@ -172,7 +227,7 @@ const JoinContent = () => {
             size="lg"
             className="w-full"
             loading={join.isPending}
-            onClick={() => join.mutate()}
+            onClick={() => requireName.run(() => join.mutate())}
           >
             Вступить
           </Button>

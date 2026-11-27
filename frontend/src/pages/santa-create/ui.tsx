@@ -9,6 +9,8 @@ import { ArrowLeftRight, Check, Plus, X } from "lucide-react";
 
 import { AppHeader } from "@/widgets/app-header";
 
+import { NAME_CAPTIONS, useRequireName } from "@/features/ask-name";
+
 import { useFriends, useMe } from "@/entities/user";
 
 import { createSantaGame, isApiError } from "@/shared/api";
@@ -126,7 +128,7 @@ export const SantaCreatePage = () => {
 
   const people: Person[] = [
     ...(me
-      ? [{ id: me.id, name: me.name ?? "", avatarColor: me.avatarColor }]
+      ? [{ id: me.id, name: me.name || "Ты", avatarColor: me.avatarColor }]
       : []),
     ...(friends.data ?? [])
       .filter(({ user }) => invited.includes(user.id))
@@ -139,16 +141,21 @@ export const SantaCreatePage = () => {
   const nameOf = (id: string) =>
     people.find((person) => person.id === id)?.name ?? "…";
 
+  // Нет имени — NameSheet по «Создать игру» (DESIGN.md §8.8), потом игра
+  // создаётся сама; NAME_REQUIRED от сервера — та же шторка и повтор.
+  const requireName = useRequireName(NAME_CAPTIONS.santa);
   const create = useMutation({
     mutationFn: createSantaGame,
     onSuccess: (view) => router.replace(ROUTES.SANTA_GAME(view.game.id)),
-    onError: (error) =>
+    onError: (error, input) => {
+      if (requireName.handleError(error, () => create.mutate(input))) return;
       toast(
         isApiError(error)
           ? error.message
           : "Не получилось создать игру. Попробуй ещё раз",
         { tone: "error" },
-      ),
+      );
+    },
   });
 
   // Только цифры и пробелы-разделители: «1500.50» или «1,5» — ошибка, а не
@@ -174,8 +181,8 @@ export const SantaCreatePage = () => {
       people.some((person) => person.id === b),
   );
 
-  const submit = () =>
-    create.mutate({
+  const submit = () => {
+    const input = {
       title: title.trim(),
       budget: budgetValue,
       exchangeDate,
@@ -183,7 +190,9 @@ export const SantaCreatePage = () => {
       drawAt: drawMode === "date" ? new Date(drawAt).toISOString() : undefined,
       participantIds: invited,
       exclusions: activeExclusions,
-    });
+    };
+    requireName.run(() => create.mutate(input));
+  };
 
   return (
     <Screen>
@@ -365,6 +374,7 @@ export const SantaCreatePage = () => {
           setPairOpen(false);
         }}
       />
+      {requireName.sheet}
     </Screen>
   );
 };

@@ -5,10 +5,7 @@ import {
   INTEREST_LABELS,
   type InterestId,
 } from "@/shared/config";
-import { plural } from "@/shared/lib/format";
 import { Chip } from "@/shared/ui";
-
-import { MIN_INTERESTS } from "../model";
 
 type Props = {
   onChange: (interests: string[]) => void;
@@ -21,7 +18,6 @@ export const InterestsPicker = ({ value, onChange }: Props) => {
     onChange(
       value.includes(id) ? value.filter((item) => item !== id) : [...value, id],
     );
-  const left = MIN_INTERESTS - value.length;
 
   return (
     <div className="flex flex-col gap-3">
@@ -36,11 +32,6 @@ export const InterestsPicker = ({ value, onChange }: Props) => {
           </Chip>
         ))}
       </div>
-      <p className="text-caption text-rose" aria-live="polite">
-        {left > 0
-          ? `Ещё ${left} ${plural(left, ["интерес", "интереса", "интересов"])} — и можно дальше`
-          : `Выбрано: ${value.length}`}
-      </p>
     </div>
   );
 };

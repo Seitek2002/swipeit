@@ -1,7 +1,6 @@
 export {
   draftFromUser,
   EMPTY_DRAFT,
-  MIN_INTERESTS,
   NAME_MAX,
   type ProfileDraft,
   type ProfileErrors,

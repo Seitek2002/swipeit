@@ -8,6 +8,7 @@ import {
   createContext,
   use,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
 } from "react";
@@ -78,6 +79,7 @@ type Props = {
   canUndo: boolean;
   children: ReactNode;
   depth: number;
+  description?: string;
   disabled: boolean;
   // Карточку вернули «Отменой» — прилетает с той стороны, куда ушла.
   enterFrom?: SwipeDirection;
@@ -108,6 +110,7 @@ export const PhotoDeckCard = ({
   children,
   depth,
   label,
+  description,
   progress,
   isBusyRef,
   disabled,
@@ -132,6 +135,7 @@ export const PhotoDeckCard = ({
   const underScale = useTransform(progress, (p) => 0.95 + 0.05 * p);
 
   const ref = useRef<HTMLDivElement>(null);
+  const descriptionId = useId();
   const dragRef = useRef<Drag | null>(null);
   const animations = useRef<AnimationPlaybackControls[]>([]);
   const suppressClick = useRef(false);
@@ -337,6 +341,7 @@ export const PhotoDeckCard = ({
       role={isTop ? "group" : undefined}
       aria-roledescription={isTop ? "карточка" : undefined}
       aria-label={isTop ? label : undefined}
+      aria-describedby={isTop && description ? descriptionId : undefined}
       className={
         isTop
           ? "bg-velvet absolute inset-0 overflow-x-hidden overflow-y-auto overscroll-contain rounded-[24px] shadow-[0_18px_40px_-12px_rgb(10_0_8/0.55),0_4px_10px_rgb(10_0_8/0.25)] [scrollbar-width:none] will-change-transform data-[dragging]:overflow-y-hidden [&::-webkit-scrollbar]:hidden"
@@ -357,6 +362,11 @@ export const PhotoDeckCard = ({
       onPointerCancel={handlePointerEnd}
       onClickCapture={handleClickCapture}
     >
+      {isTop && description && (
+        <span id={descriptionId} hidden>
+          {description}
+        </span>
+      )}
       <PhotoCardContext
         value={{
           isTop,

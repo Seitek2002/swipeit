@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Heart, Star, Undo2, X } from "lucide-react";
 import { type MotionValue, motion, useTransform } from "motion/react";
 
+import { DeckGuide, GuidePlaque } from "@/features/deck-guide";
 import {
   ProductDetailsSections,
   defaultChoice,
@@ -24,6 +25,8 @@ import {
 } from "@/entities/product";
 
 type Props = {
+  // Обучающая карточка (DESIGN.md §7 DeckGuide): слой поверх фото.
+  guide?: boolean;
   hidePrices?: boolean;
   // Выбор варианта уходит в желание при «Хочу» (как раньше из шторки).
   onVariantChange: (choice: Record<string, string>) => void;
@@ -60,6 +63,7 @@ const FEEDBACK_ICONS = {
 export const GiftCard = ({
   product,
   hidePrices = false,
+  guide = false,
   onVariantChange,
 }: Props) => {
   const state = usePhotoCard();
@@ -96,8 +100,16 @@ export const GiftCard = ({
         <GiftInfo
           product={product}
           hidePrices={hidePrices}
+          concealed={guide && state.isTop}
           onOpenDetails={state.scrollToDetails}
         />
+        {guide && state.isTop && (
+          <DeckGuide
+            x={state.x}
+            onMore={state.scrollToDetails}
+            plaque={<GuidePlaque />}
+          />
+        )}
       </GiftPhoto>
       {/* Мини-шапка и подробности не короче экрана карточки без ряда
           кнопок: иначе прокрутка к подробностям не доставала бы до шапки. */}

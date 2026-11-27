@@ -9,6 +9,7 @@ import { Reorder } from "motion/react";
 
 import { AppHeader } from "@/widgets/app-header";
 
+import { NAME_CAPTIONS, NameForm, useRequireName } from "@/features/ask-name";
 import { CustomWishSheet } from "@/features/custom-wish";
 import {
   GivenSheet,
@@ -70,6 +71,9 @@ export const WishlistPage = () => {
   const [sheet, setSheet] = useState<null | Sheet>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // Имя увидят друзья (DESIGN.md §8.4 шаг 1): нет его — NameSheet первым
+  // шагом шторки отправки; NAME_REQUIRED от сервера — поверх и повтор.
+  const requireName = useRequireName(NAME_CAPTIONS.wishlist);
   // «Да, подарили» из подсказки после повода — та же шторка, что в меню.
   const [hintItem, setHintItem] = useState<null | WishlistItem>(null);
   // Порядок во время перетаскивания — локально; с «сервера» — когда не тащим.
@@ -337,7 +341,14 @@ export const WishlistPage = () => {
         open={shareOpen}
         onClose={() => setShareOpen(false)}
         wishlist={data}
+        nameStep={
+          requireName.needsName ? (
+            <NameForm caption={NAME_CAPTIONS.wishlist} />
+          ) : undefined
+        }
+        onShareError={requireName.handleError}
       />
+      {requireName.sheet}
       {hintItem && (
         <HintGivenSheet
           key={hintItem.id}

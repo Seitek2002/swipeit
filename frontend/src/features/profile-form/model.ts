@@ -2,8 +2,6 @@ import type { NewUserInput, User } from "@/entities/user";
 
 import type { Audience, AvatarColor } from "@/shared/config";
 
-// Минимум интересов в онбординге (DESIGN.md §8.1): по ним подбирается лента.
-export const MIN_INTERESTS = 3;
 export const NAME_MAX = 40;
 
 // Поля профиля в форме. День рождения — два отдельных поля без года: так
@@ -70,7 +68,8 @@ export const draftFromUser = (user: User): ProfileDraft => {
 };
 
 export const toProfileInput = (draft: ProfileDraft): NewUserInput => ({
-  name: draft.name.trim(),
+  // Имени может ещё не быть (DESIGN.md §8.1) — тогда поле не отправляем.
+  name: draft.name.trim() || undefined,
   avatarColor: draft.avatarColor,
   birthday: toBirthday(draft.birthdayDay, draft.birthdayMonth),
   interests: draft.interests,
@@ -84,14 +83,17 @@ export type ProfileErrors = {
 };
 
 // Предикаты валидации — чистые функции (как в imbir, CODESTYLE §7).
-export const validateProfile = (draft: ProfileDraft): ProfileErrors => {
+// Анкеты нет (DESIGN.md §8.1): имя необязательно, пока его не было, а уже
+// данное стереть нельзя — его видят друзья. Минимума интересов больше нет:
+// ленту подстраивают лайки.
+export const validateProfile = (
+  draft: ProfileDraft,
+  hadName = false,
+): ProfileErrors => {
   const errors: ProfileErrors = {};
-  if (!draft.name.trim()) errors.name = "Напиши, как тебя зовут";
+  if (hadName && !draft.name.trim()) errors.name = "Напиши, как тебя зовут";
   if (Boolean(draft.birthdayDay) !== Boolean(draft.birthdayMonth)) {
     errors.birthday = "Выбери и день, и месяц — или оставь оба пустыми";
-  }
-  if (draft.interests.length < MIN_INTERESTS) {
-    errors.interests = `Выбери хотя бы ${MIN_INTERESTS}`;
   }
   return errors;
 };

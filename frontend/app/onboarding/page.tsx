@@ -1,5 +1,5 @@
-import { OnboardingPage } from "@/pages/onboarding";
+import { OnboardingRedirect } from "@/pages/onboarding";
 
 export default function Page() {
-  return <OnboardingPage />;
+  return <OnboardingRedirect />;
 }

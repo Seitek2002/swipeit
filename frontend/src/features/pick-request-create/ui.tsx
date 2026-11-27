@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 
 import type { ProductFilters } from "@/entities/product";
 import { useMe } from "@/entities/user";
@@ -24,7 +24,13 @@ type Props = {
   // Условия словами — их показывает экран, который открыл шторку.
   conditions: string;
   filters: ProductFilters;
+  // Сначала имя (DESIGN.md §8.6) — форму NameSheet даёт страница
+  // (features/ask-name): фичи друг друга не импортируют. Пока он есть,
+  // шторка показывает его; имя сохранилось — сама переходит к ссылке.
+  nameStep?: ReactNode;
   onClose: () => void;
+  // NAME_REQUIRED от сервера: страница спрашивает имя и повторяет отправку.
+  onShareError?: (error: unknown, retry: () => void) => boolean;
   open: boolean;
 };
 
@@ -38,8 +44,11 @@ export const PickRequestSheet = ({
   onClose,
   filters,
   conditions,
+  nameStep,
+  onShareError,
 }: Props) => {
   const { data: me } = useMe();
+  const askName = Boolean(nameStep);
   const [toName, setToName] = useState("");
   const [draft, setDraft] = useState(() => occasionDraftOf());
   const [message, setMessage] = useState("");
@@ -63,7 +72,7 @@ export const PickRequestSheet = ({
       });
     }
     const url = await created.current.url;
-    const name = me?.name ?? "Друг";
+    const name = me?.name?.trim() || "Друг";
     return {
       title: "Выбери подарок сам",
       text: `${name} хочет подарить тебе подарок. Выбери сам, что тебе нравится`,
@@ -75,39 +84,49 @@ export const PickRequestSheet = ({
     <BottomSheet
       open={open}
       onClose={onClose}
-      title="Выбери подарок сам"
-      height="full"
+      title={askName ? "Как тебя зовут?" : "Выбери подарок сам"}
+      height={askName ? "auto" : "full"}
       footer={
-        <ShareActions getPayload={getPayload} qrLabel="QR-код ссылки-фильтра" />
+        askName ? undefined : (
+          <ShareActions
+            getPayload={getPayload}
+            onError={onShareError}
+            qrLabel="QR-код ссылки-фильтра"
+          />
+        )
       }
     >
-      <div className="flex flex-col gap-5 pb-2">
-        <div className="paper rounded-paper shadow-paper px-4 py-3.5">
-          <p className="text-caption text-ink-soft">Друг выберет подарки</p>
-          <p className="text-title-3 mt-0.5 italic">{conditions}</p>
+      {askName ? (
+        nameStep
+      ) : (
+        <div className="flex flex-col gap-5 pb-2">
+          <div className="paper rounded-paper shadow-paper px-4 py-3.5">
+            <p className="text-caption text-ink-soft">Друг выберет подарки</p>
+            <p className="text-title-3 mt-0.5 italic">{conditions}</p>
+          </div>
+          <TextField
+            label="Кому"
+            placeholder="Имя друга"
+            maxLength={40}
+            value={toName}
+            onChange={(event) => setToName(event.target.value)}
+          />
+          <OccasionFields value={draft} onChange={setDraft} />
+          <TextArea
+            label="Сообщение"
+            placeholder="Хочу порадовать тебя — выбери, что нравится"
+            maxLength={200}
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+          />
+          <Switch
+            label="Скрыть цены от друга"
+            description="Друг увидит только подарки в бюджете — без цифр"
+            checked={hidePrices}
+            onChange={setHidePrices}
+          />
         </div>
-        <TextField
-          label="Кому"
-          placeholder="Имя друга"
-          maxLength={40}
-          value={toName}
-          onChange={(event) => setToName(event.target.value)}
-        />
-        <OccasionFields value={draft} onChange={setDraft} />
-        <TextArea
-          label="Сообщение"
-          placeholder="Хочу порадовать тебя — выбери, что нравится"
-          maxLength={200}
-          value={message}
-          onChange={(event) => setMessage(event.target.value)}
-        />
-        <Switch
-          label="Скрыть цены от друга"
-          description="Друг увидит только подарки в бюджете — без цифр"
-          checked={hidePrices}
-          onChange={setHidePrices}
-        />
-      </div>
+      )}
     </BottomSheet>
   );
 };

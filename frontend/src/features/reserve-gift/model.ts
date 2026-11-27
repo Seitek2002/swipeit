@@ -10,6 +10,7 @@ import {
   deleteReservation,
   getReservations,
   isApiError,
+  isNameRequired,
   reservationKeys,
 } from "@/shared/api";
 import { useMounted } from "@/shared/lib/dom";
@@ -22,9 +23,16 @@ export const useReserver = () => {
   const { data: me } = useMe();
   const guestId = useGuestStore((state) => state.guestId);
   const guestName = useGuestStore((state) => state.name);
+  // needsName — вопрос имени только для брони, у гостя без профиля. Профилю
+  // без имени имя спросит NameSheet (features/ask-name) и сохранит в профиль.
   return me
-    ? { name: me.name ?? "", guestId: undefined, needsName: false }
-    : { name: guestName, guestId, needsName: !guestName };
+    ? {
+        name: me.name ?? "",
+        guestId: undefined,
+        isGuest: false,
+        needsName: false,
+      }
+    : { name: guestName, guestId, isGuest: true, needsName: !guestName };
 };
 
 export type ReservationState = "closed" | "free" | "mine" | "taken";
@@ -61,16 +69,19 @@ export const useReserve = (ownerId: string) => {
   const queryClient = useQueryClient();
   const { guestId } = useReserver();
   return useMutation({
-    mutationFn: ({ itemKey, name }: { itemKey: string; name: string }) =>
+    mutationFn: ({ itemKey, name }: { itemKey: string; name?: string }) =>
       createReservation({ ownerId, itemKey, name, guestId }),
     onSuccess: () => toast("Подарок забронирован"),
-    onError: (error) =>
+    // NAME_REQUIRED разбирает ReserveControl: спрашивает имя и повторяет.
+    onError: (error) => {
+      if (isNameRequired(error)) return;
       toast(
         isApiError(error)
           ? error.message
           : "Не получилось забронировать. Попробуй ещё раз",
         { tone: "error" },
-      ),
+      );
+    },
     onSettled: () =>
       queryClient.invalidateQueries({
         queryKey: reservationKeys.forOwner(ownerId),

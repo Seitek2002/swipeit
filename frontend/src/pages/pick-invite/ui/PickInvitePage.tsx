@@ -10,9 +10,10 @@ import { ChevronLeft } from "lucide-react";
 
 import { GiftDeck } from "@/widgets/gift-deck";
 
+import { useRequireName } from "@/features/ask-name";
 import { ActiveFilterChips, describeFilters } from "@/features/product-filters";
 
-import { useMe } from "@/entities/user";
+import { useCreateUser, useMe } from "@/entities/user";
 
 import { getMyPicks, pickKeys } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
@@ -33,7 +34,6 @@ import {
   Splash,
 } from "@/shared/ui";
 
-import { NameSheet } from "./NameSheet";
 import { SendPicksSheet } from "./SendPicksSheet";
 
 // Столько «Хочу» нужно, чтобы отправить выбор (DESIGN.md §8.6: «после 3+»).
@@ -61,11 +61,15 @@ const TopBar = ({ onBack }: { onBack?: () => void }) => (
 const Invite = ({
   request,
   isMine,
+  starting,
+  startFailed,
   onStart,
 }: {
   isMine: boolean;
   onStart: () => void;
   request: SharedPickRequest;
+  startFailed: boolean;
+  starting: boolean;
 }) => {
   const occasion = occasionLabel(request.occasion);
   const to = dative(request.from.name, request.from.gender);
@@ -105,13 +109,27 @@ const Invite = ({
             Это твоя ссылка — так её увидит друг.
           </p>
         )}
-        <Button size="lg" className="w-full" onClick={onStart}>
+        <Button
+          size="lg"
+          className="w-full"
+          loading={starting}
+          onClick={onStart}
+        >
           Выбрать подарки
         </Button>
+        {startFailed && (
+          <p role="alert" className="text-caption text-rose mt-2.5 text-center">
+            Не получилось начать. Проверь связь и попробуй ещё раз
+          </p>
+        )}
       </div>
     </>
   );
 };
+
+// Подпись NameSheet у друга: кому уйдёт имя.
+const nameCaption = (request: SharedPickRequest) => () =>
+  `${request.from.name} увидит имя вместе с твоим выбором`;
 
 // Лента друга: фильтры из ссылки заблокированы, свайпы — в контексте pick и
 // в собственный вишлист не попадают. После 3 «Хочу» — «Отправить выбор».
@@ -123,6 +141,10 @@ const PickSwipe = ({
   request: SharedPickRequest;
 }) => {
   const [sendOpen, setSendOpen] = useState(false);
+  // Имя спрашиваем там, где его увидят: выбор уходит отправителю с именем
+  // друга («Айгерим выбрала 5 подарков», DESIGN.md §8.6).
+  const caption = nameCaption(request);
+  const requireName = useRequireName(caption);
   const picks = useQuery({
     queryKey: pickKeys.picks(request.id),
     queryFn: () => getMyPicks(request.id),
@@ -158,7 +180,7 @@ const PickSwipe = ({
           <Button
             size="lg"
             className="w-full"
-            onClick={() => setSendOpen(true)}
+            onClick={() => requireName.run(() => setSendOpen(true))}
           >
             Отправить выбор {dative(request.from.name, request.from.gender)}
           </Button>
@@ -169,7 +191,9 @@ const PickSwipe = ({
         onClose={() => setSendOpen(false)}
         request={request}
         count={count}
+        caption={caption}
       />
+      {requireName.sheet}
     </>
   );
 };
@@ -180,7 +204,9 @@ const PickContent = () => {
   const activeUserId = useSessionStore((state) => state.activeUserId);
   const me = useMe();
   const [view, setView] = useState<"invite" | "swipe" | null>(null);
-  const [askName, setAskName] = useState(false);
+  // Друг без профиля: «Выбрать подарки» создаёт профиль сам (без имени и
+  // без вопросов) — свайпам нужен профиль. Имя спросим при отправке выбора.
+  const createUser = useCreateUser();
   const picks = useQuery({
     queryKey: pickKeys.picks(request?.id ?? ""),
     queryFn: () => getMyPicks(request?.id ?? ""),
@@ -213,15 +239,14 @@ const PickContent = () => {
       <Invite
         request={request}
         isMine={Boolean(me.data && me.data.id === request.from.userId)}
-        onStart={() => (me.data ? setView("swipe") : setAskName(true))}
-      />
-      <NameSheet
-        open={askName}
-        senderName={request.from.name}
-        onClose={() => setAskName(false)}
-        onDone={() => {
-          setAskName(false);
-          setView("swipe");
+        starting={createUser.isPending}
+        startFailed={createUser.isError}
+        onStart={() => {
+          if (me.data) setView("swipe");
+          else
+            createUser.mutate(undefined, {
+              onSuccess: () => setView("swipe"),
+            });
         }}
       />
     </>
@@ -229,7 +254,7 @@ const PickContent = () => {
 };
 
 // «Выбери подарок сам» — сторона друга (DESIGN.md §8.6): без таб-бара и без
-// полной регистрации — достаточно имени.
+// вопросов на входе — имя только при отправке выбора.
 export const PickInvitePage = () => (
   <Screen>
     <Suspense fallback={<Splash />}>

@@ -107,6 +107,9 @@ export const GiftPhoto = ({
 };
 
 type InfoProps = {
+  // Под обучающим слоем блок скрыт: подсказка легла бы на название и цену, его
+  // роль играет кнопка слоя (DESIGN.md §7 DeckGuide). Для скринридера он есть.
+  concealed?: boolean;
   hidePrices?: boolean;
   onOpenDetails: () => void;
   product: Product;
@@ -117,13 +120,19 @@ type InfoProps = {
 export const GiftInfo = ({
   product,
   hidePrices = false,
+  concealed = false,
   onOpenDetails,
 }: InfoProps) => {
   const swatches = colorSwatches(product).slice(0, 4);
   const stores = storeLabels(product).slice(0, 2).join(", ");
 
   return (
-    <div className="text-paper relative bg-[linear-gradient(to_bottom,rgb(42_16_36/0)_0,rgb(42_16_36/0.88)_44px,rgb(42_16_36/0.96)_100%)] px-4 pt-11 pb-[88px]">
+    <div
+      className={cn(
+        "text-paper relative bg-[linear-gradient(to_bottom,rgb(42_16_36/0)_0,rgb(42_16_36/0.88)_44px,rgb(42_16_36/0.96)_100%)] px-4 pt-11 pb-[88px]",
+        concealed && "*:opacity-0",
+      )}
+    >
       <span className="bg-mint text-ink inline-flex h-6 items-center rounded-full px-2.5 text-[12px] font-semibold">
         {CATEGORY_LABELS[product.category]}
       </span>

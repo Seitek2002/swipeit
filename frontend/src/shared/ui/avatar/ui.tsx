@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 
+import { User } from "lucide-react";
+
 import type { AvatarColor } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
 
@@ -24,7 +26,10 @@ type Props = {
   color: AvatarColor;
   // Аватар рядом с подписью-именем: скрываем от скринридера, имя и так прочтётся.
   decorative?: boolean;
-  name: string;
+  // Нет, пока человек не назвался (DESIGN.md §8.1) — тогда иконка User.
+  name?: string;
+  // Только фон, без буквы и иконки: кружки выбора цвета (DESIGN.md §7 NameSheet).
+  plain?: boolean;
   size?: number;
 };
 
@@ -35,11 +40,12 @@ export const Avatar = ({
   color,
   size = 36,
   decorative = false,
+  plain = false,
   className,
 }: Props) => (
   <span
     role={decorative ? undefined : "img"}
-    aria-label={decorative ? undefined : name}
+    aria-label={decorative ? undefined : name?.trim() || "Профиль без имени"}
     aria-hidden={decorative || undefined}
     style={{ "--size": `${size}px` } as CSSProperties}
     className={cn(
@@ -48,11 +54,19 @@ export const Avatar = ({
       className,
     )}
   >
-    {getInitial(name)}
+    {plain ? null : name?.trim() ? (
+      getInitial(name)
+    ) : (
+      <User
+        aria-hidden
+        strokeWidth={2}
+        className="size-[calc(var(--size)*0.5)]"
+      />
+    )}
   </span>
 );
 
-type StackPerson = { color: AvatarColor; id: string; name: string };
+type StackPerson = { color: AvatarColor; id: string; name?: string };
 
 type StackProps = {
   className?: string;
@@ -79,7 +93,10 @@ export const AvatarStack = ({
 }: StackProps) => {
   const shown = people.slice(0, max);
   const rest = people.length - shown.length;
-  const names = people.map((person) => person.name).join(", ");
+  const names = people
+    .map((person) => person.name)
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <span role="img" aria-label={names} className={cn("flex", className)}>

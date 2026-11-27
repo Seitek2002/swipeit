@@ -2,13 +2,15 @@
 
 import { useState, useSyncExternalStore } from "react";
 
+import { useRouter } from "next/navigation";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
 
 import { ResetDemoButton } from "@/features/demo-reset";
 import { LoadNewYearButton } from "@/features/demo-scenario";
 
-import { type User, usePresence } from "@/entities/user";
+import { type User, useLoginDemo, usePresence } from "@/entities/user";
 
 import {
   type DemoSettings,
@@ -17,9 +19,12 @@ import {
   getDemoUsers,
   getMode,
   isBotLeader,
+  resetDemoHints,
   subscribeBotLeader,
   updateDemoSettings,
+  userKeys,
 } from "@/shared/api";
+import { ROUTES } from "@/shared/config";
 import { clock, useClockOffset } from "@/shared/lib/clock";
 import { formatDayMonth, pluralize, toDateKey } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
@@ -54,7 +59,11 @@ const WatchAs = ({ onPicked }: { onPicked: () => void }) => {
     if (user.id === activeUserId) return;
     // «Последнего пользователя» не трогаем: новые вкладки открываются собой.
     setActiveUser(user.id, { remember: false });
-    toast(`Смотришь как ${user.name}`);
+    toast(
+      user.name?.trim()
+        ? `Смотришь как ${user.name}`
+        : "Смотришь как профиль без имени",
+    );
     onPicked();
   };
 
@@ -79,7 +88,7 @@ const WatchAs = ({ onPicked }: { onPicked: () => void }) => {
                   )}
                 >
                   <Avatar
-                    name={user.name ?? ""}
+                    name={user.name}
                     color={user.avatarColor}
                     size={48}
                     decorative
@@ -91,7 +100,7 @@ const WatchAs = ({ onPicked }: { onPicked: () => void }) => {
                     active ? "text-paper" : "text-rose",
                   )}
                 >
-                  {user.name}
+                  {user.name?.trim() || "Без имени"}
                 </span>
               </button>
             </li>
@@ -128,6 +137,28 @@ export const DemoPanel = () => {
     () => false,
   );
   const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const loginDemo = useLoginDemo();
+  const [hintsPending, setHintsPending] = useState(false);
+
+  // «Показать обучение снова» (DESIGN.md §8.10): снимает deck_guide и
+  // taste_toast — обучающая карточка снова первая.
+  const showGuideAgain = () => {
+    setHintsPending(true);
+    resetDemoHints()
+      .then(
+        (user) => {
+          queryClient.setQueryData(userKeys.me(), user);
+          setOpen(false);
+          router.push(ROUTES.GIFTS);
+        },
+        () =>
+          toast("Не получилось. Попробуй ещё раз", {
+            tone: "error",
+          }),
+      )
+      .finally(() => setHintsPending(false));
+  };
 
   if (!demoMode || !activeUserId) return null;
 
@@ -254,6 +285,33 @@ export const DemoPanel = () => {
             )}
           </section>
 
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="secondary"
+              loading={hintsPending}
+              onClick={showGuideAgain}
+            >
+              Показать обучение снова
+            </Button>
+            <Button
+              variant="secondary"
+              loading={loginDemo.isPending}
+              onClick={() =>
+                loginDemo.mutate(undefined, {
+                  onSuccess: () => {
+                    setOpen(false);
+                    router.push(ROUTES.WISHLIST);
+                  },
+                  onError: () =>
+                    toast("Не получилось войти. Попробуй ещё раз", {
+                      tone: "error",
+                    }),
+                })
+              }
+            >
+              Войти как демо-пользователь
+            </Button>
+          </div>
           <LoadNewYearButton network={isLan} onDone={() => setOpen(false)} />
           <ResetDemoButton label="Сбросить всё" network={isLan} />
         </div>

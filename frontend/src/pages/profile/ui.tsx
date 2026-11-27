@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { ChevronRight } from "lucide-react";
 
@@ -21,7 +22,13 @@ import {
   validateProfile,
 } from "@/features/profile-form";
 
-import { type User, useFriends, useMe, useUpdateMe } from "@/entities/user";
+import {
+  type User,
+  useFriends,
+  useLoginDemo,
+  useMe,
+  useUpdateMe,
+} from "@/entities/user";
 
 import { ROUTES } from "@/shared/config";
 import { plural } from "@/shared/lib/format";
@@ -67,13 +74,15 @@ const sameDraft = (a: ProfileDraft, b: ProfileDraft) =>
 
 const ProfileForm = ({ user }: { user: User }) => {
   const updateMe = useUpdateMe();
+  const loginDemo = useLoginDemo();
+  const router = useRouter();
   const friends = useFriends();
   const demoMode = useDemoSettingsStore((state) => state.demoMode);
   const setDemoMode = useDemoSettingsStore((state) => state.setDemoMode);
   const [saved, setSaved] = useState(() => draftFromUser(user));
   const [draft, setDraft] = useState(saved);
 
-  const errors = validateProfile(draft);
+  const errors = validateProfile(draft, Boolean(user.name?.trim()));
   const isDirty = !sameDraft(draft, saved);
   const hasErrors = Object.keys(errors).length > 0;
   const friendCount = friends.data?.length ?? 0;
@@ -110,9 +119,15 @@ const ProfileForm = ({ user }: { user: User }) => {
 
       <TextField
         label="Имя"
+        placeholder="Как тебя зовут?"
         maxLength={NAME_MAX}
         value={draft.name}
         error={errors.name}
+        hint={
+          draft.name.trim()
+            ? undefined
+            : "Нужно, когда отправляешь вишлист или зовёшь друзей"
+        }
         onChange={(event) => update({ name: event.target.value })}
       />
       <div className="flex flex-col gap-2">
@@ -185,6 +200,24 @@ const ProfileForm = ({ user }: { user: User }) => {
           onChange={setDemoMode}
         />
         <ResetDemoButton className="mt-3 self-start px-0" />
+        {/* Готовая Айгерим с вишлистом (DESIGN.md §8.1) — бывшая кнопка
+            первого экрана. */}
+        <Button
+          variant="secondary"
+          className="mt-3"
+          loading={loginDemo.isPending}
+          onClick={() =>
+            loginDemo.mutate(undefined, {
+              onSuccess: () => router.push(ROUTES.WISHLIST),
+              onError: () =>
+                toast("Не получилось войти. Попробуй ещё раз", {
+                  tone: "error",
+                }),
+            })
+          }
+        >
+          Войти как демо-пользователь
+        </Button>
         {/* Фото занятий — под CC BY и CC BY-SA: авторы обязательны (DESIGN.md §8.9).
             Ссылка мелкая, а зона нажатия — ≥ 44 px за счёт псевдоэлемента:
             сверху до кнопки сброса остаётся зазор, соседей она не перекрывает. */}

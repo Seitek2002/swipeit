@@ -81,7 +81,7 @@ const GuestContent = () => {
             <>
               {/* Виральная петля (DESIGN.md §8.5): гость собирает свой. */}
               <Link
-                href={ROUTES.ONBOARDING}
+                href={ROUTES.GIFTS}
                 className={buttonClassName({
                   variant: "secondary",
                   size: "lg",

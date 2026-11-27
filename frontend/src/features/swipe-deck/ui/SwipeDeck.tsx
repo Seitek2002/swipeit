@@ -34,6 +34,8 @@ type Props<T> = {
   disabled?: boolean;
   // Что показать, когда карточки кончились.
   empty?: ReactNode;
+  // Подсказка к карточке для скринридера (обучающая карточка — DeckGuide).
+  getDescription?: (item: T) => string | undefined;
   getKey: (item: T) => string;
   getLabel: (item: T) => string;
   handleRef?: Ref<SwipeDeckHandle>;
@@ -90,6 +92,7 @@ export const SwipeDeck = <T,>({
   items,
   getKey,
   getLabel,
+  getDescription,
   renderCard,
   renderPhotoCard,
   directions = ["left", "right", "up"],
@@ -266,6 +269,7 @@ export const SwipeDeck = <T,>({
                 key={key}
                 depth={depth}
                 label={getLabel(item)}
+                description={getDescription?.(item)}
                 progress={progress}
                 isBusyRef={isBusyRef}
                 disabled={disabled}

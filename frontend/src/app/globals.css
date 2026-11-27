@@ -286,3 +286,32 @@
     animation: none;
   }
 }
+
+/* Обучающая карточка (DESIGN.md §7 DeckGuide): слой проявляется за 200ms,
+   руки дважды «нажимают» и замирают. */
+@keyframes guide-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes guide-press {
+  50% {
+    transform: scale(0.88);
+  }
+}
+
+.guide-in {
+  animation: guide-in 200ms var(--ease-out-soft) both;
+}
+
+.guide-press {
+  animation: guide-press 600ms ease-in-out var(--delay, 200ms) 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-in,
+  .guide-press {
+    animation: none;
+  }
+}
