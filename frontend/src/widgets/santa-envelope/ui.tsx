@@ -82,8 +82,10 @@ export const SantaEnvelope = ({ state, letter, onOpen }: Props) => {
     }
     if (state !== "ready" || frame.current) return;
     const started = performance.now();
-    const step = (now: number) => {
-      const next = Math.min(1, (now - started) / HOLD_MS);
+    // Время — от performance.now(), а не из аргумента rAF: у метки кадра
+    // своя база, и удержание засчиталось бы раньше 0.8 с.
+    const step = () => {
+      const next = Math.min(1, (performance.now() - started) / HOLD_MS);
       setProgress(next);
       if (next >= 1) {
         frame.current = null;
