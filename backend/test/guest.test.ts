@@ -432,3 +432,49 @@ describe("приглашения в план и игру (POST /share-links)", (
     ).toEqual({ kind: "plan", planId: "pl_1" });
   });
 });
+
+describe("ревью сервера: дружба по ссылке", () => {
+  it("R1: безымянный открыл ссылку и забронировал с именем — у владельца не появляется «новый друг»", async () => {
+    const { owner, productIds } = await readyOwner();
+    const { code } = await share(owner);
+    const friendsOf = async () =>
+      (
+        (await server.request(owner, "GET", "/friends")).json() as Array<{
+          user: { id: string };
+        }>
+      ).map((entry) => entry.user.id);
+
+    const nameless = await server.newUser();
+    await server.request(nameless, "GET", `/share/${code}`);
+    const before = await friendsOf();
+    const made = await reserve(nameless, {
+      ownerId: owner.id,
+      itemKey: productIds[0] ?? "",
+      name: "Айгерим",
+      share: code,
+    });
+    expect(made.statusCode).toBe(200);
+    expect(await friendsOf()).toEqual(before);
+    // С именем — при следующем открытии ссылки — становится другом.
+    await server.request(nameless, "GET", `/share/${code}`);
+    expect(await friendsOf()).toEqual([nameless.id]);
+  });
+
+  it("R3: двое одновременно открывают вишлисты друг друга — без deadlock, все 200", async () => {
+    const pairs: Array<[TestUser, string, TestUser, string]> = [];
+    for (let index = 0; index < 10; index += 1) {
+      const a = (await readyOwner(`А${index}`)).owner;
+      const b = (await readyOwner(`Б${index}`)).owner;
+      pairs.push([a, (await share(a)).code, b, (await share(b)).code]);
+    }
+    const answers = await Promise.all(
+      pairs.flatMap(([a, codeA, b, codeB]) => [
+        server.request(a, "GET", `/share/${codeB}`),
+        server.request(b, "GET", `/share/${codeA}`),
+      ]),
+    );
+    expect(answers.map((answer) => answer.statusCode)).toEqual(
+      answers.map(() => 200),
+    );
+  }, 60_000);
+});

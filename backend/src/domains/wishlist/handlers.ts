@@ -15,7 +15,7 @@ import { notFound, validation } from "@swipeit/core/errors";
 import { normalizeOccasionFrom } from "@swipeit/core/logic/occasion";
 import type { RealtimeScope } from "@swipeit/core/realtime/types";
 import { parseInput } from "@swipeit/core/parse-input";
-import { and, eq, gte, isNotNull, isNull, ne, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, ne, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import type { ServerContext, ServerHandler, Tx } from "../../context";
@@ -249,10 +249,15 @@ export const markGiven: ServerHandler = async (ctx, { params, body }) => {
   ) {
     throw validation("Подарить мог только друг");
   }
-  const given: NonNullable<WishlistItem["given"]> = {
+  // Метка закрытия броней этим «подарили» — «Отменить» откроет ровно их
+  // (ревью R6): иначе открылись бы и брони прошлого «подарили», и
+  // уникальный индекс открытой брони уронил бы запрос в 500.
+  const closedAt = new Date(ctx.clock.now());
+  const given: NonNullable<WishlistItem["given"]> & { closedAt: string } = {
     ...(input.fromUserId ? { fromUserId: input.fromUserId } : {}),
     ...(input.fromName ? { fromName: input.fromName } : {}),
     at: input.at,
+    closedAt: closedAt.toISOString(),
   };
   const [row] = await ctx.tx
     .update(wishlistItems)
@@ -261,7 +266,7 @@ export const markGiven: ServerHandler = async (ctx, { params, body }) => {
     .returning();
   await ctx.tx
     .update(reservations)
-    .set({ closedAt: new Date(ctx.clock.now()) })
+    .set({ closedAt })
     .where(
       and(
         eq(reservations.ownerRef, me.id),
@@ -306,7 +311,13 @@ export const restoreItem: ServerHandler = async (ctx, { params, body }) => {
     }
   }
 
-  if (undo) {
+  const closedByGiven = (target.given as null | { closedAt?: string })
+    ?.closedAt;
+  if (
+    undo &&
+    closedByGiven &&
+    Date.parse(closedByGiven) >= now - UNDELETE_WINDOW_MS
+  ) {
     await ctx.tx
       .update(reservations)
       .set({ closedAt: null })
@@ -314,8 +325,7 @@ export const restoreItem: ServerHandler = async (ctx, { params, body }) => {
         and(
           eq(reservations.ownerRef, me.id),
           eq(reservations.itemKey, itemKeyOf(rowToItem(target))),
-          isNotNull(reservations.closedAt),
-          gte(reservations.closedAt, new Date(now - UNDELETE_WINDOW_MS)),
+          eq(reservations.closedAt, new Date(closedByGiven)),
         ),
       );
   }

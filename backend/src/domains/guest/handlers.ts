@@ -36,6 +36,7 @@ import {
   santaGames,
   santaMembers,
   users,
+  wishlistItems,
 } from "../../db/schema";
 import { datesOf } from "../dates/handlers";
 import { pickShare } from "../pick/handlers";
@@ -199,7 +200,12 @@ export const getShare: ServerHandler = async (ctx, { params }) => {
       if (!owner) throw notFound("Ссылка больше не работает");
       if (ctx.userId && ctx.userId !== owner.id) {
         const visitor = await readUser(ctx.tx, ctx.userId);
-        if (visitor) {
+        // Только посетитель с именем (ревью R1): безымянного в «Друзьях» не
+        // видно, а имя он вписывает в форме брони — и «новый друг»
+        // появлялся бы у владельца ровно в момент брони, выдавая, кто
+        // бронировал. Безымянному хватает доступа по коду ссылки; другом
+        // он станет, открыв ссылку уже с именем.
+        if (visitor?.name) {
           await makeFriends(
             ctx.tx,
             owner.id,
@@ -343,16 +349,32 @@ export const createReservation: ServerHandler = async (ctx, { body }) => {
     if (!(await canReserve(ctx.tx, me.id, target.owner.id, input.share))) {
       throw forbidden("Бронировать могут только друзья по ссылке");
     }
-    const items = await itemsOf(ctx.tx, target.owner.id);
-    const item = items.find((entry) => itemKeyOf(entry) === input.itemKey);
-    if (!item) throw notFound("Желание не найдено");
-    if (
-      !items.some(
-        (entry: WishlistItem) =>
-          entry.status === "active" && itemKeyOf(entry) === input.itemKey,
+    // Живое желание — под FOR SHARE (ревью R2): одновременное «Мне это
+    // подарили» дождётся конца брони и закроет её, а бронь, начатая после
+    // «подарили», увидит статус given. Без блокировки оставалась открытая
+    // бронь на подаренном желании.
+    const key = input.itemKey;
+    const [active] = await ctx.tx
+      .select({ id: wishlistItems.id })
+      .from(wishlistItems)
+      .where(
+        and(
+          eq(wishlistItems.ownerId, target.owner.id),
+          isNull(wishlistItems.deletedAt),
+          eq(wishlistItems.status, "active"),
+          key.startsWith("custom:")
+            ? eq(wishlistItems.id, key.slice("custom:".length))
+            : eq(wishlistItems.productId, key),
+        ),
       )
-    ) {
-      throw conflict("Это уже подарили");
+      .limit(1)
+      .for("share");
+    if (!active) {
+      const items = await itemsOf(ctx.tx, target.owner.id);
+      if (items.some((entry: WishlistItem) => itemKeyOf(entry) === key)) {
+        throw conflict("Это уже подарили");
+      }
+      throw notFound("Желание не найдено");
     }
   }
 

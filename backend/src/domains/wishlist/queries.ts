@@ -61,6 +61,14 @@ export const checkShareUnlock = async (
 export type ItemRow = typeof wishlistItems.$inferSelect;
 export type MetaRow = typeof wishlistMeta.$inferSelect;
 
+// «Подарили» без служебной метки закрытия броней (ревью R6).
+const publicGiven = (given: unknown): WishlistItem["given"] => {
+  const { closedAt: _closedAt, ...rest } = given as NonNullable<
+    WishlistItem["given"]
+  > & { closedAt?: string };
+  return rest;
+};
+
 // Строка базы → WishlistItem мока (§4.1: формы ответов те же).
 export const rowToItem = (row: ItemRow): WishlistItem => ({
   id: row.id,
@@ -76,7 +84,7 @@ export const rowToItem = (row: ItemRow): WishlistItem => ({
     : {}),
   ...(row.note ? { note: row.note } : {}),
   status: row.status as WishlistItem["status"],
-  ...(row.given ? { given: row.given as WishlistItem["given"] } : {}),
+  ...(row.given ? { given: publicGiven(row.given) } : {}),
   addedAt: row.addedAt.toISOString(),
 });
 

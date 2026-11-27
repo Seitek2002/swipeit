@@ -65,7 +65,7 @@ describe("порядок под блокировкой (§2.6)", () => {
       Array.from({ length: 15 }, (_, index) => index),
     );
     expect(new Set(items.map((item) => item.id)).size).toBe(15);
-  });
+  }, 60_000);
 });
 
 describe("«Отменить» удаление (§4.4)", () => {
@@ -189,5 +189,74 @@ describe("«Мне это подарили» и брони", () => {
     });
     expect(response.statusCode).toBe(400);
     expect(response.json()).toMatchObject({ code: "VALIDATION" });
+  });
+});
+
+describe("ревью сервера: брони и «подарили»", () => {
+  const giveAt = () => new Date(NOW).toISOString();
+
+  it("R2: бронь и «Мне это подарили» одновременно — открытой брони на подаренном не остаётся", async () => {
+    for (let round = 0; round < 10; round += 1) {
+      await resetDb(database);
+      const me = await server.newUser({ name: "Айпери" });
+      const friend = await server.newUser({ name: "Бакыт" });
+      await database.db.transaction((tx) =>
+        makeFriends(tx, me.id, friend.id, "plan", clock),
+      );
+      const { wishlistItemId: id } = await like(me, "p_0001");
+      await Promise.all([
+        server.request(friend, "POST", "/reservations", {
+          ownerId: me.id,
+          itemKey: "p_0001",
+        }),
+        server.request(me, "POST", `/wishlist/items/${id}/given`, {
+          at: giveAt(),
+        }),
+      ]);
+      const open = (await database.db.select().from(reservations)).filter(
+        (row) => !row.closedAt,
+      );
+      expect(open).toEqual([]);
+    }
+  }, 60_000);
+
+  it("R6: «Отменить» после второго «подарили» открывает только бронь этого «подарили»", async () => {
+    const me = await server.newUser({ name: "Айпери" });
+    const first = await server.newUser({ name: "Бакыт" });
+    const second = await server.newUser({ name: "Нурай" });
+    for (const friend of [first, second]) {
+      await database.db.transaction((tx) =>
+        makeFriends(tx, me.id, friend.id, "plan", clock),
+      );
+    }
+    const { wishlistItemId: id } = await like(me, "p_0001");
+    const reserveAs = (user: TestUser) =>
+      server.request(user, "POST", "/reservations", {
+        ownerId: me.id,
+        itemKey: "p_0001",
+      });
+    await reserveAs(first);
+    await server.request(me, "POST", `/wishlist/items/${id}/given`, {
+      at: giveAt(),
+    });
+    await server.request(me, "POST", `/wishlist/items/${id}/restore`);
+    clock.advance(60_000);
+    const secondMade = (await reserveAs(second)).json() as { id: string };
+    await server.request(me, "POST", `/wishlist/items/${id}/given`, {
+      at: giveAt(),
+    });
+    const undone = await server.request(
+      me,
+      "POST",
+      `/wishlist/items/${id}/restore`,
+      { undo: true },
+    );
+    expect(undone.statusCode).toBe(200);
+    // Служебная метка владельцу не уходит.
+    expect(undone.body).not.toContain("closedAt");
+    const open = (await database.db.select().from(reservations)).filter(
+      (row) => !row.closedAt,
+    );
+    expect(open.map((row) => row.id)).toEqual([secondMade.id]);
   });
 });

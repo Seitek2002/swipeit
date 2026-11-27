@@ -23,11 +23,15 @@ export const makeFriends = async (
 ): Promise<boolean> => {
   if (a === b) return false;
   const createdAt = new Date(clock.now());
+  // Строки — всегда в одном порядке (меньший id первым, ревью R3): двое,
+  // одновременно открывшие вишлисты друг друга, иначе ждали бы друг друга
+  // крест-накрест, и Postgres ронял одну транзакцию с deadlock → 500.
+  const [low, high] = a < b ? [a, b] : [b, a];
   const inserted = await tx
     .insert(friendships)
     .values([
-      { userId: a, friendId: b, source, createdAt },
-      { userId: b, friendId: a, source, createdAt },
+      { userId: low, friendId: high, source, createdAt },
+      { userId: high, friendId: low, source, createdAt },
     ])
     .onConflictDoNothing()
     .returning({ userId: friendships.userId });
