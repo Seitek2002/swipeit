@@ -367,6 +367,29 @@ export const WishlistShareSheet = ({
       title={TITLES[current]}
       headerStart={backButton}
       height={current === "send" ? "full" : "auto"}
+      // Главные кнопки шагов «Выбрать дату» и «Отправить» — в липком низу
+      // (auto-tasks V04): на 360×640 «Дальше» и «Поделиться / Скопировать /
+      // QR-код» уходили за край. Раньше кнопки стояли в конце шага, потому
+      // что их было пять строк (QA T25, D3), — теперь это один ряд.
+      footer={
+        current === "calendar" ? (
+          <Button
+            size="lg"
+            variant="paper"
+            disabled={!picked}
+            loading={pending === "calendar"}
+            onClick={afterCalendar}
+          >
+            Дальше
+          </Button>
+        ) : current === "send" ? (
+          <ShareActions
+            getPayload={getPayload}
+            onError={onShareError}
+            qrLabel="QR-код ссылки на вишлист"
+          />
+        ) : undefined
+      }
     >
       <div ref={stepRef} tabIndex={-1} className="outline-none">
         {current === "name" && nameStep}
@@ -415,15 +438,6 @@ export const WishlistShareSheet = ({
               disabled={pending === "calendar"}
             />
             {errorLine}
-            <Button
-              size="lg"
-              variant="paper"
-              disabled={!picked}
-              loading={pending === "calendar"}
-              onClick={afterCalendar}
-            >
-              Дальше
-            </Button>
           </div>
         )}
 
@@ -604,14 +618,6 @@ export const WishlistShareSheet = ({
               maxLength={200}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-            />
-
-            {/* Кнопки — в конце шага, а не в липком футере: пять строк по
-                48px закрывали превью и сообщение на 360px (QA T25, D3). */}
-            <ShareActions
-              getPayload={getPayload}
-              onError={onShareError}
-              qrLabel="QR-код ссылки на вишлист"
             />
           </div>
         )}
