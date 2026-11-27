@@ -239,11 +239,18 @@ export const createLanServer = async ({
 
     // Маршруты только сервера: их нет в routes.ts, во вкладке они не нужны.
     if (method === "GET" && apiPath === "/health") {
+      // shareOrigin — адрес ноутбука в Wi-Fi: ссылки и QR, созданные на
+      // самом ноутбуке (страница открыта по localhost), должны вести туда,
+      // где их откроют телефоны.
+      const [address] = lanAddresses();
       sendJson(res, 200, {
         app: "swipeit",
         mode: "lan",
         serverId,
         now: clock.now(),
+        shareOrigin: address
+          ? `http://${address}:${req.socket.localPort}`
+          : undefined,
       });
       return;
     }

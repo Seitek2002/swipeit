@@ -9,7 +9,7 @@ import {
   warmLocalApi,
 } from "@/shared/api";
 import { setLanClock } from "@/shared/lib/clock";
-import { setRemoteImageStore } from "@/shared/lib/dom";
+import { setRemoteImageStore, setShareOrigin } from "@/shared/lib/dom";
 import {
   createWsRealtime,
   getConnectionStatus,
@@ -92,6 +92,7 @@ export const startEnvironment = (): Promise<ApiMode> => {
     if (environment.mode === "lan" && environment.lan) {
       setLastUserKey(`swipeit:lan:${environment.lan.serverId}:userId`);
       setTransport(httpTransport);
+      setShareOrigin(environment.lan.shareOrigin ?? null);
       // До первой сверки часы — по ответу /health без перемотки: иначе
       // подхватилось бы смещение из local-режима этого браузера.
       setLanClock({ diffMs: environment.lan.now - Date.now(), offsetMs: 0 });

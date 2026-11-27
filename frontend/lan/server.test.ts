@@ -95,6 +95,12 @@ describe("LAN-сервер", () => {
     expect(health).toMatchObject({ app: "swipeit", mode: "lan" });
     expect(health.serverId).toBe(lan.serverId);
     expect(Math.abs(health.now - Date.now())).toBeLessThan(5000);
+    // Адрес в Wi-Fi для ссылок с ноутбука — если сеть есть.
+    const [address] = lanAddresses();
+    const shareOrigin = (data as { shareOrigin?: string }).shareOrigin;
+    if (address)
+      expect(shareOrigin?.startsWith(`http://${address}:`)).toBe(true);
+    else expect(shareOrigin).toBeUndefined();
   });
 
   it("демо-вход, потом свой вишлист по x-user-id", async () => {

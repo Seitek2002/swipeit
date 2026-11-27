@@ -13,6 +13,7 @@ export { getScrollLockCount, useScrollLock } from "./useScrollLock";
 export { useTapHaptics } from "./useTapHaptics";
 export {
   absoluteUrl,
+  setShareOrigin,
   canNativeShare,
   copyText,
   type SharePayload,

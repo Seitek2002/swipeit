@@ -4,7 +4,8 @@ import { withBasePath } from "@/shared/lib/base-path";
 // local — «На этом устройстве», lan — «Локальная сеть».
 export type ApiMode = "lan" | "local";
 
-export type LanInfo = { now: number; serverId: string };
+// shareOrigin — адрес ноутбука в Wi-Fi для ссылок и QR (нет Wi-Fi — нет).
+export type LanInfo = { now: number; serverId: string; shareOrigin?: string };
 
 export type Environment = { lan?: LanInfo; mode: ApiMode };
 
@@ -33,6 +34,7 @@ const probe = async (): Promise<Environment> => {
       mode: string;
       now: number;
       serverId: string;
+      shareOrigin: string;
     }>;
     if (
       health.app === "swipeit" &&
@@ -42,7 +44,14 @@ const probe = async (): Promise<Environment> => {
     ) {
       return {
         mode: "lan",
-        lan: { serverId: health.serverId, now: health.now },
+        lan: {
+          serverId: health.serverId,
+          now: health.now,
+          shareOrigin:
+            typeof health.shareOrigin === "string"
+              ? health.shareOrigin
+              : undefined,
+        },
       };
     }
   } catch {
