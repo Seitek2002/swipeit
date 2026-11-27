@@ -125,6 +125,10 @@ export const ProductFiltersSchema = z.object({
   }),
   categories: z.array(z.enum(CATEGORY_IDS)),
   marketplaces: z.array(z.enum(MARKETPLACE_IDS)),
+  // «Показывать подарки: всем / для неё / для него» — в фильтрах и в
+  // профиле (один стор gift-filters), едет и в ссылку-фильтр. Нет поля —
+  // «всем»: старые ссылки и сохранённые фильтры читаются как раньше.
+  audience: z.enum(AUDIENCES).optional(),
 });
 
 export type ProductImage = z.infer<typeof ProductImageSchema>;

@@ -200,14 +200,24 @@ describe("лента", () => {
     expect(count).toBe(feed.total);
   });
 
-  it("«для него» не показывает товары только для неё", async () => {
-    const user = await newUser({ audience: "male" });
+  // С этапа 7 аудитория — в фильтрах (ProductFilters.audience), а не в
+  // профиле: User.audience ленту больше не сужает.
+  it("«для него» в фильтрах не показывает товары только для неё", async () => {
+    const user = await newUser({ audience: "female" });
     const feed = await call<FeedResponse>(
       "GET",
       "/catalog/feed",
       user.id,
       undefined,
-      { limit: 50 },
+      {
+        limit: 50,
+        filters: JSON.stringify({
+          budget: { min: 0, max: null },
+          categories: [],
+          marketplaces: [],
+          audience: "male",
+        }),
+      },
     );
     expect(feed.items.some((p) => p.audience === "female")).toBe(false);
     expect(feed.items.length).toBe(

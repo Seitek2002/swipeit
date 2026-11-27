@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-import { AUDIENCES, AVATAR_COLORS } from "@/shared/config";
+import {
+  AUDIENCES,
+  AVATAR_COLORS,
+  CATEGORY_IDS,
+  INTEREST_IDS,
+} from "@/shared/config";
 
 // "MM-DD": месяц 01–12, день — какой бывает в этом месяце (29 февраля можно).
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -34,6 +39,21 @@ export const MonthDaySchema = z
 export const HINT_IDS = ["deck_guide", "taste_toast"] as const;
 export const HintIdSchema = z.enum(HINT_IDS);
 
+// Вкус — сумма по свайпам в контексте self (TECH_SPEC §5 Taste, §6 «Вкус»).
+// Считает сервер чистой функцией computeTaste, клиент только читает.
+export const TasteSchema = z.object({
+  // Вес интереса: «Хочу» +1, «Очень хочу» +2, «Мимо» −0.3, не ниже −3.
+  interests: z.record(z.string(), z.number()),
+  categories: z.partialRecord(z.enum(CATEGORY_IDS), z.number()),
+  // Сколько «Хочу» у товаров «для неё» и «для него».
+  audience: z.object({ female: z.number(), male: z.number() }),
+  // like + superlike в self.
+  likes: z.number().int().nonnegative(),
+  // Время последнего свайпа, из которого посчитан вкус: так отмена свайпа
+  // возвращает вкус точно в прежнее состояние.
+  updatedAt: z.string(),
+});
+
 export const UserSchema = z.object({
   id: z.string().min(1),
   // Нет, пока человек не назвался: имя спрашиваем, когда его увидят другие
@@ -49,6 +69,9 @@ export const UserSchema = z.object({
   // Все поля этапа 7 — необязательные: база, сохранённая до обновления,
   // читается без сброса (TECH_SPEC §5 «Совместимость»).
   seenHints: z.array(HintIdSchema).optional(),
+  // «Не моё» — интерес больше не предлагаем, лента его опускает.
+  mutedInterests: z.array(z.string()).optional(),
+  taste: TasteSchema.optional(),
   isBot: z.boolean(),
   bot: BotProfileSchema.optional(),
   createdAt: z.string(),
@@ -57,9 +80,12 @@ export const UserSchema = z.object({
 export type BotProfile = z.infer<typeof BotProfileSchema>;
 export type User = z.infer<typeof UserSchema>;
 export type HintId = z.infer<typeof HintIdSchema>;
+export type Taste = z.infer<typeof TasteSchema>;
 
 // GET /me: профиль и вычисленные сервером поля (в базе не хранятся).
-export type MeResponse = User;
+// inferredInterests — «Похоже, тебе нравится»: выведены из лайков, без уже
+// выбранных и «Не моё», не больше 4 (TECH_SPEC §6 «Вкус»).
+export type MeResponse = User & { inferredInterests: string[] };
 
 // Профиль, который видят другие: всегда с именем (безымянных в друзьях и
 // участниках нет — TECH_SPEC §7a, NAME_REQUIRED).
@@ -88,12 +114,25 @@ export const NewUserInputSchema = z.object({
 });
 export type NewUserInput = z.input<typeof NewUserInputSchema>;
 
+// Интерес из 20 известных (InterestId = string в каталоге, но у чипа в
+// профиле должна быть подпись).
+const KNOWN_INTERESTS: ReadonlySet<string> = new Set(INTEREST_IDS);
+const KnownInterestSchema = z
+  .string()
+  .refine((id) => KNOWN_INTERESTS.has(id), "Такого интереса нет");
+
 // PATCH /me — имя и фон аватара можно поменять в любой момент.
 export const UpdateMeInputSchema = z.object({
   name: NameSchema.optional(),
   avatarColor: z.enum(AVATAR_COLORS).optional(),
   birthday: MonthDaySchema.optional(),
-  interests: z.array(z.string()).optional(),
+  // Свои интересы и «Не моё» (DESIGN §8.9 «Мне нравится»): только из 20
+  // известных — у чипа должна быть подпись.
+  interests: z.array(KnownInterestSchema).max(INTEREST_IDS.length).optional(),
+  mutedInterests: z
+    .array(KnownInterestSchema)
+    .max(INTEREST_IDS.length)
+    .optional(),
   audience: z.enum(AUDIENCES).optional(),
 });
 export type UpdateMeInput = z.input<typeof UpdateMeInputSchema>;

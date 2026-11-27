@@ -111,6 +111,37 @@ describe("кодек ссылки-фильтра и ответа", () => {
     expect(decodePickRequest("битая")).toBeNull();
   });
 
+  it("аудитория «для неё» едет в ссылке; «всем» и старые ссылки без неё — «всем»", async () => {
+    const { decodePickRequest, encodePickRequest } = await import("./codec");
+    const request = {
+      id: "pk_2",
+      from: { name: "Азамат", avatarColor: "mint" as const },
+      filters: {
+        budget: { min: 0, max: 3000 },
+        categories: [],
+        marketplaces: [],
+        audience: "female" as const,
+      },
+      hidePrices: false,
+    };
+    expect(decodePickRequest(encodePickRequest(request))).toEqual(request);
+    const forAll = encodePickRequest({
+      ...request,
+      filters: { ...request.filters, audience: "all" },
+    });
+    expect(decodePickRequest(forAll)?.filters.audience).toBeUndefined();
+    // Ссылка, отправленная до этапа 7: в fl нет поля a.
+    const old = encodeEnvelope("pk", {
+      i: "pk_old",
+      f: { n: "Азамат", c: "mint" },
+      fl: { b: [0, null], c: ["tech"], m: [] },
+    });
+    expect(decodePickRequest(old)).toMatchObject({
+      id: "pk_old",
+      filters: { categories: ["tech"], audience: undefined },
+    });
+  });
+
   it("ответ: туда и обратно, чужой тип — null", async () => {
     const { decodePickAnswer, encodePickAnswer, encodePickRequest } =
       await import("./codec");

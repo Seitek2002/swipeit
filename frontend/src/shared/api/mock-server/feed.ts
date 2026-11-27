@@ -1,6 +1,7 @@
-import type { Audience } from "@/shared/config";
+import type { Audience, CategoryId } from "@/shared/config";
 
 import type { Product, ProductFilters } from "../catalog/types";
+import type { Taste } from "../users/types";
 import type { SwipeContext } from "../wishlist/types";
 import { seededUnit } from "./random";
 
@@ -16,8 +17,15 @@ export const parseContextKey = (key: string | undefined): SwipeContext =>
     ? { kind: "pick", requestId: key.slice("pick:".length) }
     : { kind: "self" };
 
+// «Показывать подарки: всем» — все товары; «для неё» — all + female.
+export const matchesAudience = (product: Product, audience: Audience) =>
+  audience === "all" ||
+  product.audience === "all" ||
+  product.audience === audience;
+
 // Бюджет — пересечение диапазонов: товар «от 2 000 до 4 000» попадает в
-// фильтр «до 3 000», потому что часть его офферов в бюджете.
+// фильтр «до 3 000», потому что часть его офферов в бюджете. Аудитория из
+// фильтров (нет поля — «всем»): старые ссылки-фильтры без неё открываются.
 export const matchesFilters = (product: Product, filters: ProductFilters) => {
   const { min, max } = filters.budget;
   if (product.priceMax < min) return false;
@@ -36,79 +44,239 @@ export const matchesFilters = (product: Product, filters: ProductFilters) => {
   ) {
     return false;
   }
-  return true;
+  return matchesAudience(product, filters.audience ?? "all");
 };
 
-// «Показывать подарки: всем» — все товары; «для неё» — all + female.
-export const matchesAudience = (product: Product, audience: Audience) =>
-  audience === "all" ||
-  product.audience === "all" ||
-  product.audience === audience;
-
-const JITTER = 0.8;
-// Не больше двух товаров одной категории подряд.
+export const PAGE_SIZE = 10;
+// Разведка в каждой порции: 2 места из 10 — категориям, которые ещё не
+// пробовали, чтобы лента не замкнулась на первых лайках.
+const EXPLORE_SLOTS = 2;
+const UNTRIED_BELOW = 1;
+// Категория, которую человек любит: набрала от 1 (хотя бы одно «Хочу»
+// перевешивает «Мимо»).
+const LIKED_FROM = 1;
+// Не больше двух товаров одной категории подряд (п. 5).
 const MAX_IN_A_ROW = 2;
+const JITTER = 0.8;
+// Лента сдвигается к аудитории, когда «Хочу» с полом набралось от 4 и одна
+// сторона взяла от 75%.
+const SHIFT_MIN_LIKES = 4;
+const SHIFT_SHARE = 0.75;
 
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+
+// Что лента знает о пользователе.
+export type FeedProfile = {
+  // Выбраны самим в профиле.
+  interests: readonly string[];
+  // «Не моё».
+  mutedInterests?: readonly string[];
+  taste?: null | Taste;
+};
+
+// К какой аудитории сдвинута лента: только при «всем» в фильтрах — если
+// человек сам выбрал «для неё», сдвигать нечего.
+export const audienceShift = (
+  taste: null | Taste | undefined,
+  filterAudience: Audience | undefined,
+): "female" | "male" | null => {
+  if ((filterAudience ?? "all") !== "all" || !taste) return null;
+  const { female, male } = taste.audience;
+  const total = female + male;
+  if (total < SHIFT_MIN_LIKES) return null;
+  if (female / total >= SHIFT_SHARE) return "female";
+  if (male / total >= SHIFT_SHARE) return "male";
+  return null;
+};
+
+const hasMuted = (product: Product, muted: ReadonlySet<string>) =>
+  product.interests.some((id) => muted.has(id));
+
+// Оценка товара (TECH_SPEC §6, п. 3). Вес «Не моё» в сумму вкуса не идёт:
+// интерес, который человек отверг, не должен поднимать товар обратно,
+// даже если раньше его лайкали.
 export const scoreProduct = (
   product: Product,
-  interests: readonly string[],
+  profile: FeedProfile,
+  shift: "female" | "male" | null,
   jitterSeed: string,
-) =>
-  2 * product.interests.filter((id) => interests.includes(id)).length +
-  product.popularity +
-  seededUnit(`${jitterSeed}:${product.id}`) * JITTER;
+) => {
+  const own = new Set(profile.interests);
+  const muted = new Set(profile.mutedInterests ?? []);
+  const taste = profile.taste;
+  const interests = [...new Set(product.interests)];
+  const tasteSum = interests
+    .filter((id) => !muted.has(id))
+    .reduce((sum, id) => sum + (taste?.interests[id] ?? 0), 0);
+  const categoryWeight = taste?.categories[product.category] ?? 0;
+  const otherSide =
+    shift !== null && product.audience !== "all" && product.audience !== shift;
+  return (
+    2 * interests.filter((id) => own.has(id)).length +
+    clamp(tasteSum / 3, -1.5, 2.5) +
+    clamp(categoryWeight / 4, -0.5, 1) -
+    2 * interests.filter((id) => muted.has(id)).length -
+    (otherSide ? 1 : 0) +
+    product.popularity +
+    seededUnit(`${jitterSeed}:${product.id}`) * JITTER
+  );
+};
 
-export const diversify = (products: Product[]): Product[] => {
-  const pool = [...products];
-  const result: Product[] = [];
-  while (pool.length > 0) {
-    const tail = result.slice(-MAX_IN_A_ROW);
-    const blocked =
-      tail.length === MAX_IN_A_ROW &&
-      tail.every((p) => p.category === tail[0]?.category)
-        ? tail[0]?.category
-        : undefined;
-    const index = pool.findIndex((product) => product.category !== blocked);
-    const [next] = pool.splice(index === -1 ? 0 : index, 1);
-    if (next) result.push(next);
+// Ещё не пробовали: вес категории по модулю меньше 1.
+export const isUntriedCategory = (
+  category: CategoryId,
+  taste: null | Taste | undefined,
+) => Math.abs(taste?.categories[category] ?? 0) < UNTRIED_BELOW;
+
+// Порция из ранжированного списка (п. 4–5): 2 места из 10 — разведке и не
+// больше 2 карточек одной категории подряд. Вторая подряд — только если
+// другой любимой категории под рукой нет: «техника, игры, техника, игры»,
+// а не «техника, техника, игры, игры». Когда оставшиеся места нужны
+// разведке — лучшая из неиспробованных категорий.
+const takePage = (
+  pool: Product[],
+  tail: readonly CategoryId[],
+  isUntried: (product: Product) => boolean,
+  isLiked: (category: CategoryId) => boolean,
+): Product[] => {
+  const page: Product[] = [];
+  const recent = [...tail];
+  let explored = 0;
+  const exploreNeeded = Math.min(EXPLORE_SLOTS, pool.filter(isUntried).length);
+  while (page.length < PAGE_SIZE && pool.length > 0) {
+    const mustExplore = exploreNeeded - explored >= PAGE_SIZE - page.length;
+    const allowed = (product: Product) => !mustExplore || isUntried(product);
+    const previous = recent.at(-1);
+    const run = recent
+      .slice(-MAX_IN_A_ROW)
+      .filter((category) => category === previous).length;
+    const fits = (product: Product) =>
+      allowed(product) &&
+      !(run >= MAX_IN_A_ROW && product.category === previous);
+    let index = pool.findIndex(fits);
+    if (index !== -1 && previous && pool[index]?.category === previous) {
+      // Повтор уступает другой любимой категории, а на местах разведки —
+      // любой другой: две разведочные карточки — это две разные категории.
+      const other = (product: Product) =>
+        fits(product) &&
+        product.category !== previous &&
+        (isLiked(product.category) || mustExplore);
+      const alternative = pool.findIndex(other);
+      if (alternative !== -1) index = alternative;
+    }
+    // Остались только карточки той же категории — лучше показать их, чем
+    // оборвать ленту.
+    if (index === -1) index = pool.findIndex(allowed);
+    if (index === -1) index = 0;
+    const [next] = pool.splice(index, 1);
+    if (!next) break;
+    if (isUntried(next)) explored += 1;
+    page.push(next);
+    recent.push(next.category);
   }
-  return result;
+  return page;
+};
+
+// Первая порция-разведка (п. 2): нового человека ещё не знаем, поэтому по
+// одному товару из 10 разных категорий — самый популярный в категории, в
+// первую очередь «для всех». Так вкус узнаётся быстрее всего.
+const explorePage = (
+  ranked: Product[],
+  jitterSeed: string,
+  muted: ReadonlySet<string>,
+): Product[] => {
+  const best = new Map<CategoryId, Product>();
+  const better = (a: Product, b: Product) => {
+    if ((a.audience === "all") !== (b.audience === "all")) {
+      return a.audience === "all";
+    }
+    if (hasMuted(a, muted) !== hasMuted(b, muted)) return !hasMuted(a, muted);
+    return a.popularity > b.popularity;
+  };
+  for (const product of ranked) {
+    const current = best.get(product.category);
+    if (!current || better(product, current)) {
+      best.set(product.category, product);
+    }
+  }
+  const order = (product: Product) =>
+    product.popularity + seededUnit(`${jitterSeed}:${product.id}`) * JITTER;
+  return [...best.values()]
+    .sort((a, b) => order(b) - order(a))
+    .slice(0, PAGE_SIZE);
 };
 
 export type RankInput = {
-  audience: Audience;
   // "YYYY-MM-DD": разброс считается от userId + даты, чтобы лента не прыгала
   // при перезагрузке, но обновлялась день ото дня.
   dateKey: string;
+  // Уже свайпнутые в этом контексте и те, что уже лежат в колоде клиента:
+  // выданная колода не перемешивается — новый вкус влияет только на
+  // следующие порции.
   excludeIds: ReadonlySet<string>;
+  // Первая порция-разведка: в self ещё нет ни одного свайпа.
+  explore: boolean;
   filters: ProductFilters;
-  interests: readonly string[];
-  products: Product[];
+  products: readonly Product[];
+  profile: FeedProfile;
   userId: string;
 };
 
+// Вся лента по порядку: порции по 10 подряд. Обработчик отдаёт первые
+// limit, счётчик «Показать N подарков» — длину.
 export const rankProducts = ({
   products,
   filters,
-  audience,
-  interests,
+  profile,
   excludeIds,
+  explore,
   userId,
   dateKey,
 }: RankInput): Product[] => {
   const jitterSeed = `${userId}:${dateKey}`;
-  const scored = products
+  const muted = new Set(profile.mutedInterests ?? []);
+  const shift = audienceShift(profile.taste, filters.audience);
+  // «Не моё» лента опускает: такие товары — только когда других кандидатов
+  // нет (иначе вкус, набранный до «Не моё», поднимал бы их обратно).
+  const ranked = products
     .filter(
       (product) =>
-        !excludeIds.has(product.id) &&
-        matchesFilters(product, filters) &&
-        matchesAudience(product, audience),
+        !excludeIds.has(product.id) && matchesFilters(product, filters),
     )
     .map((product) => ({
       product,
-      score: scoreProduct(product, interests, jitterSeed),
+      muted: hasMuted(product, muted),
+      score: scoreProduct(product, profile, shift, jitterSeed),
     }))
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) =>
+      a.muted === b.muted
+        ? b.score - a.score || a.product.id.localeCompare(b.product.id)
+        : a.muted
+          ? 1
+          : -1,
+    )
     .map(({ product }) => product);
-  return diversify(scored);
+
+  const result: Product[] = explore
+    ? explorePage(ranked, jitterSeed, muted)
+    : [];
+  const used = new Set(result.map((product) => product.id));
+  const pool = ranked.filter((product) => !used.has(product.id));
+  const isUntried = (product: Product) =>
+    !hasMuted(product, muted) &&
+    isUntriedCategory(product.category, profile.taste);
+  const isLiked = (category: CategoryId) =>
+    (profile.taste?.categories[category] ?? 0) >= LIKED_FROM;
+  while (pool.length > 0) {
+    result.push(
+      ...takePage(
+        pool,
+        result.slice(-MAX_IN_A_ROW).map((product) => product.category),
+        isUntried,
+        isLiked,
+      ),
+    );
+  }
+  return result;
 };

@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import { AVATAR_COLORS } from "@/shared/config";
 import { daysUntilBirthday } from "@/shared/lib/format";
 
+import type { Product } from "../../catalog/types";
 import {
   type FriendSummary,
   MarkHintInputSchema,
@@ -12,8 +13,10 @@ import {
   type User,
 } from "../../users/types";
 import { type Handler, type HandlerContext, nowIso } from "../context";
-import { notFound } from "../errors";
+import type { Db } from "../db";
+import { notFound, validation } from "../errors";
 import { BOT_IDS, DEMO_USER_ID } from "../seed";
+import { inferInterests, tasteOf } from "../taste";
 import { parseInput, requireUser } from "./common";
 
 const addFriends = (
@@ -36,8 +39,30 @@ const usersChanged = (ctx: HandlerContext, id: string) =>
   ctx.realtime.publish({ type: "db:changed", scope: ["users"], id, by: id });
 
 // Ответ GET /me и всех маршрутов, что меняют свой профиль. Вычисляемые поля
-// (выведенные интересы — T23) добавляются здесь, в базе их нет.
-export const toMe = (user: User): MeResponse => user;
+// добавляются здесь, в базе их нет: «Похоже, тебе нравится» — из вкуса.
+export const toMe = (
+  user: User,
+  db: Db,
+  products: readonly Product[],
+): MeResponse => ({
+  ...user,
+  inferredInterests: inferInterests(
+    tasteOf(user, db.productSwipes, products),
+    user,
+  ),
+});
+
+// Записать свой профиль и ответить MeResponse — по базе после записи.
+const writeMe = async (ctx: HandlerContext, mutate: (me: User) => void) => {
+  const products = await ctx.catalog.products();
+  const me = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    mutate(user);
+    return toMe(user, db, products);
+  });
+  usersChanged(ctx, me.id);
+  return me;
+};
 
 // Профиль без имени — «человек, которого никто не узнает»: его не
 // показываем другим в «В этой сети», /presence и плашке сети (TECH_SPEC
@@ -75,69 +100,77 @@ export const createUser: Handler = async (ctx, { body }) => {
     );
   });
   usersChanged(ctx, user.id);
-  return toMe(user);
+  // Свайпов у нового профиля нет — и выведенных интересов тоже.
+  return { ...user, inferredInterests: [] } satisfies MeResponse;
 };
 
 // POST /auth/demo — войти как «Айгерим» с готовым вишлистом. Она перестаёт
 // быть ботом, чтобы боты не действовали от её имени.
 export const loginDemo: Handler = async (ctx) => {
-  const user = await ctx.db.write((db) => {
+  const products = await ctx.catalog.products();
+  const me = await ctx.db.write((db) => {
     const demo = db.users[DEMO_USER_ID];
     if (!demo)
       throw notFound("Демо-пользователь не найден — сбрось демо-данные");
     demo.isBot = false;
-    return demo;
+    return toMe(demo, db, products);
   });
-  usersChanged(ctx, user.id);
-  return toMe(user);
+  usersChanged(ctx, me.id);
+  return me;
 };
 
-export const getMe: Handler = async (ctx) =>
-  toMe(requireUser(ctx, await ctx.db.read()));
+export const getMe: Handler = async (ctx) => {
+  const products = await ctx.catalog.products();
+  const db = await ctx.db.read();
+  return toMe(requireUser(ctx, db), db, products);
+};
 
-// PATCH /me — имя и фон аватара в любой момент (NameSheet, профиль).
+const unique = <T>(list: readonly T[]) => [...new Set(list)];
+
+// PATCH /me — имя и фон аватара в любой момент (NameSheet, профиль), свои
+// интересы и «Не моё» (DESIGN §8.9 «Мне нравится»). Интерес не бывает
+// сразу и своим, и «Не моё»: новое решение снимает старое.
 export const updateMe: Handler = async (ctx, { body }) => {
   const patch = parseInput(UpdateMeInputSchema, body);
-  const user = await ctx.db.write((db) => {
-    const me = requireUser(ctx, db);
+  const { interests, mutedInterests } = patch;
+  if (interests?.some((id) => mutedInterests?.includes(id))) {
+    throw validation("Интерес не может быть и твоим, и «Не моё»");
+  }
+  return writeMe(ctx, (me) => {
     if (patch.name !== undefined) me.name = patch.name;
     if (patch.avatarColor !== undefined) me.avatarColor = patch.avatarColor;
     if (patch.birthday !== undefined) me.birthday = patch.birthday;
-    if (patch.interests !== undefined)
-      me.interests = [...new Set(patch.interests)];
     if (patch.audience !== undefined) me.audience = patch.audience;
-    return me;
+    if (interests !== undefined) {
+      me.interests = unique(interests);
+      if (me.mutedInterests) {
+        me.mutedInterests = me.mutedInterests.filter(
+          (id) => !interests.includes(id),
+        );
+      }
+    }
+    if (mutedInterests !== undefined) {
+      me.mutedInterests = unique(mutedInterests);
+      me.interests = me.interests.filter((id) => !mutedInterests.includes(id));
+    }
   });
-  usersChanged(ctx, user.id);
-  return toMe(user);
 };
 
 // POST /me/hints { id } — подсказка показана (обучающая карточка, тост
 // «вкус сложился»). Повтор ничего не меняет.
 export const markHintSeen: Handler = async (ctx, { body }) => {
   const { id } = parseInput(MarkHintInputSchema, body);
-  const user = await ctx.db.write((db) => {
-    const me = requireUser(ctx, db);
-    const seen = new Set(me.seenHints ?? []);
-    seen.add(id);
-    me.seenHints = [...seen];
-    return me;
+  return writeMe(ctx, (me) => {
+    me.seenHints = unique([...(me.seenHints ?? []), id]);
   });
-  usersChanged(ctx, user.id);
-  return toMe(user);
 };
 
 // POST /demo/hints/reset — «Показать обучение снова» в демо-панели: снять
 // отметки, обучающая карточка снова первая.
-export const resetHints: Handler = async (ctx) => {
-  const user = await ctx.db.write((db) => {
-    const me = requireUser(ctx, db);
+export const resetHints: Handler = async (ctx) =>
+  writeMe(ctx, (me) => {
     delete me.seenHints;
-    return me;
   });
-  usersChanged(ctx, user.id);
-  return toMe(user);
-};
 
 export const getUser: Handler = async (ctx, { params }) => {
   const db = await ctx.db.read();

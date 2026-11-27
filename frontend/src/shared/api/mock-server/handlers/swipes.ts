@@ -1,12 +1,20 @@
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
+import type { Product } from "../../catalog/types";
+import type { User } from "../../users/types";
 import type { SwipeResponse } from "../../wishlist/types";
 import { SwipeContextSchema, SwipeDecisionSchema } from "../../wishlist/types";
 import { type Handler, nowIso } from "../context";
 import type { Db } from "../db";
 import { notFound } from "../errors";
 import { contextKey } from "../feed";
+import {
+  computeTaste,
+  inferInterests,
+  isTasteJustFormed,
+  tasteOf,
+} from "../taste";
 import { parseInput, requireUser } from "./common";
 
 // Порог шеринга: после 5 «Хочу» вишлист можно отправить (решение владельца
@@ -25,6 +33,24 @@ const ContextBodySchema = z.object({ context: SwipeContextSchema });
 
 const isLike = (decision: string) =>
   decision === "like" || decision === "superlike";
+
+// Вкус — функция от истории свайпов (TECH_SPEC §6 «Вкус»): после любого
+// изменения своей ленты пересчитываем его целиком, а не правим на дельту.
+// Так «Вернуть» возвращает вкус точно в прежнее состояние. Возвращает,
+// поменялись ли выведенные интересы — по ним вкладки перечитывают профиль.
+const refreshTaste = (db: Db, user: User, products: readonly Product[]) => {
+  const before = inferInterests(
+    tasteOf(user, db.productSwipes, products),
+    user,
+  );
+  const taste = computeTaste(
+    db.productSwipes.filter((swipe) => swipe.userId === user.id),
+    products,
+  );
+  if (taste) user.taste = taste;
+  else delete user.taste;
+  return before.join() !== inferInterests(taste, user).join();
+};
 
 export const countSelfLikes = (db: Db, userId: string) =>
   db.productSwipes.filter(
@@ -46,9 +72,13 @@ export const createSwipe: Handler = async (ctx, { body }) => {
   const at = nowIso(ctx.clock);
   // «Мимо» убрал товар из вишлиста — другим вкладкам тоже надо перечитать его.
   let passRemovedItem = false;
+  // Выведенные интересы поменялись — профиль («Похоже, тебе нравится») надо
+  // перечитать.
+  let interestsChanged = false;
 
   const response = await ctx.db.write((db): SwipeResponse => {
     const user = requireUser(ctx, db);
+    const tasteBefore = tasteOf(user, db.productSwipes, products);
     const key = contextKey(input.context);
     // Повторный свайп той же карточки в том же контексте заменяет прошлый.
     db.productSwipes = db.productSwipes.filter(
@@ -124,20 +154,31 @@ export const createSwipe: Handler = async (ctx, { body }) => {
       meta.shareUnlockedAt = at;
       shareJustUnlocked = true;
     }
+    // Вкус — только по своей ленте: выбор по чужой ссылке-фильтру его не
+    // трогает (TECH_SPEC §6 «Вкус»).
+    let tasteJustFormed = false;
+    if (input.context.kind === "self") {
+      interestsChanged = refreshTaste(db, user, products);
+      tasteJustFormed = isTasteJustFormed(tasteBefore, user.taste, user);
+    }
     return {
       likeCount,
       shareUnlocked: Boolean(meta.shareUnlockedAt),
       shareJustUnlocked,
+      tasteJustFormed,
       wishlistItemId,
     };
   });
 
   ctx.realtime.publish({
     type: "db:changed",
-    scope:
-      response.wishlistItemId || passRemovedItem
-        ? ["swipes", "wishlist"]
-        : ["swipes"],
+    scope: [
+      "swipes",
+      ...(response.wishlistItemId || passRemovedItem
+        ? (["wishlist"] as const)
+        : []),
+      ...(interestsChanged ? (["users"] as const) : []),
+    ],
     by: ctx.userId ?? "",
   });
   return response;
@@ -148,6 +189,7 @@ export const createSwipe: Handler = async (ctx, { body }) => {
 export const undoSwipe: Handler = async (ctx, { body }) => {
   const { context } = parseInput(ContextBodySchema, body);
   const key = contextKey(context);
+  const products = await ctx.catalog.products();
   const result = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     let index = -1;
@@ -173,11 +215,17 @@ export const undoSwipe: Handler = async (ctx, { body }) => {
       productId: swipe.productId,
       likeCount: countSelfLikes(db, user.id),
       wishlistChanged: context.kind === "self" && isLike(swipe.decision),
+      interestsChanged:
+        context.kind === "self" && refreshTaste(db, user, products),
     };
   });
   ctx.realtime.publish({
     type: "db:changed",
-    scope: result.wishlistChanged ? ["swipes", "wishlist"] : ["swipes"],
+    scope: [
+      "swipes",
+      ...(result.wishlistChanged ? (["wishlist"] as const) : []),
+      ...(result.interestsChanged ? (["users"] as const) : []),
+    ],
     by: ctx.userId ?? "",
   });
   return { productId: result.productId, likeCount: result.likeCount };
@@ -188,7 +236,8 @@ export const undoSwipe: Handler = async (ctx, { body }) => {
 export const restartSwipes: Handler = async (ctx, { body }) => {
   const { context } = parseInput(ContextBodySchema, body);
   const key = contextKey(context);
-  const removed = await ctx.db.write((db) => {
+  const products = await ctx.catalog.products();
+  const { removed, interestsChanged } = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const before = db.productSwipes.length;
     db.productSwipes = db.productSwipes.filter(
@@ -199,11 +248,16 @@ export const restartSwipes: Handler = async (ctx, { body }) => {
           contextKey(swipe.context) === key
         ),
     );
-    return before - db.productSwipes.length;
+    // Убрали «Мимо» — и вкус теперь без них.
+    return {
+      removed: before - db.productSwipes.length,
+      interestsChanged:
+        context.kind === "self" && refreshTaste(db, user, products),
+    };
   });
   ctx.realtime.publish({
     type: "db:changed",
-    scope: ["swipes"],
+    scope: interestsChanged ? ["swipes", "users"] : ["swipes"],
     by: ctx.userId ?? "",
   });
   return { removed };

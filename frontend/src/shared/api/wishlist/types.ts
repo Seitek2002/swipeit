@@ -117,10 +117,13 @@ export type ExternalWishlist = z.infer<typeof ExternalWishlistSchema>;
 
 // Ответ на свайп: сколько «Хочу» уже есть и открылся ли шеринг прямо сейчас
 // (по shareJustUnlocked клиент запускает бант, TECH_SPEC §6).
+// tasteJustFormed — впервые вывелись 2 интереса, а тост «Подстроили ленту
+// под твои „Хочу“» ещё не показывали (TECH_SPEC §6 «Вкус»).
 export type SwipeResponse = {
   likeCount: number;
   shareJustUnlocked: boolean;
   shareUnlocked: boolean;
+  tasteJustFormed: boolean;
   wishlistItemId?: string;
 };
 
