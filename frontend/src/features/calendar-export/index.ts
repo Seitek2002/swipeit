@@ -6,4 +6,7 @@ export {
   liveStart,
   nextSaturdayNoon,
   planEventStart,
+  type PlanWhen,
+  planWhen,
+  suggestedPlanDay,
 } from "./model";

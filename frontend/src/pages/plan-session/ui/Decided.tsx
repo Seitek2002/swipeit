@@ -11,7 +11,8 @@ import {
   LIVE_DURATION_MINUTES,
   buildIcs,
   downloadIcs,
-  planEventStart,
+  planWhen,
+  suggestedPlanDay,
 } from "@/features/calendar-export";
 
 import { ActivityTicket } from "@/entities/activity";
@@ -21,7 +22,18 @@ import { cancelPlanDecision, isApiError, planKeys } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { clock } from "@/shared/lib/clock";
 import { absoluteUrl } from "@/shared/lib/dom";
-import { AvatarStack, Button, ShareActions, toast } from "@/shared/ui";
+import {
+  AvatarStack,
+  BottomSheet,
+  Button,
+  ShareActions,
+  TextField,
+  toast,
+} from "@/shared/ui";
+
+// "YYYY-MM-DD" для поля даты — по местному календарю.
+const toDateInput = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 type Props = { meId: string; view: PlanView };
 
@@ -65,6 +77,12 @@ export const Decided = ({ view, meId }: Props) => {
   const decision = plan.decision;
   const activity = activities.find((item) => item.id === decision?.activityId);
   const drumKey = seenKey(plan.id, decision?.decidedAt ?? "");
+  // «В какой день?» для календаря, когда время не выбрано (V01). Хуки — до
+  // раннего возврата с барабаном.
+  const [askDay, setAskDay] = useState(false);
+  const [day, setDay] = useState(() =>
+    toDateInput(suggestedPlanDay(clock.now())),
+  );
   const [showDrum, setShowDrum] = useState(
     () => decision?.method === "random" && !wasSeen(drumKey),
   );
@@ -102,24 +120,30 @@ export const Decided = ({ view, meId }: Props) => {
     );
   }
 
-  const live = plan.mode === "live" && !decision.scheduledFor;
-  const when = planEventStart({
+  const timing = planWhen({
     decidedAt: new Date(decision.decidedAt).getTime(),
     mode: plan.mode,
-    now: clock.now(),
     scheduledFor: decision.scheduledFor,
   });
-  // «Прямо сейчас» — решили сейчас, значит «Сегодня», без времени (DESIGN.md
-  // §8.7, UX-аудит H3). В календарь уходит сегодня через час на 2 часа.
-  const whenText = live ? "Сегодня" : formatWhen(when);
+  const live = timing.kind === "today";
+  // «Прямо сейчас» — «Сегодня» (DESIGN.md §8.7, UX-аудит H3). «До даты» без
+  // выбранного времени — не выдумываем его (auto-tasks V01): раньше здесь
+  // стояла «Суббота, 12:00», которую никто не выбирал.
+  const whenText =
+    timing.kind === "today"
+      ? "Сегодня"
+      : timing.kind === "scheduled"
+        ? formatWhen(timing.start)
+        : "Когда — договоритесь в чате";
   const names = participants.map((person) => person.name).join(", ");
 
-  const addToCalendar = () => {
+  const download = (start: Date, allDay: boolean) => {
     const ics = buildIcs(
       {
         uid: `${plan.id}-${decision.decidedAt}`,
         title: activity.title,
-        start: when,
+        start,
+        allDay,
         durationMinutes: live
           ? LIVE_DURATION_MINUTES
           : Math.max(60, activity.durationMax || 120),
@@ -128,6 +152,13 @@ export const Decided = ({ view, meId }: Props) => {
       clock.now(),
     );
     downloadIcs("swipeit-plan.ics", ics);
+  };
+
+  // Время не выбрано — календарь спрашивает день и пишет событие на весь
+  // день; иначе — сразу с выбранным временем.
+  const addToCalendar = () => {
+    if (timing.kind === "unscheduled") setAskDay(true);
+    else download(timing.start, false);
   };
 
   return (
@@ -162,7 +193,10 @@ export const Decided = ({ view, meId }: Props) => {
       <ShareActions
         getPayload={async () => ({
           title: plan.title,
-          text: `Решили: ${activity.title}, ${live ? "сегодня" : whenText}`,
+          text:
+            timing.kind === "unscheduled"
+              ? `Решили: ${activity.title}. Когда — договоримся здесь`
+              : `Решили: ${activity.title}, ${live ? "сегодня" : whenText}`,
           url: absoluteUrl(ROUTES.PLAN_SESSION(plan.id)),
         })}
         qrLabel="QR-код плана"
@@ -175,6 +209,36 @@ export const Decided = ({ view, meId }: Props) => {
       >
         Добавить в календарь
       </Button>
+      <BottomSheet
+        open={askDay}
+        onClose={() => setAskDay(false)}
+        title="В какой день?"
+        footer={
+          <Button
+            size="lg"
+            disabled={!day}
+            onClick={() => {
+              const [year = 0, month = 1, date = 1] = day
+                .split("-")
+                .map(Number);
+              download(new Date(year, month - 1, date, 12), true);
+              setAskDay(false);
+            }}
+          >
+            Добавить
+          </Button>
+        }
+      >
+        <p className="text-body text-rose mb-4">
+          Время ещё не выбрали — добавим событие на весь день.
+        </p>
+        <TextField
+          label="День"
+          type="date"
+          value={day}
+          onChange={(event) => setDay(event.target.value)}
+        />
+      </BottomSheet>
       {plan.ownerId === meId && (
         <Button
           variant="ghost"

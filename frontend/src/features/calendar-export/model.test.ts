@@ -7,6 +7,7 @@ import {
   liveStart,
   nextSaturdayNoon,
   planEventStart,
+  planWhen,
 } from "./model";
 
 describe("calendar-export", () => {
@@ -120,5 +121,46 @@ describe("«Прямо сейчас» в календаре (UX-аудит H3)",
         scheduledFor: fixed,
       }).toISOString(),
     ).toBe(fixed);
+  });
+});
+
+describe("когда на «Решено» (auto-tasks V01)", () => {
+  const decidedAt = new Date(2026, 10, 28, 4, 30).getTime();
+
+  it("«До даты» без выбранного времени — не выбрано, ничего не выдумываем", () => {
+    expect(planWhen({ decidedAt, mode: "deadline" })).toEqual({
+      kind: "unscheduled",
+    });
+  });
+
+  it("время выбрали — оно; «Прямо сейчас» — сегодня", () => {
+    expect(
+      planWhen({
+        decidedAt,
+        mode: "deadline",
+        scheduledFor: "2026-11-29T15:00:00.000Z",
+      }),
+    ).toEqual({
+      kind: "scheduled",
+      start: new Date("2026-11-29T15:00:00.000Z"),
+    });
+    expect(planWhen({ decidedAt, mode: "live" }).kind).toBe("today");
+  });
+
+  it(".ics на весь день — только дата, без времени", () => {
+    const ics = buildIcs(
+      {
+        uid: "x",
+        title: "Концерт",
+        start: new Date(2026, 11, 5, 12),
+        durationMinutes: 120,
+        description: "Пятница",
+        allDay: true,
+      },
+      decidedAt,
+    );
+    expect(ics).toContain("DTSTART;VALUE=DATE:20261205");
+    expect(ics).toContain("DTEND;VALUE=DATE:20261206");
+    expect(ics).not.toMatch(/DTSTART:\d/);
   });
 });

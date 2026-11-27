@@ -2,6 +2,9 @@
 // название, время, описание с участниками). Чистые функции — с тестами.
 
 export type CalendarEvent = {
+  // Событие на весь день: время никто не выбирал (auto-tasks V01) — в
+  // календаре только дата start.
+  allDay?: boolean;
   description: string;
   durationMinutes: number;
   start: Date;
@@ -14,6 +17,10 @@ const pad = (value: number) => String(value).padStart(2, "0");
 // Время в UTC: календарь сам переведёт в пояс телефона.
 const stamp = (date: Date) =>
   `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}T${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())}Z`;
+
+// Дата события на весь день — по местному календарю.
+const day = (date: Date) =>
+  `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}`;
 
 // RFC 5545: запятая, точка с запятой, обратный слэш экранируются, перевод
 // строки — «\n».
@@ -83,8 +90,31 @@ export type PlanTimingInput = {
   scheduledFor?: string;
 };
 
+// Когда событие на экране «Решено» (auto-tasks V01): время выбрали —
+// оно; «Прямо сейчас» — сегодня; «До даты» без времени — не выбрано, и
+// выдумывать его нельзя: «Суббота, 12:00» выглядела как решение группы.
+export type PlanWhen =
+  | { kind: "scheduled"; start: Date }
+  | { kind: "today"; start: Date }
+  | { kind: "unscheduled" };
+
+export const planWhen = ({
+  decidedAt,
+  mode,
+  scheduledFor,
+}: Omit<PlanTimingInput, "now">): PlanWhen =>
+  scheduledFor
+    ? { kind: "scheduled", start: new Date(scheduledFor) }
+    : mode === "live"
+      ? { kind: "today", start: liveStart(decidedAt) }
+      : { kind: "unscheduled" };
+
+// Дата по умолчанию в «Добавить в календарь», когда время не выбрано: только
+// подсказка в поле даты, человек её подтверждает или меняет.
+export const suggestedPlanDay = (now: number): Date => nextSaturdayNoon(now);
+
 // Когда событие: время из решения, у «Прямо сейчас» — сегодня через час,
-// у «До даты» без времени — ближайшая суббота 12:00, как раньше.
+// у «До даты» без времени — ближайшая суббота 12:00 (подсказка даты).
 export const planEventStart = ({
   decidedAt,
   mode,
@@ -107,8 +137,12 @@ export const buildIcs = (event: CalendarEvent, now: number): string => {
     "BEGIN:VEVENT",
     `UID:${event.uid}@swipeit`,
     `DTSTAMP:${stamp(new Date(now))}`,
-    `DTSTART:${stamp(event.start)}`,
-    `DTEND:${stamp(end)}`,
+    ...(event.allDay
+      ? [
+          `DTSTART;VALUE=DATE:${day(event.start)}`,
+          `DTEND;VALUE=DATE:${day(new Date(event.start.getFullYear(), event.start.getMonth(), event.start.getDate() + 1))}`,
+        ]
+      : [`DTSTART:${stamp(event.start)}`, `DTEND:${stamp(end)}`]),
     `SUMMARY:${escapeText(event.title)}`,
     `DESCRIPTION:${escapeText(event.description)}`,
     "END:VEVENT",
