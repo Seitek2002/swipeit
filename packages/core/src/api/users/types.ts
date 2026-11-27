@@ -196,6 +196,13 @@ export const NewUserInputSchema = z.object({
   birthday: MonthDaySchema.optional(),
   interests: z.array(z.string()).optional(),
   audience: z.enum(AUDIENCES).optional(),
+  // Гость по ссылке, который бронировал до профиля (мок и LAN): его брони
+  // переходят в новый профиль (auto-tasks U02). Сервер это поле не читает —
+  // там у гостя профиль с первой брони (BACKEND.md §3.1).
+  guestId: z
+    .string()
+    .regex(/^g_[A-Za-z0-9_-]+$/)
+    .optional(),
 });
 export type NewUserInput = z.input<typeof NewUserInputSchema>;
 

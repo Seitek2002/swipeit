@@ -711,3 +711,67 @@ describe("ревью этапа 2", () => {
     expect(new Set(keys).size).toBe(keys.length);
   });
 });
+
+describe("бронь гостя переходит в профиль (auto-tasks U02)", () => {
+  it("гость бронирует, потом создаёт профиль с guestId — бронь его, снять можно", async () => {
+    const owner = await demo();
+    const itemKey = (await wishlist(owner)).items[0]?.source;
+    const key = itemKey?.kind === "product" ? itemKey.productId : "custom:нет";
+    const guestId = "g_beforeprofile";
+    const made = await call<Reservation>("POST", "/reservations", null, {
+      ownerId: owner,
+      itemKey: key,
+      name: "Бакыт",
+      guestId,
+    });
+
+    const profile = await call<User>("POST", "/users", null, {
+      name: "Бакыт",
+      guestId,
+    });
+    const view = await call<ReservationsView>(
+      "GET",
+      "/reservations",
+      profile.id,
+      undefined,
+      { ownerId: owner },
+    );
+    expect(view.role === "guest" && view.items).toEqual([
+      expect.objectContaining({ id: made.id, mine: true, closed: false }),
+    ]);
+    await call("DELETE", `/reservations/${made.id}`, profile.id);
+    const after = await call<ReservationsView>(
+      "GET",
+      "/reservations",
+      profile.id,
+      undefined,
+      { ownerId: owner },
+    );
+    expect(after.role === "guest" && after.items).toEqual([]);
+  });
+
+  it("чужие брони гостя не трогает: другой guestId", async () => {
+    const owner = await demo();
+    const source = (await wishlist(owner)).items[0]?.source;
+    const key = source?.kind === "product" ? source.productId : "custom:нет";
+    await call("POST", "/reservations", null, {
+      ownerId: owner,
+      itemKey: key,
+      name: "Другой",
+      guestId: "g_someone",
+    });
+    const profile = await call<User>("POST", "/users", null, {
+      guestId: "g_me",
+    });
+    const view = await call<ReservationsView>(
+      "GET",
+      "/reservations",
+      profile.id,
+      undefined,
+      { ownerId: owner },
+    );
+    expect(view.role === "guest" && view.items).toEqual([
+      expect.objectContaining({ mine: false }),
+    ]);
+  });
+});

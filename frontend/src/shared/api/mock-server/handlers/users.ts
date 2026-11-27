@@ -110,8 +110,24 @@ export const createUser: Handler = async (ctx, { body }) => {
       user.id,
       BOT_IDS.filter((id) => db.users[id]),
     );
+    // Брони, сделанные гостем до профиля, — теперь его (auto-tasks U02):
+    // иначе на своём подарке он увидел бы «Кто-то уже выбрал».
+    if (input.guestId) {
+      for (const reservation of db.reservations) {
+        if (reservation.reserver.userId === input.guestId) {
+          reservation.reserver.userId = user.id;
+        }
+      }
+    }
   });
   usersChanged(ctx, user.id);
+  if (input.guestId) {
+    ctx.realtime.publish({
+      type: "db:changed",
+      scope: ["reservations"],
+      by: user.id,
+    });
+  }
   // Свайпов у нового профиля нет — и выведенных интересов тоже.
   return { ...user, inferredInterests: [] } satisfies MeResponse;
 };

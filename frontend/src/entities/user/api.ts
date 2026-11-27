@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  type NewUserInput,
   type UpdateMeInput,
   createUser,
   friendKeys,
@@ -12,11 +13,12 @@ import {
   getPresence,
   getUser,
   loginDemoFn,
+  reservationKeys,
   updateMe,
   userKeys,
 } from "@/shared/api";
 import { useMounted } from "@/shared/lib/dom";
-import { useSessionStore } from "@/shared/store";
+import { useGuestStore, useSessionStore } from "@/shared/store";
 
 // Текущий пользователь вкладки. Ждём монтирования: сессия живёт в
 // sessionStorage, на сервере её нет (TECH_SPEC §3).
@@ -97,10 +99,20 @@ export const useCreateUser = () => {
   const queryClient = useQueryClient();
   const setActiveUser = useSessionStore((state) => state.setActiveUser);
   return useMutation({
-    mutationFn: createUser,
+    // Гость по ссылке, который уже бронировал и назвался, — брони и имя
+    // переходят в профиль (auto-tasks U02).
+    mutationFn: (input?: NewUserInput) => {
+      const guest = useGuestStore.getState();
+      return createUser({
+        ...input,
+        guestId: guest.guestId,
+        ...(input?.name || !guest.name ? {} : { name: guest.name }),
+      });
+    },
     onSuccess: (user) => {
       setActiveUser(user.id);
       queryClient.setQueryData(userKeys.me(), user);
+      void queryClient.invalidateQueries({ queryKey: reservationKeys.all });
     },
   });
 };
