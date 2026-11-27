@@ -139,7 +139,15 @@ export const FiltersSheet = ({
             aria-label="Категории"
             className="flex flex-wrap gap-2"
           >
-            {CATEGORY_IDS.map((category) => (
+            {/* Только категории с товарами (auto-tasks U09); уже выбранная
+                остаётся, чтобы её можно было снять. Пока каталог не
+                ответил — весь справочник. */}
+            {CATEGORY_IDS.filter(
+              (category) =>
+                !stores.data ||
+                stores.data.categories.includes(category) ||
+                draft.categories.includes(category),
+            ).map((category) => (
               <Chip
                 key={category}
                 selected={draft.categories.includes(category)}

@@ -5,6 +5,7 @@ import {
   ACTIVITY_TAG_IDS,
   AUDIENCES,
   CATEGORY_IDS,
+  type CategoryId,
   MARKETPLACE_IDS,
   SEASONS,
 } from "../../config/index";
@@ -151,6 +152,9 @@ export type FeedResponse = { items: Product[]; total: number };
 // строятся из них, а не из всего справочника (UX-аудит M1). shops — домены
 // «других» магазинов. По убыванию числа товаров.
 export type CatalogStores = {
+  // Категории, где есть хотя бы один товар, — в порядке справочника: пустой
+  // чип «Впечатления» не обещает того, чего нет (auto-tasks U09).
+  categories: CategoryId[];
   marketplaces: Array<Exclude<(typeof MARKETPLACE_IDS)[number], "other">>;
   shops: string[];
 };

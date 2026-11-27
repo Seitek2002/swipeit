@@ -1,5 +1,5 @@
 import type { CatalogStores, Product } from "../api/catalog/types";
-import { shopHost } from "../config/index";
+import { CATEGORY_IDS, shopHost } from "../config/index";
 
 // GET /catalog/stores — магазины, где есть товары (UX-аудит M1): чипы
 // фильтра. Маркетплейсы — по своему id, «другие» — доменами; по убыванию
@@ -23,7 +23,9 @@ export const catalogStores = (products: readonly Product[]): CatalogStores => {
     [...map.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([id]) => id);
+  const used = new Set(products.map((product) => product.category));
   return {
+    categories: CATEGORY_IDS.filter((id) => used.has(id)),
     marketplaces: byCount(marketplaces) as CatalogStores["marketplaces"],
     shops: byCount(shops),
   };

@@ -196,12 +196,16 @@ describe.each(CLIENTS)("лента и свайпы — %s", (_name, create) => {
     await expect(
       api.call(null, "GET", "/catalog/products/p_nope"),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    const stores = await api.call<{ marketplaces: string[] }>(
-      null,
-      "GET",
-      "/catalog/stores",
-    );
+    const stores = await api.call<{
+      categories: string[];
+      marketplaces: string[];
+    }>(null, "GET", "/catalog/stores");
     expect(stores.marketplaces.length).toBeGreaterThan(0);
+    // Только категории с товарами (U09): «Впечатлений» в каталоге нет.
+    const used = new Set(products.map((p) => p.category));
+    expect(stores.categories.length).toBe(used.size);
+    expect(stores.categories).toContain("tech");
+    expect(stores.categories).not.toContain("experiences");
     expect(await api.call(null, "GET", "/catalog/meta")).toBeTruthy();
     const all = await api.call<unknown[]>(null, "GET", "/activities");
     const cheap = await api.call<unknown[]>(
