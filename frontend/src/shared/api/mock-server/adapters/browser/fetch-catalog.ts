@@ -1,6 +1,7 @@
 import { withBasePath } from "@/shared/lib/base-path";
 
 import type { Activity, CatalogMeta, Product } from "../../../catalog/types";
+import { takeWarmProducts } from "../../../warmup";
 import {
   parseActivities,
   parseCatalogMeta,
@@ -34,7 +35,13 @@ export const createFetchCatalog = (): CatalogAccess => {
 
   return {
     products: () => {
-      products ??= loadJson("/catalog/products.json")
+      // Каталог мог начать качаться ещё при старте вкладки (warmup.ts).
+      const warm = takeWarmProducts();
+      products ??= (
+        warm
+          ? warm.then((raw) => raw ?? loadJson("/catalog/products.json"))
+          : loadJson("/catalog/products.json")
+      )
         .then((raw) => {
           const { items, dropped } = parseProducts(raw);
           if (dropped.length > 0) {

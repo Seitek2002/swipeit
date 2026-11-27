@@ -6,6 +6,7 @@ import {
   getDemoSettings,
   httpTransport,
   setTransport,
+  warmLocalApi,
 } from "@/shared/api";
 import { setLanClock } from "@/shared/lib/clock";
 import { setRemoteImageStore } from "@/shared/lib/dom";
@@ -20,6 +21,10 @@ import {
   setLastUserKey,
   useSessionStore,
 } from "@/shared/store";
+
+// Сразу при загрузке модуля, до гидрации и до проверки режима: мок-сервер и
+// каталог качаются параллельно с ней (shared/api/warmup.ts).
+warmLocalApi();
 
 // Адрес WebSocket того же сервера, что отвечает на /api.
 const wsUrl = () => {

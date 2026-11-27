@@ -52,6 +52,7 @@ export {
   isNameRequired,
 } from "./mock-server/errors";
 export { httpTransport } from "./http-transport";
+export { warmLocalApi } from "./warmup";
 export {
   type ApiMode,
   apiUrl,
