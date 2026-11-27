@@ -32,6 +32,18 @@ import {
 } from "./domains/swipes/handlers";
 import { deleteMe } from "./domains/users/delete";
 import {
+  createCustomWish,
+  deleteItem,
+  dismissGivenHint,
+  getMyWishlist,
+  markGiven,
+  reorderItems,
+  restoreItem,
+  undeleteItem,
+  updateItem,
+  updateMeta,
+} from "./domains/wishlist/handlers";
+import {
   createUser,
   getMe,
   logout,
@@ -66,6 +78,16 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "POST /swipes": createSwipe,
   "POST /swipes/undo": undoSwipe,
   "POST /swipes/restart": restartSwipes,
+  "GET /wishlist": getMyWishlist,
+  "POST /wishlist/items": createCustomWish,
+  "PATCH /wishlist/items/:id": updateItem,
+  "DELETE /wishlist/items/:id": deleteItem,
+  "POST /wishlist/items/:id/undelete": undeleteItem,
+  "POST /wishlist/reorder": reorderItems,
+  "POST /wishlist/items/:id/given": markGiven,
+  "POST /wishlist/items/:id/restore": restoreItem,
+  "PATCH /wishlist/meta": updateMeta,
+  "POST /wishlist/given-hint/dismiss": dismissGivenHint,
 };
 
 export type RouteDeps = {

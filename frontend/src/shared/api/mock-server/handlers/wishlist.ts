@@ -1,8 +1,14 @@
+import {
+  CustomWishInputSchema,
+  GivenInputSchema,
+  PatchItemInputSchema,
+  ReorderInputSchema,
+  RestoreInputSchema,
+  UNDELETE_WINDOW_MS,
+} from "@swipeit/core/api/wishlist/inputs";
 import { nanoid } from "nanoid";
-import { z } from "zod";
 
 import {
-  CustomWishSchema,
   type WishlistItem,
   WishlistItemSchema,
   type WishlistResponse,
@@ -49,21 +55,7 @@ export const getMyWishlist: Handler = async (ctx) => {
 
 // POST /wishlist/items — своё желание: название, цена, ссылка, фото.
 export const createCustomWish: Handler = async (ctx, { body }) => {
-  const custom = parseInput(
-    CustomWishSchema.extend({
-      title: z.string().trim().min(1, "Напиши, что хочешь").max(80),
-      // Длиннее ссылка не влезет в ссылку на вишлист (share-codec).
-      url: z.string().trim().max(500, "Ссылка слишком длинная").optional(),
-    }),
-    body,
-  );
-  if (
-    custom.priceMin !== undefined &&
-    custom.priceMax !== undefined &&
-    custom.priceMin > custom.priceMax
-  ) {
-    throw new ApiError(400, "VALIDATION", "Цена «от» больше цены «до»");
-  }
+  const custom = parseInput(CustomWishInputSchema, body);
   const result = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const items = listOf(db, user.id);
@@ -89,16 +81,9 @@ export const createCustomWish: Handler = async (ctx, { body }) => {
   return result;
 };
 
-const PatchItemSchema = z.object({
-  priority: z.enum(["normal", "top"]).optional(),
-  variantChoice: z.record(z.string(), z.string()).optional(),
-  // Пустая строка — убрать заметку.
-  note: z.string().max(140, "Заметка — до 140 символов").optional(),
-});
-
 // PATCH /wishlist/items/:id — вариант, заметка, «Очень хочу».
 export const updateItem: Handler = async (ctx, { params, body }) => {
-  const patch = parseInput(PatchItemSchema, body);
+  const patch = parseInput(PatchItemInputSchema, body);
   const item = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const target = findItem(db, user.id, params.id ?? "");
@@ -152,7 +137,7 @@ export const undeleteItem: Handler = async (ctx, { params, body }) => {
 // POST /wishlist/reorder { ids } — новый ручной порядок (ids — все желания
 // в нужном порядке; не упомянутые встают в конец).
 export const reorderItems: Handler = async (ctx, { body }) => {
-  const { ids } = parseInput(z.object({ ids: z.array(z.string()) }), body);
+  const { ids } = parseInput(ReorderInputSchema, body);
   await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const items = listOf(db, user.id);
@@ -172,12 +157,6 @@ export const reorderItems: Handler = async (ctx, { body }) => {
   return { ok: true };
 };
 
-const GivenSchema = z.object({
-  fromUserId: z.string().optional(),
-  fromName: z.string().trim().max(40).optional(),
-  at: z.string().min(1),
-});
-
 // itemKey брони: productId или "custom:<title>" (TECH_SPEC §5 Reservation).
 export const itemKeyOf = (item: WishlistItem) =>
   item.source.kind === "product" ? item.source.productId : `custom:${item.id}`;
@@ -185,7 +164,7 @@ export const itemKeyOf = (item: WishlistItem) =>
 // POST /wishlist/items/:id/given — «Мне это подарили»: желание уходит во
 // вкладку «Подарили», брони на него закрываются (гость видит «Уже подарено»).
 export const markGiven: Handler = async (ctx, { params, body }) => {
-  const given = parseInput(GivenSchema, body);
+  const given = parseInput(GivenInputSchema, body);
   const item = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const target = findItem(db, user.id, params.id ?? "");
@@ -217,10 +196,7 @@ export const markGiven: Handler = async (ctx, { params, body }) => {
 // тосте сразу после «Мне это подарили»: желание встаёт на прежнее место, а
 // закрытые этим действием брони снова открыты — будто ничего не было.
 export const restoreItem: Handler = async (ctx, { params, body }) => {
-  const { undo = false } = parseInput(
-    z.object({ undo: z.boolean().optional() }),
-    body ?? {},
-  );
+  const { undo = false } = parseInput(RestoreInputSchema, body ?? {});
   const item = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const target = findItem(db, user.id, params.id ?? "");
@@ -228,7 +204,9 @@ export const restoreItem: Handler = async (ctx, { params, body }) => {
     if (undo) {
       const key = itemKeyOf(target);
       // Брони, закрытые этим «подарили» (только что, а не давно).
-      const closedAfter = new Date(ctx.clock.now() - 10 * 60_000).toISOString();
+      const closedAfter = new Date(
+        ctx.clock.now() - UNDELETE_WINDOW_MS,
+      ).toISOString();
       db.reservations.forEach((reservation) => {
         if (
           reservation.ownerId === user.id &&

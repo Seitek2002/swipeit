@@ -61,7 +61,7 @@ const sortedViews = (dates: readonly ImportantDate[], now: number) =>
         a.createdAt.localeCompare(b.createdAt),
     );
 
-const datesOf = async (tx: Tx, ownerId: string) =>
+export const datesOf = async (tx: Tx, ownerId: string) =>
   (
     await tx
       .select()

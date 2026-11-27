@@ -1,3 +1,7 @@
+import {
+  MetaPatchInputSchema,
+  OccasionInputSchema,
+} from "@swipeit/core/api/wishlist/inputs";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
@@ -14,7 +18,6 @@ import type {
   Reservation,
   ReservationsView,
 } from "../../wishlist/types";
-import { OccasionSchema } from "../../wishlist/types";
 import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, notFound, validation } from "../errors";
@@ -35,15 +38,8 @@ const changed = (
 
 // ── Повод, отправка, подсказка ──────────────────────────────────────────
 
-// Повод из запроса. Свой (старый custom) — до 60 символов, как в ссылке
-// (share-codec). important — со своей датой (dateId), остальное сервер
-// дополнит сам (normalizeOccasion).
-export const OccasionInputSchema = OccasionSchema.extend({
-  label: z.string().trim().max(60, "Повод — до 60 символов").optional(),
-  dateId: z.string().max(60).optional(),
-}).refine((occasion) => occasion.kind !== "important" || occasion.dateId, {
-  message: "Выбери дату",
-});
+// Повод из запроса — общая схема core (BACKEND.md B07).
+export { OccasionInputSchema };
 
 // Один ключ — одно желание в гостевом виде: товар, лайкнутый заново, пока
 // старая копия в «Подарили», после «Вернуть» оказался бы дважды.
@@ -73,15 +69,9 @@ export const guestItems = (db: Db, ownerId: string) =>
     itemKeyOf,
   );
 
-const MetaPatchSchema = z.object({
-  occasion: OccasionInputSchema.nullable().optional(),
-  message: z.string().trim().max(200, "Сообщение — до 200 символов").optional(),
-  hideReservationCount: z.boolean().optional(),
-});
-
 // PATCH /wishlist/meta — повод, сообщение, «Не показывать мне даже это».
 export const updateMeta: Handler = async (ctx, { body }) => {
-  const patch = parseInput(MetaPatchSchema, body);
+  const patch = parseInput(MetaPatchInputSchema, body);
   const now = ctx.clock.now();
   const meta = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);

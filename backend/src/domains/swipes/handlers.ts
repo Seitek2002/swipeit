@@ -20,7 +20,11 @@ import { nanoid } from "nanoid";
 import type { ServerContext, ServerHandler, Tx } from "../../context";
 import { productSwipes, users, wishlistItems } from "../../db/schema";
 import { lockMe, rowToUser } from "../users/queries";
-import { checkShareUnlock, countActiveWishes } from "../wishlist/queries";
+import {
+  checkShareUnlock,
+  countActiveWishes,
+  nextOrderFor,
+} from "../wishlist/queries";
 import { swipesOf } from "./queries";
 
 // Свайпы своей ленты и ленты по ссылке-фильтру (BACKEND.md B06) — логика
@@ -102,7 +106,7 @@ const upsertWish = async (
     sourceKind: "product",
     productId,
     priority,
-    sortOrder: sql`(select coalesce(max(${wishlistItems.sortOrder}), -1) + 1 from ${wishlistItems} where ${wishlistItems.ownerId} = ${ownerId})`,
+    sortOrder: nextOrderFor(ownerId),
     variantChoice: variantChoice ?? null,
     addedAt: at,
   });

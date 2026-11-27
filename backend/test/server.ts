@@ -10,12 +10,21 @@ import { NOW, testCatalog } from "./contract/client";
 
 export type TestUser = { id: string; token: string };
 
-export const createTestServer = async (database: Db) => {
+// Часы, которые тест двигает сам.
+export const makeClock = (start = NOW) => {
+  let now = start;
+  return { now: () => now, advance: (ms: number) => (now += ms) };
+};
+
+export const createTestServer = async (
+  database: Db,
+  clock: { now: () => number } = { now: () => NOW },
+) => {
   const app = buildApp({
     config: loadConfig({ LOG_LEVEL: "silent" }),
     db: database,
     catalog: await testCatalog(),
-    clock: { now: () => NOW },
+    clock,
     random: createSeededRandom("server-test"),
   });
 
