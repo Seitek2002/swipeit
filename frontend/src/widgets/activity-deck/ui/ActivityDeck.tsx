@@ -18,7 +18,7 @@ import {
   ActivityTicket,
   formatPerPerson,
 } from "@/entities/activity";
-import { type PlanView, computeMatches } from "@/entities/plan";
+import { type PlanView, computeMatches, formatDeadline } from "@/entities/plan";
 
 import { isApiError, planKeys, swipePlan, undoPlanSwipe } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
@@ -219,7 +219,13 @@ export const ActivityDeck = ({ view, meId }: Props) => {
         empty={
           <EmptyState
             object="ticket"
-            title="Колода закончилась. Ждём остальных — итоги откроются, когда закончат все."
+            // «До даты» — называем и дедлайн: итоги откроются раньше, если
+            // все закончат, но не позже него (auto-tasks U12).
+            title={
+              plan.mode === "deadline" && plan.deadline
+                ? `Колода закончилась. Ждём остальных — итоги откроются, когда закончат все, но не позже ${formatDeadline(plan.deadline).replace(/^До /, "")}.`
+                : "Колода закончилась. Ждём остальных — итоги откроются, когда закончат все."
+            }
           />
         }
       />
