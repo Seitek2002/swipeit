@@ -56,7 +56,15 @@ describe("каркас сервера", () => {
 describe("остановка", () => {
   it("app.close() дожидается начатого запроса (SIGTERM без обрыва)", async () => {
     const app = buildApp({ config: loadConfig({ LOG_LEVEL: "silent" }) });
+    // Остановку начинаем, когда обработчик уже работает, а не через
+    // фиксированные 50 мс: под нагрузкой запрос мог дойти позже close(), и
+    // Fastify честно отвечал 503 (return503OnClosing) — тест мигал.
+    let started: () => void = () => undefined;
+    const handlerStarted = new Promise<void>((resolve) => {
+      started = resolve;
+    });
     app.get("/v1/slow", async () => {
+      started();
       await new Promise((resolve) => setTimeout(resolve, 200));
       return { ok: true };
     });
@@ -64,8 +72,8 @@ describe("остановка", () => {
     const address = app.server.address();
     const port = typeof address === "object" && address ? address.port : 0;
     const pending = fetch(`http://127.0.0.1:${port}/v1/slow`);
-    // Запрос уже ушёл — начинаем остановку.
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // Запрос уже в обработчике — начинаем остановку.
+    await handlerStarted;
     const closed = app.close();
     const response = await pending;
     expect(response.status).toBe(200);
