@@ -2,25 +2,17 @@
 
 import { useRef, useState } from "react";
 
-import {
-  Copy,
-  MessageCircle,
-  QrCode as QrIcon,
-  Send,
-  Share2,
-} from "lucide-react";
+import { Copy, QrCode as QrIcon, Share2 } from "lucide-react";
 
 import {
   type SharePayload,
   canNativeShare,
   copyText,
   shareNative,
-  telegramUrl,
-  whatsappUrl,
 } from "@/shared/lib/dom";
 import { useMounted } from "@/shared/lib/dom";
+import { cn } from "@/shared/lib/utils";
 
-import { Button } from "../button";
 import { QrCode } from "../qr-code";
 import { toast } from "../toast";
 
@@ -37,10 +29,17 @@ type Props = {
   secondary?: boolean;
 };
 
-const ICON = { size: 20, strokeWidth: 1.75, "aria-hidden": true } as const;
+const ICON = { size: 24, strokeWidth: 1.75, "aria-hidden": true } as const;
 
-// Кнопки отправки (DESIGN.md §8.4): «Поделиться» (где есть системное),
-// Telegram, WhatsApp, «Скопировать ссылку», «Показать QR». Первая — главная.
+// Кнопки отправки — ряд круглых иконок (решение владельца от 27.11.2026:
+// экономим место, Telegram и WhatsApp убраны — они есть в «Поделиться»):
+// «Поделиться» (где есть системное), «Скопировать ссылку», «Показать QR».
+// Первая — главная. Подпись — в aria-label и title.
+const ROUND =
+  "grid size-14 place-items-center rounded-full transition-[transform,opacity] duration-[120ms] select-none active:scale-[0.94] aria-disabled:pointer-events-none aria-disabled:opacity-40";
+const PRIMARY =
+  "bg-mandarin text-ink shadow-[0_8px_20px_-6px_rgb(255_138_61/0.6)]";
+const SECONDARY = "bg-velvet-3 text-paper";
 export const ShareActions = ({
   getPayload,
   onError,
@@ -80,90 +79,60 @@ export const ShareActions = ({
     }
   };
 
-  // Мессенджер — в новой вкладке. Окно открываем до await: иначе браузер
-  // заблокирует его как всплывающее. Ссылка не собралась — пустую вкладку
-  // закрываем, иначе человек остаётся в ней, а шторка с ошибкой — здесь.
-  const openMessenger = (build: (payload: SharePayload) => string) => {
-    if (busyRef.current) return;
-    // Без "noopener" в параметрах: с ним window.open всегда возвращает null.
-    // Связь с нашей вкладкой обрываем вручную.
-    const opened = window.open("about:blank", "_blank");
-    if (opened) opened.opener = null;
-    void run(
-      (payload) => {
-        const url = build(payload);
-        if (opened && !opened.closed) opened.location.href = url;
-        else window.location.href = url;
-      },
-      { fail: () => opened?.close(), again: () => openMessenger(build) },
-    );
-  };
+  const copy = () =>
+    void run(async (payload) => {
+      const ok = await copyText(payload.url);
+      toast(ok ? "Ссылка скопирована" : "Не получилось скопировать", {
+        tone: ok ? "success" : "error",
+      });
+    });
+
+  // Главная — первая кнопка ряда, если на экране нет своей главной.
+  const firstTone = secondary ? SECONDARY : PRIMARY;
+  const qrLabelText = qrUrl ? "Скрыть QR" : "Показать QR";
 
   return (
     <div className="flex flex-col gap-2">
-      {native && (
-        <Button
-          size="lg"
-          variant={secondary ? "secondary" : "primary"}
+      <div className="flex justify-center gap-5">
+        {native && (
+          <button
+            type="button"
+            aria-label="Поделиться"
+            title="Поделиться"
+            aria-disabled={busy || undefined}
+            className={cn(ROUND, firstTone)}
+            onClick={() =>
+              void run((payload) => shareNative(payload).then(() => undefined))
+            }
+          >
+            <Share2 {...ICON} />
+          </button>
+        )}
+        <button
+          type="button"
+          aria-label="Скопировать ссылку"
+          title="Скопировать ссылку"
           aria-disabled={busy || undefined}
-          icon={<Share2 {...ICON} />}
-          onClick={() =>
-            void run((payload) => shareNative(payload).then(() => undefined))
-          }
+          className={cn(ROUND, native ? SECONDARY : firstTone)}
+          onClick={copy}
         >
-          Поделиться
-        </Button>
-      )}
-      <Button
-        size="lg"
-        variant={native || secondary ? "secondary" : "primary"}
-        aria-disabled={busy || undefined}
-        icon={<Send {...ICON} />}
-        onClick={() => openMessenger(telegramUrl)}
-      >
-        Отправить в Telegram
-      </Button>
-      <Button
-        size="lg"
-        variant="secondary"
-        aria-disabled={busy || undefined}
-        icon={<MessageCircle {...ICON} />}
-        onClick={() => openMessenger(whatsappUrl)}
-      >
-        Отправить в WhatsApp
-      </Button>
-      {/* Строками на всю ширину (DESIGN.md §8.4): в два столбца «Скопировать
-          ссылку» не помещается. */}
-      <div className="flex flex-col gap-2">
-        <Button
-          size="lg"
-          variant="secondary"
+          <Copy {...ICON} />
+        </button>
+        <button
+          type="button"
+          aria-label={qrLabelText}
+          title={qrLabelText}
+          aria-pressed={Boolean(qrUrl)}
           aria-disabled={busy || undefined}
-          icon={<Copy {...ICON} />}
-          onClick={() =>
-            void run(async (payload) => {
-              const ok = await copyText(payload.url);
-              toast(ok ? "Ссылка скопирована" : "Не получилось скопировать", {
-                tone: ok ? "success" : "error",
-              });
-            })
-          }
-        >
-          Скопировать ссылку
-        </Button>
-        <Button
-          size="lg"
-          variant="secondary"
-          aria-disabled={busy || undefined}
-          icon={<QrIcon {...ICON} />}
+          className={cn(ROUND, SECONDARY)}
           onClick={() =>
             qrUrl
               ? setQrUrl(null)
               : void run((payload) => setQrUrl(payload.url))
           }
         >
-          {qrUrl ? "Скрыть QR" : "Показать QR"}
-        </Button>
+          <QrIcon {...ICON} />
+        </button>
       </div>
       {qrUrl && (
         <QrCode
