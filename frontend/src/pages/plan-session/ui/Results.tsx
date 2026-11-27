@@ -251,7 +251,10 @@ export const Results = ({ view, meId }: Props) => {
           </ResultRow>
         ))}
       </ul>
-      <div className="flex flex-col gap-2">
+      {/* Действия — в липком низу (auto-tasks U08): при 9 совпадениях
+          «Крутить барабан» уезжал на второй экран. Список прокручивается над
+          ним, бархатный градиент отделяет кнопки от карточек. */}
+      <div className="from-velvet sticky bottom-0 z-10 -mx-5 -mb-4 flex flex-col gap-2 bg-linear-to-t from-75% to-transparent px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+12px)]">
         {voting ? (
           isOwner && (
             <>
