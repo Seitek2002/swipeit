@@ -35,10 +35,10 @@ describe("шаги отправки вишлиста", () => {
   it("варианты — ближайшая дата первой, со своим днём рождения и датами", () => {
     const options = whenOptions({ birthday: "03-14" }, [anniversary], NOW);
     expect(options.map((option) => option.label)).toEqual([
-      "Новый год, 31 декабря",
+      "Новый год, 31\u00a0декабря",
       "8 Марта",
-      "Мой день рождения, 14 марта",
-      "Годовщина, 2 июня",
+      "Мой день рождения, 14\u00a0марта",
+      "Годовщина, 2\u00a0июня",
     ]);
     expect(options[3]?.occasion).toEqual({ kind: "important", dateId: "d_1" });
   });

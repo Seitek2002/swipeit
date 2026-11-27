@@ -44,13 +44,13 @@ describe("reminderText", () => {
       date: "2027-06-02",
     };
     expect(reminderText({ ...anniversary, daysLeft: 26 })).toBe(
-      "Через 26 дней — Годовщина, 2 июня",
+      "Через 26 дней — Годовщина, 2\u00a0июня",
     );
     expect(reminderText({ ...anniversary, daysLeft: 1 })).toBe(
-      "Завтра — Годовщина, 2 июня",
+      "Завтра — Годовщина, 2\u00a0июня",
     );
     expect(reminderText({ ...anniversary, daysLeft: 0 })).toBe(
-      "Сегодня — Годовщина, 2 июня",
+      "Сегодня — Годовщина, 2\u00a0июня",
     );
   });
 });
