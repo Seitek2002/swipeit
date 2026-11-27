@@ -552,6 +552,8 @@ export const votePlan: Handler = async (ctx, { params, body }) => {
     return viewOf(db, plan, catalog);
   });
   changed(ctx, view.plan.id);
+  // Голосование началось или продолжается — боты-участники голосуют тоже.
+  if (input.activityId !== null) trigger(ctx, "plan:voted", view.plan.id);
   return view;
 };
 

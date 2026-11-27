@@ -1,4 +1,5 @@
 import type { Activity } from "../../catalog/types";
+import { voteCandidates } from "../../plans/matches";
 import type { PlanView } from "../../plans/types";
 import type { User } from "../../users/types";
 import type { BotApi, BotBehavior } from "./engine";
@@ -182,7 +183,54 @@ const readyUp = async (api: BotApi, planId: string) => {
   }
 };
 
+// Бот голосует в «Выбрать самим» через 3–15 с: за то, что сам лайкнул среди
+// кандидатов, иначе — за любого кандидата (auto-tasks U07). Уже
+// проголосовавших не трогаем; повтор (resume, новый голос) безопасен — у
+// шага ключ.
+const VOTE_DELAY_MS: [number, number] = [3_000, 15_000];
+
+const voteLater = async (api: BotApi, planId: string) => {
+  const db = await api.db.read();
+  const plan = db.plans[planId];
+  if (!plan || plan.status !== "results") return;
+  if (Object.keys(plan.votes).length === 0) return;
+  const bots = plan.participantIds
+    .filter((id) => !(id in plan.votes))
+    .map((id) => db.users[id])
+    .filter((user): user is User => Boolean(user?.isBot));
+  for (const bot of bots) {
+    api.schedule(
+      bot,
+      VOTE_DELAY_MS,
+      async () => {
+        const fresh = (await api.db.read()).plans[planId];
+        if (!fresh || fresh.status !== "results" || bot.id in fresh.votes) {
+          return;
+        }
+        const candidates = voteCandidates(fresh);
+        const liked = candidates.filter(
+          (id) => fresh.swipes[bot.id]?.[id] === "like",
+        );
+        const pool = liked.length > 0 ? liked : candidates;
+        const activityId = pool[api.random.int(pool.length)];
+        if (!activityId) return;
+        await api.as(bot.id, {
+          method: "POST",
+          path: `/plans/${encodeURIComponent(planId)}/votes`,
+          body: { activityId },
+        });
+        api.report(
+          bot.id,
+          `${bot.name} ${byGender(bot, "проголосовал", "проголосовала", "проголосовал(а)")} в «${fresh.title}»`,
+        );
+      },
+      `plan:vote:${planId}:${bot.id}`,
+    );
+  }
+};
+
 export const plansBehavior: BotBehavior = {
+  "plan:voted": (api, event) => voteLater(api, event.id),
   "plan:created": (api, event) => readyUp(api, event.id),
   // Каждый бот-участник свайпает колоду в своём темпе: «Прямо сейчас» —
   // бодро, «До даты» — неспешно. Повторный plan:started («Добавить ещё
@@ -195,6 +243,10 @@ export const plansBehavior: BotBehavior = {
     for (const plan of Object.values(db.plans)) {
       if (plan.status === "lobby") {
         await readyUp(api, plan.id).catch(() => undefined);
+        continue;
+      }
+      if (plan.status === "results") {
+        await voteLater(api, plan.id).catch(() => undefined);
         continue;
       }
       if (plan.status !== "swiping") continue;

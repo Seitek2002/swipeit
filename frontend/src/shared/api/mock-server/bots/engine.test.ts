@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import type { RealtimeEvent } from "@/shared/lib/realtime/types";
 
+import { voteCandidates } from "../../plans/matches";
 import type { ReservationsView } from "../../wishlist/types";
 import {
   createFixedClock,
@@ -11,7 +12,7 @@ import {
   createMemoryDb,
   createMemorySettings,
 } from "../adapters/memory";
-import { parseProducts } from "../catalog-parse";
+import { parseActivities, parseProducts } from "../catalog-parse";
 import type { SettingsAccess } from "../context";
 import { createSeededRandom } from "../random";
 import { DEMO_USER_ID, createSeedDb } from "../seed";
@@ -24,6 +25,17 @@ const stubPath = fileURLToPath(
 );
 const { items: products } = parseProducts(
   JSON.parse(readFileSync(stubPath, "utf8")),
+);
+
+const { items: activities } = parseActivities(
+  JSON.parse(
+    readFileSync(
+      fileURLToPath(
+        new URL("../../../../../catalog-stub/activities.json", import.meta.url),
+      ),
+      "utf8",
+    ),
+  ),
 );
 
 const NOW = new Date(2026, 10, 26, 12).getTime();
@@ -115,7 +127,7 @@ beforeEach(async () => {
   settings = createMemorySettings();
   manual = createManualScheduler();
   server = createMockServer({
-    catalog: createMemoryCatalog(products),
+    catalog: createMemoryCatalog(products, activities),
     clock,
     db: createMemoryDb(async () =>
       createSeedDb({ products, now: clock.now() }),
@@ -254,5 +266,62 @@ describe("боты Санты досылают пропущенное (auto-task
       (event) => event.type === "bot:action" && event.text.includes("вступил"),
     );
     expect(joinedRows).toHaveLength(BOTS.length);
+  });
+});
+
+describe("боты голосуют в «Выбрать самим» (auto-tasks U07)", () => {
+  // Сценарий «Новый год»: план, где боты уже досвайпали; переводим его к
+  // итогам напрямую в базе — дедлайн в тесте не ждём.
+  const planAtResults = async () => {
+    await server.handle({
+      method: "POST",
+      path: "/demo/scenario/new-year",
+      userId: DEMO_USER_ID,
+    });
+    const db = server.deps.db as unknown as {
+      write: (mutate: (data: never) => void) => Promise<void>;
+    };
+    await db.write((data: { plans: Record<string, { status: string }> }) => {
+      const plan = data.plans.pl_new_year;
+      if (plan) plan.status = "results";
+    });
+    return (await server.deps.db.read()).plans.pl_new_year;
+  };
+
+  it("человек проголосовал — боты голосуют за свои лайки среди кандидатов, по разу", async () => {
+    const plan = await planAtResults();
+    expect(plan?.status).toBe("results");
+    startEngine();
+    await flush();
+    if (!plan) throw new Error("нет плана сценария");
+    const [first] = voteCandidates(plan);
+    await server.handle({
+      method: "POST",
+      path: "/plans/pl_new_year/votes",
+      userId: DEMO_USER_ID,
+      body: { activityId: first },
+    });
+    await flush();
+    const bots = (plan?.participantIds ?? []).filter(
+      (id) => id !== DEMO_USER_ID,
+    );
+    expect(manual.tasks.length).toBe(bots.length);
+    for (const { ms } of manual.tasks) {
+      expect(ms).toBeGreaterThanOrEqual(3_000 * 0.7);
+      expect(ms).toBeLessThanOrEqual(15_000 * 1.4);
+    }
+    await manual.runAll();
+    const after = (await server.deps.db.read()).plans.pl_new_year;
+    expect(Object.keys(after?.votes ?? {}).sort()).toEqual(
+      [DEMO_USER_ID, ...bots].sort(),
+    );
+  });
+
+  it("«Выкл» — боты не голосуют", async () => {
+    await planAtResults();
+    settings.update({ botSpeed: "off" });
+    startEngine();
+    await flush();
+    expect(manual.tasks).toHaveLength(0);
   });
 });

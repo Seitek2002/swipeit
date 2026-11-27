@@ -16,6 +16,9 @@ export type RealtimeScope =
 export type BotTrigger =
   | "plan:created"
   | "plan:started"
+  // Кто-то проголосовал в «Выбрать самим» — боты голосуют тоже
+  // (auto-tasks U07).
+  | "plan:voted"
   | "santa:created"
   | "santa:drawn"
   | "wishlist:shared";
