@@ -34,6 +34,15 @@ describe("каркас сервера", () => {
     expect(() => loadConfig({ DATABASE_URL: "mysql://x" })).toThrow(
       /DATABASE_URL/,
     );
+    // Адрес коротких ссылок в production — тоже только явно (§6.2).
+    expect(() =>
+      loadConfig({ NODE_ENV: "production", DATABASE_URL: "postgres://db/x" }),
+    ).toThrow(/PUBLIC_SHARE_URL/);
+    expect(
+      loadConfig({ PUBLIC_SHARE_URL: "https://swipeit.example/" })
+        .PUBLIC_SHARE_URL,
+    ).toBe("https://swipeit.example");
+    expect(loadConfig({}).PUBLIC_SHARE_URL).toBe("http://localhost:4100");
   });
 
   it("неизвестный путь — 404", async () => {

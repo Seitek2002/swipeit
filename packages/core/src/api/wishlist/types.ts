@@ -123,7 +123,9 @@ export const ExternalWishlistSchema = z.object({
     z.object({
       key: z.string(),
       productId: z.string().optional(),
-      custom: CustomWishSchema.omit({ imageKey: true }).optional(),
+      // imageKey — только в гостевом виде с сервера (живая короткая ссылка,
+      // BACKEND.md §6.2): фото своего желания. В длинной ссылке фото нет.
+      custom: CustomWishSchema.optional(),
       priority: z.enum(["normal", "top"]),
       variantChoice: z.record(z.string(), z.string()).optional(),
       note: z.string().optional(),

@@ -26,6 +26,16 @@ import {
 } from "./domains/dates/handlers";
 import { getUser, listFriends } from "./domains/friends/handlers";
 import {
+  createReservation,
+  createShareLink,
+  deleteReservation,
+  getReservations,
+  getShare,
+  getUserWishlist,
+  importExternalWishlist,
+  shareWishlist,
+} from "./domains/guest/handlers";
+import {
   createSwipe,
   restartSwipes,
   undoSwipe,
@@ -88,6 +98,14 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "POST /wishlist/items/:id/restore": restoreItem,
   "PATCH /wishlist/meta": updateMeta,
   "POST /wishlist/given-hint/dismiss": dismissGivenHint,
+  "POST /wishlist/share": shareWishlist,
+  "POST /share-links": createShareLink,
+  "GET /share/:code": getShare,
+  "GET /users/:id/wishlist": getUserWishlist,
+  "POST /external-wishlists": importExternalWishlist,
+  "GET /reservations": getReservations,
+  "POST /reservations": createReservation,
+  "DELETE /reservations/:id": deleteReservation,
 };
 
 export type RouteDeps = {
@@ -95,6 +113,7 @@ export type RouteDeps = {
   clock: Clock;
   db: Db;
   hub: EventHub;
+  publicShareUrl: string;
   random: Random;
 };
 
@@ -137,6 +156,7 @@ export const registerRoutes = (app: FastifyInstance, deps: RouteDeps) => {
               catalog: deps.catalog,
               events: { publish: (event) => events.push(event) },
               log: request.log,
+              publicShareUrl: deps.publicShareUrl,
             },
             {
               body: request.body,

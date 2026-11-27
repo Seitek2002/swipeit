@@ -22,6 +22,12 @@ const ConfigSchema = z.object({
   // Каталог Товароведа (BACKEND.md §8): products.json, activities.json,
   // meta.json. По умолчанию — catalog/ рядом с backend/.
   CATALOG_DIR: z.string().min(1).default("../catalog"),
+  // Начало коротких ссылок (BACKEND.md §6.2): url = PUBLIC_SHARE_URL/s/<код>.
+  // Пока домена нет — адрес API. В production обязателен явно.
+  PUBLIC_SHARE_URL: z
+    .url({ protocol: /^https?$/ })
+    .transform((url) => url.replace(/\/+$/, ""))
+    .optional(),
   // Дни считаются по календарю Бишкека (BACKEND.md §2.5): процесс живёт в
   // этом поясе, даже если сервер в UTC.
   TZ: z.string().min(1).default("Asia/Bishkek"),
@@ -31,8 +37,12 @@ const ConfigSchema = z.object({
 export const DEV_DATABASE_URL =
   "postgres://swipeit:swipeit@127.0.0.1:5433/swipeit";
 
-export type Config = Omit<z.infer<typeof ConfigSchema>, "DATABASE_URL"> & {
+export type Config = Omit<
+  z.infer<typeof ConfigSchema>,
+  "DATABASE_URL" | "PUBLIC_SHARE_URL"
+> & {
   DATABASE_URL: string;
+  PUBLIC_SHARE_URL: string;
 };
 
 export class ConfigError extends Error {
@@ -47,11 +57,24 @@ export const loadConfig = (env: NodeJS.ProcessEnv = process.env): Config => {
       .join("\n");
     throw new ConfigError(`Неверные переменные окружения:\n${details}`);
   }
-  const { DATABASE_URL, ...rest } = parsed.data;
-  if (!DATABASE_URL && rest.NODE_ENV === "production") {
-    throw new ConfigError(
-      "Неверные переменные окружения:\n  DATABASE_URL: обязательна в production",
-    );
+  const { DATABASE_URL, PUBLIC_SHARE_URL, ...rest } = parsed.data;
+  // Секрет и адрес ссылок в production — только явно, без значений для
+  // разработки.
+  if (rest.NODE_ENV === "production") {
+    const missing = [
+      ...(DATABASE_URL ? [] : ["DATABASE_URL"]),
+      ...(PUBLIC_SHARE_URL ? [] : ["PUBLIC_SHARE_URL"]),
+    ];
+    if (missing.length > 0) {
+      const details = missing
+        .map((name) => `  ${name}: обязательна в production`)
+        .join("\n");
+      throw new ConfigError(`Неверные переменные окружения:\n${details}`);
+    }
   }
-  return { ...rest, DATABASE_URL: DATABASE_URL ?? DEV_DATABASE_URL };
+  return {
+    ...rest,
+    DATABASE_URL: DATABASE_URL ?? DEV_DATABASE_URL,
+    PUBLIC_SHARE_URL: PUBLIC_SHARE_URL ?? `http://localhost:${rest.PORT}`,
+  };
 };

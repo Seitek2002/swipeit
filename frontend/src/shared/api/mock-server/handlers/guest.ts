@@ -1,9 +1,12 @@
 import {
+  ExternalWishlistInputSchema,
   MetaPatchInputSchema,
   OccasionInputSchema,
+  ReservationDeleteQuerySchema,
+  ReservationsQueryInputSchema,
+  ReserveInputSchema,
 } from "@swipeit/core/api/wishlist/inputs";
 import { nanoid } from "nanoid";
-import { z } from "zod";
 
 import { toDateKey } from "@/shared/lib/format";
 import {
@@ -200,10 +203,7 @@ export const ownerReservationInfo = (db: Db, ownerId: string, now: number) => {
 
 // POST /external-wishlists — импорт снимка из ссылки на стороне гостя.
 export const importExternalWishlist: Handler = async (ctx, { body }) => {
-  const { encoded } = parseInput(
-    z.object({ encoded: z.string().min(1) }),
-    body,
-  );
+  const { encoded } = parseInput(ExternalWishlistInputSchema, body);
   const shared = decodeWishlist(encoded);
   if (!shared) throw new ApiError(400, "VALIDATION", "Ссылка повреждена");
   const external: ExternalWishlist = {
@@ -265,26 +265,15 @@ export const getUserWishlist: Handler = async (ctx, { params }) => {
 
 // ── Брони ───────────────────────────────────────────────────────────────
 
-// id гостя — всегда «g_…»: так его нельзя выдать за id пользователя («u_…»)
-// и бронировать или снимать брони от чужого имени.
-const GuestIdSchema = z
-  .string()
-  .regex(/^g_[A-Za-z0-9_-]+$/, "Неверный id гостя");
-
 // Кто бронирует: пользователь вкладки или гость без профиля (его id живёт
 // в localStorage гостя и приходит в запросе).
 const reserverId = (ctx: HandlerContext, guestId?: string) =>
   ctx.userId ?? guestId;
 
-const ReservationsQuerySchema = z.object({
-  ownerId: z.string().min(1),
-  guestId: GuestIdSchema.optional(),
-});
-
 // GET /reservations?ownerId — владельцу только количество (сюрприз!), гостю —
 // какие желания заняты, какое из них его и что уже подарено.
 export const getReservations: Handler = async (ctx, { query }) => {
-  const { ownerId, guestId } = parseInput(ReservationsQuerySchema, query);
+  const { ownerId, guestId } = parseInput(ReservationsQueryInputSchema, query);
   const db = await ctx.db.read();
   if (ctx.userId === ownerId) {
     const view: ReservationsView = {
@@ -318,18 +307,9 @@ export const getReservations: Handler = async (ctx, { query }) => {
   return view;
 };
 
-const ReserveBodySchema = z.object({
-  ownerId: z.string().min(1),
-  itemKey: z.string().min(1),
-  // Имя нужно только гостю без профиля — «имя только для брони». У профиля
-  // имя берётся из него самого.
-  name: z.string().trim().max(40, "Имя — до 40 символов").optional(),
-  guestId: GuestIdSchema.optional(),
-});
-
 // POST /reservations — «Забронирую я».
 export const createReservation: Handler = async (ctx, { body }) => {
-  const input = parseInput(ReserveBodySchema, body);
+  const input = parseInput(ReserveInputSchema, body);
   const me = reserverId(ctx, input.guestId);
   if (!me) throw new ApiError(400, "VALIDATION", "Не понятно, кто бронирует");
   if (me === input.ownerId) {
@@ -368,10 +348,7 @@ export const createReservation: Handler = async (ctx, { body }) => {
 
 // DELETE /reservations/:id — снять свою бронь.
 export const deleteReservation: Handler = async (ctx, { params, query }) => {
-  const { guestId } = parseInput(
-    z.object({ guestId: GuestIdSchema.optional() }),
-    query,
-  );
+  const { guestId } = parseInput(ReservationDeleteQuerySchema, query);
   const me = reserverId(ctx, guestId);
   await ctx.db.write((db) => {
     const reservation = db.reservations.find((entry) => entry.id === params.id);

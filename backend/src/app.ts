@@ -90,7 +90,16 @@ export const buildApp = ({
     };
   });
 
-  if (db && catalog) registerRoutes(app, { db, catalog, clock, random, hub });
+  if (db && catalog) {
+    registerRoutes(app, {
+      db,
+      catalog,
+      clock,
+      random,
+      hub,
+      publicShareUrl: config.PUBLIC_SHARE_URL,
+    });
+  }
 
   return app;
 };

@@ -21,6 +21,8 @@ export type ServerContext = {
   clock: Clock;
   events: EventSink;
   log: FastifyBaseLogger;
+  // Начало коротких ссылок: url = publicShareUrl/s/<код> (§6.2).
+  publicShareUrl: string;
   random: Random;
   // Сессия запроса: выход закрывает только её (§3.4).
   sessionId: null | string;
