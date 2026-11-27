@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import { ProductDetailsSheet } from "@/features/product-details";
 import {
   SwipeDeck,
   type SwipeDeckHandle,
@@ -12,8 +11,7 @@ import {
 } from "@/features/swipe-deck";
 
 import {
-  GiftTagCard,
-  GiftTagSkeleton,
+  GiftCardSkeleton,
   type Product,
   type ProductFilters,
 } from "@/entities/product";
@@ -34,6 +32,7 @@ import { formatPrice } from "@/shared/lib/format";
 import { useConnectionStatus } from "@/shared/lib/realtime";
 import { Button, EmptyState, toast } from "@/shared/ui";
 
+import { GiftCard } from "./GiftCard";
 import { RIBBON_SEGMENTS, WishRibbon } from "./WishRibbon";
 import { WishlistReadySheet } from "./WishlistReadySheet";
 
@@ -95,7 +94,6 @@ export const GiftDeck = ({
   const [likes, setLikes] = useState<null | number>(null);
   const [drawingBow, setDrawingBow] = useState(false);
   const [readyOpen, setReadyOpen] = useState(false);
-  const [details, setDetails] = useState<null | Product>(null);
 
   // Запросы свайпов — строго по очереди: «Вернуть» не должно обогнать сам
   // свайп (у мока случайная задержка 150–450 ms).
@@ -258,6 +256,9 @@ export const GiftDeck = ({
       () => {
         epoch.current += 1;
         setHistory([]);
+        // Иначе лента исключила бы всё, что свайпнули в этой колоде, и
+        // «Начать заново» вернуло бы пустой стол.
+        swipedRef.current = [];
         void loadMore([], true);
       },
       () => {
@@ -267,21 +268,9 @@ export const GiftDeck = ({
     );
   };
 
-  const handleDetailsDecision = (
-    direction: "left" | "right",
-    variantChoice?: Record<string, string>,
-  ) => {
-    if (details && variantChoice) variants.current[details.id] = variantChoice;
-    setDetails(null);
-    // Шторка уезжает 220ms — потом карточка улетает той же анимацией свайпа.
-    setTimeout(() => deckRef.current?.swipe(direction), 240);
-  };
-
   const empty =
     status === "loading" || status === "idle" ? (
-      <div className="mt-[34px] mb-4 h-[calc(100%-50px)] w-[min(100%,calc((100%-50px)*0.74))] max-w-full">
-        <GiftTagSkeleton />
-      </div>
+      <GiftCardSkeleton />
     ) : status === "error" ? (
       <EmptyState
         title="Не получилось загрузить подарки. Проверь связь и попробуй ещё раз."
@@ -333,12 +322,13 @@ export const GiftDeck = ({
             ? product.title
             : `${product.title}, ${formatPrice(product.priceMin, product.priceMax)}`
         }
-        renderCard={(product, { isTop }) => (
-          <GiftTagCard
+        renderPhotoCard={(product) => (
+          <GiftCard
             product={product}
-            isTop={isTop}
             hidePrices={hidePrices}
-            onOpenDetails={() => setDetails(product)}
+            onVariantChange={(choice) => {
+              variants.current[product.id] = choice;
+            }}
           />
         )}
         disabled={offline}
@@ -346,21 +336,16 @@ export const GiftDeck = ({
         onUndo={handleUndo}
         canUndo={history.length > 0}
         onNeedMore={handleNeedMore}
-        onOpen={setDetails}
         announce={(product, direction) =>
           direction === "left"
             ? `Мимо: ${product.title}`
-            : context.kind === "self"
-              ? `Добавлено в вишлист: ${product.title}`
-              : `Выбрано: ${product.title}`
+            : direction === "up" && context.kind === "self"
+              ? `Очень хочу: ${product.title}`
+              : context.kind === "self"
+                ? `Добавлено в вишлист: ${product.title}`
+                : `Выбрано: ${product.title}`
         }
         empty={empty}
-      />
-      <ProductDetailsSheet
-        product={details}
-        hidePrices={hidePrices}
-        onClose={() => setDetails(null)}
-        onDecide={handleDetailsDecision}
       />
       <WishlistReadySheet
         open={readyOpen}

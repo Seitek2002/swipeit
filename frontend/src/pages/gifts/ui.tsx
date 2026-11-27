@@ -27,10 +27,12 @@ import { Bow, Screen } from "@/shared/ui";
 const SendWishlistChip = () => (
   <Link
     href={ROUTES.WISHLIST}
-    className="bg-velvet-2 border-line text-paper rounded-chip relative mr-1 inline-flex h-9 items-center gap-1.5 border pr-3 pl-2 text-[13px] leading-none font-semibold before:absolute before:-inset-1 before:content-['']"
+    className="bg-velvet-2 border-line text-paper rounded-chip relative mr-1 inline-flex h-9 items-center gap-1.5 border pr-3 pl-2 text-[13px] leading-none font-semibold before:absolute before:-inset-1 before:content-[''] max-[379px]:px-2.5"
   >
     <Bow className="h-[18px] w-[26px]" />
-    Отправить
+    {/* На 360px заголовку «Подарки» не хватает места — остаётся бант,
+        а «Отправить» читает только скринридер. */}
+    <span className="max-[379px]:sr-only">Отправить</span>
   </Link>
 );
 

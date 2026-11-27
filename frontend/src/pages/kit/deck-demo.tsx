@@ -23,7 +23,7 @@ const RESULT: Record<SwipeDirection, string> = {
   up: "Очень хочу",
 };
 
-// Проверка движка колоды (T06) на заглушках: 10 цветных бирок.
+// Проверка движка колоды (T06) в режиме билетиков на заглушках.
 export const DeckDemo = () => {
   const [queue, setQueue] = useState(makeCards);
   const [done, setDone] = useState<

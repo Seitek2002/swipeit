@@ -129,7 +129,7 @@ src/
 ├── features/
 │   ├── swipe-deck/           ДВИЖОК колоды (общий для подарков и занятий): жесты, физика, штампы, undo, клавиатура
 │   ├── product-filters/      шторка фильтров + счётчик
-│   ├── product-details/      шторка «Подробнее» + выбор варианта
+│   ├── product-details/      шторка «Подробнее» (гостевой вишлист, ответ друга) + выбор варианта; секции подробностей переиспользуются в GiftCard
 │   ├── wishlist-share/       шторка отправки, мессенджеры, QR
 │   ├── wishlist-edit/        порядок, заметка, вариант, удаление
 │   ├── custom-wish/          своё желание
@@ -144,7 +144,7 @@ src/
 │   └── calendar-export/      .ics
 ├── entities/
 │   ├── user/                 типы, Avatar, AvatarStack, запросы/хуки
-│   ├── product/              типы, GiftTagCard, мини-бирка, скелетон
+│   ├── product/              типы, фото и текстовый блок GiftCard, мини-бирка, скелетон (сама GiftCard с кнопками и подробностями собирается в widgets/gift-deck)
 │   ├── activity/             типы, ActivityTicket
 │   ├── wishlist/
 │   ├── reservation/

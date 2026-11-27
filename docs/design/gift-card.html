@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Карточка подарка</title>
+<!--
+  Эталон карточки подарка в ленте (DESIGN.md §7 «GiftCard», TASKS T19b).
+  Поведение повторяет ../tap-tap/src/pages/feed/ui/swipe-card.tsx,
+  цвета и шрифты — токены SwipeIt. Четыре состояния: сверху, начало
+  прокрутки, подробности, карточку тянут вправо. Карточки живые:
+  их можно прокручивать, листать фото тапом по краям, тап по названию
+  прокручивает к подробностям. Жест свайпа здесь не сделан — его физика
+  описана в DESIGN.md §6 и есть в tap-tap.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --velvet: #2a1024; --velvet-2: #3a1832; --velvet-3: #4a2241;
+    --line: rgb(255 241 243 / 0.12);
+    --paper: #fff1f3; --paper-2: #f6e1e7; --ink: #2a1024; --ink-soft: #7a5a6e;
+    --rose: #cba8bc; --mandarin: #ff8a3d; --mandarin-ink: #b8460e;
+    --mint: #8fe3c6; --champagne: #ffd27a;
+    --display: "Cormorant Garamond", "Times New Roman", serif;
+    --sans: "Onest", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: #1c0a18; color: var(--paper); font-family: var(--sans);
+    display: flex; gap: 28px; padding: 28px; flex-wrap: wrap; justify-content: center;
+  }
+  figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  figcaption { font-size: 15px; color: var(--rose); }
+
+  /* ── Телефон и экран «Подарки» ─────────────────────────── */
+  .phone {
+    position: relative; width: 390px; height: 844px; overflow: hidden; border-radius: 44px;
+    border: 1px solid var(--line);
+    background:
+      radial-gradient(120% 60% at 50% -10%, rgb(255 138 61 / 0.10), transparent 60%),
+      var(--velvet);
+    display: flex; flex-direction: column;
+  }
+  .hdr { height: 56px; margin-top: 8px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; }
+  .hdr h1 { margin: 0; font: 600 32px/36px var(--display); }
+  .hdr .acts { display: flex; gap: 8px; align-items: center; }
+  .icon-btn { width: 44px; height: 44px; display: grid; place-items: center; color: var(--paper); }
+  .ava { width: 36px; height: 36px; border-radius: 50%; background: #f2c9d6; color: var(--ink); display: grid; place-items: center; font-weight: 600; font-size: 15px; }
+  .ribbon { margin: 4px 16px 0; display: flex; align-items: center; gap: 10px; }
+  .ribbon .segs { display: flex; gap: 4px; }
+  .ribbon .segs i { width: 22px; height: 6px; border-radius: 3px; background: var(--velvet-3); }
+  .ribbon .segs i.on { background: var(--mandarin); }
+  .ribbon span { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--rose); }
+  .chips { margin: 10px 16px 0; display: flex; gap: 8px; }
+  .chip { height: 32px; padding: 0 12px; border-radius: 999px; background: var(--velvet-3); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .deck { position: relative; flex: 1; margin: 12px 16px 0; min-height: 0; }
+  .tabbar {
+    margin: 12px 12px 12px; height: 64px; border-radius: 999px; flex: none;
+    background: rgb(58 24 50 / 0.92); border: 1px solid var(--line);
+    display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;
+  }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: 500; color: var(--rose); position: relative; }
+  .tab.on { color: var(--paper); }
+  .tab.on::after { content: ""; position: absolute; bottom: -9px; width: 4px; height: 4px; border-radius: 50%; background: var(--mandarin); }
+
+  /* ── Карточка ──────────────────────────────────────────── */
+  .card {
+    position: absolute; inset: 0; border-radius: 24px; background: var(--velvet);
+    overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain;
+    box-shadow: 0 18px 40px -12px rgb(10 0 8 / 0.55), 0 4px 10px rgb(10 0 8 / 0.25);
+  }
+  .card::-webkit-scrollbar { display: none; }
+  .card.under { transform: scale(0.95); overflow: hidden; pointer-events: none; }
+
+  .photo { position: relative; height: 100%; overflow: hidden; display: flex; flex-direction: column; }
+  .photo .fill { position: absolute; inset: -40px; width: calc(100% + 80px); height: calc(100% + 80px); object-fit: cover; filter: blur(28px) saturate(1.1); }
+  .photo .pic-area { position: relative; flex: 1; min-height: 0; margin-bottom: -28px; }
+  .photo .pic { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .scrim-top { position: absolute; inset: 0 0 auto; height: 72px; background: linear-gradient(rgb(42 16 36 / 0.38), transparent); pointer-events: none; }
+  .segs-photo { position: absolute; inset: 12px 12px auto; display: flex; gap: 6px; pointer-events: none; }
+  .segs-photo i { height: 4px; flex: 1; border-radius: 2px; background: rgb(255 241 243 / 0.45); }
+  .segs-photo i.on { background: var(--paper); }
+  .tap { position: absolute; top: 0; bottom: 0; width: 50%; border: 0; background: none; cursor: pointer; }
+  .tap.l { left: 0; } .tap.r { right: 0; }
+  .tint { position: absolute; inset: 0; pointer-events: none; }
+  .verdict {
+    position: absolute; left: 50%; top: 42%; width: 64px; height: 64px; margin: -32px 0 0 -32px;
+    border-radius: 50%; background: var(--paper); color: var(--ink); display: grid; place-items: center;
+    box-shadow: 0 10px 24px rgb(10 0 8 / 0.3); opacity: 0; pointer-events: none;
+  }
+  .info {
+    position: relative; padding: 44px 16px 88px; color: var(--paper);
+    background: linear-gradient(to bottom, rgb(42 16 36 / 0) 0, rgb(42 16 36 / 0.88) 44px, rgb(42 16 36 / 0.96) 100%);
+  }
+  .pill { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: var(--mint); color: var(--ink); font-size: 12px; font-weight: 600; }
+  .info-btn { all: unset; cursor: pointer; display: flex; width: 100%; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 8px; }
+  .info h2 { margin: 0; font: 600 26px/30px var(--display); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .meta { margin-top: 6px; display: flex; align-items: center; gap: 12px; }
+  .price { font-size: 17px; line-height: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .store { font-size: 13px; font-weight: 500; color: rgb(255 241 243 / 0.8); display: flex; align-items: center; gap: 4px; }
+  .swatches { display: flex; gap: 4px; }
+  .swatches i { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 0 1.5px rgb(255 241 243 / 0.7); }
+
+  .mini { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--velvet); }
+  .mini img { width: 36px; height: 36px; border-radius: 10px; object-fit: contain; background: #fff; }
+  .mini span { font-size: 17px; line-height: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .details { padding: 0 0 12px; }
+  .sec { margin-top: 12px; border-radius: 16px; background: var(--velvet-2); padding: 16px; }
+  .sec:first-child { margin-top: 0; }
+  .sec-t { display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--rose); }
+  .sec-b { margin-top: 8px; font-size: 15px; line-height: 22px; }
+  .sec-b p { margin: 0 0 8px; } .sec-b p:last-child { margin: 0; }
+  .vchips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .vchip { height: 36px; padding: 0 12px; border-radius: 999px; background: var(--velvet-3); display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; border: 0; color: var(--paper); font-family: inherit; }
+  .vchip i { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 0 1px rgb(255 241 243 / 0.5); }
+  .vchip.on { background: var(--paper); color: var(--ink); }
+  .note { margin-top: 10px; font-size: 13px; color: var(--rose); }
+  .offer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .offer + .offer { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .offer b { font-weight: 600; }
+  .offer .go { display: flex; align-items: center; gap: 4px; color: var(--mandarin); font-size: 15px; font-weight: 600; text-decoration: none; }
+  .ichips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ichips span { height: 32px; padding: 0 12px; border-radius: 999px; background: var(--velvet-3); display: flex; align-items: center; font-size: 13px; font-weight: 500; }
+
+  .bar { position: sticky; bottom: 0; z-index: 3; padding: 0 20px 16px; }
+  .bar .back { position: absolute; inset: -24px 0 0; pointer-events: none; opacity: 0;
+    background: linear-gradient(to top, rgb(42 16 36 / 0.7), rgb(42 16 36 / 0.4) 55%, rgb(42 16 36 / 0)); backdrop-filter: blur(3px); }
+  .bar .row { position: relative; display: flex; align-items: center; justify-content: space-between; }
+  .bar .mid { display: flex; gap: 20px; }
+  .b { border: 0; display: grid; place-items: center; border-radius: 50%; cursor: pointer; padding: 0; }
+  .b.s { width: 44px; height: 44px; }
+  .b.l { width: 56px; height: 56px; backdrop-filter: blur(30px); box-shadow: inset 2px -1px 2px rgb(255 255 255 / 0.16); }
+  .b[disabled] { opacity: 0.4; }
+</style>
+</head>
+<body>
+
+<template id="icons">
+  <svg data-i="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+  <svg data-i="heart" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+  <svg data-i="undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+  <svg data-i="star" viewBox="0 0 24 24" fill="var(--champagne)" stroke="var(--mandarin-ink)" stroke-width="1.4" stroke-linejoin="round"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>
+  <svg data-i="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></svg>
+  <svg data-i="quote" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg>
+  <svg data-i="palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+  <svg data-i="bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg>
+  <svg data-i="ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+  <svg data-i="spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+  <svg data-i="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+  <svg data-i="sliders" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></svg>
+  <svg data-i="gift" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+  <svg data-i="ticket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/></svg>
+  <svg data-i="mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+  <svg data-i="heart-o" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+</template>
+
+<script>
+const IMG = (id, n) => `../../catalog/products/${id}/${n}.webp`;
+const PRODUCTS = {
+  jbl: {
+    id: "p_0044", title: "Колонка JBL Flip 7", category: "Техника", price: "9 800 сом",
+    stores: ["Wildberries"], photos: 3,
+    description: ["Портативная колонка JBL новой модели Flip 7 — компактная, её легко взять с собой на природу или в гости."],
+    offers: [["Wildberries", "9 800 сом"]], interests: ["Музыка", "Гаджеты", "Путешествия"],
+  },
+  bag: {
+    id: "p_0018", title: "Сумка-кроссбоди из натуральной кожи", category: "Одежда и аксессуары", price: "2 740 сом",
+    stores: ["AliExpress"], photos: 5,
+    description: ["Небольшая сумка из натуральной кожи с верхней ручкой и ремнём через плечо. Размер около 23 × 17 × 9 см."],
+    colors: [["Коричневый", "#5A3422"], ["Чёрный", "#1E1E1E"], ["Бордовый", "#6B1E2A"], ["Тёмно-серый", "#55585C"]],
+    offers: [["AliExpress", "2 740 сом"]], interests: ["Мода"],
+  },
+  engine: {
+    id: "p_0048", title: "Конструктор Mould King: двигатель V8 с мотором", category: "Хобби и творчество", price: "5 090 сом",
+    stores: ["AliExpress"], photos: 3,
+    description: ["Сборная модель двигателя V8 (набор 10171) с электромотором: после сборки поршни двигаются."],
+    offers: [["AliExpress", "5 090 сом"]], interests: ["Авто", "Творчество", "Гаджеты"],
+  },
+};
+const icon = (name, size) => {
+  const svg = document.querySelector(`#icons`).content.querySelector(`[data-i="${name}"]`).cloneNode(true);
+  svg.setAttribute("width", size); svg.setAttribute("height", size); svg.removeAttribute("data-i");
+  return svg.outerHTML;
+};
+
+const cardHTML = (p, under) => `
+  <div class="card${under ? " under" : ""}">
+    <div class="photo">
+      <img class="fill" alt="" src="${IMG(p.id, 1)}">
+      <div class="pic-area"><img class="pic" alt="${p.title}" src="${IMG(p.id, 1)}"></div>
+      <div class="scrim-top"></div>
+      <div class="segs-photo">${Array.from({ length: p.photos }, (_, i) => `<i class="${i ? "" : "on"}"></i>`).join("")}</div>
+      <button class="tap l" aria-label="Предыдущее фото"></button>
+      <button class="tap r" aria-label="Следующее фото"></button>
+      <div class="tint"></div>
+      <div class="verdict" style="color: var(--mandarin-ink)">${icon("heart", 32)}</div>
+      <div class="info">
+        <span class="pill">${p.category}</span>
+        <button class="info-btn" aria-label="Подробнее о подарке">
+          <div>
+            <h2>${p.title}</h2>
+            <div class="meta">
+              <span class="price">${p.price}</span>
+              <span class="store">${icon("bag", 14)}${p.stores.join(", ")}</span>
+              ${p.colors ? `<span class="swatches">${p.colors.map((c) => `<i style="background:${c[1]}"></i>`).join("")}</span>` : ""}
+            </div>
+          </div>
+          ${icon("chev", 24)}
+        </button>
+      </div>
+    </div>
+    <div class="mini"><img alt="" src="${IMG(p.id, 1)}"><span>${p.title}</span></div>
+    <div class="details">
+      <section class="sec"><div class="sec-t">${icon("quote", 16)}Описание</div>
+        <div class="sec-b">${p.description.map((d) => `<p>${d}</p>`).join("")}</div></section>
+      ${p.colors ? `<section class="sec"><div class="sec-t">${icon("palette", 16)}Цвет</div>
+        <div class="sec-b"><div class="vchips">${p.colors.map((c, i) => `<button class="vchip${i ? "" : " on"}">${i ? "" : icon("check", 16)}<i style="background:${c[1]}"></i>${c[0]}</button>`).join("")}</div>
+        <div class="note">Мне подойдёт: коричневый. Друзья увидят это в вишлисте.</div></div></section>` : ""}
+      <section class="sec"><div class="sec-t">${icon("bag", 16)}Где купить</div>
+        <div class="sec-b">${p.offers.map((o) => `<div class="offer"><div><b>${o[0]}</b><div class="price">${o[1]}</div></div><a class="go" href="#">Открыть${icon("ext", 16)}</a></div>`).join("")}</div></section>
+      <section class="sec"><div class="sec-t">${icon("spark", 16)}Подойдёт, если любишь</div>
+        <div class="sec-b"><div class="ichips">${p.interests.map((t) => `<span>${t}</span>`).join("")}</div></div></section>
+    </div>
+    <div class="bar">
+      <div class="back"></div>
+      <div class="row">
+        <button class="b s" data-k="small" aria-label="Вернуть">${icon("undo", 20)}</button>
+        <div class="mid">
+          <button class="b l" data-k="x" aria-label="Мимо">${icon("x", 30)}</button>
+          <button class="b l" data-k="heart" aria-label="Хочу">${icon("heart", 30)}</button>
+        </div>
+        <button class="b s" data-k="star" aria-label="Очень хочу">${icon("star", 26)}</button>
+      </div>
+    </div>
+  </div>`;
+
+const phoneHTML = (inner) => `
+  <div class="phone">
+    <div class="hdr"><h1>Подарки</h1><div class="acts"><span class="icon-btn">${icon("sliders", 22)}</span><span class="ava">А</span></div></div>
+    <div class="ribbon"><span class="segs"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span><span>Ещё 3 — и можно отправить</span></div>
+    <div class="chips"><span class="chip">до 10 000 сом ✕</span><span class="chip">Техника ✕</span></div>
+    <div class="deck">${inner}</div>
+    <nav class="tabbar">
+      <span class="tab on">${icon("gift", 22)}Подарки</span><span class="tab">${icon("heart-o", 22)}Вишлист</span>
+      <span class="tab">${icon("ticket", 22)}Планы</span><span class="tab">${icon("mail", 22)}Санта</span>
+    </nav>
+  </div>`;
+
+// RGBA-интерполяция для «перетекания» кнопок по прогрессу прокрутки (как useTransform в tap-tap).
+const mix = (a, b, t) => `rgba(${a.map((v, i) => (i < 3 ? Math.round(v + (b[i] - v) * t) : +(v + (b[i] - v) * t).toFixed(3))).join(",")})`;
+const PAPER = [255, 241, 243], INK = [42, 16, 36], MAND = [255, 138, 61], MAND_INK = [184, 70, 14];
+const applyProgress = (card, p) => {
+  card.querySelector(".back").style.opacity = p;
+  card.querySelectorAll(".b").forEach((b) => {
+    const k = b.dataset.k;
+    if (k === "x") {
+      b.style.background = mix([...PAPER, 0.16], [...PAPER, 1], p);
+      b.style.color = mix([...PAPER, 1], [...INK, 1], p);
+    } else if (k === "heart") {
+      b.style.background = mix([...MAND, 0.92], [...PAPER, 1], p);
+      b.style.color = mix([...INK, 1], [...MAND_INK, 1], p);
+    } else {
+      b.style.background = mix([...PAPER, 0.18], [...PAPER, 1], p);
+      b.style.color = mix([...PAPER, 1], [...INK, 1], p);
+      b.style.boxShadow = `0 6px 16px rgba(10,0,8,${(0.25 * p).toFixed(3)})`;
+    }
+  });
+};
+const wire = (card, p) => {
+  let index = 0;
+  const pics = card.querySelectorAll(".pic, .fill"), segs = card.querySelectorAll(".segs-photo i");
+  const show = (i) => { index = Math.max(0, Math.min(p.photos - 1, i)); pics.forEach((im) => (im.src = IMG(p.id, index + 1))); segs.forEach((s, j) => s.classList.toggle("on", j === index)); };
+  card.querySelector(".tap.l").onclick = () => show(index - 1);
+  card.querySelector(".tap.r").onclick = () => show(index + 1);
+  card.querySelector(".info-btn").onclick = () => card.scrollTo({ top: card.clientHeight, behavior: "smooth" });
+  card.addEventListener("scroll", () => applyProgress(card, Math.min(card.scrollTop / 120, 1)), { passive: true });
+  card.querySelectorAll(".vchip").forEach((c) => (c.onclick = () => card.querySelectorAll(".vchip").forEach((o) => o.classList.toggle("on", o === c))));
+  applyProgress(card, 0);
+};
+
+const FRAMES = [
+  { cap: "1. Сверху: фото целиком, кнопки — стекло", top: "jbl", next: "bag", scroll: 0 },
+  { cap: "2. Прокрутка вниз: кнопки перетекают в бумагу", top: "bag", next: "jbl", scroll: 70 },
+  { cap: "3. Подробности: шапка прилипла", top: "bag", next: "jbl", scroll: "details" },
+  { cap: "4. Тянешь вправо: «Хочу»", top: "engine", next: "jbl", scroll: 0, drag: 96 },
+];
+document.body.innerHTML = FRAMES.map((f) => `<figure>${phoneHTML(cardHTML(PRODUCTS[f.next], true) + cardHTML(PRODUCTS[f.top]))}<figcaption>${f.cap}</figcaption></figure>`).join("");
+document.querySelectorAll(".phone").forEach((phone, i) => {
+  const f = FRAMES[i];
+  const [under, top] = phone.querySelectorAll(".card");
+  wire(top, PRODUCTS[f.top]); applyProgress(under, 0);
+  requestAnimationFrame(() => {
+    top.scrollTop = f.scroll === "details" ? top.clientHeight + 140 : f.scroll;
+    applyProgress(top, Math.min(top.scrollTop / 120, 1));
+    if (f.drag) {
+      const x = f.drag;
+      top.style.transform = `translateX(${x}px) rotate(${(x / 200) * 12}deg)`;
+      top.querySelector(".tint").style.background = `rgba(255,138,61,${Math.min(x / 160, 1) * 0.35})`;
+      top.querySelector(".verdict").style.opacity = Math.max(0, Math.min((x - 20) / 100, 1));
+      under.style.transform = `scale(${0.95 + 0.05 * Math.min(x / 120, 1)})`;
+    }
+  });
+});
+</script>
+</body>
+</html>

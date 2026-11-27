@@ -150,3 +150,56 @@ export const flyTarget = (
   if (direction === "left") return { x: -outX, y: 0 };
   return { x: 0, y: -outY };
 };
+
+// ── Колода подарков (DESIGN.md §6 «Колода подарков», как в tap-tap) ──────
+// Фото-карточка прокручивается вертикально, поэтому жест — только по X.
+
+// Направление жеста решается по первым 10px движения пальца.
+export const AXIS_LOCK = 10;
+// Порог: сдвиг больше 120px или скорость больше 700 px/s.
+export const PHOTO_DISTANCE = 120;
+export const PHOTO_VELOCITY = 700;
+// Улетание: x до ±700px, вверх («Очень хочу» кнопкой) — y до −900px, за 0.3s.
+export const PHOTO_FLY_X = 700;
+export const PHOTO_FLY_Y = -900;
+export const PHOTO_FLY_DURATION = 0.3;
+export const SPRING_PHOTO_BACK = {
+  type: "spring",
+  damping: 30,
+  stiffness: 300,
+} as const;
+export const SPRING_PHOTO_ENTER = {
+  type: "spring",
+  damping: 30,
+  stiffness: 260,
+} as const;
+// Прогресс скролла карточки: на 120px кнопки уже «бумажные».
+export const SCROLL_PROGRESS_DISTANCE = 120;
+
+export type Axis = "x" | "y";
+
+// Ось жеста по первым AXIS_LOCK px: больше по X — тянем карточку, больше по
+// Y — обычная прокрутка. null — палец ещё не ушёл достаточно далеко.
+export const lockAxis = (dx: number, dy: number): Axis | null => {
+  if (Math.hypot(dx, dy) < AXIS_LOCK) return null;
+  return Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+};
+
+// Наклон: от −12° до 12° при x от −200 до 200px.
+export const photoRotation = (x: number) => clamp((x / 200) * 12, -12, 12);
+
+// Прогресс сдвига 0..1 к порогу — по нему поднимается следующая карточка.
+export const photoProgress = (x: number) =>
+  clamp(Math.abs(x) / PHOTO_DISTANCE, 0, 1);
+
+export const decidePhotoDirection = (
+  x: number,
+  velocityX: number,
+): "left" | "right" | null => {
+  if (x > PHOTO_DISTANCE || velocityX > PHOTO_VELOCITY) return "right";
+  if (x < -PHOTO_DISTANCE || velocityX < -PHOTO_VELOCITY) return "left";
+  return null;
+};
+
+export const scrollProgressFor = (scrollTop: number) =>
+  clamp(scrollTop / SCROLL_PROGRESS_DISTANCE, 0, 1);

@@ -17,6 +17,7 @@ import { type SwipeAction, SwipeActionButton } from "@/shared/ui";
 
 import { type SwipeDirection, cardSize } from "../model";
 import { type ButtonRefs, type CardApi, DeckCard } from "./DeckCard";
+import { type PhotoCardApi, PhotoDeckCard } from "./PhotoDeckCard";
 
 export type SwipeDeckHandle = {
   swipe: (direction: SwipeDirection) => void;
@@ -47,7 +48,12 @@ type Props<T> = {
   // Вернуть последнюю карточку. Родитель кладёт её первой и сообщает, куда
   // она уходила, — колода прилетит с той стороны (null — возвращать нечего).
   onUndo?: () => { direction: SwipeDirection; key: string } | null;
-  renderCard: (item: T, state: { isTop: boolean }) => ReactNode;
+  renderCard?: (item: T, state: { isTop: boolean }) => ReactNode;
+  // Колода подарков (DESIGN.md §6 «Колода подарков»): фото-карточка с
+  // прокруткой к подробностям, жест только по X, кнопки внутри карточки.
+  // Если задан — вместо renderCard, штампов и ряда кнопок под колодой.
+  // Состояние карточки (отклик, прокрутка, кнопки) — через usePhotoCard().
+  renderPhotoCard?: (item: T) => ReactNode;
   // Отступ сверху — место под нитку бирки.
   stampTop?: number;
   topInset?: number;
@@ -66,6 +72,11 @@ const DEFAULT_LABELS: Record<SwipeDirection, string> = {
 };
 
 const VISIBLE = 3;
+// У фото-колоды в DOM две карточки: верхняя и следующая под ней.
+const VISIBLE_PHOTO = 2;
+
+// Клавиши прокрутки фото-карточки (↑ занята «Очень хочу»).
+const SCROLL_KEYS = ["ArrowDown", "PageDown", "PageUp", " ", "Home", "End"];
 
 const isTypingTarget = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
@@ -80,6 +91,7 @@ export const SwipeDeck = <T,>({
   getKey,
   getLabel,
   renderCard,
+  renderPhotoCard,
   directions = ["left", "right", "up"],
   onDecision,
   onUndo,
@@ -100,6 +112,8 @@ export const SwipeDeck = <T,>({
   const areaRef = useRef<HTMLDivElement>(null);
   const buttonsRef = useRef<ButtonRefs>({});
   const topApi = useRef<CardApi | null>(null);
+  const photoApi = useRef<null | PhotoCardApi>(null);
+  const isPhoto = renderPhotoCard !== undefined;
   const isBusyRef = useRef(false);
   const [enterFrom, setEnterFrom] = useState<{
     direction: SwipeDirection;
@@ -108,7 +122,7 @@ export const SwipeDeck = <T,>({
   const [area, setArea] = useState({ width: 0, height: 0 });
   const [announcement, setAnnouncement] = useState("");
 
-  const visible = items.slice(0, VISIBLE);
+  const visible = items.slice(0, isPhoto ? VISIBLE_PHOTO : VISIBLE);
   const top = visible[0];
   const { cardWidth, cardHeight } = cardSize(area.width, area.height, topInset);
   const allLabels = { ...DEFAULT_LABELS, ...labels };
@@ -131,14 +145,14 @@ export const SwipeDeck = <T,>({
   }, []);
 
   useEffect(() => {
-    if (items.length <= VISIBLE) onNeedMore?.();
+    if (items.length <= 3) onNeedMore?.();
     // Только при изменении длины очереди, а не на каждый рендер родителя.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.length]);
 
   const swipe = (direction: SwipeDirection) => {
     if (disabled || !top) return;
-    topApi.current?.swipe(direction);
+    (isPhoto ? photoApi.current : topApi.current)?.swipe(direction);
   };
 
   const undo = () => {
@@ -172,6 +186,24 @@ export const SwipeDeck = <T,>({
       if (document.querySelector('[role="dialog"], [role="alertdialog"]'))
         return;
       const key = event.key;
+      const onControl =
+        event.target instanceof HTMLElement &&
+        event.target.closest("button, a") !== null;
+      if (isPhoto && top && SCROLL_KEYS.includes(key) && !onControl) {
+        // Фокус внутри карточки — браузер прокрутит её сам; иначе крутим
+        // верхнюю карточку за него (DESIGN.md §10).
+        const card = photoApi.current?.element();
+        if (!card || card.contains(event.target as Node)) return;
+        event.preventDefault();
+        const page = card.clientHeight * 0.85;
+        if (key === "Home") card.scrollTo({ top: 0 });
+        else if (key === "End") card.scrollTo({ top: card.scrollHeight });
+        else
+          card.scrollBy({
+            top: key === "PageUp" ? -page : key === "ArrowDown" ? 60 : page,
+          });
+        return;
+      }
       const map: Record<string, SwipeDirection> = {
         ArrowLeft: "left",
         ArrowRight: "right",
@@ -184,14 +216,15 @@ export const SwipeDeck = <T,>({
       } else if (["Backspace", "z", "Z", "я", "Я"].includes(key)) {
         event.preventDefault();
         undo();
+      } else if (isPhoto && key === "Enter" && top && !onControl) {
+        // Enter прокручивает фото-карточку к подробностям.
+        event.preventDefault();
+        photoApi.current?.scrollToDetails();
       } else if (
         (key === "Enter" || key === " ") &&
         top &&
         onOpen &&
-        !(
-          event.target instanceof HTMLElement &&
-          event.target.closest("button, a")
-        )
+        !onControl
       ) {
         event.preventDefault();
         onOpen(top);
@@ -209,9 +242,43 @@ export const SwipeDeck = <T,>({
     <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
       <div
         ref={areaRef}
-        className={cn("relative mx-5 min-h-0 flex-1", disabled && "opacity-50")}
+        className={cn(
+          "relative min-h-0 flex-1",
+          isPhoto ? "mx-4 mt-3" : "mx-5",
+          disabled && "opacity-50",
+        )}
       >
-        {area.width > 0 &&
+        {isPhoto &&
+          renderPhotoCard &&
+          [...visible].reverse().map((item) => {
+            const key = getKey(item);
+            const depth = visible.indexOf(item);
+            return (
+              <PhotoDeckCard
+                key={key}
+                depth={depth}
+                label={getLabel(item)}
+                progress={progress}
+                isBusyRef={isBusyRef}
+                disabled={disabled}
+                reducedMotion={reducedMotion}
+                canUndo={canUndo && !disabled}
+                onUndo={undo}
+                enterFrom={
+                  enterFrom?.key === key ? enterFrom.direction : undefined
+                }
+                onCommit={handleCommit}
+                onRegister={(api) => {
+                  if (depth === 0) photoApi.current = api;
+                }}
+              >
+                {renderPhotoCard(item)}
+              </PhotoDeckCard>
+            );
+          })}
+        {!isPhoto &&
+          renderCard &&
+          area.width > 0 &&
           [...visible].reverse().map((item) => {
             const key = getKey(item);
             const depth = visible.indexOf(item);
@@ -251,31 +318,33 @@ export const SwipeDeck = <T,>({
         )}
       </div>
 
-      <div
-        className={cn(
-          "flex h-[84px] flex-none items-center justify-center gap-[18px] pb-1",
-          disabled && "opacity-50",
-        )}
-      >
-        {onUndo && (
-          <SwipeActionButton
-            action="undo"
-            disabled={disabled || !canUndo}
-            onClick={undo}
-          />
-        )}
-        {buttonOrder.map((direction) => (
-          <SwipeActionButton
-            key={direction}
-            ref={(element) => {
-              buttonsRef.current[direction] = element;
-            }}
-            action={ACTIONS[direction]}
-            disabled={disabled || !top}
-            onClick={() => swipe(direction)}
-          />
-        ))}
-      </div>
+      {!isPhoto && (
+        <div
+          className={cn(
+            "flex h-[84px] flex-none items-center justify-center gap-[18px] pb-1",
+            disabled && "opacity-50",
+          )}
+        >
+          {onUndo && (
+            <SwipeActionButton
+              action="undo"
+              disabled={disabled || !canUndo}
+              onClick={undo}
+            />
+          )}
+          {buttonOrder.map((direction) => (
+            <SwipeActionButton
+              key={direction}
+              ref={(element) => {
+                buttonsRef.current[direction] = element;
+              }}
+              action={ACTIONS[direction]}
+              disabled={disabled || !top}
+              onClick={() => swipe(direction)}
+            />
+          ))}
+        </div>
+      )}
 
       <p aria-live="polite" className="sr-only">
         {announcement}

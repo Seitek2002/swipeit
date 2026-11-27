@@ -2,8 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   decideDirection,
+  decidePhotoDirection,
+  lockAxis,
+  photoProgress,
+  photoRotation,
   progressFor,
   rotationFor,
+  scrollProgressFor,
   stampOpacities,
   velocityOf,
 } from "./model";
@@ -75,5 +80,35 @@ describe("физика свайпа", () => {
       { t: 300, x: 100, y: 0 },
     ];
     expect(velocityOf(samples).x).toBeCloseTo(900);
+  });
+});
+
+describe("физика колоды подарков", () => {
+  it("ось решается по первым 10px", () => {
+    expect(lockAxis(4, 5)).toBeNull();
+    expect(lockAxis(10, 4)).toBe("x");
+    expect(lockAxis(-3, 12)).toBe("y");
+    expect(lockAxis(7, -8)).toBe("y");
+  });
+
+  it("наклон ±12° на ±200px и не больше", () => {
+    expect(photoRotation(100)).toBe(6);
+    expect(photoRotation(-200)).toBe(-12);
+    expect(photoRotation(500)).toBe(12);
+  });
+
+  it("порог 120px или 700 px/s", () => {
+    expect(decidePhotoDirection(100, 0)).toBeNull();
+    expect(decidePhotoDirection(130, 0)).toBe("right");
+    expect(decidePhotoDirection(-130, 0)).toBe("left");
+    expect(decidePhotoDirection(30, 900)).toBe("right");
+    expect(decidePhotoDirection(-30, -900)).toBe("left");
+  });
+
+  it("прогресс сдвига и прокрутки", () => {
+    expect(photoProgress(-60)).toBe(0.5);
+    expect(photoProgress(400)).toBe(1);
+    expect(scrollProgressFor(60)).toBe(0.5);
+    expect(scrollProgressFor(300)).toBe(1);
   });
 });

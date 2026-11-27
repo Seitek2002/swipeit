@@ -14,5 +14,10 @@ export {
   type VariantGroup,
   type VariantOption,
 } from "./model";
-export { GiftTagCard, GiftTagSkeleton } from "./ui/GiftTagCard";
+export {
+  GiftCardSkeleton,
+  GiftInfo,
+  GiftMiniHeader,
+  GiftPhoto,
+} from "./ui/GiftPhoto";
 export { VariantPicker } from "./ui/VariantPicker";

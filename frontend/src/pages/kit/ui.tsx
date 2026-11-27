@@ -35,6 +35,7 @@ import {
 
 import { DataSection } from "./data-section";
 import { DeckDemo } from "./deck-demo";
+import { GiftCardDemo } from "./gift-card-demo";
 
 const PEOPLE = [
   { id: "1", name: "Айгерим", color: "mandarin" as const },
@@ -92,7 +93,11 @@ export const KitPage = () => {
     <Screen>
       <AppHeader title="Витрина" showAvatar={false} />
       <ScreenBody className="px-5 pt-2">
-        <Section title="Колода">
+        <Section title="Колода подарков">
+          <GiftCardDemo />
+        </Section>
+
+        <Section title="Колода билетиков">
           <DeckDemo />
         </Section>
 
