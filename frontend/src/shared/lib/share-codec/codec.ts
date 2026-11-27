@@ -253,6 +253,8 @@ const PickRequestShort = z.object({
     // Неизвестная категория — ссылка от более новой версии: считаем битой.
     c: z.array(z.enum(CATEGORY_IDS)).max(CATEGORY_IDS.length),
     m: z.array(z.enum(MARKETPLACE_IDS)).max(MARKETPLACE_IDS.length),
+    // «Другие» магазины по домену (UX-аудит M1). Нет — как раньше.
+    s: z.array(z.string().min(1).max(80)).max(20).optional(),
     // «Показывать подарки»: f — для неё, m — для него. Нет — «всем»: так
     // открываются и старые ссылки, где поля ещё не было.
     a: GenderShort.optional(),
@@ -269,6 +271,7 @@ export type SharedPickRequest = {
     budget: { max: null | number; min: number };
     categories: CategoryId[];
     marketplaces: MarketplaceId[];
+    shops?: string[];
   };
   from: {
     avatarColor: (typeof AVATAR_COLORS)[number];
@@ -297,6 +300,7 @@ export const encodePickRequest = (request: SharedPickRequest): string =>
       b: [request.filters.budget.min, request.filters.budget.max],
       c: request.filters.categories,
       m: request.filters.marketplaces,
+      s: request.filters.shops?.length ? request.filters.shops : undefined,
       a: fromGender(
         request.filters.audience === "all"
           ? undefined
@@ -326,6 +330,7 @@ export const decodePickRequest = (
       budget: { min: short.fl.b[0], max: short.fl.b[1] },
       categories: short.fl.c,
       marketplaces: short.fl.m,
+      shops: short.fl.s,
       audience: toGender(short.fl.a),
     },
     hidePrices: short.h === 1,

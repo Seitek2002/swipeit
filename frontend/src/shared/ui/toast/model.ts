@@ -6,6 +6,9 @@ export type ToastAction = { label: string; onClick: () => void };
 
 export type ToastItem = {
   action?: ToastAction;
+  // Ниже на столько px: тост не должен закрывать главный ориентир экрана
+  // (лента «Ещё N — и можно отправить» в колоде, DESIGN.md §6).
+  below?: number;
   id: number;
   text: string;
   tone: ToastTone;
@@ -13,6 +16,7 @@ export type ToastItem = {
 
 type ToastOptions = {
   action?: ToastAction;
+  below?: number;
   // null — без автозакрытия («Нет связи с ноутбуком…», DESIGN.md §8.11).
   duration?: null | number;
   tone?: ToastTone;
@@ -48,6 +52,7 @@ export const toast = Object.assign(
       text,
       tone: options.tone ?? "success",
       action: options.action,
+      below: options.below,
     };
     clearTimeout(timer);
     const duration =

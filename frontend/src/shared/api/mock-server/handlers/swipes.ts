@@ -70,7 +70,6 @@ export const createSwipe: Handler = async (ctx, { body }) => {
 
   const response = await ctx.db.write((db): SwipeResponse => {
     const user = requireUser(ctx, db);
-    const tasteBefore = tasteOf(user, db.productSwipes, products);
     const key = contextKey(input.context);
     // Повторный свайп той же карточки в том же контексте заменяет прошлый.
     db.productSwipes = db.productSwipes.filter(
@@ -143,7 +142,7 @@ export const createSwipe: Handler = async (ctx, { body }) => {
     let tasteJustFormed = false;
     if (input.context.kind === "self") {
       interestsChanged = refreshTaste(db, user, products);
-      tasteJustFormed = isTasteJustFormed(tasteBefore, user.taste, user);
+      tasteJustFormed = isTasteJustFormed(user.taste, user, shareJustUnlocked);
     }
     return {
       wishCount,

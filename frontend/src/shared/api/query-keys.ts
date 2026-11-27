@@ -29,6 +29,7 @@ export const catalogKeys = {
   count: (context: string, filters: ProductFilters) =>
     [...catalogKeys.all, "count", context, filters] as const,
   product: (id: string) => [...catalogKeys.all, "product", id] as const,
+  stores: () => [...catalogKeys.all, "stores"] as const,
   // meta.json не меняется, пока открыта вкладка — его не инвалидируем.
   meta: () => [...catalogKeys.all, "meta"] as const,
 };

@@ -1,4 +1,4 @@
-import type { Audience, CategoryId } from "@/shared/config";
+import { type Audience, type CategoryId, shopHost } from "@/shared/config";
 
 import type { Product, ProductFilters } from "../catalog/types";
 import type { Taste } from "../users/types";
@@ -36,10 +36,16 @@ export const matchesFilters = (product: Product, filters: ProductFilters) => {
   ) {
     return false;
   }
+  // Магазины: свой маркетплейс или «другой» по домену ссылки (shops). Старый
+  // выбор «Другой магазин» (marketplaces: other) — любой «другой».
+  const shops = filters.shops ?? [];
   if (
-    filters.marketplaces.length > 0 &&
+    (filters.marketplaces.length > 0 || shops.length > 0) &&
     !product.offers.some((offer) =>
-      filters.marketplaces.includes(offer.marketplace),
+      offer.marketplace === "other"
+        ? filters.marketplaces.includes("other") ||
+          shops.includes(shopHost(offer.url) ?? "")
+        : filters.marketplaces.includes(offer.marketplace),
     )
   ) {
     return false;

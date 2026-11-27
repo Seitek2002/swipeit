@@ -1,6 +1,7 @@
 import { getTransport } from "../transport";
 import type {
   CatalogMeta,
+  CatalogStores,
   FeedResponse,
   Product,
   ProductFilters,
@@ -51,3 +52,7 @@ export const getProduct = (id: string): Promise<Product> =>
 // Курсы и авторы фото занятий — для страницы «Авторы фото» (/credits/).
 export const getCatalogMeta = (): Promise<CatalogMeta> =>
   getTransport().request<CatalogMeta>("GET", "/catalog/meta");
+
+// Магазины, где в каталоге есть товары, — чипы «Магазины» в фильтрах.
+export const getCatalogStores = (): Promise<CatalogStores> =>
+  getTransport().request<CatalogStores>("GET", "/catalog/stores");

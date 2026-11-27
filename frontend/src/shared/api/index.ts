@@ -4,6 +4,7 @@
 export {
   getCatalogCount,
   getCatalogMeta,
+  getCatalogStores,
   getFeed,
   getProduct,
 } from "./catalog/requests";
@@ -11,6 +12,7 @@ export {
   type Activity,
   ActivitySchema,
   type CatalogMeta,
+  type CatalogStores,
   type FeedResponse,
   type Offer,
   type PhotoCredit,

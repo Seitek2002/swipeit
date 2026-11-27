@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { GUIDE_PRODUCT_ID } from "@/shared/config";
 
-import type { FeedResponse } from "../catalog/types";
+import type { CatalogStores, FeedResponse } from "../catalog/types";
 import type { User } from "../users/types";
 import {
   createFixedClock,
@@ -92,5 +92,18 @@ describe("обучающая карточка в каталоге", () => {
     });
     expect(page.items[0]?.id).not.toBe(GUIDE_PRODUCT_ID);
     expect(page.items.length).toBeGreaterThan(0);
+  });
+});
+
+describe("магазины для фильтра (UX-аудит M1)", () => {
+  it("только магазины с товарами; «другие» — доменами, по убыванию числа товаров", async () => {
+    const stores = await call<CatalogStores>("GET", "/catalog/stores", null);
+    expect(stores.marketplaces).toEqual(["aliexpress", "wildberries"]);
+    expect(stores.shops.slice(0, 3)).toEqual([
+      "kivano.kg",
+      "labirint.ru",
+      "sulpak.kg",
+    ]);
+    expect(stores.marketplaces).not.toContain("other");
   });
 });

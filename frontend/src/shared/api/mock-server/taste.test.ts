@@ -181,15 +181,21 @@ describe("inferInterests", () => {
     ).toEqual(["coffee", "gadgets", "music"]);
   });
 
-  it("«вкус сложился» — один раз, когда впервые вывелись 2 интереса и тоста ещё не было", () => {
-    const one = taste({ gadgets: 2 });
-    const two = taste({ gadgets: 2, photo: 2 });
+  it("«вкус сложился» — 2 интереса и не меньше 4 лайков, тоста ещё не было, отправка не открылась этим свайпом", () => {
     const user = { interests: [] };
-    expect(isTasteJustFormed(one, two, user)).toBe(true);
-    expect(isTasteJustFormed(two, two, user)).toBe(false);
+    const two = (likes: number) => ({
+      ...taste({ gadgets: 2, photo: 2 }),
+      likes,
+    });
+    expect(isTasteJustFormed(two(2), user)).toBe(false);
+    expect(isTasteJustFormed(two(4), user)).toBe(true);
     expect(
-      isTasteJustFormed(one, two, { ...user, seenHints: ["taste_toast"] }),
+      isTasteJustFormed({ ...taste({ gadgets: 3 }), likes: 6 }, user),
     ).toBe(false);
+    expect(
+      isTasteJustFormed(two(4), { ...user, seenHints: ["taste_toast"] }),
+    ).toBe(false);
+    expect(isTasteJustFormed(two(5), user, true)).toBe(false);
   });
 });
 
@@ -263,26 +269,56 @@ describe("вкус в обработчиках", () => {
     expect(profile.inferredInterests).toEqual(["gadgets", "photo"]);
   });
 
-  it("tasteJustFormed — ровно один раз, пока тост не отмечен", async () => {
+  it("«Очень хочу» + «Хочу» — ещё не вкус: тост не раньше 4 лайков (UX-аудит M2)", async () => {
     const userId = await newUser();
+    // gadgets и photo сразу набирают вес 2, но лайков всего 1, потом 2.
+    expect(
+      (await swipeVia(userId, "gadget", "superlike")).tasteJustFormed,
+    ).toBe(false);
     expect((await swipeVia(userId, "book", "like")).tasteJustFormed).toBe(
       false,
     );
-    // gadgets и photo впервые набирают 2 — вкус сложился.
-    expect(
-      (await swipeVia(userId, "gadget", "superlike")).tasteJustFormed,
-    ).toBe(true);
-    expect(
-      (await swipeVia(userId, "console", "superlike")).tasteJustFormed,
-    ).toBe(false);
-    // Тост не отметили, отменили лайки и снова набрали — тост покажется ещё
-    // раз; после отметки — уже никогда.
+    expect((await swipeVia(userId, "cream", "like")).tasteJustFormed).toBe(
+      false,
+    );
+    // Четвёртый лайк — пора.
+    expect((await swipeVia(userId, "console", "like")).tasteJustFormed).toBe(
+      true,
+    );
+    // После отметки — уже никогда.
     await call("POST", "/me/hints", userId, { id: "taste_toast" });
     await call("POST", "/swipes/undo", userId, { context: { kind: "self" } });
-    await call("POST", "/swipes/undo", userId, { context: { kind: "self" } });
-    expect(
-      (await swipeVia(userId, "gadget", "superlike")).tasteJustFormed,
-    ).toBe(false);
+    expect((await swipeVia(userId, "console", "like")).tasteJustFormed).toBe(
+      false,
+    );
+  });
+
+  it("5-й лайк открыл отправку — тост ждёт 6-го свайпа", async () => {
+    // Шесть «гаджетов»: интересы gadgets и photo набирают вес 2 со второго
+    // лайка, но тоста нет до 4-го.
+    const gadgets = Array.from({ length: 6 }, (_, index) =>
+      product({
+        id: `g${index}`,
+        category: "tech",
+        interests: ["gadgets", "photo"],
+      }),
+    );
+    startServer(gadgets);
+    const userId = await newUser();
+    // 3 «Хочу» и «Мимо» — лайков 3, тоста нет; своё желание — 4-е в
+    // вишлисте. Следующий «Хочу» — 4-й лайк и 5-е желание сразу.
+    const results = [];
+    for (const item of gadgets.slice(0, 3)) {
+      results.push(await swipeVia(userId, item.id, "like"));
+    }
+    results.push(await swipeVia(userId, gadgets[3]!.id, "pass"));
+    await call("POST", "/wishlist/items", userId, { title: "Своё желание" });
+    const fifth = await swipeVia(userId, gadgets[4]!.id, "like");
+    const sixth = await swipeVia(userId, gadgets[5]!.id, "like");
+    expect(results.every((result) => !result.tasteJustFormed)).toBe(true);
+    expect(fifth.shareJustUnlocked).toBe(true);
+    expect(fifth.tasteJustFormed).toBe(false);
+    expect(sixth.tasteJustFormed).toBe(true);
   });
 
   it("«Вернуть» возвращает вкус точно в прежнее состояние", async () => {

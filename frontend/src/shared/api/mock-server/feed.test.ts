@@ -524,3 +524,48 @@ describe("обучающая карточка (п. 2)", () => {
     );
   });
 });
+
+describe("магазины в фильтре (UX-аудит M1)", () => {
+  const offer = (
+    marketplace: Product["offers"][number]["marketplace"],
+    url: string,
+  ) => ({
+    marketplace,
+    url,
+    price: 1000,
+    checkedAt: "2026-11-27",
+  });
+  const kivano = product({
+    id: "k",
+    offers: [offer("other", "https://www.kivano.kg/x")],
+  });
+  const ali = product({
+    id: "a",
+    offers: [offer("aliexpress", "https://aliexpress.ru/x")],
+  });
+  const withShops = (
+    marketplaces: Product["offers"][number]["marketplace"][],
+    shops?: string[],
+  ) => ({
+    ...EMPTY_FILTERS,
+    marketplaces,
+    shops,
+  });
+
+  it("«другой» магазин — по домену ссылки", () => {
+    expect(matchesFilters(kivano, withShops([], ["kivano.kg"]))).toBe(true);
+    expect(matchesFilters(kivano, withShops([], ["labirint.ru"]))).toBe(false);
+    expect(matchesFilters(ali, withShops([], ["kivano.kg"]))).toBe(false);
+  });
+
+  it("маркетплейс и домен вместе — любой из них", () => {
+    const filters = withShops(["aliexpress"], ["kivano.kg"]);
+    expect(matchesFilters(kivano, filters)).toBe(true);
+    expect(matchesFilters(ali, filters)).toBe(true);
+  });
+
+  it("старый выбор «Другой магазин» — любой «другой»", () => {
+    expect(matchesFilters(kivano, withShops(["other"]))).toBe(true);
+    expect(matchesFilters(ali, withShops(["other"]))).toBe(false);
+  });
+});

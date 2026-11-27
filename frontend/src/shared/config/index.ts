@@ -21,6 +21,9 @@ export {
   type MarketplaceId,
   type Season,
   SEASONS,
+  SHOP_LABELS,
+  shopHost,
+  shopLabel,
 } from "./catalog";
 export {
   getActiveTab,

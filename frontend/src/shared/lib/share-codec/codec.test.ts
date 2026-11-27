@@ -111,6 +111,24 @@ describe("кодек ссылки-фильтра и ответа", () => {
     expect(decodePickRequest("битая")).toBeNull();
   });
 
+  it("ссылка-фильтр: «другие» магазины по домену едут в ссылке (UX-аудит M1)", async () => {
+    const { decodePickRequest, encodePickRequest } = await import("./codec");
+    const request = {
+      id: "pk_2",
+      from: { name: "Азамат", avatarColor: "mint" as const },
+      filters: {
+        budget: { min: 0, max: null },
+        categories: [],
+        marketplaces: ["aliexpress" as const],
+        shops: ["kivano.kg", "labirint.ru"],
+      },
+      hidePrices: false,
+    };
+    expect(decodePickRequest(encodePickRequest(request))?.filters).toEqual(
+      request.filters,
+    );
+  });
+
   it("аудитория «для неё» едет в ссылке; «всем» и старые ссылки без неё — «всем»", async () => {
     const { decodePickRequest, encodePickRequest } = await import("./codec");
     const request = {

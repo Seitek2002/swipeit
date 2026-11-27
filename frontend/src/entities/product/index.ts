@@ -1,4 +1,4 @@
-export { useFeedPage, useProduct } from "./api";
+export { useCatalogStores, useFeedPage, useProduct } from "./api";
 export {
   colorSwatches,
   describeVariant,

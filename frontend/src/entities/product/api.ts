@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   type ProductFilters,
   catalogKeys,
+  getCatalogStores,
   getFeed,
   getProduct,
 } from "@/shared/api";
@@ -31,3 +32,15 @@ export const useProduct = (id?: string) =>
     enabled: Boolean(id),
     staleTime: Infinity,
   });
+
+// Магазины, где есть товары, — для чипов «Магазины» (UX-аудит M1). Каталог в
+// демо не меняется, поэтому кеш не устаревает.
+export const useCatalogStores = () => {
+  const mounted = useMounted();
+  return useQuery({
+    queryKey: catalogKeys.stores(),
+    queryFn: getCatalogStores,
+    enabled: mounted,
+    staleTime: Infinity,
+  });
+};

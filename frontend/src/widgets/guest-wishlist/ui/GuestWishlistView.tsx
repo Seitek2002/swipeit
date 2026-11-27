@@ -18,8 +18,10 @@ import {
 
 import type { GuestWishlist } from "@/shared/api";
 import { withBasePath } from "@/shared/lib/base-path";
-import { formatPrice, genitive, occasionLabel } from "@/shared/lib/format";
-import { Avatar, StoreTag } from "@/shared/ui";
+import { formatPrice } from "@/shared/lib/format";
+import { StoreTag } from "@/shared/ui";
+
+import { GuestWishlistHeader } from "./GuestWishlistHeader";
 
 type Item = GuestWishlist["items"][number];
 
@@ -146,34 +148,19 @@ export const GuestWishlistView = ({
   titleAs: Title = "h1",
 }: Props) => {
   const [details, setDetails] = useState<null | Product>(null);
-  const occasion = occasionLabel(wishlist.meta.occasion);
   // Бронь от профиля без имени: одна NameSheet на весь список (DESIGN.md
   // §8.5). Гость без профиля называется только для брони — в ReserveControl.
   const requireName = useRequireName(NAME_CAPTIONS.reserve);
 
   return (
     <>
-      <div className="px-5 pt-2.5 pb-1">
-        <Avatar
-          name={wishlist.owner.name}
-          color={wishlist.owner.avatarColor}
-          size={56}
-        />
-        <Title className="text-title-1 mt-3.5">
-          {/* Без имени (профиль, открытый по прямому id) — без «Вишлист ». */}
-          {wishlist.owner.name.trim()
-            ? `Вишлист ${genitive(wishlist.owner.name, ownerGender)}`
-            : "Вишлист"}
-        </Title>
-        {occasion && (
-          <p className="text-title-3 text-rose mt-0.5">{occasion}</p>
-        )}
-        {wishlist.meta.message && (
-          <p className="text-body bg-velvet-2 text-paper mt-3 rounded-[14px_14px_14px_4px] px-3.5 py-3">
-            {wishlist.meta.message}
-          </p>
-        )}
-      </div>
+      <GuestWishlistHeader
+        owner={wishlist.owner}
+        occasion={wishlist.meta.occasion}
+        message={wishlist.meta.message}
+        ownerGender={ownerGender}
+        titleAs={Title}
+      />
       {wishlist.items.length === 0 ? (
         <p className="text-body text-rose px-5 pt-6">
           Здесь пока пусто — желания ещё не добавлены.

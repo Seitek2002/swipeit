@@ -4,15 +4,19 @@ import { useState } from "react";
 
 import { Send } from "lucide-react";
 
-import { EMPTY_FILTERS, type ProductFilters } from "@/entities/product";
+import {
+  EMPTY_FILTERS,
+  type ProductFilters,
+  useCatalogStores,
+} from "@/entities/product";
 
 import {
   AUDIENCES,
   AUDIENCE_LABELS,
   CATEGORY_IDS,
   CATEGORY_LABELS,
-  MARKETPLACE_IDS,
   MARKETPLACE_LABELS,
+  shopLabel,
 } from "@/shared/config";
 import { plural } from "@/shared/lib/format";
 import {
@@ -60,6 +64,10 @@ export const FiltersSheet = ({
 
   const count = useFilterCount(draft, { enabled: open });
   const total = count.data?.count;
+  // Чипы «Магазины» — только магазины, где есть товары, под теми же именами,
+  // что на карточках; «другие» — по домену (UX-аудит M1).
+  const stores = useCatalogStores();
+  const draftShops = draft.shops ?? [];
 
   return (
     <BottomSheet
@@ -154,7 +162,7 @@ export const FiltersSheet = ({
             aria-label="Магазины"
             className="flex flex-wrap gap-2"
           >
-            {MARKETPLACE_IDS.map((marketplace) => (
+            {stores.data?.marketplaces.map((marketplace) => (
               <Chip
                 key={marketplace}
                 selected={draft.marketplaces.includes(marketplace)}
@@ -168,6 +176,40 @@ export const FiltersSheet = ({
                 {MARKETPLACE_LABELS[marketplace]}
               </Chip>
             ))}
+            {stores.data?.shops.map((host) => (
+              <Chip
+                key={host}
+                selected={draftShops.includes(host)}
+                onClick={() =>
+                  setDraft((current) => {
+                    const shops = toggle(current.shops ?? [], host);
+                    return {
+                      ...current,
+                      shops: shops.length > 0 ? shops : undefined,
+                    };
+                  })
+                }
+              >
+                {shopLabel(host)}
+              </Chip>
+            ))}
+            {/* Старый выбор «Другой магазин» (сохранённые фильтры, ссылки) —
+                виден и снимается. */}
+            {draft.marketplaces.includes("other") && (
+              <Chip
+                selected
+                onClick={() =>
+                  setDraft((current) => ({
+                    ...current,
+                    marketplaces: current.marketplaces.filter(
+                      (item) => item !== "other",
+                    ),
+                  }))
+                }
+              >
+                {MARKETPLACE_LABELS.other}
+              </Chip>
+            )}
           </div>
         </div>
       </div>

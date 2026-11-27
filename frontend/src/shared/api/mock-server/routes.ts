@@ -3,6 +3,7 @@ import { validation } from "./errors";
 import { createCustomActivity, listActivities } from "./handlers/activities";
 import {
   getCatalogMeta,
+  getCatalogStores,
   getCount,
   getFeed,
   getProduct,
@@ -118,6 +119,7 @@ export const ROUTE_TABLE: Route[] = [
   { method: "GET", pattern: "/catalog/count", handler: getCount },
   { method: "GET", pattern: "/catalog/products/:id", handler: getProduct },
   { method: "GET", pattern: "/catalog/meta", handler: getCatalogMeta },
+  { method: "GET", pattern: "/catalog/stores", handler: getCatalogStores },
   { method: "POST", pattern: "/swipes", handler: createSwipe },
   { method: "POST", pattern: "/swipes/undo", handler: undoSwipe },
   { method: "POST", pattern: "/swipes/restart", handler: restartSwipes },

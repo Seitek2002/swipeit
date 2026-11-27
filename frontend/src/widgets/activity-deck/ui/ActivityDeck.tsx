@@ -22,7 +22,9 @@ import { type PlanView, computeMatches } from "@/entities/plan";
 
 import { isApiError, planKeys, swipePlan, undoPlanSwipe } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { withBasePath } from "@/shared/lib/base-path";
 import { clock } from "@/shared/lib/clock";
+import { usePreloadImages } from "@/shared/lib/image-cache";
 import { useConnectionStatus } from "@/shared/lib/realtime";
 import { cn } from "@/shared/lib/utils";
 import { Countdown, EmptyState, toast } from "@/shared/ui";
@@ -68,6 +70,17 @@ export const ActivityDeck = ({ view, meId }: Props) => {
 
   // Запросы строго по очереди: «Вернуть» не обгонит сам свайп.
   const chain = useRef<Promise<unknown>>(Promise.resolve());
+  // Фото верхнего и двух следующих билетиков — заранее (UX-аудит M4), тем
+  // же кешем, что колода подарков.
+  usePreloadImages(
+    "tickets",
+    queue
+      .slice(0, 3)
+      .flatMap((activity) =>
+        activity.image ? [withBasePath(activity.image.src)] : [],
+      ),
+  );
+
   function enqueue<T>(task: () => Promise<T>) {
     const run = chain.current.then(task);
     chain.current = run.catch(() => undefined);

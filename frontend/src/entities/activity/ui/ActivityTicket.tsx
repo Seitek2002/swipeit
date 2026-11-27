@@ -1,12 +1,13 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { type CSSProperties, useState } from "react";
 
 import { Clock, MapPin } from "lucide-react";
 
 import { ACTIVITY_TAG_LABELS } from "@/shared/config";
 import { withBasePath } from "@/shared/lib/base-path";
 import { useCustomImageUrl } from "@/shared/lib/dom";
+import { useImageStatus } from "@/shared/lib/image-cache";
 import { cn } from "@/shared/lib/utils";
 import { StoreTag } from "@/shared/ui";
 
@@ -38,16 +39,34 @@ const Photo = ({ activity }: { activity: Activity }) => {
   const src = activity.image
     ? withBasePath(activity.image.src)
     : (customUrl ?? undefined);
-  if (src) {
+  // Фото уже в кеше колоды (ActivityDeck грузит два следующих заранее) — сразу;
+  // иначе перелив, пока <img> не загрузится (UX-аудит M4: раньше — пустая
+  // розовая заливка). Без банта: билетик маленький. Не загрузилось — вид
+  // «без фото» ниже.
+  const cached = useImageStatus(src) === "ready";
+  const [loadedSrc, setLoadedSrc] = useState<null | string>(null);
+  const [failedSrc, setFailedSrc] = useState<null | string>(null);
+  const loaded = cached || (src !== undefined && loadedSrc === src);
+  if (src && failedSrc !== src) {
     return (
-      <img
-        src={src}
-        alt={activity.image?.alt ?? ""}
-        draggable={false}
-        // В колоде на столе не больше трёх билетов — все грузим сразу (§10).
-        loading="eager"
-        className="absolute inset-0 size-full object-cover select-none"
-      />
+      <>
+        {!loaded && (
+          <div aria-hidden className="skeleton bg-paper-2 absolute inset-0" />
+        )}
+        <img
+          src={src}
+          alt={activity.image?.alt ?? ""}
+          draggable={false}
+          // В колоде на столе не больше трёх билетов — все грузим сразу (§10).
+          loading="eager"
+          onLoad={() => setLoadedSrc(src)}
+          onError={() => setFailedSrc(src)}
+          className={cn(
+            "absolute inset-0 size-full object-cover select-none",
+            !loaded && "opacity-0",
+          )}
+        />
+      </>
     );
   }
   // Своё занятие без фото: бумага-2, крупная иконка категории и название

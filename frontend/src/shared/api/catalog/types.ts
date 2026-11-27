@@ -125,6 +125,9 @@ export const ProductFiltersSchema = z.object({
   }),
   categories: z.array(z.enum(CATEGORY_IDS)),
   marketplaces: z.array(z.enum(MARKETPLACE_IDS)),
+  // «Другие» магазины по домену ссылки: kivano.kg, labirint.ru (UX-аудит M1).
+  // Нет поля — как раньше: старые ссылки и сохранённые фильтры читаются.
+  shops: z.array(z.string().min(1).max(80)).max(20).optional(),
   // «Показывать подарки: всем / для неё / для него» — в фильтрах и в
   // профиле (один стор gift-filters), едет и в ссылку-фильтр. Нет поля —
   // «всем»: старые ссылки и сохранённые фильтры читаются как раньше.
@@ -143,3 +146,11 @@ export type ProductFilters = z.infer<typeof ProductFiltersSchema>;
 
 // Ответ ленты: порция карточек и сколько всего осталось в этих фильтрах.
 export type FeedResponse = { items: Product[]; total: number };
+
+// GET /catalog/stores — магазины, где в каталоге есть товары: чипы фильтра
+// строятся из них, а не из всего справочника (UX-аудит M1). shops — домены
+// «других» магазинов. По убыванию числа товаров.
+export type CatalogStores = {
+  marketplaces: Array<Exclude<(typeof MARKETPLACE_IDS)[number], "other">>;
+  shops: string[];
+};

@@ -40,6 +40,11 @@ export const Toaster = () => {
         role="status"
         aria-live="polite"
         className="pointer-events-none absolute inset-x-0 top-[calc(env(safe-area-inset-top)+62px)] z-[180] flex justify-center px-5"
+        style={
+          item?.below
+            ? { top: `calc(env(safe-area-inset-top) + ${62 + item.below}px)` }
+            : undefined
+        }
       >
         <AnimatePresence>
           {item && (

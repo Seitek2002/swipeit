@@ -47,7 +47,7 @@ import { useConnectionStatus } from "@/shared/lib/realtime";
 import { Button, EmptyState, toast } from "@/shared/ui";
 
 import { GiftCard } from "./GiftCard";
-import { RIBBON_SEGMENTS, WishRibbon } from "./WishRibbon";
+import { RIBBON_HEIGHT, RIBBON_SEGMENTS, WishRibbon } from "./WishRibbon";
 import { WishlistReadySheet } from "./WishlistReadySheet";
 
 type Props = {
@@ -252,12 +252,19 @@ export const GiftDeck = ({
   // Тост «вкус сложился» (DESIGN.md §8.2) — один раз, когда из лайков
   // впервые вывелись хотя бы 2 интереса. Колода при этом не перемешивается:
   // новый порядок начнётся со следующей порции.
+  const tasteToastShown = useRef(false);
   const showTasteToast = () => {
+    // Сервер отвечает «пора», пока тост не отмечен (TECH_SPEC §6 «Вкус»):
+    // в этой колоде показываем его один раз.
+    if (tasteToastShown.current) return;
+    tasteToastShown.current = true;
     void queryClient
       .fetchQuery({ queryKey: userKeys.me(), queryFn: getMe, staleTime: 0 })
       .then((me) => {
+        // Не больше двух интересов и без многоточия: «…: гаджеты и мода»
+        // (DESIGN.md §6, UX-аудит M2).
         const labels = me.inferredInterests
-          .slice(0, 3)
+          .slice(0, 2)
           .map((id) =>
             (INTEREST_LABELS as Record<string, string | undefined>)[
               id
@@ -265,8 +272,10 @@ export const GiftDeck = ({
           )
           .filter(Boolean);
         if (labels.length === 0) return;
-        toast(`Подстроили ленту под твои «Хочу»: ${labels.join(", ")}`, {
+        toast(`Подстроили ленту под твои «Хочу»: ${labels.join(" и ")}`, {
           tone: "info",
+          // Ниже ленты «Ещё N — и можно отправить»: не закрывать её.
+          below: showRibbon ? RIBBON_HEIGHT : undefined,
           action: {
             label: "Поправить",
             onClick: () => router.push(`${ROUTES.PROFILE}#likes`),

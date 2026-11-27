@@ -172,3 +172,21 @@ export type Season = (typeof SEASONS)[number];
 // п. 2): всегда этот товар, пока подсказка deck_guide не отмечена. Один и тот
 // же — поэтому его обложку можно грузить прямо из HTML, до JS.
 export const GUIDE_PRODUCT_ID = "p_0049";
+
+// «Другой магазин» в фильтре и на карточке — по домену ссылки (UX-аудит M1:
+// kivano.kg прятался под «Другой магазин»). Домен — как на карточке; у
+// известных — короткое имя.
+export const SHOP_LABELS: Readonly<Record<string, string>> = {
+  "labirint.ru": "Лабиринт",
+  "sulpak.kg": "Sulpak",
+};
+
+export const shopHost = (url: string): null | string => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+};
+
+export const shopLabel = (host: string): string => SHOP_LABELS[host] ?? host;

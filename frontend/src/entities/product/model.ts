@@ -1,5 +1,5 @@
 import type { Offer, Product } from "@/shared/api";
-import { MARKETPLACE_LABELS } from "@/shared/config";
+import { MARKETPLACE_LABELS, shopHost, shopLabel } from "@/shared/config";
 
 // Типы каталога — контракт API в shared/api (см. entities/user/model.ts).
 export {
@@ -14,15 +14,13 @@ export {
 } from "@/shared/api";
 
 // Название магазина текстом (DESIGN.md §7: без логотипов). Для «другого»
-// магазина — его домен: «kivano.kg» понятнее, чем «Другой магазин».
+// магазина — по домену ссылки: «kivano.kg», «Лабиринт». Те же имена — у чипов
+// «Магазины» в фильтрах (UX-аудит M1).
 export const storeLabel = (offer: Offer): string => {
   if (offer.marketplace !== "other")
     return MARKETPLACE_LABELS[offer.marketplace];
-  try {
-    return new URL(offer.url).hostname.replace(/^www\./, "");
-  } catch {
-    return MARKETPLACE_LABELS.other;
-  }
+  const host = shopHost(offer.url);
+  return host ? shopLabel(host) : MARKETPLACE_LABELS.other;
 };
 
 // Магазины товара без повторов, в порядке офферов.

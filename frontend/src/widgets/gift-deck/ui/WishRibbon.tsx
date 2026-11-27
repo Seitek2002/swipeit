@@ -5,6 +5,8 @@ import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/shared/lib/utils";
 
 export const RIBBON_SEGMENTS = 5;
+// Высота ленты (h-[30px] ниже): тост вкуса встаёт под неё.
+export const RIBBON_HEIGHT = 30;
 
 type Props = {
   // На 5-м «Хочу» лента затягивается в бант (DESIGN.md §6, вау-момент 1).

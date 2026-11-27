@@ -13,6 +13,7 @@ import {
   type CategoryId,
   MARKETPLACE_LABELS,
   type MarketplaceId,
+  shopLabel,
 } from "@/shared/config";
 import { formatBudget } from "@/shared/lib/format";
 import { useSessionStore } from "@/shared/store";
@@ -72,6 +73,14 @@ export const activeFilterChips = (filters: ProductFilters): FilterChip[] => [
       marketplaces: current.marketplaces.filter((item) => item !== marketplace),
     }),
   })),
+  ...(filters.shops ?? []).map((host) => ({
+    id: `shop:${host}`,
+    label: shopLabel(host),
+    remove: (current: ProductFilters) => {
+      const shops = (current.shops ?? []).filter((item) => item !== host);
+      return { ...current, shops: shops.length > 0 ? shops : undefined };
+    },
+  })),
 ];
 
 export const countActiveFilters = (filters: ProductFilters) =>
@@ -130,9 +139,12 @@ export const describeFilters = (
   if (!hidePrices && !isDefaultBudget(filters)) {
     parts.push(formatBudget(filters.budget.min, filters.budget.max));
   }
-  const stores = filters.marketplaces.map(
-    (marketplace: MarketplaceId) => MARKETPLACE_LABELS[marketplace],
-  );
+  const stores = [
+    ...filters.marketplaces.map(
+      (marketplace: MarketplaceId) => MARKETPLACE_LABELS[marketplace],
+    ),
+    ...(filters.shops ?? []).map(shopLabel),
+  ];
   if (stores.length > 0) parts.push(`из магазинов ${joinAnd(stores)}`);
   return parts.length > 0 ? parts.join(", ") : "любые подарки из каталога";
 };

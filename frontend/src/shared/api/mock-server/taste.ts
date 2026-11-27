@@ -19,6 +19,9 @@ export const INFER_MIN_WEIGHT = 2;
 export const INFER_MAX = 4;
 // Тост «вкус сложился» — когда впервые вывелись хотя бы 2 интереса.
 export const TASTE_FORMED_COUNT = 2;
+// Тост «вкус сложился» — не раньше стольких лайков: один «Очень хочу» сразу
+// даёт интересам вес 2, и тост выходил на втором свайпе (UX-аудит M2).
+export const TASTE_TOAST_MIN_LIKES = 4;
 
 // Дробные −0.3 копятся с ошибкой (0.1 + 0.2); округляем до сотых, чтобы
 // вес в базе был ровным и сравнения не дрожали.
@@ -106,16 +109,19 @@ export const inferInterests = (
   );
 };
 
-// «Вкус сложился»: до свайпа выводилось меньше 2 интересов, после — 2 и
-// больше, а тост ещё не показывали (TECH_SPEC §6). Отметку taste_toast
-// ставит клиент через POST /me/hints, когда показал тост.
+// «Вкус сложился» (TECH_SPEC §6 «Вкус»): выводится не меньше 2 интересов,
+// лайков не меньше 4, а тост ещё не отмечен. Если этим же свайпом открылась
+// отправка («Вишлист готов»), тост ждёт следующего свайпа — поэтому это не
+// «впервые стало 2», а «пора показать»: ответ повторяется, пока клиент не
+// отметит taste_toast через POST /me/hints (клиент показывает тост один раз).
 export const isTasteJustFormed = (
-  before: null | Taste | undefined,
   after: null | Taste | undefined,
   user: Pick<User, "interests" | "mutedInterests" | "seenHints">,
+  shareJustUnlocked = false,
 ) =>
   !(user.seenHints ?? []).includes("taste_toast") &&
-  inferInterests(before, user).length < TASTE_FORMED_COUNT &&
+  !shareJustUnlocked &&
+  (after?.likes ?? 0) >= TASTE_TOAST_MIN_LIKES &&
   inferInterests(after, user).length >= TASTE_FORMED_COUNT;
 
 // Вкус профиля. Обычно он уже лежит в профиле (его пересчитывают свайпы),

@@ -1,6 +1,5 @@
-// .ics для «Добавить в календарь» (TECH_SPEC §8: VEVENT — название, время из
-// decision.scheduledFor или ближайшая суббота 12:00, описание с
-// участниками). Чистые функции — с тестами.
+// .ics для «Добавить в календарь» (TECH_SPEC §8 «Календарь»: VEVENT —
+// название, время, описание с участниками). Чистые функции — с тестами.
 
 export type CalendarEvent = {
   description: string;
@@ -60,6 +59,43 @@ export const nextSaturdayNoon = (now: number): Date => {
   if (date.getTime() <= now) date.setDate(date.getDate() + 7);
   return date;
 };
+
+const HALF_HOUR = 30 * 60_000;
+// У плана «Прямо сейчас» — 2 часа (TECH_SPEC §8 «Календарь»).
+export const LIVE_DURATION_MINUTES = 120;
+
+// «Прямо сейчас»: сегодня, начало через час после решения, вверх до :00 или
+// :30 по местному времени (UX-аудит H3: раньше в пятницу вечером «прямо
+// сейчас» превращалось в субботу 12:00).
+export const liveStart = (decidedAt: number): Date => {
+  const date = new Date(decidedAt + 60 * 60_000);
+  const sinceHour =
+    (date.getMinutes() * 60 + date.getSeconds()) * 1000 +
+    date.getMilliseconds();
+  const rest = sinceHour % HALF_HOUR;
+  return rest === 0 ? date : new Date(date.getTime() + HALF_HOUR - rest);
+};
+
+export type PlanTimingInput = {
+  decidedAt: number;
+  mode: "deadline" | "live";
+  now: number;
+  scheduledFor?: string;
+};
+
+// Когда событие: время из решения, у «Прямо сейчас» — сегодня через час,
+// у «До даты» без времени — ближайшая суббота 12:00, как раньше.
+export const planEventStart = ({
+  decidedAt,
+  mode,
+  now,
+  scheduledFor,
+}: PlanTimingInput): Date =>
+  scheduledFor
+    ? new Date(scheduledFor)
+    : mode === "live"
+      ? liveStart(decidedAt)
+      : nextSaturdayNoon(now);
 
 export const buildIcs = (event: CalendarEvent, now: number): string => {
   const end = new Date(event.start.getTime() + event.durationMinutes * 60_000);

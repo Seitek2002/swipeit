@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { buildIcs, foldLine, nextSaturdayNoon } from "./model";
+import {
+  LIVE_DURATION_MINUTES,
+  buildIcs,
+  foldLine,
+  liveStart,
+  nextSaturdayNoon,
+  planEventStart,
+} from "./model";
 
 describe("calendar-export", () => {
   it("длинные строки сворачиваются по 75 октетов, не разрывая букв", () => {
@@ -49,5 +56,69 @@ describe("calendar-export", () => {
     expect(ics).toContain("SUMMARY:Кино\\, в Bishkek Park\\; вечером");
     expect(ics).toContain("DESCRIPTION:Айгерим\\, Азамат\\nНурай");
     expect(ics.split("\r\n").length).toBeGreaterThan(10);
+  });
+});
+
+describe("«Прямо сейчас» в календаре (UX-аудит H3)", () => {
+  // Пятница, 27 ноября 2026, вечер — местное время.
+  const at = (h: number, m: number, s = 0) =>
+    new Date(2026, 10, 27, h, m, s).getTime();
+  const hm = (date: Date) => [
+    date.getDate(),
+    date.getHours(),
+    date.getMinutes(),
+  ];
+
+  it("сегодня, через час после решения, вверх до :00 или :30", () => {
+    expect(hm(liveStart(at(19, 10)))).toEqual([27, 20, 30]);
+    expect(hm(liveStart(at(19, 0)))).toEqual([27, 20, 0]);
+    expect(hm(liveStart(at(19, 30, 1)))).toEqual([27, 21, 0]);
+    expect(hm(liveStart(at(19, 45)))).toEqual([27, 21, 0]);
+  });
+
+  it("план «Прямо сейчас» — не суббота: .ics сегодня, на 2 часа", () => {
+    const start = planEventStart({
+      decidedAt: at(19, 10),
+      mode: "live",
+      now: at(19, 12),
+    });
+    expect(hm(start)).toEqual([27, 20, 30]);
+    const ics = buildIcs(
+      {
+        uid: "pl_1",
+        title: "Бранч",
+        description: "",
+        start,
+        durationMinutes: LIVE_DURATION_MINUTES,
+      },
+      at(19, 12),
+    );
+    const utc = (date: Date) =>
+      date
+        .toISOString()
+        .replace(/[-:]/g, "")
+        .replace(/\.\d{3}/, "");
+    expect(ics).toContain(`DTSTART:${utc(start)}`);
+    expect(ics).toContain(
+      `DTEND:${utc(new Date(start.getTime() + 2 * 60 * 60_000))}`,
+    );
+  });
+
+  it("«До даты» без времени — ближайшая суббота 12:00; время из решения — как есть", () => {
+    const deadline = planEventStart({
+      decidedAt: at(19, 10),
+      mode: "deadline",
+      now: at(19, 12),
+    });
+    expect([deadline.getDay(), deadline.getHours()]).toEqual([6, 12]);
+    const fixed = "2026-12-05T15:00:00.000Z";
+    expect(
+      planEventStart({
+        decidedAt: at(19, 10),
+        mode: "live",
+        now: at(19, 12),
+        scheduledFor: fixed,
+      }).toISOString(),
+    ).toBe(fixed);
   });
 });

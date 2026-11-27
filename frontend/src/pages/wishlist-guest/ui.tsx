@@ -7,13 +7,15 @@ import { useSearchParams } from "next/navigation";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { GuestWishlistView } from "@/widgets/guest-wishlist";
+import {
+  GuestWishlistHeader,
+  GuestWishlistView,
+} from "@/widgets/guest-wishlist";
 
 import { useMe } from "@/entities/user";
 
 import { importExternalWishlist, wishlistKeys } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
-import { usePreloaderHold } from "@/shared/lib/preloader";
 import { decodeWishlist } from "@/shared/lib/share-codec";
 import {
   Brand,
@@ -40,8 +42,10 @@ const GuestSkeleton = () => (
 const GuestContent = () => {
   const encoded = useSearchParams()?.get("d") ?? "";
   const { data: me } = useMe();
-  // Сначала разбираем сами: битую ссылку видно сразу, без запроса.
-  const isValid = decodeWishlist(encoded) !== null;
+  // Сначала разбираем сами: битую ссылку видно сразу, без запроса, а шапку
+  // (имя, повод, сообщение) — сразу из ссылки (UX-аудит H2).
+  const decoded = decodeWishlist(encoded);
+  const isValid = decoded !== null;
   const external = useQuery({
     queryKey: wishlistKeys.external(encoded),
     queryFn: () => importExternalWishlist(encoded),
@@ -49,15 +53,28 @@ const GuestContent = () => {
     staleTime: Infinity,
   });
 
-  // Гостевой вишлист держит прелоадер до своего первого запроса (T21).
-  usePreloaderHold(
-    "guest-wishlist",
-    isValid && !external.data && !external.isError,
-  );
-
-  if (!isValid) return <BrokenLink />;
+  if (!decoded) return <BrokenLink />;
   if (external.isError) return <BrokenLink />;
-  if (!external.data) return <GuestSkeleton />;
+  // Каталог и мок-сервер ещё грузятся: шапка из ссылки — сразу, бирки —
+  // скелетонами по числу желаний (DESIGN.md §6: никогда неподвижный экран).
+  if (!external.data) {
+    return (
+      <div role="status" aria-label="Загружаем вишлист">
+        <GuestWishlistHeader
+          owner={decoded.owner}
+          occasion={decoded.occasion}
+          message={decoded.message}
+        />
+        <ul aria-hidden className="flex flex-col gap-4 px-5 pt-[18px] pb-6">
+          {decoded.items.slice(0, 3).map((item, index) => (
+            <li key={item.key ?? item.productId ?? index}>
+              <Skeleton tone="paper" className="h-72 rounded-[22px]" />
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
 
   const wishlist = external.data;
   const ownerId = wishlist.owner.userId ?? wishlist.id;

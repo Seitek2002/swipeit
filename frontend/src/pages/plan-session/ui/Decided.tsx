@@ -8,9 +8,10 @@ import { CalendarPlus } from "lucide-react";
 import { RandomDrum } from "@/widgets/random-drum";
 
 import {
+  LIVE_DURATION_MINUTES,
   buildIcs,
   downloadIcs,
-  nextSaturdayNoon,
+  planEventStart,
 } from "@/features/calendar-export";
 
 import { ActivityTicket } from "@/entities/activity";
@@ -101,10 +102,16 @@ export const Decided = ({ view, meId }: Props) => {
     );
   }
 
-  const when = decision.scheduledFor
-    ? new Date(decision.scheduledFor)
-    : nextSaturdayNoon(clock.now());
-  const whenText = formatWhen(when);
+  const live = plan.mode === "live" && !decision.scheduledFor;
+  const when = planEventStart({
+    decidedAt: new Date(decision.decidedAt).getTime(),
+    mode: plan.mode,
+    now: clock.now(),
+    scheduledFor: decision.scheduledFor,
+  });
+  // «Прямо сейчас» — решили сейчас, значит «Сегодня», без времени (DESIGN.md
+  // §8.7, UX-аудит H3). В календарь уходит сегодня через час на 2 часа.
+  const whenText = live ? "Сегодня" : formatWhen(when);
   const names = participants.map((person) => person.name).join(", ");
 
   const addToCalendar = () => {
@@ -113,7 +120,9 @@ export const Decided = ({ view, meId }: Props) => {
         uid: `${plan.id}-${decision.decidedAt}`,
         title: activity.title,
         start: when,
-        durationMinutes: Math.max(60, activity.durationMax || 120),
+        durationMinutes: live
+          ? LIVE_DURATION_MINUTES
+          : Math.max(60, activity.durationMax || 120),
         description: `${plan.title}. Идут: ${names}`,
       },
       clock.now(),
@@ -153,7 +162,7 @@ export const Decided = ({ view, meId }: Props) => {
       <ShareActions
         getPayload={async () => ({
           title: plan.title,
-          text: `Решили: ${activity.title}, ${whenText}`,
+          text: `Решили: ${activity.title}, ${live ? "сегодня" : whenText}`,
           url: absoluteUrl(ROUTES.PLAN_SESSION(plan.id)),
         })}
         qrLabel="QR-код плана"

@@ -1,10 +1,11 @@
 import { z } from "zod";
 
-import { GUIDE_PRODUCT_ID } from "@/shared/config";
+import { GUIDE_PRODUCT_ID, shopHost } from "@/shared/config";
 import { toDateKey } from "@/shared/lib/format";
 
 import { EMPTY_FILTERS } from "../../catalog/constants";
 import {
+  type CatalogStores,
   type FeedResponse,
   type ProductFilters,
   ProductFiltersSchema,
@@ -103,6 +104,35 @@ export const getProduct: Handler = async (ctx, { params }) => {
   );
   if (!product) throw notFound("Товар не найден");
   return product;
+};
+
+// GET /catalog/stores — магазины, где есть товары (UX-аудит M1): чипы фильтра.
+// Каталог в демо не меняется — считаем по нему, без пользователя.
+export const getCatalogStores: Handler = async (ctx) => {
+  const products = await ctx.catalog.products();
+  const marketplaces = new Map<string, number>();
+  const shops = new Map<string, number>();
+  for (const product of products) {
+    const seen = new Set<string>();
+    for (const offer of product.offers) {
+      const host = offer.marketplace === "other" ? shopHost(offer.url) : null;
+      const key = host ? `shop:${host}` : offer.marketplace;
+      if (seen.has(key) || key === "other") continue;
+      seen.add(key);
+      const bucket = host ? shops : marketplaces;
+      const id = host ?? offer.marketplace;
+      bucket.set(id, (bucket.get(id) ?? 0) + 1);
+    }
+  }
+  const byCount = (map: Map<string, number>) =>
+    [...map.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([id]) => id);
+  const response: CatalogStores = {
+    marketplaces: byCount(marketplaces) as CatalogStores["marketplaces"],
+    shops: byCount(shops),
+  };
+  return response;
 };
 
 // GET /catalog/meta — meta.json: курсы и авторы фото занятий (страница
