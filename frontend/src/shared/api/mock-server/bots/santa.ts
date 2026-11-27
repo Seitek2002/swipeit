@@ -74,15 +74,28 @@ const botsOf = async (api: BotApi, ids: string[]) => {
     .filter((user): user is User => Boolean(user?.isBot));
 };
 
-export const santaBehavior: BotBehavior = {
-  "santa:created": async (api, event) => {
-    const db = await api.db.read();
-    const game = db.santaGames[event.id];
-    if (!game || game.status !== "gathering") return;
-    for (const bot of await botsOf(api, game.invitedIds)) {
-      api.schedule(bot, JOIN_DELAY_MS, async () => {
-        // Жеребьёвка могла пройти, пока бот «думал», — тогда обработчик
-        // ответит ошибкой, и строки в ленте не будет.
+// Позванные боты вступают в игру, которая ещё собирается. Уже вступивших не
+// трогаем: повтор (resume после перезагрузки или смены вкладки-лидера)
+// безопасен (auto-tasks U04).
+const joinInvited = async (api: BotApi, gameId: string) => {
+  const db = await api.db.read();
+  const game = db.santaGames[gameId];
+  if (!game || game.status !== "gathering") return;
+  const waiting = game.invitedIds.filter(
+    (id) => !game.participantIds.includes(id),
+  );
+  for (const bot of await botsOf(api, waiting)) {
+    api.schedule(
+      bot,
+      JOIN_DELAY_MS,
+      async () => {
+        const current = await gameNow(api, gameId);
+        if (
+          current?.status !== "gathering" ||
+          current.participantIds.includes(bot.id)
+        ) {
+          return;
+        }
         await api.as(bot.id, {
           method: "POST",
           path: `${gamePath(game.id)}/join`,
@@ -92,30 +105,76 @@ export const santaBehavior: BotBehavior = {
           `${bot.name} ${byGender(bot, "вступил", "вступила", "вступил(а)")} в «${game.title}»`,
         );
         if (!(await hasWishlist(api, bot.id))) collectWishlist(api, bot);
+      },
+      `santa:join:${gameId}:${bot.id}`,
+    );
+  }
+};
+
+// Игра сейчас — шаг бота мог уже сделать повтор (resume запускается и при
+// смене настроек демо): перед действием перечитываем.
+const gameNow = async (api: BotApi, gameId: string) =>
+  (await api.db.read()).santaGames[gameId];
+
+// «Я купил подарок» — после вскрытия конверта.
+const buyLater = (api: BotApi, bot: User, gameId: string, title: string) =>
+  api.schedule(
+    bot,
+    BUY_DELAY_MS,
+    async () => {
+      if ((await gameNow(api, gameId))?.boughtIds.includes(bot.id)) return;
+      await api.as(bot.id, {
+        method: "POST",
+        path: `${gamePath(gameId)}/bought`,
+        body: { bought: true },
       });
+      // Кому — не пишем: даже в ленте демо-панели пары не видны.
+      api.report(
+        bot.id,
+        `${bot.name} ${byGender(bot, "купил", "купила", "купил(а)")} подарок в «${title}»`,
+      );
+    },
+    `santa:buy:${gameId}:${bot.id}`,
+  );
+
+// После жеребьёвки боты вскрывают конверт, потом отмечают «Купил». Тех, кто
+// уже вскрыл или купил, продолжаем с их шага — для resume.
+const openAndBuy = async (api: BotApi, gameId: string) => {
+  const db = await api.db.read();
+  const game = db.santaGames[gameId];
+  if (!game || game.status !== "drawn") return;
+  for (const bot of await botsOf(api, game.participantIds)) {
+    if (game.boughtIds.includes(bot.id)) continue;
+    if (game.openedIds.includes(bot.id)) {
+      buyLater(api, bot, game.id, game.title);
+      continue;
     }
-  },
-  "santa:drawn": async (api, event) => {
-    const db = await api.db.read();
-    const game = db.santaGames[event.id];
-    if (!game || game.status !== "drawn") return;
-    const path = gamePath(game.id);
-    for (const bot of await botsOf(api, game.participantIds)) {
-      api.schedule(bot, OPEN_DELAY_MS, async () => {
-        await api.as(bot.id, { method: "POST", path: `${path}/open` });
-        api.schedule(bot, BUY_DELAY_MS, async () => {
-          await api.as(bot.id, {
-            method: "POST",
-            path: `${path}/bought`,
-            body: { bought: true },
-          });
-          // Кому — не пишем: даже в ленте демо-панели пары не видны.
-          api.report(
-            bot.id,
-            `${bot.name} ${byGender(bot, "купил", "купила", "купил(а)")} подарок в «${game.title}»`,
-          );
+    api.schedule(
+      bot,
+      OPEN_DELAY_MS,
+      async () => {
+        if ((await gameNow(api, game.id))?.openedIds.includes(bot.id)) return;
+        await api.as(bot.id, {
+          method: "POST",
+          path: `${gamePath(game.id)}/open`,
         });
-      });
+        buyLater(api, bot, game.id, game.title);
+      },
+      `santa:open:${game.id}:${bot.id}`,
+    );
+  }
+};
+
+export const santaBehavior: BotBehavior = {
+  "santa:created": (api, event) => joinInvited(api, event.id),
+  "santa:drawn": (api, event) => openAndBuy(api, event.id),
+  // Вкладку перезагрузили или боты перешли к другой вкладке — отложенные
+  // шаги пропали. Досылаем их по базе: иначе игра навсегда «Участники 1».
+  resume: async (api) => {
+    const db = await api.db.read();
+    for (const game of Object.values(db.santaGames)) {
+      if (game.status === "gathering") await joinInvited(api, game.id);
+      else await openAndBuy(api, game.id);
     }
   },
 };

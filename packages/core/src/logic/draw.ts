@@ -122,3 +122,25 @@ export const drawIssueOf = (
     throw error;
   }
 };
+
+// Причина на экране игры с учётом позванных (auto-tasks U04): пока
+// участников меньше трёх, но позванные ещё могут вступить, — «Ждём, пока
+// вступят: Нурай, Данияр», а не «позови ещё друзей»: друзья уже позваны.
+export const drawIssueWithInvites = (
+  participantIds: readonly string[],
+  invitedIds: readonly string[],
+  exclusions: ReadonlyArray<readonly [string, string]>,
+  describe: Describe = (id) => id,
+  // Имя в именительном — «Ждём, пока вступят: Азамат» (describe — дательный
+  // для «Азамату некому дарить»).
+  nameOf: Describe = (id) => id,
+): null | string => {
+  const waiting = invitedIds.filter((id) => !participantIds.includes(id));
+  if (
+    new Set(participantIds).size < MIN_SANTA_PARTICIPANTS &&
+    waiting.length > 0
+  ) {
+    return `Ждём, пока вступят: ${waiting.map(nameOf).join(", ")}`;
+  }
+  return drawIssueOf(participantIds, exclusions, describe);
+};

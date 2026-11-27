@@ -1,3 +1,4 @@
+import { drawIssueWithInvites } from "@swipeit/core/logic/draw";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
@@ -210,7 +211,13 @@ const wardOf = (
 const drawIssue = (db: Db, game: SantaGame) =>
   game.status === "drawn"
     ? null
-    : drawIssueOf(game.participantIds, game.exclusions, describeIn(db));
+    : drawIssueWithInvites(
+        game.participantIds,
+        game.invitedIds,
+        game.exclusions,
+        describeIn(db),
+        (id) => db.users[id]?.name ?? "кто-то",
+      );
 
 const viewOf = (
   db: Db,

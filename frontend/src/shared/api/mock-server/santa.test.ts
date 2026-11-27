@@ -186,9 +186,10 @@ describe("создание игры", () => {
       ["Тимур", false, false],
       ["Бекзат", false, false],
     ]);
-    // Пока вступил один организатор — провести нельзя.
+    // Пока вступил один организатор — провести нельзя: ждём позванных
+    // (auto-tasks U04), а не «позови ещё друзей».
     expect(view.drawIssue).toBe(
-      "Нужно хотя бы 3 участника — позови ещё друзей",
+      "Ждём, пока вступят: Азамат, Нурай, Данияр, Тимур, Бекзат",
     );
     expect(triggers("santa:created")).toEqual([
       expect.objectContaining({ id: view.game.id, by: DEMO_USER_ID }),

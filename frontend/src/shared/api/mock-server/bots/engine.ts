@@ -25,7 +25,13 @@ export type BotApi = {
   // Строка в ленту демо-панели: «Азамат забронировал подарок».
   report(botId: string, text: string): void;
   // Задержка с учётом «Скорости ботов» и темпа бота; null — боты выключены.
-  schedule(bot: User, range: [number, number], task: () => Promise<void>): void;
+  // key — шаг с этим ключом уже ждёт: повтор (resume) не ставим.
+  schedule(
+    bot: User,
+    range: [number, number],
+    task: () => Promise<void>,
+    key?: string,
+  ): void;
   settings(): DemoSettings;
 };
 
@@ -75,6 +81,8 @@ const timerScheduler: BotScheduler = {
 export const createBotEngine = (deps: BotEngineDeps): BotEngine => {
   const scheduler = deps.scheduler ?? timerScheduler;
   const pending = new Set<() => void>();
+  // Ключи шагов, которые ждут своего часа (для schedule с key).
+  const waitingKeys = new Set<string>();
   let unsubscribe: (() => void) | null = null;
 
   const api: BotApi = {
@@ -86,13 +94,18 @@ export const createBotEngine = (deps: BotEngineDeps): BotEngine => {
     settings: () => deps.settings.get(),
     report: (botId, text) =>
       deps.publish({ type: "bot:action", botId, text, at: deps.clock.now() }),
-    schedule(bot, [min, max], task) {
+    schedule(bot, [min, max], task, key) {
       const factor = SPEED[deps.settings.get().botSpeed];
       if (factor === null) return;
+      if (key !== undefined) {
+        if (waitingKeys.has(key)) return;
+        waitingKeys.add(key);
+      }
       const pace = bot.bot?.speedFactor ?? 1;
       const delay = (min + deps.random.next() * (max - min)) * factor * pace;
       const cancel = scheduler.after(delay, () => {
         pending.delete(cancel);
+        if (key !== undefined) waitingKeys.delete(key);
         // Скорость могли выключить, пока бот «думал».
         if (SPEED[deps.settings.get().botSpeed] === null) return;
         // Ошибка бота (подарок уже забрали, сеть) — не повод ронять вкладку.
@@ -136,6 +149,7 @@ export const createBotEngine = (deps: BotEngineDeps): BotEngine => {
       unsubscribe = null;
       pending.forEach((cancel) => cancel());
       pending.clear();
+      waitingKeys.clear();
     },
   };
 };

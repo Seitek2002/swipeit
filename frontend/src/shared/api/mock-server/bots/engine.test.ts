@@ -205,3 +205,54 @@ describe("боты и вишлист", () => {
     expect(await ownerCount()).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe("боты Санты досылают пропущенное (auto-tasks U04)", () => {
+  const BOTS = ["u_azamat", "u_nurai", "u_daniyar"];
+  const createGame = async () =>
+    (await server.handle({
+      method: "POST",
+      path: "/santa",
+      userId: DEMO_USER_ID,
+      body: {
+        title: "Офис",
+        budget: 2000,
+        exchangeDate: "2026-12-28",
+        participantIds: BOTS,
+      },
+    })) as { drawIssue: null | string; game: { id: string } };
+  const gameOf = async (id: string) =>
+    (await server.deps.db.read()).santaGames[id];
+
+  it("игра создана, пока боты не работали, — после запуска движка позванные вступают", async () => {
+    const created = await createGame();
+    expect(created.drawIssue).toBe("Ждём, пока вступят: Азамат, Нурай, Данияр");
+    // Триггер ушёл в пустоту: движка ещё нет.
+    startEngine();
+    await flush();
+    expect(manual.tasks).toHaveLength(BOTS.length);
+    await manual.runAll();
+    const game = await gameOf(created.game.id);
+    expect([...(game?.participantIds ?? [])].sort()).toEqual(
+      [DEMO_USER_ID, ...BOTS].sort(),
+    );
+  });
+
+  it("повторный resume (смена настроек) не вступает дважды и не пишет строку дважды", async () => {
+    startEngine();
+    const created = await createGame();
+    await flush();
+    // Настройки демо поменялись — resume досылает то же самое ещё раз.
+    settings.update({ clockOffsetMs: 60_000 });
+    bus.publish({ type: "db:changed", scope: ["settings"], by: DEMO_USER_ID });
+    await flush();
+    // Шаги с тем же ключом уже ждут — второй раз не ставятся.
+    expect(manual.tasks.length).toBe(BOTS.length);
+    await manual.runAll();
+    const game = await gameOf(created.game.id);
+    expect(game?.participantIds).toHaveLength(BOTS.length + 1);
+    const joinedRows = bus.events.filter(
+      (event) => event.type === "bot:action" && event.text.includes("вступил"),
+    );
+    expect(joinedRows).toHaveLength(BOTS.length);
+  });
+});
