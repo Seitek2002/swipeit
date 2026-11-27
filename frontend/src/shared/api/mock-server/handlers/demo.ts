@@ -6,7 +6,7 @@ import type { Handler, HandlerContext } from "../context";
 import { applyNewYearScenario } from "../scenarios/new-year";
 import { DEMO_USER_ID, buildSeedDb, createSeedDb } from "../seed";
 import { parseInput } from "./common";
-import { isNamelessHuman } from "./users";
+import { isNamelessHuman, publicUser } from "./users";
 
 // «Сбросить всё» — и часы, и скорость ботов, и ошибки API: иначе следующая
 // группа начала бы с перемотанным временем (в lan настройки общие). До
@@ -62,6 +62,7 @@ export const listDemoUsers: Handler = async (ctx) => {
   // этому списку «Здесь уже 3 человека», а безымянного никто не узнает
   // (TECH_SPEC §7a). Свой профиль — всегда (для «Смотреть как»).
   return Object.values(db.users)
+    .map((user) => (user.id === ctx.userId ? user : publicUser(user)))
     .filter(
       (user) =>
         ctx.mode !== "lan" || user.id === ctx.userId || !isNamelessHuman(user),

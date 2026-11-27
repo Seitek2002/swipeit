@@ -1,9 +1,13 @@
 import { getTransport } from "../transport";
 import type {
+  CreateDateInput,
   FriendSummary,
   HintId,
+  ImportantDateView,
   MeResponse,
   NewUserInput,
+  Reminder,
+  UpdateDateInput,
   UpdateMeInput,
   User,
 } from "./types";
@@ -39,3 +43,43 @@ export const getPresence = (): Promise<{
   devices: number;
   online: string[];
 }> => getTransport().request("GET", "/presence");
+
+// ── «Мои даты» и напоминания (только свои: id — из сессии) ─────────────
+
+export const getMyDates = (): Promise<ImportantDateView[]> =>
+  getTransport().request<ImportantDateView[]>("GET", "/me/dates");
+
+// Такая дата уже есть — вернётся она же, без дубля.
+export const createMyDate = (
+  input: CreateDateInput,
+): Promise<ImportantDateView> =>
+  getTransport().request<ImportantDateView>("POST", "/me/dates", input);
+
+// label: "" или null — вернуть подпись готового повода или «Значимая дата N».
+export const updateMyDate = (
+  id: string,
+  patch: UpdateDateInput,
+): Promise<ImportantDateView> =>
+  getTransport().request<ImportantDateView>(
+    "PATCH",
+    `/me/dates/${encodeURIComponent(id)}`,
+    patch,
+  );
+
+// В ответе — удалённая дата (для «Отменить»: createMyDate с её date,
+// preset, label и autoNumber) и сбросился ли повод вишлиста на «Просто так».
+export const deleteMyDate = (
+  id: string,
+): Promise<{ date: ImportantDateView; occasionReset: boolean; ok: true }> =>
+  getTransport().request("DELETE", `/me/dates/${encodeURIComponent(id)}`);
+
+// Активное напоминание: 0 или 1.
+export const getMyReminders = (): Promise<Reminder[]> =>
+  getTransport().request<Reminder[]>("GET", "/me/reminders");
+
+// «Скрыть» — до следующего года. Ответ — напоминания после скрытия.
+export const dismissReminder = (id: string): Promise<Reminder[]> =>
+  getTransport().request<Reminder[]>(
+    "POST",
+    `/me/reminders/${encodeURIComponent(id)}/dismiss`,
+  );

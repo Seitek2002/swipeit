@@ -9,6 +9,7 @@ export {
   encodePickRequest,
   encodeWishlist,
   type SharedPickAnswer,
+  type SharedOccasion,
   type SharedPickRequest,
   type SharedWishlist,
   sharedItemKey,

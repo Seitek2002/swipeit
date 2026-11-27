@@ -4,7 +4,7 @@ import { ActivitySchema } from "../catalog/types";
 import { PickAnswerSchema, PickRequestSchema } from "../pick/types";
 import { PlanSessionSchema } from "../plans/types";
 import { SantaGameSchema } from "../santa/types";
-import { UserSchema } from "../users/types";
+import { ImportantDateSchema, UserSchema } from "../users/types";
 import {
   ExternalWishlistSchema,
   ProductSwipeSchema,
@@ -32,6 +32,11 @@ export const DbSchema = z.object({
   customActivities: z.record(z.string(), ActivitySchema),
   plans: z.record(z.string(), PlanSessionSchema),
   santaGames: z.record(z.string(), SantaGameSchema),
+  // ownerId → значимые даты (этап 7). default — база, сохранённая до
+  // обновления, читается без сброса (TECH_SPEC §5 «Совместимость»).
+  importantDates: z
+    .record(z.string(), z.array(ImportantDateSchema))
+    .default({}),
 });
 
 export type Db = z.infer<typeof DbSchema>;
@@ -50,6 +55,7 @@ export const createEmptyDb = (): Db => ({
   customActivities: {},
   plans: {},
   santaGames: {},
+  importantDates: {},
 });
 
 // Сырой JSON из хранилища → база. null — данных нет; "broken" — JSON битый

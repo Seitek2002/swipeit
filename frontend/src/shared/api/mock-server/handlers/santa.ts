@@ -24,6 +24,7 @@ import type { WishlistItem } from "../../wishlist/types";
 import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, isApiError, notFound, validation } from "../errors";
+import { publicOccasion } from "../occasion";
 import { parseInput, requireNamedUser, requireUser } from "./common";
 import { guestItems } from "./guest";
 import { itemKeyOf } from "./wishlist";
@@ -196,7 +197,8 @@ const wardOf = (
   });
   return {
     ...profileOf(ward),
-    occasion: meta?.occasion,
+    // Даты подопечного личные: Санте — только дата и готовый повод.
+    occasion: publicOccasion(meta?.occasion),
     message: meta?.message,
     wishlist,
     overBudgetCount: wishlist.filter((item) => item.overBudget).length,

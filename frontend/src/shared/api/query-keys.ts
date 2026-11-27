@@ -10,6 +10,9 @@ import type { PlanFilters } from "./plans/types";
 export const userKeys = {
   all: ["users"] as const,
   me: () => [...userKeys.all, "me"] as const,
+  // Свои даты и напоминания — под users: их перечитывает область "users".
+  dates: () => [...userKeys.all, "me", "dates"] as const,
+  reminders: () => [...userKeys.all, "me", "reminders"] as const,
   detail: (id: string) => [...userKeys.all, "detail", id] as const,
 };
 

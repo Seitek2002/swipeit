@@ -8,7 +8,12 @@ import { DEFAULT_DEMO_SETTINGS } from "../demo/constants";
 import { computeMatches } from "../plans/matches";
 import type { PlanView } from "../plans/types";
 import type { SantaView } from "../santa/types";
-import type { FriendSummary, User } from "../users/types";
+import type {
+  FriendSummary,
+  ImportantDateView,
+  MeResponse,
+  User,
+} from "../users/types";
 import type { WishlistResponse } from "../wishlist/types";
 import {
   createFixedClock,
@@ -162,6 +167,29 @@ describe("POST /demo/scenario/new-year", () => {
       message: expect.any(String),
       shareUnlockedAt: expect.any(String),
     });
+  });
+
+  it("этап 7: у Айгерим вкус по вишлисту, день рождения и «Годовщина»; ссылку можно отправить", async () => {
+    await loadScenario();
+    const me = await call<MeResponse>("GET", "/me", DEMO_USER_ID);
+    expect(me.name).toBe("Айгерим");
+    expect(me.birthday).toBe("03-14");
+    expect(me.taste?.likes).toBe(7);
+    expect(me.inferredInterests.length).toBeGreaterThan(0);
+    const dates = await call<ImportantDateView[]>(
+      "GET",
+      "/me/dates",
+      DEMO_USER_ID,
+    );
+    expect(dates).toEqual([
+      expect.objectContaining({ preset: "anniversary", title: "Годовщина" }),
+    ]);
+    const { url } = await call<{ url: string }>(
+      "POST",
+      "/wishlist/share",
+      DEMO_USER_ID,
+    );
+    expect(url).toMatch(/^\/w\/\?d=/);
   });
 
   it("у Нурай день рождения через 5 дней", async () => {

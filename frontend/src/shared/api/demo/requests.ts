@@ -1,5 +1,5 @@
 import { getTransport } from "../transport";
-import type { MeResponse, User } from "../users/types";
+import type { MeResponse, Reminder, User } from "../users/types";
 import type { DemoSettings, NewYearScenarioResult } from "./types";
 
 export const resetDemo = (): Promise<{ ok: true }> =>
@@ -28,3 +28,12 @@ export const getDemoUsers = (): Promise<User[]> =>
 // текущего профиля — обучающая карточка снова первая.
 export const resetDemoHints = (): Promise<MeResponse> =>
   getTransport().request<MeResponse>("POST", "/demo/hints/reset");
+
+// «Перемотать к напоминанию»: часы встают за 30 дней до ближайшей своей
+// даты, напоминание о которой не скрыто. Своих дат нет — VALIDATION
+// «Сначала отправь вишлист с датой».
+export const jumpToReminder = (): Promise<{
+  clockOffsetMs: number;
+  ok: true;
+  reminder: null | Reminder;
+}> => getTransport().request("POST", "/demo/clock/to-reminder");

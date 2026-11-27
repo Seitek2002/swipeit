@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { AVATAR_COLORS } from "@/shared/config";
+import {
+  AVATAR_COLORS,
+  IMPORTANT_DATE_PRESETS,
+  OCCASION_KINDS,
+} from "@/shared/config";
 
 export const SwipeDecisionSchema = z.enum(["like", "superlike", "pass"]);
 
@@ -53,9 +57,18 @@ export const WishlistItemSchema = z.object({
   addedAt: z.string(),
 });
 
+// Повод вишлиста (TECH_SPEC §5 WishlistMeta.occasion). "custom" — только
+// старые данные и ссылки; "important" — значимая дата владельца.
 export const OccasionSchema = z.object({
-  kind: z.enum(["birthday", "new_year", "just_because", "custom"]),
+  kind: z.enum(OCCASION_KINDS),
+  // Для "important": ImportantDate.id. Только у владельца — в ссылку и
+  // чужим не отдаётся.
+  dateId: z.string().optional(),
+  // Готовый повод значимой даты: по нему гость видит «на годовщину».
+  preset: z.enum(IMPORTANT_DATE_PRESETS).optional(),
+  // Только у старого "custom".
   label: z.string().optional(),
+  // "YYYY-MM-DD" ближайшего наступления.
   date: z.string().optional(),
 });
 

@@ -8,6 +8,15 @@ import {
   getProduct,
 } from "./handlers/catalog";
 import {
+  createDate,
+  deleteDate,
+  dismissReminder,
+  jumpToReminder,
+  listDates,
+  listReminders,
+  updateDate,
+} from "./handlers/dates";
+import {
   getSettings,
   listDemoUsers,
   loadNewYearScenario,
@@ -93,6 +102,16 @@ export const ROUTE_TABLE: Route[] = [
   { method: "GET", pattern: "/me", handler: getMe },
   { method: "PATCH", pattern: "/me", handler: updateMe },
   { method: "POST", pattern: "/me/hints", handler: markHintSeen },
+  { method: "GET", pattern: "/me/dates", handler: listDates },
+  { method: "POST", pattern: "/me/dates", handler: createDate },
+  { method: "PATCH", pattern: "/me/dates/:id", handler: updateDate },
+  { method: "DELETE", pattern: "/me/dates/:id", handler: deleteDate },
+  { method: "GET", pattern: "/me/reminders", handler: listReminders },
+  {
+    method: "POST",
+    pattern: "/me/reminders/:id/dismiss",
+    handler: dismissReminder,
+  },
   { method: "GET", pattern: "/users/:id", handler: getUser },
   { method: "GET", pattern: "/friends", handler: listFriends },
   { method: "GET", pattern: "/catalog/feed", handler: getFeed },
@@ -188,6 +207,11 @@ export const ROUTE_TABLE: Route[] = [
   { method: "POST", pattern: "/activities", handler: createCustomActivity },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },
   { method: "POST", pattern: "/demo/hints/reset", handler: resetHints },
+  {
+    method: "POST",
+    pattern: "/demo/clock/to-reminder",
+    handler: jumpToReminder,
+  },
   {
     method: "POST",
     pattern: "/demo/scenario/new-year",

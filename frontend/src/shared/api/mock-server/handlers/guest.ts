@@ -18,6 +18,7 @@ import { OccasionSchema } from "../../wishlist/types";
 import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, notFound, validation } from "../errors";
+import { normalizeOccasion, occasionForOthers } from "../occasion";
 import { hashString } from "../random";
 import { parseInput, requireNamed, requireUser } from "./common";
 import { itemKeyOf } from "./wishlist";
@@ -34,9 +35,14 @@ const changed = (
 
 // ── Повод, отправка, подсказка ──────────────────────────────────────────
 
-// Свой повод — до 60 символов, как в поле ввода и в ссылке (share-codec).
+// Повод из запроса. Свой (старый custom) — до 60 символов, как в ссылке
+// (share-codec). important — со своей датой (dateId), остальное сервер
+// дополнит сам (normalizeOccasion).
 export const OccasionInputSchema = OccasionSchema.extend({
   label: z.string().trim().max(60, "Повод — до 60 символов").optional(),
+  dateId: z.string().max(60).optional(),
+}).refine((occasion) => occasion.kind !== "important" || occasion.dateId, {
+  message: "Выбери дату",
 });
 
 // Один ключ — одно желание в гостевом виде: товар, лайкнутый заново, пока
@@ -76,6 +82,7 @@ const MetaPatchSchema = z.object({
 // PATCH /wishlist/meta — повод, сообщение, «Не показывать мне даже это».
 export const updateMeta: Handler = async (ctx, { body }) => {
   const patch = parseInput(MetaPatchSchema, body);
+  const now = ctx.clock.now();
   const meta = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const current = (db.wishlistMeta[user.id] ??= {
@@ -83,7 +90,9 @@ export const updateMeta: Handler = async (ctx, { body }) => {
       hideReservationCount: false,
     });
     if (patch.occasion === null) delete current.occasion;
-    else if (patch.occasion) current.occasion = patch.occasion;
+    else if (patch.occasion) {
+      current.occasion = normalizeOccasion(db, user, patch.occasion, now);
+    }
     if (patch.message !== undefined)
       current.message = patch.message.trim() || undefined;
     if (patch.hideReservationCount !== undefined) {
@@ -115,7 +124,9 @@ export const shareWishlist: Handler = async (ctx) => {
       userId: user.id,
       birthday: user.birthday,
     },
-    occasion: meta.occasion,
+    // У значимой даты — только дата и готовый повод: своё название и
+    // dateId личные и в ссылку не попадают (TECH_SPEC §8).
+    occasion: occasionForOthers(db, user.id, ctx.clock.now()),
     message: meta.message,
     items: items.map((item) => ({
       productId:
@@ -231,6 +242,7 @@ export const getUserWishlist: Handler = async (ctx, { params }) => {
   const owner = db.users[params.id ?? ""];
   if (!owner) throw notFound("Профиль не найден");
   const meta = db.wishlistMeta[owner.id];
+  const occasion = occasionForOthers(db, owner.id, ctx.clock.now());
   const view: GuestWishlist = {
     owner: {
       // Профиль друга без имени сюда не попадает (его нет в друзьях), но
@@ -239,7 +251,7 @@ export const getUserWishlist: Handler = async (ctx, { params }) => {
       avatarColor: owner.avatarColor,
       userId: owner.id,
     },
-    meta: { occasion: meta?.occasion, message: meta?.message },
+    meta: { occasion, message: meta?.message },
     items: guestItems(db, owner.id).map((item) => ({
       key: itemKeyOf(item),
       productId:
