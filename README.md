@@ -11,22 +11,28 @@
 
 <table>
   <tr>
-    <td><img src="docs/progress/T20/readme/1-onboarding.png" width="200" alt="Знакомство"></td>
+    <td><img src="docs/progress/T25/readme/1-preloader.png" width="200" alt="Прелоадер"></td>
+    <td><img src="docs/progress/T25/readme/2-guide.png" width="200" alt="Обучающая карточка"></td>
     <td><img src="docs/progress/T20/readme/2-gifts.png" width="200" alt="Лента подарков"></td>
     <td><img src="docs/progress/T20/readme/3-wishlist.png" width="200" alt="Вишлист"></td>
-    <td><img src="docs/progress/T20/readme/7-friends.png" width="200" alt="Друзья"></td>
   </tr>
   <tr>
+    <td><img src="docs/progress/T25/readme/3-when.png" width="200" alt="К какому дню готовить подарки"></td>
+    <td><img src="docs/progress/T25/readme/4-dates.png" width="200" alt="Мои даты"></td>
+    <td><img src="docs/progress/T20/readme/7-friends.png" width="200" alt="Друзья"></td>
     <td><img src="docs/progress/T20/readme/4-plan-deck.png" width="200" alt="Свайп занятий"></td>
+  </tr>
+  <tr>
     <td><img src="docs/progress/T20/readme/5-match.png" width="200" alt="Совпадение"></td>
     <td><img src="docs/progress/T20/readme/6-santa.png" width="200" alt="Тайный Санта"></td>
+    <td></td>
     <td></td>
   </tr>
 </table>
 
 ### Демо: https://seitek2002.github.io/swipeit/
 
-Открой на телефоне и нажми «Войти как демо-пользователь». Всё хранится только в твоём браузере, друзья внутри — демо-боты, которые бронируют подарки, свайпают планы и играют в Санту сами. Приложение можно установить на главный экран и открывать без интернета.
+Открой на телефоне — после прелоадера сразу лента подарков, без анкеты: первая карточка покажет, как свайпать. Готовый профиль с вишлистом — в профиле, «Войти как демо-пользователь». Всё хранится только в твоём браузере, друзья внутри — демо-боты, которые бронируют подарки, свайпают планы и играют в Санту сами. Приложение можно установить на главный экран и открывать без интернета.
 
 Как показывать демо (7 минут на одном телефоне, тест с друзьями по Wi-Fi, ссылка для всех) — [docs/DEMO.md](docs/DEMO.md).
 
