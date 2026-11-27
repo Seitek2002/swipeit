@@ -37,6 +37,10 @@ export type ServerDeps = {
   catalog: CatalogAccess;
   clock: Clock;
   db: DbAccess;
+  // Где работает сервер: local — во вкладке, lan — на ноутбуке (TECH_SPEC
+  // §7a). Влияет на правила, а не на устройство: в lan все люди сервера —
+  // друзья друг другу. По умолчанию local.
+  mode?: "lan" | "local";
   random: Random;
   realtime: RealtimePublisher;
   settings: SettingsAccess;
