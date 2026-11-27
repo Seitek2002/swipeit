@@ -23,6 +23,8 @@ import {
   Skeleton,
 } from "@/shared/ui";
 
+import { MyReservations } from "./my-reservations";
+
 // Ближайший день рождения ближе этого порога — карточкой над списком.
 const SOON_DAYS = 30;
 
@@ -194,12 +196,18 @@ export const FriendsPage = () => {
             ))}
           </div>
         ) : list.length === 0 ? (
-          <EmptyState className="h-full" title="Друзей пока нет." />
+          <>
+            {/* Брони по ссылкам бывают и без друзей в списке. */}
+            <MyReservations />
+            <EmptyState className="h-full" title="Друзей пока нет." />
+          </>
         ) : (
           <>
             {soon && (
               <SoonCard friend={soon} onPick={() => setPickOpen(true)} />
             )}
+            {/* «Я дарю» — свои брони над списком (auto-tasks P02). */}
+            <MyReservations />
             {getMode() === "lan" ? (
               <>
                 {/* Сеть (DESIGN.md §8.11): люди с мятной точкой онлайна

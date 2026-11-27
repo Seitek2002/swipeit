@@ -1,5 +1,9 @@
 import { getTransport } from "../transport";
-import type { Reservation, ReservationsView } from "../wishlist/types";
+import type {
+  MyReservation,
+  Reservation,
+  ReservationsView,
+} from "../wishlist/types";
 
 export const getReservations = (
   ownerId: string,
@@ -31,4 +35,13 @@ export const deleteReservation = (
     {
       guestId,
     },
+  );
+
+// «Я дарю» — свои брони (auto-tasks P02).
+export const getMyReservations = (guestId?: string): Promise<MyReservation[]> =>
+  getTransport().request<MyReservation[]>(
+    "GET",
+    "/me/reservations",
+    undefined,
+    { guestId },
   );

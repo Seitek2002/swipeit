@@ -85,6 +85,8 @@ export const CONTRACT: readonly ContractRoute[] = [
   route("GET", "/reservations"),
   route("POST", "/reservations"),
   route("DELETE", "/reservations/:id"),
+  // «Я дарю» — свои брони на «Друзьях» (auto-tasks P02).
+  route("GET", "/me/reservations"),
 
   // «Выбери подарок сам»
   route("POST", "/pick-requests"),

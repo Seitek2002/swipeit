@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import {
   AVATAR_COLORS,
+  type AvatarColor,
   IMPORTANT_DATE_PRESETS,
   OCCASION_KINDS,
 } from "../../config/index";
@@ -183,3 +184,21 @@ export type ReservationsView =
       }>;
       role: "guest";
     };
+
+// GET /me/reservations — «Я дарю»: свои брони (auto-tasks P02). Чужих
+// бронирующих здесь нет; повод — как его видят гости (occasionForOthers).
+export type MyReservation = {
+  at: string;
+  closed: boolean;
+  // Когда бронь закрылась («Мне это подарили»): по нему закрытые уходят,
+  // если у повода нет даты.
+  closedAt?: string;
+  id: string;
+  item: {
+    custom?: Omit<CustomWish, "imageKey">;
+    productId?: string;
+  };
+  itemKey: string;
+  occasion?: Occasion;
+  owner: { avatarColor: AvatarColor; id: string; name: string };
+};

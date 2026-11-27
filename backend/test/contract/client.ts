@@ -23,6 +23,7 @@ import { createSession } from "../../src/auth/sessions";
 import { loadCatalog, type ServerCatalog } from "../../src/catalog/load";
 import { loadConfig } from "../../src/config";
 import { users, wishlistMeta } from "../../src/db/schema";
+import { makeFriends } from "../../src/domains/friends/handlers";
 import { createTestDb, resetDb } from "../db";
 
 // 28 ноября 2026, полдень по Бишкеку.
@@ -31,6 +32,9 @@ export const NOW = Date.UTC(2026, 10, 28, 6);
 export type Caller = { id: string; token?: string };
 
 export type ApiClient = {
+  // Подружить двоих (на сервере дружба появляется сама — §4.3; в тестах
+  // ставим её напрямую).
+  befriend: (a: Caller, b: Caller) => Promise<void>;
   call: <T>(
     caller: Caller | null,
     method: HttpMethod,
@@ -85,6 +89,16 @@ export const createMockClient = async (): Promise<ApiClient> => {
     newUser: async () => {
       const me = await call<MeResponse>(null, "POST", "/users", {});
       return { me, caller: { id: me.id } };
+    },
+    befriend: async (a, b) => {
+      await db.write((data) => {
+        data.friends[a.id] = [
+          ...new Set([...(data.friends[a.id] ?? []), b.id]),
+        ];
+        data.friends[b.id] = [
+          ...new Set([...(data.friends[b.id] ?? []), a.id]),
+        ];
+      });
     },
     userWithId: async (id) => {
       await db.write((data) => {
@@ -149,6 +163,11 @@ export const createServerClient = async (): Promise<ApiClient> => {
         {},
       );
       return { me, caller: { id: me.id, token } };
+    },
+    befriend: async (a, b) => {
+      await database.db.transaction((tx) =>
+        makeFriends(tx, a.id, b.id, "plan", { now: () => NOW }),
+      );
     },
     userWithId: async (id) => {
       const { token } = await database.db.transaction(async (tx) => {

@@ -7,6 +7,7 @@ import {
 import type {
   ExternalWishlist,
   GuestWishlist,
+  MyReservation,
   Reservation,
   ReservationsView,
   WishlistItem,
@@ -18,6 +19,7 @@ import {
   nameRequired,
   notFound,
 } from "@swipeit/core/errors";
+import { visibleMyReservations } from "@swipeit/core/logic/my-reservations";
 import { occasionForOthersFrom } from "@swipeit/core/logic/occasion";
 import { hashString } from "@swipeit/core/logic/random";
 import { parseInput } from "@swipeit/core/parse-input";
@@ -454,4 +456,65 @@ export const importExternalWishlist: ServerHandler = async (ctx, { body }) => {
     openedAt: new Date(ctx.clock.now()).toISOString(),
   };
   return external;
+};
+
+// ── «Я дарю» ─────────────────────────────────────────────────────────────
+
+// GET /me/reservations — свои брони (auto-tasks P02). Брони по старым
+// ссылкам (ext:) сервер показать не может: снимков он не хранит — их нет.
+// Других бронирующих в ответе нет; повод — как его видят гости.
+export const getMyReservations: ServerHandler = async (ctx) => {
+  const me = await readMe(ctx);
+  const now = ctx.clock.now();
+  const rows = await ctx.tx
+    .select()
+    .from(reservations)
+    .where(eq(reservations.reserverId, me.id));
+  const list: MyReservation[] = [];
+  for (const row of rows) {
+    if (row.ownerRef.startsWith("ext:")) continue;
+    const owner = await readUser(ctx.tx, row.ownerRef);
+    if (!owner) continue;
+    const item = (await itemsOf(ctx.tx, owner.id)).find(
+      (entry) => itemKeyOf(entry) === row.itemKey,
+    );
+    if (!item) continue;
+    const meta = rowToMeta(owner.id, await readMeta(ctx.tx, owner.id));
+    const occasion = occasionForOthersFrom(
+      await datesOf(ctx.tx, owner.id),
+      meta.occasion,
+      now,
+    );
+    list.push({
+      id: row.id,
+      itemKey: row.itemKey,
+      closed: Boolean(row.closedAt),
+      ...(row.closedAt ? { closedAt: row.closedAt.toISOString() } : {}),
+      at: row.at.toISOString(),
+      owner: {
+        id: owner.id,
+        name: owner.name ?? "",
+        avatarColor: owner.avatarColor as MyReservation["owner"]["avatarColor"],
+      },
+      item:
+        item.source.kind === "product"
+          ? { productId: item.source.productId }
+          : {
+              custom: {
+                title: item.source.custom.title,
+                ...(item.source.custom.priceMin !== undefined
+                  ? { priceMin: item.source.custom.priceMin }
+                  : {}),
+                ...(item.source.custom.priceMax !== undefined
+                  ? { priceMax: item.source.custom.priceMax }
+                  : {}),
+                ...(item.source.custom.url
+                  ? { url: item.source.custom.url }
+                  : {}),
+              },
+            },
+      ...(occasion ? { occasion } : {}),
+    });
+  }
+  return visibleMyReservations(list, now);
 };

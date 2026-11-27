@@ -6,6 +6,7 @@ import {
   ReservationsQueryInputSchema,
   ReserveInputSchema,
 } from "@swipeit/core/api/wishlist/inputs";
+import { visibleMyReservations } from "@swipeit/core/logic/my-reservations";
 import { nanoid } from "nanoid";
 
 import { toDateKey } from "@/shared/lib/format";
@@ -18,6 +19,7 @@ import {
 import type {
   ExternalWishlist,
   GuestWishlist,
+  MyReservation,
   Reservation,
   ReservationsView,
 } from "../../wishlist/types";
@@ -362,4 +364,80 @@ export const deleteReservation: Handler = async (ctx, { params, query }) => {
   });
   changed(ctx, ["reservations", "wishlist"]);
   return { ok: true };
+};
+
+// GET /me/reservations — «Я дарю» (auto-tasks P02): свои брони у друзей и по
+// старым ссылкам, если про желание есть данные. Других бронирующих в ответе
+// нет; повод — как его видят гости.
+export const getMyReservations: Handler = async (ctx, { query }) => {
+  const { guestId } = parseInput(ReservationDeleteQuerySchema, query);
+  const db = await ctx.db.read();
+  const me = reserverId(ctx, guestId);
+  if (!me) return [];
+  const now = ctx.clock.now();
+  const externalOf = (ownerId: string) =>
+    db.externalWishlists[ownerId] ??
+    Object.values(db.externalWishlists).find(
+      (external) => external.owner.userId === ownerId,
+    );
+  const list: MyReservation[] = [];
+  for (const reservation of db.reservations) {
+    if (reservation.reserver.userId !== me) continue;
+    const base = {
+      id: reservation.id,
+      itemKey: reservation.itemKey,
+      closed: Boolean(reservation.closedAt),
+      ...(reservation.closedAt ? { closedAt: reservation.closedAt } : {}),
+      at: reservation.at,
+    };
+    const owner = db.users[reservation.ownerId];
+    if (owner) {
+      const item = (db.wishlistItems[owner.id] ?? []).find(
+        (entry) => itemKeyOf(entry) === reservation.itemKey,
+      );
+      if (!item) continue;
+      const occasion = occasionForOthers(db, owner.id, now);
+      list.push({
+        ...base,
+        owner: {
+          id: owner.id,
+          name: owner.name ?? "",
+          avatarColor: owner.avatarColor,
+        },
+        item:
+          item.source.kind === "product"
+            ? { productId: item.source.productId }
+            : {
+                custom: {
+                  title: item.source.custom.title,
+                  priceMin: item.source.custom.priceMin,
+                  priceMax: item.source.custom.priceMax,
+                  url: item.source.custom.url,
+                },
+              },
+        ...(occasion ? { occasion } : {}),
+      });
+      continue;
+    }
+    const external = externalOf(reservation.ownerId);
+    const item = external?.items.find(
+      (entry) => entry.key === reservation.itemKey,
+    );
+    if (!external || !item) continue;
+    list.push({
+      ...base,
+      owner: {
+        id: reservation.ownerId,
+        name: external.owner.name,
+        avatarColor: external.owner.avatarColor,
+      },
+      item: item.productId
+        ? { productId: item.productId }
+        : item.custom
+          ? { custom: item.custom }
+          : {},
+      ...(external.meta.occasion ? { occasion: external.meta.occasion } : {}),
+    });
+  }
+  return visibleMyReservations(list, now);
 };

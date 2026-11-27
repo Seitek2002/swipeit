@@ -218,6 +218,7 @@ export {
 export {
   createReservation,
   deleteReservation,
+  getMyReservations,
   getReservations,
 } from "./reservations/requests";
 export {
@@ -227,6 +228,7 @@ export {
   type Occasion,
   type ProductSwipe,
   type Reservation,
+  type MyReservation,
   type ReservationsView,
   type SwipeContext,
   type SwipeDecision,

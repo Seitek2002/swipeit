@@ -45,6 +45,7 @@ export const wishlistKeys = {
 export const reservationKeys = {
   all: ["reservations"] as const,
   forOwner: (ownerId: string) => [...reservationKeys.all, ownerId] as const,
+  mine: () => [...reservationKeys.all, "mine"] as const,
 };
 
 export const pickKeys = {
