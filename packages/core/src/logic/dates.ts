@@ -177,3 +177,47 @@ export const reminderJumpTarget = (
   }
   return best;
 };
+
+// ── День рождения друга на «Вишлисте» (auto-tasks P03) ───────────────────
+
+// Карточка — за 14 дней: за месяц про чужой праздник рано.
+export const FRIEND_REMINDER_WINDOW_DAYS = 14;
+
+// "friend:<id друга>:2027" — в тех же скрытых напоминаниях профиля: «Скрыть»
+// прячет друга до следующего года.
+export const friendReminderId = (friendId: string, dateKey: string) =>
+  reminderId(`friend:${friendId}`, dateKey);
+
+export type FriendBirthdayReminder = {
+  date: string;
+  daysLeft: number;
+  friendId: string;
+  id: string;
+  // Сколько ещё друзей с днём рождения в окне (ссылка «ещё 2» → «Друзья»).
+  more: number;
+  name: string;
+};
+
+// Ближайший день рождения друга в окне 0–14 дней, не скрытый «Скрыть».
+// Друзья без даты не считаются.
+export const nearestFriendBirthday = (
+  friends: ReadonlyArray<{
+    user: { birthday?: string; id: string; name?: string };
+  }>,
+  dismissed: readonly string[],
+  now: number,
+): FriendBirthdayReminder | null => {
+  const hidden = new Set(dismissed);
+  const candidates = friends
+    .flatMap(({ user }) => {
+      if (!user.birthday) return [];
+      const date = nextOccurrence(user.birthday, now);
+      const daysLeft = daysUntil(date, now);
+      const id = friendReminderId(user.id, date);
+      if (daysLeft > FRIEND_REMINDER_WINDOW_DAYS || hidden.has(id)) return [];
+      return [{ id, date, daysLeft, friendId: user.id, name: user.name ?? "" }];
+    })
+    .sort((a, b) => a.daysLeft - b.daysLeft || a.name.localeCompare(b.name));
+  const [first] = candidates;
+  return first ? { ...first, more: candidates.length - 1 } : null;
+};

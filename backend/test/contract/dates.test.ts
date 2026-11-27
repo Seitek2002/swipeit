@@ -178,6 +178,19 @@ describe.each(CLIENTS)("даты и напоминания — %s", (_name, crea
     ).rejects.toMatchObject({ code: "VALIDATION" });
   });
 
+  it("«Скрыть» день рождения друга — в скрытых напоминаниях профиля (P03)", async () => {
+    await dismiss("friend:u_friend1:2026");
+    const me1 = await api.call<{ dismissedReminders?: string[] }>(
+      me,
+      "GET",
+      "/me",
+    );
+    expect(me1.dismissedReminders).toEqual(["friend:u_friend1:2026"]);
+    await expect(dismiss("friend:плохой id:2026")).rejects.toMatchObject({
+      code: "VALIDATION",
+    });
+  });
+
   it("чужие даты и напоминания не видны", async () => {
     await api.call(me, "PATCH", "/me", { birthday: "12-10" });
     await addDate({ date: "12-01", label: "Секрет" });

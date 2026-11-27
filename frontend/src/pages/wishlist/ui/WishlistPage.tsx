@@ -9,10 +9,15 @@ import { Plus, Share2 } from "lucide-react";
 import { Reorder } from "motion/react";
 
 import { AppHeader } from "@/widgets/app-header";
+import { FriendPickSheet } from "@/widgets/friend-pick-sheet";
 
 import { NAME_CAPTIONS, NameForm, useRequireName } from "@/features/ask-name";
 import { CustomWishSheet } from "@/features/custom-wish";
-import { ReminderBanner, useActiveReminder } from "@/features/date-reminder";
+import {
+  FriendBirthdayCard,
+  ReminderBanner,
+  useActiveReminder,
+} from "@/features/date-reminder";
 import {
   GivenSheet,
   type ItemAction,
@@ -75,6 +80,8 @@ export const WishlistPage = () => {
   const [sheet, setSheet] = useState<null | Sheet>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // «Предложить выбрать» из карточки дня рождения друга (P03).
+  const [pickFriend, setPickFriend] = useState<null | string>(null);
   // Повод напоминания: «Отправить вишлист» в баннере открывает шторку сразу
   // с ним (DESIGN.md §7 ReminderBanner).
   const [shareOccasion, setShareOccasion] = useState<Occasion | undefined>();
@@ -290,6 +297,13 @@ export const WishlistPage = () => {
               />
             </div>
           )}
+        {/* День рождения друга — ниже своего напоминания (auto-tasks P03). */}
+        {data && tab === "want" && (
+          <FriendBirthdayCard
+            className="mx-5 mt-3"
+            onPick={(friend) => setPickFriend(friend.name)}
+          />
+        )}
         {data && tab === "want" && (
           <GivenHintBanner data={data} onGiven={setHintItem} />
         )}
@@ -393,6 +407,13 @@ export const WishlistPage = () => {
         onClose={() => setSheet(null)}
       />
       <CustomWishSheet open={customOpen} onClose={() => setCustomOpen(false)} />
+      {pickFriend !== null && (
+        <FriendPickSheet
+          friendName={pickFriend}
+          open
+          onClose={() => setPickFriend(null)}
+        />
+      )}
       <WishlistShareSheet
         open={shareOpen}
         onClose={() => setShareOpen(false)}

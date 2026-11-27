@@ -71,6 +71,15 @@ export const ImportantDateSchema = z.object({
 
 // Напоминание за месяц до своей даты (TECH_SPEC §6 «Даты и напоминания»).
 // Вычисляется сервером, в базе не хранится.
+// id напоминания в «Скрыть»: "birthday:2027", "d_…:2027" или день рождения
+// друга "friend:u_…:2027" (auto-tasks P03).
+export const ReminderIdSchema = z
+  .string()
+  .regex(
+    /^(birthday|d_[A-Za-z0-9_-]{1,40}|friend:[A-Za-z0-9_-]{1,40}):\d{4}$/,
+    "Неверное напоминание",
+  );
+
 export const ReminderSchema = z.object({
   // "birthday:2027" или "<dateId>:2027": ключ даты + год наступления.
   id: z.string(),

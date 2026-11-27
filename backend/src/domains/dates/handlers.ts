@@ -3,6 +3,7 @@ import {
   type ImportantDate,
   type ImportantDateView,
   type Reminder,
+  ReminderIdSchema,
   UpdateDateInputSchema,
 } from "@swipeit/core/api/users/types";
 import type { Occasion } from "@swipeit/core/api/wishlist/types";
@@ -17,7 +18,6 @@ import type { RealtimeScope } from "@swipeit/core/realtime/types";
 import { parseInput } from "@swipeit/core/parse-input";
 import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { z } from "zod";
 
 import type { ServerContext, ServerHandler, Tx } from "../../context";
 import { importantDates, users, wishlistMeta } from "../../db/schema";
@@ -230,10 +230,7 @@ export const listReminders: ServerHandler = async (ctx) => {
   return remindersOf(me, await datesOf(ctx.tx, me.id), ctx.clock.now());
 };
 
-// "birthday:2027" или "d_…:2027".
-const ReminderIdSchema = z
-  .string()
-  .regex(/^(birthday|d_[A-Za-z0-9_-]{1,40}):\d{4}$/, "Неверное напоминание");
+// id «Скрыть» — общая схема core: своя дата или день рождения друга.
 
 // POST /me/reminders/:id/dismiss — «Скрыть» это наступление.
 export const dismissReminder: ServerHandler = async (ctx, { params }) => {
