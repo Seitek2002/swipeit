@@ -1,5 +1,6 @@
+import { GiftsPageSkeleton } from "@/pages/gifts";
 import { OnboardingRedirect } from "@/pages/onboarding";
 
 export default function Page() {
-  return <OnboardingRedirect />;
+  return <OnboardingRedirect skeleton={<GiftsPageSkeleton />} />;
 }

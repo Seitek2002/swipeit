@@ -442,3 +442,85 @@ describe("«Не моё» и правило повторов", () => {
     expect(ranked.at(-1)?.id).toBe("t_muted");
   });
 });
+
+describe("обучающая карточка (п. 2)", () => {
+  const products = realisticCatalog();
+  // Не самый популярный товар своей категории: без guideId разведка его не
+  // взяла бы.
+  const home = products
+    .filter((p) => p.category === "home" && p.audience === "all")
+    .sort((a, b) => a.popularity - b.popularity);
+  const guide = home[0]!;
+
+  it("новый профиль: первым — обучающий товар, в порции всё ещё 10 разных категорий", () => {
+    const page = rankProducts({
+      ...base,
+      products,
+      explore: true,
+      guideId: guide.id,
+    }).slice(0, PAGE_SIZE);
+    expect(page[0]?.id).toBe(guide.id);
+    expect(new Set(page.map((p) => p.category)).size).toBe(10);
+    // Он занял место своей категории — другого «дома» в разведке нет.
+    expect(page.filter((p) => p.category === "home")).toHaveLength(1);
+  });
+
+  it("после разведки (уже есть свайпы) — тоже первым", () => {
+    const ranked = rankProducts({ ...base, products, guideId: guide.id });
+    expect(ranked[0]?.id).toBe(guide.id);
+    expect(ranked.filter((p) => p.id === guide.id)).toHaveLength(1);
+  });
+
+  it("свайпнут или уже в колоде — лента как без него", () => {
+    const without = rankProducts({
+      ...base,
+      products,
+      explore: true,
+      excludeIds: new Set([guide.id]),
+    });
+    const withGuide = rankProducts({
+      ...base,
+      products,
+      explore: true,
+      excludeIds: new Set([guide.id]),
+      guideId: guide.id,
+    });
+    expect(withGuide.map((p) => p.id)).toEqual(without.map((p) => p.id));
+  });
+
+  it("не проходит фильтры (аудитория, бюджет) — первой идёт обычная карточка", () => {
+    const female = products.find(
+      (p) => p.category === "home" && p.audience === "female",
+    )!;
+    const male = rankProducts({
+      ...base,
+      products,
+      filters: { ...EMPTY_FILTERS, audience: "male" },
+      guideId: female.id,
+    });
+    expect(male.some((p) => p.id === female.id)).toBe(false);
+
+    const cheap = rankProducts({
+      ...base,
+      products: [
+        ...products,
+        product({
+          id: "guide",
+          category: "home",
+          priceMin: 2950,
+          priceMax: 2950,
+        }),
+      ],
+      filters: { ...EMPTY_FILTERS, budget: { min: 0, max: 2000 } },
+      guideId: "guide",
+    });
+    expect(cheap[0]?.id).not.toBe("guide");
+  });
+
+  it("нет в каталоге — лента как без него", () => {
+    const ranked = rankProducts({ ...base, products, guideId: "p_none" });
+    expect(ranked.map((p) => p.id)).toEqual(
+      rankProducts({ ...base, products }).map((p) => p.id),
+    );
+  });
+});

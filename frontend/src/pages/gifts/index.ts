@@ -1,1 +1,1 @@
-export { GiftsPage } from "./ui";
+export { GiftsPage, GiftsPageSkeleton } from "./ui";

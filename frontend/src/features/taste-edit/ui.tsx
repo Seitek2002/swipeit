@@ -85,6 +85,14 @@ export const TasteEdit = ({ id, className }: Props) => {
         </p>
       )}
 
+      {/* Лайки есть, а чипов ещё нет: интерес выводится, когда набрал вес 2
+          (DESIGN.md §8.9, TECH_SPEC §6 «Вкус»). */}
+      {hasLikes && own.length === 0 && inferred.length === 0 && (
+        <p className="text-caption text-rose">
+          Ещё несколько «Хочу» — и подскажем, что тебе нравится
+        </p>
+      )}
+
       {expanded && rest.length > 0 && (
         <ChipWrap
           id={restId}

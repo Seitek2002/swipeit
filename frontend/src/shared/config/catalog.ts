@@ -167,3 +167,8 @@ export const ACTIVITY_TAG_LABELS: Record<ActivityTagId, string> = {
 
 export const SEASONS = ["winter", "spring", "summer", "autumn"] as const;
 export type Season = (typeof SEASONS)[number];
+
+// Обучающая карточка (DESIGN.md §7 DeckGuide, TECH_SPEC §6 «Алгоритм ленты»,
+// п. 2): всегда этот товар, пока подсказка deck_guide не отмечена. Один и тот
+// же — поэтому его обложку можно грузить прямо из HTML, до JS.
+export const GUIDE_PRODUCT_ID = "p_0049";

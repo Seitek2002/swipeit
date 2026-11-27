@@ -10,6 +10,7 @@ import {
 } from "@/shared/api";
 import { setLanClock } from "@/shared/lib/clock";
 import { setRemoteImageStore, setShareOrigin } from "@/shared/lib/dom";
+import { warmPreloadedImages } from "@/shared/lib/image-cache";
 import {
   createWsRealtime,
   getConnectionStatus,
@@ -23,8 +24,10 @@ import {
 } from "@/shared/store";
 
 // Сразу при загрузке модуля, до гидрации и до проверки режима: мок-сервер и
-// каталог качаются параллельно с ней (shared/api/warmup.ts).
+// каталог качаются параллельно с ней (shared/api/warmup.ts), а обложка из
+// HTML декодируется заранее (shared/lib/image-cache).
 warmLocalApi();
+warmPreloadedImages();
 
 // Адрес WebSocket того же сервера, что отвечает на /api.
 const wsUrl = () => {

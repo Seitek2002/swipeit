@@ -1,1 +1,1 @@
-export { PlanJoinPage } from "./ui";
+export { PlanJoinPage, PlanJoinPageSkeleton } from "./ui";

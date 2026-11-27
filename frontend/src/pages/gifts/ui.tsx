@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 import { AppHeader } from "@/widgets/app-header";
-import { GiftDeck } from "@/widgets/gift-deck";
+import { GiftDeck, GiftDeckSkeleton } from "@/widgets/gift-deck";
 
 import { NAME_CAPTIONS, NameForm, useRequireName } from "@/features/ask-name";
 import { PickRequestSheet } from "@/features/pick-request-create";
@@ -16,7 +16,7 @@ import {
   describeFilters,
 } from "@/features/product-filters";
 
-import type { ProductFilters } from "@/entities/product";
+import { EMPTY_FILTERS, type ProductFilters } from "@/entities/product";
 import { useWishlistSummary } from "@/entities/wishlist";
 
 import { ROUTES } from "@/shared/config";
@@ -102,3 +102,20 @@ export const GiftsPage = () => {
     </Screen>
   );
 };
+
+// Лента, пока вкладка запускается или создаётся профиль (DESIGN.md §6
+// «Прелоадер»): шапка «Подарки», лента из 5 сегментов, скелетон карточки —
+// та же разметка, что у экрана, без данных. Таб-бар рисует каркас (app).
+export const GiftsPageSkeleton = () => (
+  <Screen>
+    <AppHeader
+      title="Подарки"
+      actions={
+        <FiltersButton filters={EMPTY_FILTERS} onClick={() => undefined} />
+      }
+    />
+    <div className="flex min-h-0 flex-1 flex-col pb-[var(--tabbar-space)]">
+      <GiftDeckSkeleton />
+    </div>
+  </Screen>
+);

@@ -1,1 +1,1 @@
-export { PickInvitePage } from "./ui/PickInvitePage";
+export { PickInvitePage, PickInvitePageSkeleton } from "./ui/PickInvitePage";

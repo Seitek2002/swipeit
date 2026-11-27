@@ -1,1 +1,1 @@
-export { SantaJoinPage } from "./ui";
+export { SantaJoinPage, SantaJoinPageSkeleton } from "./ui";

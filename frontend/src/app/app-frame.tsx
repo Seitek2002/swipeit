@@ -14,8 +14,9 @@ import { useSantaGames } from "@/entities/santa-game";
 
 import { rendersBeforeReady } from "@/shared/config";
 import { useAppReady, useAppStatus } from "@/shared/lib/app-status";
-import { Button, EmptyState, Splash } from "@/shared/ui";
+import { Button, EmptyState } from "@/shared/ui";
 
+import { RouteSkeleton } from "./route-skeleton";
 import { SessionGate } from "./session-gate";
 
 // Демо-панель (шторка на motion) нужна только после готовности окружения —
@@ -39,7 +40,7 @@ const AppTabBar = () => {
 };
 
 // Пока вкладка не запустилась (app/environment.ts), большинство экранов
-// показывают заставку: им нужны сессия и данные. Экраны из
+// показывают свой скелетон (route-skeleton.tsx): им нужны сессия и данные. Экраны из
 // rendersBeforeReady рисуются сразу — их первый кадр есть уже в статическом
 // HTML, а к API они сами не обращаются до useAppReady().
 const EnvironmentGate = ({ children }: { children: ReactNode }) => {
@@ -59,20 +60,22 @@ const EnvironmentGate = ({ children }: { children: ReactNode }) => {
     );
   }
   if (status === "ready" || rendersBeforeReady(pathname)) return children;
-  return <Splash />;
+  return <RouteSkeleton />;
 };
 
 // Каркас всего приложения: оболочка + таб-бар. Собирается здесь, в слое app:
 // виджеты одного слоя не импортируют друг друга (FSD), а корневой app/ steiger
 // не сканирует — так он видит, что оба виджета используются.
 //
-// Оболочка (бархат, рамка) рисуется сразу. Таб-бар и демо-панель читают
-// данные и шину — их подключаем только после запуска вкладки.
+// Оболочка (бархат, рамка) рисуется сразу. Таб-бар до запуска вкладки —
+// без точек и бейджей (данных ещё нет), но на месте: скелетон экрана стоит
+// уже в «настоящем» каркасе (DESIGN.md §6 «Прелоадер»). Точки и демо-панель
+// читают данные и шину — их подключаем только после запуска.
 export const AppFrame = ({ children }: { children: ReactNode }) => {
   const ready = useAppReady();
   return (
     <AppShell
-      tabBar={ready ? <AppTabBar /> : null}
+      tabBar={ready ? <AppTabBar /> : <TabBar />}
       overlay={ready ? <DemoPanel /> : null}
     >
       <EnvironmentGate>

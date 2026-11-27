@@ -137,8 +137,10 @@ export const GiftDeck = ({
 
   // Лента над колодой — по желаниям в «Хочу», свои тоже (TECH_SPEC §6).
   const likeCount = likes ?? summary.wishCount;
+  // Пока вишлист не пришёл — тоже: скелетон ленты в HTML её уже показал
+  // (DESIGN.md §6 «Прелоадер»), и колода не прыгает вверх-вниз на 30px.
   const showRibbon =
-    !hideRibbon && summary.isLoaded && (!summary.shareUnlocked || drawingBow);
+    !hideRibbon && (!summary.isLoaded || !summary.shareUnlocked || drawingBow);
 
   const loadMore = useCallback(
     async (current: Product[], reset = false) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { type ReactNode, Suspense, useEffect } from "react";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -25,11 +25,10 @@ import {
   AvatarStack,
   Brand,
   Button,
+  ContentSkeleton,
   EmptyState,
   Screen,
   ScreenBody,
-  Skeleton,
-  Splash,
   buttonClassName,
   toast,
 } from "@/shared/ui";
@@ -169,12 +168,7 @@ const JoinContent = () => {
     );
   }
   if (!view || isMember) {
-    return (
-      <div className="flex flex-col gap-4 px-5 pt-6">
-        <Skeleton className="h-9 w-2/3" />
-        <Skeleton tone="paper" className="h-40 rounded-[22px]" />
-      </div>
-    );
+    return <ContentSkeleton />;
   }
 
   const owner = view.members.find((member) => member.id === view.game.ownerId);
@@ -233,7 +227,7 @@ const JoinContent = () => {
 };
 
 // Приглашение в Тайного Санту по ссылке (TECH_SPEC §8): без таб-бара.
-export const SantaJoinPage = () => (
+const Frame = ({ children }: { children: ReactNode }) => (
   <Screen>
     <div className="flex h-[52px] flex-none items-center px-5">
       <Link
@@ -244,10 +238,22 @@ export const SantaJoinPage = () => (
         <Brand size="sm" />
       </Link>
     </div>
-    <ScreenBody>
-      <Suspense fallback={<Splash />}>
-        <JoinContent />
-      </Suspense>
-    </ScreenBody>
+    <ScreenBody>{children}</ScreenBody>
   </Screen>
+);
+
+export const SantaJoinPage = () => (
+  <Frame>
+    <Suspense fallback={<ContentSkeleton />}>
+      <JoinContent />
+    </Suspense>
+  </Frame>
+);
+
+// Тот же экран до запуска вкладки (app/route-skeleton.tsx): шапка и скелетон
+// вместо логотипа после прелоадера (DESIGN.md §6 «Прелоадер»).
+export const SantaJoinPageSkeleton = () => (
+  <Frame>
+    <ContentSkeleton />
+  </Frame>
 );

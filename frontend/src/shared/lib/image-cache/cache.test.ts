@@ -62,6 +62,20 @@ describe("кеш картинок колоды", () => {
     expect(cache.getStatus("a")).toBe("ready");
   });
 
+  it("ушли с экрана — начатое докачивается, очередь снимается", async () => {
+    const { cache, cancelled, started, finish } = setup();
+    cache.setGroup("deck", ["a", "b", "c"]);
+    cache.setGroup("deck", []);
+    expect(cancelled).toEqual([]);
+    expect(cache.getStatus("c")).toBe("idle");
+    await finish("a");
+    expect(cache.getStatus("a")).toBe("ready");
+    // Вернулись в ленту, пока «b» ещё качается, — второй загрузки нет.
+    cache.setGroup("deck", ["a", "b", "c"]);
+    expect(started.filter((src) => src === "b")).toHaveLength(1);
+    expect(cache.getStatus("b")).toBe("loading");
+  });
+
   it("открытое фото не ждёт: третье место, фоновые не обрываются", () => {
     const { cache, started, cancelled } = setup();
     cache.setGroup("deck", ["a", "b", "c", "d"]);

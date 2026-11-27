@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 
 import { Copy, QrCode as QrIcon, Share2 } from "lucide-react";
 
@@ -29,17 +29,54 @@ type Props = {
   secondary?: boolean;
 };
 
-const ICON = { size: 24, strokeWidth: 1.75, "aria-hidden": true } as const;
+const ICON = { size: 22, strokeWidth: 1.75, "aria-hidden": true } as const;
 
-// Кнопки отправки — ряд круглых иконок (решение владельца от 27.11.2026:
-// экономим место, Telegram и WhatsApp убраны — они есть в «Поделиться»):
-// «Поделиться» (где есть системное), «Скопировать ссылку», «Показать QR».
-// Первая — главная. Подпись — в aria-label и title.
-const ROUND =
-  "grid size-14 place-items-center rounded-full transition-[transform,opacity] duration-[120ms] select-none active:scale-[0.94] aria-disabled:pointer-events-none aria-disabled:opacity-40";
+// Кнопки отправки — ряд круглых иконок 56px с подписями (DESIGN.md §8.4,
+// эталон — quick-start.html, кадр 4; решение владельца от 27.11.2026:
+// Telegram и WhatsApp убраны — они есть в «Поделиться»). Первая — мандарин,
+// если на экране нет своей главной кнопки. Подпись короткая, полное
+// название — в aria-label: он начинается с видимой подписи (axe
+// label-content-name-mismatch).
+const CIRCLE =
+  "grid size-14 place-items-center rounded-full transition-transform duration-[120ms] group-active:scale-[0.94]";
 const PRIMARY =
-  "bg-mandarin text-ink shadow-[0_8px_20px_-6px_rgb(255_138_61/0.6)]";
+  "bg-mandarin text-ink shadow-[0_10px_24px_-10px_rgb(255_138_61/0.6)]";
 const SECONDARY = "bg-velvet-3 text-paper";
+
+type ButtonProps = {
+  busy: boolean;
+  caption: string;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  pressed?: boolean;
+  primary: boolean;
+};
+
+const ShareButton = ({
+  busy,
+  caption,
+  icon,
+  label,
+  onClick,
+  pressed,
+  primary,
+}: ButtonProps) => (
+  <button
+    type="button"
+    aria-label={label}
+    aria-pressed={pressed}
+    aria-disabled={busy || undefined}
+    onClick={onClick}
+    className="group text-rose flex min-w-[72px] flex-col items-center gap-1.5 select-none aria-disabled:pointer-events-none aria-disabled:opacity-40"
+  >
+    <span className={cn(CIRCLE, primary ? PRIMARY : SECONDARY)}>{icon}</span>
+    <span aria-hidden className="text-caption whitespace-nowrap">
+      {caption}
+    </span>
+  </button>
+);
+
 export const ShareActions = ({
   getPayload,
   onError,
@@ -88,51 +125,44 @@ export const ShareActions = ({
     });
 
   // Главная — первая кнопка ряда, если на экране нет своей главной.
-  const firstTone = secondary ? SECONDARY : PRIMARY;
-  const qrLabelText = qrUrl ? "Скрыть QR" : "Показать QR";
+  const primaryFirst = !secondary;
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex justify-center gap-5">
+      <div className="mt-5 mb-2 flex justify-center gap-4">
         {native && (
-          <button
-            type="button"
-            aria-label="Поделиться"
-            title="Поделиться"
-            aria-disabled={busy || undefined}
-            className={cn(ROUND, firstTone)}
+          <ShareButton
+            label="Поделиться"
+            caption="Поделиться"
+            icon={<Share2 {...ICON} />}
+            primary={primaryFirst}
+            busy={busy}
             onClick={() =>
               void run((payload) => shareNative(payload).then(() => undefined))
             }
-          >
-            <Share2 {...ICON} />
-          </button>
+          />
         )}
-        <button
-          type="button"
-          aria-label="Скопировать ссылку"
-          title="Скопировать ссылку"
-          aria-disabled={busy || undefined}
-          className={cn(ROUND, native ? SECONDARY : firstTone)}
+        <ShareButton
+          label="Скопировать ссылку"
+          caption="Скопировать"
+          icon={<Copy {...ICON} />}
+          primary={!native && primaryFirst}
+          busy={busy}
           onClick={copy}
-        >
-          <Copy {...ICON} />
-        </button>
-        <button
-          type="button"
-          aria-label={qrLabelText}
-          title={qrLabelText}
-          aria-pressed={Boolean(qrUrl)}
-          aria-disabled={busy || undefined}
-          className={cn(ROUND, SECONDARY)}
+        />
+        <ShareButton
+          label={qrUrl ? "Скрыть QR-код" : "Показать QR-код"}
+          caption="QR-код"
+          icon={<QrIcon {...ICON} />}
+          primary={false}
+          pressed={Boolean(qrUrl)}
+          busy={busy}
           onClick={() =>
             qrUrl
               ? setQrUrl(null)
               : void run((payload) => setQrUrl(payload.url))
           }
-        >
-          <QrIcon {...ICON} />
-        </button>
+        />
       </div>
       {qrUrl && (
         <QrCode

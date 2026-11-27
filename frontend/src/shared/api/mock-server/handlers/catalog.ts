@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { GUIDE_PRODUCT_ID } from "@/shared/config";
 import { toDateKey } from "@/shared/lib/format";
 
 import { EMPTY_FILTERS } from "../../catalog/constants";
@@ -67,6 +68,11 @@ const rankForUser = async (
     explore:
       context.kind === "self" &&
       !own.some((swipe) => swipe.context.kind === "self"),
+    // Обучающая карточка — в своей ленте, пока подсказка не отмечена.
+    guideId:
+      context.kind === "self" && !(user.seenHints ?? []).includes("deck_guide")
+        ? GUIDE_PRODUCT_ID
+        : undefined,
     userId: user.id,
     dateKey: toDateKey(ctx.clock.now()),
   });

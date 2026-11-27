@@ -92,16 +92,24 @@ export const createImageCache = ({
     );
   };
 
-  // Пересобрать очередь: отменить лишнее, запустить следующее, вытеснить
+  // Пересобрать очередь: снять лишнее, запустить следующее, вытеснить
   // старые готовые картинки вне окна.
-  const pump = () => {
+  //
+  // Начатую загрузку обрывает только сдвиг окна колоды (cancelLoading —
+  // свайп, TECH_SPEC §6). Уход с экрана, закрытое фото, «последняя
+  // свайпнутая» её не трогают: фото докачивается в кеш, и при возврате
+  // в ленту не скачивается второй раз. Из очереди снимается сразу.
+  const pump = (cancelLoading = false) => {
     const order = wanted();
     const inWindow = new Set(order);
     let changed = false;
 
     for (const [src, entry] of entries) {
       if (inWindow.has(src)) continue;
-      if (entry.status === "loading" || entry.status === "queued") {
+      if (
+        entry.status === "queued" ||
+        (entry.status === "loading" && cancelLoading)
+      ) {
         stop(entry);
         entries.delete(src);
         changed = true;
@@ -157,7 +165,9 @@ export const createImageCache = ({
       };
     },
 
-    // Окно группы в порядке загрузки. Пустой список — группа больше не нужна.
+    // Окно группы в порядке загрузки. Новое окно (свайп) обрывает то, что
+    // из него выпало. Пустой список — группа больше не нужна (экран ушёл):
+    // начатое докачивается.
     setGroup: (name: string, srcs: readonly string[]) => {
       if (srcs.length === 0) groups.delete(name);
       else groups.set(name, srcs);
@@ -165,7 +175,7 @@ export const createImageCache = ({
         const entry = entries.get(src);
         if (entry) entry.touched = ++clock;
       });
-      pump();
+      pump(srcs.length > 0);
     },
 
     setKept: (srcs: readonly string[]) => {

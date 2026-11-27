@@ -61,3 +61,19 @@ export const usePreloadImages = (
 };
 
 export const retryImage = (src: string) => getCache()?.retry(src);
+
+// Картинки, которые статический HTML уже начал качать (<link rel="preload"
+// as="image">: обложка обучающей карточки, TECH_SPEC §6). Кеш берёт их сразу
+// при старте JS и декодирует заранее — к первому кадру ленты карточка уже с
+// фото, без перелива и банта. Адрес — тот же, что у <img> в GiftPhoto.
+export const warmPreloadedImages = () => {
+  if (typeof document === "undefined") return;
+  const srcs = [
+    ...document.querySelectorAll<HTMLLinkElement>(
+      'link[rel="preload"][as="image"]',
+    ),
+  ]
+    .map((link) => link.getAttribute("href"))
+    .filter((href): href is string => Boolean(href));
+  if (srcs.length > 0) getCache()?.setGroup("html-preload", srcs);
+};

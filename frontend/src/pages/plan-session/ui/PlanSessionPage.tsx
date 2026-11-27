@@ -15,11 +15,11 @@ import { ROUTES } from "@/shared/config";
 import { useSessionStore } from "@/shared/store";
 import {
   Button,
+  ContentSkeleton,
   EmptyState,
   Screen,
   ScreenBody,
   Skeleton,
-  Splash,
 } from "@/shared/ui";
 
 import { Decided } from "./Decided";
@@ -124,7 +124,7 @@ const SessionContent = () => {
 // Экран плана (DESIGN.md §8.7): лобби → свайп → результаты → решено.
 export const PlanSessionPage = () => (
   <Screen>
-    <Suspense fallback={<Splash />}>
+    <Suspense fallback={<ContentSkeleton />}>
       <SessionContent />
     </Suspense>
   </Screen>

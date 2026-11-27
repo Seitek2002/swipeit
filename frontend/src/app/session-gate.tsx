@@ -12,7 +12,9 @@ import { useAppReady } from "@/shared/lib/app-status";
 import { useMounted } from "@/shared/lib/dom";
 import { usePreloaderHold } from "@/shared/lib/preloader";
 import { useSessionStore } from "@/shared/store";
-import { Button, EmptyState, Splash } from "@/shared/ui";
+import { Button, EmptyState } from "@/shared/ui";
+
+import { RouteSkeleton } from "./route-skeleton";
 
 // Анкеты нет (DESIGN.md §8.1, TECH_SPEC §10): экран с профилем без сессии сам
 // создаёт безымянный профиль (POST /users) под прелоадером и остаётся тем же
@@ -67,6 +69,7 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
       />
     );
   }
-  if (waiting) return <Splash />;
+  // Не логотип, а скелетон экрана (DESIGN.md §6 «Прелоадер»).
+  if (waiting) return <RouteSkeleton />;
   return children;
 };

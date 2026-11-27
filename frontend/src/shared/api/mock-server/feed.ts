@@ -191,10 +191,12 @@ const takePage = (
 // Первая порция-разведка (п. 2): нового человека ещё не знаем, поэтому по
 // одному товару из 10 разных категорий — самый популярный в категории, в
 // первую очередь «для всех». Так вкус узнаётся быстрее всего.
+// Обучающая карточка (guide) занимает место своей категории и идёт первой.
 const explorePage = (
   ranked: Product[],
   jitterSeed: string,
   muted: ReadonlySet<string>,
+  guide: Product | undefined,
 ): Product[] => {
   const best = new Map<CategoryId, Product>();
   const better = (a: Product, b: Product) => {
@@ -210,8 +212,11 @@ const explorePage = (
       best.set(product.category, product);
     }
   }
+  if (guide) best.set(guide.category, guide);
   const order = (product: Product) =>
-    product.popularity + seededUnit(`${jitterSeed}:${product.id}`) * JITTER;
+    product === guide
+      ? Number.POSITIVE_INFINITY
+      : product.popularity + seededUnit(`${jitterSeed}:${product.id}`) * JITTER;
   return [...best.values()]
     .sort((a, b) => order(b) - order(a))
     .slice(0, PAGE_SIZE);
@@ -228,6 +233,10 @@ export type RankInput = {
   // Первая порция-разведка: в self ещё нет ни одного свайпа.
   explore: boolean;
   filters: ProductFilters;
+  // Обучающая карточка (п. 2): этот товар первым, если он ещё не свайпнут и
+  // проходит фильтры. Обработчик передаёт id, пока deck_guide не отмечена в
+  // своей ленте; в ленте по ссылке-фильтру — нет.
+  guideId?: string;
   products: readonly Product[];
   profile: FeedProfile;
   userId: string;
@@ -241,6 +250,7 @@ export const rankProducts = ({
   profile,
   excludeIds,
   explore,
+  guideId,
   userId,
   dateKey,
 }: RankInput): Product[] => {
@@ -268,9 +278,16 @@ export const rankProducts = ({
     )
     .map(({ product }) => product);
 
+  // В ranked его нет, если уже свайпнут, лежит в колоде или не проходит
+  // фильтры, — тогда лента как раньше.
+  const guide = guideId
+    ? ranked.find((product) => product.id === guideId)
+    : undefined;
   const result: Product[] = explore
-    ? explorePage(ranked, jitterSeed, muted)
-    : [];
+    ? explorePage(ranked, jitterSeed, muted, guide)
+    : guide
+      ? [guide]
+      : [];
   const used = new Set(result.map((product) => product.id));
   const pool = ranked.filter((product) => !used.has(product.id));
   const isUntried = (product: Product) =>

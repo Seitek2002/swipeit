@@ -12,6 +12,7 @@ export {
   CATEGORY_IDS,
   CATEGORY_LABELS,
   type CategoryId,
+  GUIDE_PRODUCT_ID,
   INTEREST_IDS,
   INTEREST_LABELS,
   type InterestId,

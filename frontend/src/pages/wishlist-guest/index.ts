@@ -1,1 +1,1 @@
-export { WishlistGuestPage } from "./ui";
+export { WishlistGuestPage, WishlistGuestPageSkeleton } from "./ui";

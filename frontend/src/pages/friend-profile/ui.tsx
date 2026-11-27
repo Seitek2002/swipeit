@@ -14,11 +14,11 @@ import { isApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import {
   Button,
+  ContentSkeleton,
   EmptyState,
   Screen,
   ScreenBody,
   Skeleton,
-  Splash,
 } from "@/shared/ui";
 
 const ProfileContent = () => {
@@ -80,7 +80,7 @@ export const FriendProfilePage = () => (
   <Screen>
     <AppHeader title="Друзья" showBack backHref={ROUTES.FRIENDS} />
     <ScreenBody className="pb-6">
-      <Suspense fallback={<Splash />}>
+      <Suspense fallback={<ContentSkeleton />}>
         <ProfileContent />
       </Suspense>
     </ScreenBody>

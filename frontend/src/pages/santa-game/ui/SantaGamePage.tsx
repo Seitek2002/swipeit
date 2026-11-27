@@ -35,12 +35,12 @@ import { useSessionStore } from "@/shared/store";
 import {
   Avatar,
   Button,
+  ContentSkeleton,
   EmptyState,
   Screen,
   ScreenBody,
   ShareActions,
   Skeleton,
-  Splash,
   buttonClassName,
   toast,
 } from "@/shared/ui";
@@ -321,7 +321,7 @@ export const SantaGamePage = () => (
   <Screen>
     <AppHeader title="Тайный Санта" showBack backHref={ROUTES.SANTA} />
     <ScreenBody className={cn("px-5 pt-2")}>
-      <Suspense fallback={<Splash />}>
+      <Suspense fallback={<ContentSkeleton />}>
         <GameContent />
       </Suspense>
     </ScreenBody>

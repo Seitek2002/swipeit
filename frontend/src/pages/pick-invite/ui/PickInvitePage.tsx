@@ -28,10 +28,10 @@ import {
   Brand,
   BrokenLink,
   Button,
+  ContentSkeleton,
   IconButton,
   Screen,
   ScreenBody,
-  Splash,
 } from "@/shared/ui";
 
 import { SendPicksSheet } from "./SendPicksSheet";
@@ -223,7 +223,7 @@ const PickContent = () => {
       </>
     );
   }
-  if (activeUserId && !me.data && !me.isError) return <Splash />;
+  if (activeUserId && !me.data && !me.isError) return <PickSkeletonBody />;
 
   // Уже выбирал по этой ссылке — сразу в ленту.
   const shown =
@@ -257,8 +257,26 @@ const PickContent = () => {
 // вопросов на входе — имя только при отправке выбора.
 export const PickInvitePage = () => (
   <Screen>
-    <Suspense fallback={<Splash />}>
+    <Suspense fallback={<PickSkeletonBody />}>
       <PickContent />
     </Suspense>
+  </Screen>
+);
+
+// Пока ссылка читается или профиль загружается: шапка и скелетон, а не
+// логотип по центру (DESIGN.md §6 «Прелоадер»).
+const PickSkeletonBody = () => (
+  <>
+    <TopBar />
+    <ScreenBody>
+      <ContentSkeleton />
+    </ScreenBody>
+  </>
+);
+
+// Тот же экран до запуска вкладки (app/route-skeleton.tsx).
+export const PickInvitePageSkeleton = () => (
+  <Screen>
+    <PickSkeletonBody />
   </Screen>
 );

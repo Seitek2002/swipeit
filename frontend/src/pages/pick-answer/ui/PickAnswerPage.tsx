@@ -34,11 +34,11 @@ import {
   Brand,
   BrokenLink,
   Button,
+  ContentSkeleton,
   EmptyState,
   Screen,
   ScreenBody,
   Skeleton,
-  Splash,
   buttonClassName,
 } from "@/shared/ui";
 
@@ -232,7 +232,7 @@ export const PickAnswerPage = () => (
       </Link>
     </div>
     <ScreenBody>
-      <Suspense fallback={<Splash />}>
+      <Suspense fallback={<ContentSkeleton />}>
         <AnswerContent />
       </Suspense>
     </ScreenBody>

@@ -1,5 +1,9 @@
+import { preloadGuideCover } from "@/app/guide-cover";
+
+import { GiftsPageSkeleton } from "@/pages/gifts";
 import { HomePage } from "@/pages/home";
 
 export default function Page() {
-  return <HomePage />;
+  preloadGuideCover();
+  return <HomePage skeleton={<GiftsPageSkeleton />} />;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { type ReactNode, Suspense } from "react";
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -21,9 +21,21 @@ import {
   Screen,
   ScreenBody,
   Skeleton,
-  Splash,
   buttonClassName,
 } from "@/shared/ui";
+
+// Пока вишлист не пришёл: аватар владельца, заголовок, бумажный лист.
+const GuestSkeleton = () => (
+  <div
+    role="status"
+    aria-label="Загружаем вишлист"
+    className="flex flex-col gap-4 px-5 pt-6"
+  >
+    <Skeleton className="size-14 rounded-full" />
+    <Skeleton className="h-9 w-3/4" />
+    <Skeleton tone="paper" className="h-72 rounded-[22px]" />
+  </div>
+);
 
 const GuestContent = () => {
   const encoded = useSearchParams()?.get("d") ?? "";
@@ -45,15 +57,7 @@ const GuestContent = () => {
 
   if (!isValid) return <BrokenLink />;
   if (external.isError) return <BrokenLink />;
-  if (!external.data) {
-    return (
-      <div className="flex flex-col gap-4 px-5 pt-6">
-        <Skeleton className="size-14 rounded-full" />
-        <Skeleton className="h-9 w-3/4" />
-        <Skeleton tone="paper" className="h-72 rounded-[22px]" />
-      </div>
-    );
-  }
+  if (!external.data) return <GuestSkeleton />;
 
   const wishlist = external.data;
   const ownerId = wishlist.owner.userId ?? wishlist.id;
@@ -101,8 +105,7 @@ const GuestContent = () => {
   );
 };
 
-// Чужой вишлист по ссылке (DESIGN.md §8.5): без таб-бара и без регистрации.
-export const WishlistGuestPage = () => (
+const Frame = ({ children }: { children: ReactNode }) => (
   <Screen>
     <div className="flex h-[52px] flex-none items-center px-5">
       <Link
@@ -113,10 +116,23 @@ export const WishlistGuestPage = () => (
         <Brand size="sm" />
       </Link>
     </div>
-    <ScreenBody>
-      <Suspense fallback={<Splash />}>
-        <GuestContent />
-      </Suspense>
-    </ScreenBody>
+    <ScreenBody>{children}</ScreenBody>
   </Screen>
+);
+
+// Чужой вишлист по ссылке (DESIGN.md §8.5): без таб-бара и без регистрации.
+export const WishlistGuestPage = () => (
+  <Frame>
+    <Suspense fallback={<GuestSkeleton />}>
+      <GuestContent />
+    </Suspense>
+  </Frame>
+);
+
+// Тот же экран до запуска вкладки (app/route-skeleton.tsx): скелетон
+// гостевого вишлиста вместо логотипа после прелоадера (DESIGN.md §6).
+export const WishlistGuestPageSkeleton = () => (
+  <Frame>
+    <GuestSkeleton />
+  </Frame>
 );
