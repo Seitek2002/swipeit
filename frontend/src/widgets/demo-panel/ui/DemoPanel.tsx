@@ -112,6 +112,13 @@ const WatchAs = ({ onPicked }: { onPicked: () => void }) => {
                 >
                   {name || "Без имени"}
                 </span>
+                {/* Чей это экран сейчас: при двух «Айгерим» (своя и демо)
+                    иначе не отличить (auto-tasks U16). */}
+                {active && (
+                  <span className="text-caption text-champagne -mt-1.5">
+                    ты
+                  </span>
+                )}
               </button>
             </li>
           );
