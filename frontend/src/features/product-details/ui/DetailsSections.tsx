@@ -97,6 +97,10 @@ type Props = {
   choice: Record<string, string>;
   hidePrices?: boolean;
   onChoose: (group: VariantGroup, optionId: string) => void;
+  // Колода ссылки-фильтра (/pick/): выбирает друг для отправителя, своего
+  // вишлиста у него тут нет — подпись «Выбрано: чёрный» без «Друзья увидят…»
+  // (auto-tasks V05).
+  pickMode?: boolean;
   product: Product;
   // Чужой выбор — только посмотреть (гость, ответ друга; auto-tasks U03):
   // чипы не нажимаются, подпись «{readOnlyCaption}: Белый» без «Друзья
@@ -113,6 +117,7 @@ export const ProductDetailsSections = ({
   choice,
   onChoose,
   hidePrices = false,
+  pickMode = false,
   readOnlyCaption,
   tone = "card",
 }: Props) => {
@@ -198,7 +203,9 @@ export const ProductDetailsSections = ({
                   )
                 : chosen && (
                     <p className="text-caption text-rose mt-2.5">
-                      Мне подойдёт: {chosen}. Друзья увидят это в вишлисте.
+                      {pickMode
+                        ? `Выбрано: ${chosen}`
+                        : `Мне подойдёт: ${chosen}. Друзья увидят это в вишлисте.`}
                     </p>
                   ))}
           </Section>

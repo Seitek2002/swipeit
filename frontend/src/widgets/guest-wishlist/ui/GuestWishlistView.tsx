@@ -144,7 +144,7 @@ const GuestWishCard = ({
           {price && <p className="text-price mt-1.5">{price}</p>}
           {variant && (
             <p className="text-caption text-ink-soft mt-1.5">
-              Мне подойдёт: {variant}
+              В вишлисте: {variant}
             </p>
           )}
           {item.note && (

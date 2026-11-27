@@ -452,6 +452,7 @@ export const GiftDeck = ({
             product={product}
             guide={product.id === guideId}
             hidePrices={hidePrices}
+            pickMode={context.kind === "pick"}
             onPhotoChange={(index) => setTopPhoto({ id: product.id, index })}
             onVariantChange={(choice) => {
               variants.current[product.id] = choice;

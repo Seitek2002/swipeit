@@ -33,6 +33,8 @@ type Props = {
   onPhotoChange?: (index: number) => void;
   // Выбор варианта уходит в желание при «Хочу» (как раньше из шторки).
   onVariantChange: (choice: Record<string, string>) => void;
+  // Колода ссылки-фильтра: подписи выбора — для друга (V05).
+  pickMode?: boolean;
   product: Product;
 };
 
@@ -66,6 +68,7 @@ const FEEDBACK_ICONS = {
 export const GiftCard = ({
   product,
   hidePrices = false,
+  pickMode = false,
   guide = false,
   onPhotoChange,
   onVariantChange,
@@ -128,6 +131,7 @@ export const GiftCard = ({
           <ProductDetailsSections
             product={product}
             hidePrices={hidePrices}
+            pickMode={pickMode}
             choice={choice}
             onChoose={choose}
           />
