@@ -191,7 +191,7 @@ export const FriendsPage = () => {
                       <FriendRow
                         key={friend.user.id}
                         friend={friend}
-                        online={presence.data?.has(friend.user.id)}
+                        online={presence.data?.online.has(friend.user.id)}
                       />
                     ))
                   )}

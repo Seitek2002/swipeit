@@ -245,7 +245,10 @@ export const createLanServer = async ({
       return;
     }
     if (method === "GET" && apiPath === "/presence") {
-      sendJson(res, 200, { online: realtime.online() });
+      sendJson(res, 200, {
+        online: realtime.online(),
+        devices: realtime.devices(),
+      });
       return;
     }
     if (method === "POST" && apiPath === "/uploads") {

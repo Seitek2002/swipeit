@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { FeedResponse, Product } from "../catalog/types";
+import { DEFAULT_DEMO_SETTINGS } from "../demo/types";
 import type { FriendSummary, User } from "../users/types";
 import {
   createFixedClock,
@@ -331,5 +332,19 @@ describe("режим lan", () => {
     expect(ids).toContain(second.id);
     expect(ids).toContain("u_azamat");
     expect(ids).not.toContain(first.id);
+  });
+});
+
+describe("сброс демо", () => {
+  it("«Сбросить всё» возвращает и настройки демо: часы, скорость, ошибки", async () => {
+    await call("PATCH", "/demo/settings", null, {
+      clockOffsetMs: 3 * 86_400_000,
+      botSpeed: "fast",
+      randomErrors: true,
+    });
+    await call("POST", "/demo/reset", null);
+    expect(await call("GET", "/demo/settings", null)).toEqual(
+      DEFAULT_DEMO_SETTINGS,
+    );
   });
 });

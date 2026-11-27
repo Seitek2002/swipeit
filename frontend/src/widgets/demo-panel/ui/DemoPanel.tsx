@@ -157,7 +157,7 @@ export const DemoPanel = () => {
           <p className="text-caption text-rose flex items-center gap-2">
             <span aria-hidden className="bg-mint size-2 rounded-full" />
             {isLan
-              ? `Локальная сеть: ${pluralize(presence.data?.size ?? 0, ["устройство", "устройства", "устройств"])} онлайн`
+              ? `Локальная сеть: ${pluralize(presence.data?.devices ?? 0, ["устройство", "устройства", "устройств"])} онлайн`
               : `На этом устройстве · ${leader ? "боты работают в этой вкладке" : "боты — в другой вкладке"}`}
           </p>
 

@@ -49,9 +49,22 @@ export const httpTransport: Transport = {
     } catch {
       throw new ApiError(0, "OFFLINE", "Нет связи с ноутбуком");
     }
-    const data = (await response.json().catch(() => null)) as unknown;
+    const NOT_JSON = Symbol("not-json");
+    const data = (await response.json().catch(() => NOT_JSON)) as unknown;
+    // Вместо API ответило что-то другое (прокси, статика с HTML) — это
+    // сбой связи, а не пустой ответ.
+    if (response.ok && data === NOT_JSON) {
+      throw new ApiError(
+        response.status,
+        "OFFLINE",
+        "Сервер ответил непонятно. Проверь адрес ноутбука",
+      );
+    }
     if (!response.ok) {
-      const error = (data ?? {}) as { code?: string; message?: string };
+      const error = (data === NOT_JSON || !data ? {} : data) as {
+        code?: string;
+        message?: string;
+      };
       const code = KNOWN_CODES.includes(error.code as ApiErrorCode)
         ? (error.code as ApiErrorCode)
         : response.status >= 500

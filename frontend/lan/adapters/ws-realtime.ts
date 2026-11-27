@@ -16,6 +16,8 @@ const HEARTBEAT_MS = 20_000;
 
 export type WsRealtime = Realtime & {
   close(): Promise<void>;
+  // Открытые вкладки — «N устройств онлайн» в демо-панели.
+  devices(): number;
   // Upgrade-запрос на /ws с общего http-сервера.
   handleUpgrade(request: IncomingMessage, socket: Duplex, head: Buffer): void;
   // Люди, у которых сейчас открыта вкладка (для GET /presence).
@@ -51,7 +53,8 @@ export const createWsRealtime = (): WsRealtime => {
 
   // Онлайн поменялся — пусть телефоны перечитают друзей («В этой сети»).
   const presenceChanged = () => {
-    const key = online().join(",");
+    // Считаем и вкладки: новая вкладка без hello (онбординг) — тоже устройство.
+    const key = `${users.size}|${online().join(",")}`;
     if (key === lastOnline) return;
     lastOnline = key;
     publish({ type: "db:changed", scope: ["users"], by: "system" });
@@ -60,6 +63,7 @@ export const createWsRealtime = (): WsRealtime => {
   wss.on("connection", (socket) => {
     users.set(socket, null);
     alive.set(socket, true);
+    presenceChanged();
     socket.on("pong", () => alive.set(socket, true));
     socket.on("message", (data, isBinary) => {
       if (isBinary) return;
@@ -102,6 +106,7 @@ export const createWsRealtime = (): WsRealtime => {
       return () => handlers.delete(handler);
     },
     online,
+    devices: () => users.size,
     handleUpgrade(request, socket, head) {
       wss.handleUpgrade(request, socket, head, (client) =>
         wss.emit("connection", client, request),

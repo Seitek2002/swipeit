@@ -1,6 +1,6 @@
 import { ALL_SCOPES } from "@/shared/lib/realtime/types";
 
-import { DemoSettingsSchema } from "../../demo/types";
+import { DEFAULT_DEMO_SETTINGS, DemoSettingsSchema } from "../../demo/types";
 import type { Handler } from "../context";
 import { DEMO_USER_ID, buildSeedDb } from "../seed";
 import { parseInput } from "./common";
@@ -14,6 +14,9 @@ export const resetDemo: Handler = async (ctx) => {
   const demoUser = seed.users[DEMO_USER_ID];
   if (ctx.userId === DEMO_USER_ID && demoUser) demoUser.isBot = false;
   await ctx.db.replace(seed);
+  // «Сбросить всё» — и часы, и скорость ботов, и ошибки API: иначе следующая
+  // группа начала бы с перемотанным временем (в lan настройки общие).
+  ctx.settings.update(DEFAULT_DEMO_SETTINGS);
   ctx.realtime.publish({
     type: "db:changed",
     scope: ALL_SCOPES,

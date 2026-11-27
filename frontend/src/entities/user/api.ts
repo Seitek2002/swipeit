@@ -58,7 +58,10 @@ export const usePresence = () => {
     queryKey: friendKeys.presence(),
     queryFn: getPresence,
     enabled: mounted && getMode() === "lan",
-    select: (data) => new Set(data.online),
+    select: (data) => ({
+      devices: data.devices,
+      online: new Set(data.online),
+    }),
   });
 };
 

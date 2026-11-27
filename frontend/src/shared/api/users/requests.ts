@@ -21,5 +21,7 @@ export const getFriends = (): Promise<FriendSummary[]> =>
 
 // Кто сейчас онлайн в «Локальной сети» (только lan: маршрут LAN-сервера,
 // TECH_SPEC §7a).
-export const getPresence = (): Promise<{ online: string[] }> =>
-  getTransport().request<{ online: string[] }>("GET", "/presence");
+export const getPresence = (): Promise<{
+  devices: number;
+  online: string[];
+}> => getTransport().request("GET", "/presence");

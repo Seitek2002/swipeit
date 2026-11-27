@@ -20,9 +20,17 @@ import {
   getConnectionStatus,
   getRealtime,
   subscribeConnection,
+  useConnectionStatus,
 } from "@/shared/lib/realtime";
 import { useSessionStore } from "@/shared/store";
-import { Splash, Toaster, toast } from "@/shared/ui";
+import {
+  Button,
+  EmptyState,
+  Splash,
+  Toaster,
+  toast,
+  useCurrentToast,
+} from "@/shared/ui";
 
 import { startEnvironment } from "./environment";
 
@@ -74,16 +82,20 @@ const SessionCacheReset = () => {
 // Потеря связи с ноутбуком (DESIGN.md §8.11): тост без автозакрытия со
 // спиннером; вернулась — «Снова в сети» и перечитать всё: пока связи не было,
 // события могли пройти мимо (TECH_SPEC §7).
+const OFFLINE_TEXT = "Нет связи с ноутбуком. Переподключаемся…";
+const showOffline = () =>
+  toast(OFFLINE_TEXT, { tone: "loading", duration: null });
+
 const ConnectionNotices = () => {
   const queryClient = useQueryClient();
+  const status = useConnectionStatus();
+  const current = useCurrentToast();
+
   useEffect(
     () =>
       subscribeConnection(() => {
         if (getConnectionStatus() === "offline") {
-          toast("Нет связи с ноутбуком. Переподключаемся…", {
-            tone: "loading",
-            duration: null,
-          });
+          showOffline();
         } else {
           toast("Снова в сети");
           void queryClient.invalidateQueries();
@@ -91,6 +103,13 @@ const ConnectionNotices = () => {
       }),
     [queryClient],
   );
+
+  // Тост один на экране: другой («Не получилось…») мог сменить уведомление
+  // и закрыться. Пока связи нет — возвращаем его.
+  useEffect(() => {
+    if (status === "offline" && current === null) showOffline();
+  }, [status, current]);
+
   return null;
 };
 
@@ -112,17 +131,36 @@ const BotsLeader = () => {
 // Пока режим не определён, шина, транспорт и сессия ещё не настроены —
 // ничего, что ходит в API или слушает шину, не рендерим (TECH_SPEC §6).
 const EnvironmentGate = ({ children }: { children: ReactNode }) => {
-  const [ready, setReady] = useState(false);
+  const [state, setState] = useState<"failed" | "loading" | "ready">("loading");
   useEffect(() => {
     let cancelled = false;
-    void startEnvironment().then(() => {
-      if (!cancelled) setReady(true);
-    });
+    startEnvironment().then(
+      () => {
+        if (!cancelled) setState("ready");
+      },
+      (error: unknown) => {
+        console.error("SwipeIt не запустился:", error);
+        if (!cancelled) setState("failed");
+      },
+    );
     return () => {
       cancelled = true;
     };
   }, []);
-  return ready ? children : <Splash />;
+  if (state === "failed") {
+    return (
+      <EmptyState
+        className="h-full"
+        title="Не получилось запустить SwipeIt. Проверь связь и обнови страницу."
+        action={
+          <Button variant="secondary" onClick={() => window.location.reload()}>
+            Обновить
+          </Button>
+        }
+      />
+    );
+  }
+  return state === "ready" ? children : <Splash />;
 };
 
 export const Providers = ({ children }: { children: ReactNode }) => {
