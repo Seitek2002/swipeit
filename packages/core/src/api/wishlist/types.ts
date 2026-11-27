@@ -13,6 +13,20 @@ export const SwipeContextSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("pick"), requestId: z.string() }),
 ]);
 
+// POST /swipes — решение по карточке. Вариант из шторки «Подробнее» («мне —
+// чёрный, M») уходит в вишлист. Общая для мока и сервера (BACKEND.md B06).
+export const SwipeInputSchema = z.object({
+  productId: z.string().min(1),
+  decision: SwipeDecisionSchema,
+  context: SwipeContextSchema,
+  variantChoice: z.record(z.string(), z.string()).optional(),
+});
+
+// POST /swipes/undo и /swipes/restart.
+export const SwipeContextInputSchema = z.object({
+  context: SwipeContextSchema,
+});
+
 export const ProductSwipeSchema = z.object({
   id: z.string(),
   userId: z.string(),

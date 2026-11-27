@@ -1,10 +1,12 @@
+import {
+  SwipeContextInputSchema,
+  SwipeInputSchema,
+} from "@swipeit/core/api/wishlist/types";
 import { nanoid } from "nanoid";
-import { z } from "zod";
 
 import type { Product } from "../../catalog/types";
 import type { User } from "../../users/types";
 import type { SwipeResponse } from "../../wishlist/types";
-import { SwipeContextSchema, SwipeDecisionSchema } from "../../wishlist/types";
 import { type Handler, nowIso } from "../context";
 import type { Db } from "../db";
 import { notFound } from "../errors";
@@ -20,16 +22,6 @@ import { parseInput, requireUser } from "./common";
 
 // Порог шеринга: после 5 «Хочу» вишлист можно отправить (решение владельца
 // от 26.11.2026). Считаются лайки, а не свайпы вообще.
-
-const SwipeBodySchema = z.object({
-  productId: z.string().min(1),
-  decision: SwipeDecisionSchema,
-  context: SwipeContextSchema,
-  // Вариант из шторки «Подробнее» («мне — чёрный, M») — уходит в вишлист.
-  variantChoice: z.record(z.string(), z.string()).optional(),
-});
-
-const ContextBodySchema = z.object({ context: SwipeContextSchema });
 
 const isLike = (decision: string) =>
   decision === "like" || decision === "superlike";
@@ -56,7 +48,7 @@ const refreshTaste = (db: Db, user: User, products: readonly Product[]) => {
 // кладут товар в вишлист; на 5-м желании в «Хочу» ставится shareUnlockedAt,
 // и ответ говорит клиенту запустить бант (TECH_SPEC §6 «Порог отправки»).
 export const createSwipe: Handler = async (ctx, { body }) => {
-  const input = parseInput(SwipeBodySchema, body);
+  const input = parseInput(SwipeInputSchema, body);
   const products = await ctx.catalog.products();
   if (!products.some((product) => product.id === input.productId)) {
     throw notFound("Товар не найден");
@@ -170,7 +162,7 @@ export const createSwipe: Handler = async (ctx, { body }) => {
 // POST /swipes/undo — отменить последний свайп в контексте; если он положил
 // товар в вишлист — убрать его оттуда. Открытый шеринг не закрывается.
 export const undoSwipe: Handler = async (ctx, { body }) => {
-  const { context } = parseInput(ContextBodySchema, body);
+  const { context } = parseInput(SwipeContextInputSchema, body);
   const key = contextKey(context);
   const products = await ctx.catalog.products();
   const result = await ctx.db.write((db) => {
@@ -217,7 +209,7 @@ export const undoSwipe: Handler = async (ctx, { body }) => {
 // POST /swipes/restart — «Начать заново» в конце колоды: пропущенные
 // карточки вернутся, лайки остаются (TECH_SPEC §6, п. 5 алгоритма ленты).
 export const restartSwipes: Handler = async (ctx, { body }) => {
-  const { context } = parseInput(ContextBodySchema, body);
+  const { context } = parseInput(SwipeContextInputSchema, body);
   const key = contextKey(context);
   const products = await ctx.catalog.products();
   const { removed, interestsChanged } = await ctx.db.write((db) => {

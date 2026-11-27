@@ -7,6 +7,7 @@
 // Миграции после первого деплоя в prod — только добавляющие (§4.2).
 import { sql } from "drizzle-orm";
 import {
+  bigserial,
   boolean,
   check,
   customType,
@@ -169,6 +170,11 @@ export const productSwipes = pgTable(
     pickRequestId: text("pick_request_id"),
     variantChoice: jsonb("variant_choice"),
     at: at("at").notNull(),
+    // Порядок записи (B06): по нему считается вкус и выбирается свайп для
+    // «Вернуть». Время для этого не годится: два свайпа одной миллисекунды
+    // (двойной тап, подставные часы в тестах) неразличимы. Повторный свайп
+    // берёт новый номер — он «последний».
+    seq: bigserial("seq", { mode: "number" }).notNull(),
   },
   (table) => [
     // Повторный свайп той же карточки в том же контексте заменяет прежний:
@@ -178,10 +184,10 @@ export const productSwipes = pgTable(
       table.contextKey,
       table.productId,
     ),
-    index("product_swipes_user_context_at").on(
+    index("product_swipes_user_context_seq").on(
       table.userId,
       table.contextKey,
-      table.at,
+      table.seq,
     ),
     check(
       "product_swipes_decision",

@@ -9,6 +9,14 @@ import type { ServerCatalog } from "./catalog/load";
 import type { Clock, ServerHandler } from "./context";
 import type { Db } from "./db/client";
 import {
+  getCatalogMeta,
+  getCatalogStores,
+  getCount,
+  getFeed,
+  getProduct,
+  listActivities,
+} from "./domains/catalog/handlers";
+import {
   createDate,
   deleteDate,
   dismissReminder,
@@ -17,6 +25,11 @@ import {
   updateDate,
 } from "./domains/dates/handlers";
 import { getUser, listFriends } from "./domains/friends/handlers";
+import {
+  createSwipe,
+  restartSwipes,
+  undoSwipe,
+} from "./domains/swipes/handlers";
 import { deleteMe } from "./domains/users/delete";
 import {
   createUser,
@@ -44,6 +57,15 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "POST /me/reminders/:id/dismiss": dismissReminder,
   "GET /users/:id": getUser,
   "GET /friends": listFriends,
+  "GET /catalog/feed": getFeed,
+  "GET /catalog/count": getCount,
+  "GET /catalog/products/:id": getProduct,
+  "GET /catalog/meta": getCatalogMeta,
+  "GET /catalog/stores": getCatalogStores,
+  "GET /activities": listActivities,
+  "POST /swipes": createSwipe,
+  "POST /swipes/undo": undoSwipe,
+  "POST /swipes/restart": restartSwipes,
 };
 
 export type RouteDeps = {

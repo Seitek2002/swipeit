@@ -19,8 +19,10 @@ import { createSeedDb } from "@/shared/api/mock-server/seed";
 import { createMockServer } from "@/shared/api/mock-server/server";
 
 import { buildApp } from "../../src/app";
+import { createSession } from "../../src/auth/sessions";
 import { loadCatalog, type ServerCatalog } from "../../src/catalog/load";
 import { loadConfig } from "../../src/config";
+import { users, wishlistMeta } from "../../src/db/schema";
 import { createTestDb, resetDb } from "../db";
 
 // 28 ноября 2026, полдень по Бишкеку.
@@ -39,6 +41,9 @@ export type ApiClient = {
   close: () => Promise<void>;
   kind: "mock" | "server";
   newUser: () => Promise<{ caller: Caller; me: MeResponse }>;
+  // Профиль с заданным id: у мока и сервера тогда один сид ленты (разброс
+  // считается от userId и даты), и первые порции можно сравнить.
+  userWithId: (id: string) => Promise<Caller>;
 };
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -49,14 +54,19 @@ export const testCatalog = () =>
   (catalogPromise ??= loadCatalog(CATALOG_DIR, { warn: () => undefined }));
 
 export const createMockClient = async (): Promise<ApiClient> => {
-  const { products } = await testCatalog();
+  const { products, activities, meta } = await testCatalog();
   const clock = createFixedClock(NOW);
+  const db = createMemoryDb(async () =>
+    createSeedDb({ products: [...products], now: clock.now() }),
+  );
   const server = createMockServer({
-    catalog: createMemoryCatalog([...products]),
-    clock,
-    db: createMemoryDb(async () =>
-      createSeedDb({ products: [...products], now: clock.now() }),
+    catalog: createMemoryCatalog(
+      [...products],
+      [...activities],
+      meta ?? undefined,
     ),
+    clock,
+    db,
     realtime: createRecordingRealtime(),
     random: createSeededRandom("contract"),
     settings: createMemorySettings(),
@@ -75,6 +85,21 @@ export const createMockClient = async (): Promise<ApiClient> => {
     newUser: async () => {
       const me = await call<MeResponse>(null, "POST", "/users", {});
       return { me, caller: { id: me.id } };
+    },
+    userWithId: async (id) => {
+      await db.write((data) => {
+        data.users[id] = {
+          id,
+          avatarColor: "mint",
+          interests: [],
+          audience: "all",
+          isBot: false,
+          createdAt: new Date(NOW).toISOString(),
+        };
+        data.wishlistItems[id] = [];
+        data.wishlistMeta[id] = { ownerId: id, hideReservationCount: false };
+      });
+      return { id };
     },
     close: async () => undefined,
   };
@@ -124,6 +149,16 @@ export const createServerClient = async (): Promise<ApiClient> => {
         {},
       );
       return { me, caller: { id: me.id, token } };
+    },
+    userWithId: async (id) => {
+      const { token } = await database.db.transaction(async (tx) => {
+        await tx
+          .insert(users)
+          .values({ id, avatarColor: "mint", createdAt: new Date(NOW) });
+        await tx.insert(wishlistMeta).values({ ownerId: id });
+        return createSession(tx, id, { now: () => NOW }, null);
+      });
+      return { id, token };
     },
     close: async () => {
       await app.close();

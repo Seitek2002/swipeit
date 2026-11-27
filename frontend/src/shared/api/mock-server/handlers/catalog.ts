@@ -1,49 +1,24 @@
-import { z } from "zod";
+import {
+  FEED_DEFAULT_LIMIT,
+  type FeedQuery,
+  FeedQuerySchema,
+  parseExcludeParam,
+  parseProductFiltersParam,
+} from "@swipeit/core/api/catalog/query";
+import { catalogStores } from "@swipeit/core/logic/catalog-stores";
 
-import { GUIDE_PRODUCT_ID, shopHost } from "@/shared/config";
+import { GUIDE_PRODUCT_ID } from "@/shared/config";
 import { toDateKey } from "@/shared/lib/format";
 
-import { EMPTY_FILTERS } from "../../catalog/constants";
-import {
-  type CatalogStores,
-  type FeedResponse,
-  type ProductFilters,
-  ProductFiltersSchema,
-} from "../../catalog/types";
+import type { FeedResponse } from "../../catalog/types";
 import type { Handler, HandlerContext } from "../context";
 import type { Db } from "../db";
-import { notFound, validation } from "../errors";
+import { notFound } from "../errors";
 import { contextKey, parseContextKey, rankProducts } from "../feed";
 import { tasteOf } from "../taste";
 import { parseInput, requireUser } from "./common";
 
-const DEFAULT_LIMIT = 10;
-
-// Параметры в query — строки (в lan они приходят из URL), поэтому фильтры —
-// JSON-строкой, список исключений — через запятую.
-const FeedQuerySchema = z.object({
-  filters: z.string().optional(),
-  context: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(50).optional(),
-  // Карточки, которые уже лежат в колоде клиента, но ещё не свайпнуты:
-  // без них дозапрос вернул бы их повторно.
-  exclude: z.string().optional(),
-});
-
-const parseFilters = (raw: string | undefined): ProductFilters => {
-  if (!raw) return EMPTY_FILTERS;
-  try {
-    return ProductFiltersSchema.parse(JSON.parse(raw));
-  } catch {
-    throw validation("Фильтры повреждены");
-  }
-};
-
-const rankForUser = async (
-  ctx: HandlerContext,
-  db: Db,
-  query: z.infer<typeof FeedQuerySchema>,
-) => {
+const rankForUser = async (ctx: HandlerContext, db: Db, query: FeedQuery) => {
   const user = requireUser(ctx, db);
   const products = await ctx.catalog.products();
   const context = parseContextKey(query.context);
@@ -52,12 +27,12 @@ const rankForUser = async (
   const swiped = own
     .filter((swipe) => contextKey(swipe.context) === key)
     .map((swipe) => swipe.productId);
-  const extra = query.exclude ? query.exclude.split(",").filter(Boolean) : [];
+  const extra = parseExcludeParam(query.exclude);
   return rankProducts({
     products,
     // Аудитория — из фильтров (TECH_SPEC §5 ProductFilters.audience), а не
     // из профиля: User.audience устарело с этапа 7.
-    filters: parseFilters(query.filters),
+    filters: parseProductFiltersParam(query.filters),
     profile: {
       interests: user.interests,
       mutedInterests: user.mutedInterests,
@@ -84,7 +59,7 @@ export const getFeed: Handler = async (ctx, { query }) => {
   const input = parseInput(FeedQuerySchema, query);
   const ranked = await rankForUser(ctx, await ctx.db.read(), input);
   const response: FeedResponse = {
-    items: ranked.slice(0, input.limit ?? DEFAULT_LIMIT),
+    items: ranked.slice(0, input.limit ?? FEED_DEFAULT_LIMIT),
     total: ranked.length,
   };
   return response;
@@ -108,32 +83,8 @@ export const getProduct: Handler = async (ctx, { params }) => {
 
 // GET /catalog/stores — магазины, где есть товары (UX-аудит M1): чипы фильтра.
 // Каталог в демо не меняется — считаем по нему, без пользователя.
-export const getCatalogStores: Handler = async (ctx) => {
-  const products = await ctx.catalog.products();
-  const marketplaces = new Map<string, number>();
-  const shops = new Map<string, number>();
-  for (const product of products) {
-    const seen = new Set<string>();
-    for (const offer of product.offers) {
-      const host = offer.marketplace === "other" ? shopHost(offer.url) : null;
-      const key = host ? `shop:${host}` : offer.marketplace;
-      if (seen.has(key) || key === "other") continue;
-      seen.add(key);
-      const bucket = host ? shops : marketplaces;
-      const id = host ?? offer.marketplace;
-      bucket.set(id, (bucket.get(id) ?? 0) + 1);
-    }
-  }
-  const byCount = (map: Map<string, number>) =>
-    [...map.entries()]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([id]) => id);
-  const response: CatalogStores = {
-    marketplaces: byCount(marketplaces) as CatalogStores["marketplaces"],
-    shops: byCount(shops),
-  };
-  return response;
-};
+export const getCatalogStores: Handler = async (ctx) =>
+  catalogStores(await ctx.catalog.products());
 
 // GET /catalog/meta — meta.json: курсы и авторы фото занятий (страница
 // «Авторы фото»). Пользователь не нужен: страница открывается и до

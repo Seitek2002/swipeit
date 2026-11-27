@@ -1,54 +1,28 @@
+import {
+  ActivitiesQuerySchema,
+  parsePlanFiltersParam,
+} from "@swipeit/core/api/catalog/query";
+import { matchesPlanFilters } from "@swipeit/core/logic/activities";
 import { nanoid } from "nanoid";
-import { z } from "zod";
 
 import type { Activity } from "../../catalog/types";
-import {
-  CustomActivityInputSchema,
-  type PlanFilters,
-  PlanFiltersSchema,
-} from "../../plans/types";
+import { CustomActivityInputSchema } from "../../plans/types";
 import type { Handler } from "../context";
-import { validation } from "../errors";
 import { parseInput, requireUser } from "./common";
 
 // Занятия для «Че делать будем?» (TECH_SPEC §5, §6): каталог Товароведа
 // (только чтение) и свои занятия пользователей в db.customActivities.
 
-// Бюджет — пересечение диапазонов, как у подарков в ленте (TECH_SPEC §6
-// «Алгоритм ленты»): занятие «500–1 500 сом» подходит под «до 1 000».
-export const matchesPlanFilters = (
-  activity: Activity,
-  filters: PlanFilters,
-): boolean => {
-  const { categories, budgetPerPerson } = filters;
-  if (categories.length > 0 && !categories.includes(activity.category)) {
-    return false;
-  }
-  if (activity.pricePerPersonMax < budgetPerPerson.min) return false;
-  return (
-    budgetPerPerson.max === null ||
-    activity.pricePerPersonMin <= budgetPerPerson.max
-  );
-};
-
-// Фильтры в query — JSON-строкой (в lan они приходят из URL).
-const ListQuerySchema = z.object({ filters: z.string().optional() });
-
-const parseFilters = (raw: string | undefined): null | PlanFilters => {
-  if (!raw) return null;
-  try {
-    return PlanFiltersSchema.parse(JSON.parse(raw));
-  } catch {
-    throw validation("Фильтры повреждены");
-  }
-};
+// Фильтр занятий и разбор query — общие с сервером (@swipeit/core,
+// BACKEND.md B06).
+export { matchesPlanFilters };
 
 // GET /activities?filters — занятия каталога (по фильтрам плана, если они
 // заданы). Расширение TECH_SPEC §6: счётчик на шаге 3 создания плана и
 // страница «Авторы фото» (названия и миниатюры к записям meta.json).
 export const listActivities: Handler = async (ctx, { query }) => {
-  const input = parseInput(ListQuerySchema, query);
-  const filters = parseFilters(input.filters);
+  const input = parseInput(ActivitiesQuerySchema, query);
+  const filters = parsePlanFiltersParam(input.filters);
   const activities = await ctx.catalog.activities();
   return filters
     ? activities.filter((activity) => matchesPlanFilters(activity, filters))

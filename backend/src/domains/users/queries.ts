@@ -55,6 +55,13 @@ export const lockMe = async (ctx: ServerContext): Promise<UserRow> => {
   return row;
 };
 
+// Свой профиль без блокировки — для чтения (лента, счётчик).
+export const readMe = async (ctx: ServerContext): Promise<UserRow> => {
+  const row = await readUser(ctx.tx, ctx.userId ?? "");
+  if (!row) throw notFound("Профиль не найден");
+  return row;
+};
+
 export const readUser = async (tx: Tx, id: string): Promise<null | UserRow> => {
   const [row] = await tx.select().from(users).where(eq(users.id, id)).limit(1);
   return row && !row.deletedAt ? row : null;
