@@ -1,18 +1,17 @@
 "use client";
 
-import { type ChangeEvent, useId, useState } from "react";
+import { useState } from "react";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, X } from "lucide-react";
 
 import { createCustomWish, isApiError, wishlistKeys } from "@/shared/api";
 import {
-  compressImage,
-  deleteCustomImage,
-  saveCustomImage,
-  useCustomImageUrl,
-} from "@/shared/lib/dom";
-import { BottomSheet, Button, Spinner, TextField, toast } from "@/shared/ui";
+  BottomSheet,
+  Button,
+  ImagePickField,
+  TextField,
+  toast,
+} from "@/shared/ui";
 
 type Props = {
   onClose: () => void;
@@ -34,7 +33,6 @@ const isUrl = (value: string) => /^https?:\/\/\S+\.\S+/i.test(value.trim());
 // желанию. Фото сжимается и ложится в IndexedDB, в базу — только ключ.
 export const CustomWishSheet = ({ open, onClose }: Props) => {
   const queryClient = useQueryClient();
-  const fileId = useId();
   const [title, setTitle] = useState("");
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
@@ -42,15 +40,6 @@ export const CustomWishSheet = ({ open, onClose }: Props) => {
   const [imageKey, setImageKey] = useState<string>();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
-  const preview = useCustomImageUrl(imageKey);
-
-  // Несохранённое фото заменили или убрали — из IndexedDB тоже.
-  const replaceImage = (next?: string) => {
-    if (imageKey && imageKey !== next) {
-      void deleteCustomImage(imageKey).catch(() => undefined);
-    }
-    setImageKey(next);
-  };
 
   const reset = () => {
     setTitle("");
@@ -77,20 +66,6 @@ export const CustomWishSheet = ({ open, onClose }: Props) => {
         { tone: "error" },
       ),
   });
-
-  const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    setIsProcessing(true);
-    try {
-      replaceImage(await saveCustomImage(await compressImage(file)));
-    } catch {
-      toast("Не получилось сохранить фото. Попробуй другое", { tone: "error" });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const handleSubmit = () => {
     const min = parsePrice(priceMin);
@@ -173,45 +148,12 @@ export const CustomWishSheet = ({ open, onClose }: Props) => {
           error={errors.url}
           onChange={(event) => setUrl(event.target.value)}
         />
-        <div>
-          <p className="text-caption text-rose mb-2">Фото, если хочешь</p>
-          {preview ? (
-            <div className="relative size-28">
-              <img
-                src={preview}
-                alt="Фото желания"
-                className="size-full rounded-2xl object-cover"
-              />
-              <button
-                type="button"
-                aria-label="Убрать фото"
-                onClick={() => replaceImage(undefined)}
-                className="bg-velvet text-paper absolute -top-2 -right-2 grid size-8 place-items-center rounded-full before:absolute before:-inset-1.5 before:content-['']"
-              >
-                <X aria-hidden size={16} strokeWidth={1.75} />
-              </button>
-            </div>
-          ) : (
-            <label
-              htmlFor={fileId}
-              className="border-rose/40 text-rose flex h-28 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed"
-            >
-              {isProcessing ? (
-                <Spinner />
-              ) : (
-                <ImagePlus aria-hidden size={24} strokeWidth={1.75} />
-              )}
-              <span className="text-label">Выбрать фото</span>
-            </label>
-          )}
-          <input
-            id={fileId}
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={handleFile}
-          />
-        </div>
+        <ImagePickField
+          alt="Фото желания"
+          value={imageKey}
+          onChange={setImageKey}
+          onBusyChange={setIsProcessing}
+        />
       </div>
     </BottomSheet>
   );

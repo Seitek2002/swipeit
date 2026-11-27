@@ -17,4 +17,12 @@ export default defineConfig([
       "fsd/insignificant-slice": "off",
     },
   },
+  {
+    // Временно, до T14: билетик занятия пока только в создании плана.
+    // Вторым потребителем станет колода билетиков (widgets/activity-deck).
+    files: ["./src/entities/activity/**"],
+    rules: {
+      "fsd/insignificant-slice": "off",
+    },
+  },
 ]);

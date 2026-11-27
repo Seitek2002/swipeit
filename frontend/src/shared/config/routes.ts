@@ -21,6 +21,7 @@ export const ROUTES = {
   FRIEND_PROFILE: (id: string) =>
     `/friends/profile/?id=${encodeURIComponent(id)}`,
   PROFILE: "/profile/",
+  CREDITS: "/credits/",
   KIT: "/kit/",
 } as const;
 

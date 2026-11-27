@@ -18,6 +18,8 @@ type Props = {
   // Куда ведёт «назад». Без адреса — шаг назад по истории.
   backHref?: string;
   className?: string;
+  // Свой «назад» — шаг назад внутри потока (создание плана), а не по истории.
+  onBack?: () => void;
   showAvatar?: boolean;
   showBack?: boolean;
   title: ReactNode;
@@ -33,12 +35,14 @@ export const AppHeader = ({
   actions,
   showAvatar = true,
   className,
+  onBack,
 }: Props) => {
   const router = useRouter();
   const { data: me } = useMe();
 
   const handleBack = () => {
-    if (backHref) router.push(backHref);
+    if (onBack) onBack();
+    else if (backHref) router.push(backHref);
     else router.back();
   };
 

@@ -23,6 +23,7 @@ import { useCreateUser, useLoginDemo, useMe } from "@/entities/user";
 
 import { getMode } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { takeReturnTo } from "@/shared/lib/dom";
 import {
   Brand,
   Button,
@@ -55,6 +56,9 @@ export const OnboardingPage = () => {
   const createUser = useCreateUser();
   const loginDemo = useLoginDemo();
   const [step, setStep] = useState<Step>("welcome");
+  // Куда вести после знакомства (приглашение в план и т. п.). Забираем один
+  // раз при открытии: навигаций несколько, и вторая получила бы пустоту.
+  const [afterOnboarding] = useState(() => takeReturnTo() ?? ROUTES.GIFTS);
   const [draft, setDraft] = useState<ProfileDraft>(EMPTY_DRAFT);
   const [nameTouched, setNameTouched] = useState(false);
 
@@ -63,15 +67,15 @@ export const OnboardingPage = () => {
 
   // Профиль уже есть (вернулись назад браузером) — сразу в ленту.
   useEffect(() => {
-    if (me.data && !createUser.isPending) router.replace(ROUTES.GIFTS);
-  }, [me.data, createUser.isPending, router]);
+    if (me.data && !createUser.isPending) router.replace(afterOnboarding);
+  }, [me.data, createUser.isPending, router, afterOnboarding]);
 
   const update = (patch: Partial<ProfileDraft>) =>
     setDraft((current) => ({ ...current, ...patch }));
 
   const handleDemo = () =>
     loginDemo.mutate(undefined, {
-      onSuccess: () => router.replace(ROUTES.GIFTS),
+      onSuccess: () => router.replace(afterOnboarding),
       onError: () =>
         toast("Не получилось войти. Попробуй ещё раз", { tone: "error" }),
     });
@@ -85,7 +89,7 @@ export const OnboardingPage = () => {
   const handleFinish = () => {
     if (Object.keys(errors).length > 0) return;
     createUser.mutate(toProfileInput(draft), {
-      onSuccess: () => router.replace(ROUTES.GIFTS),
+      onSuccess: () => router.replace(afterOnboarding),
       onError: () =>
         toast("Не получилось сохранить. Попробуй ещё раз", { tone: "error" }),
     });

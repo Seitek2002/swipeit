@@ -1,1 +1,1 @@
-export { PlanSessionPage } from "./ui";
+export { PlanSessionPage } from "./ui/PlanSessionPage";
