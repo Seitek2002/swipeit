@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useId, useState, useSyncExternalStore } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -9,8 +9,9 @@ import { Sparkles } from "lucide-react";
 
 import { ResetDemoButton } from "@/features/demo-reset";
 import { LoadNewYearButton } from "@/features/demo-scenario";
+import { useMyDates } from "@/features/important-dates";
 
-import { type User, useLoginDemo, usePresence } from "@/entities/user";
+import { type User, useLoginDemo, useMe, usePresence } from "@/entities/user";
 
 import {
   type DemoSettings,
@@ -18,7 +19,9 @@ import {
   getDemoSettings,
   getDemoUsers,
   getMode,
+  isApiError,
   isBotLeader,
+  jumpToReminder,
   resetDemoHints,
   subscribeBotLeader,
   updateDemoSettings,
@@ -140,6 +143,42 @@ export const DemoPanel = () => {
   const router = useRouter();
   const loginDemo = useLoginDemo();
   const [hintsPending, setHintsPending] = useState(false);
+  const [jumpPending, setJumpPending] = useState(false);
+  const jumpHintId = useId();
+  const me = useMe();
+  const myDates = useMyDates();
+  // День рождения — тоже своя дата (DESIGN.md §8.10). Пока профиль или даты
+  // не загрузились, кнопку не гасим: сервер сам ответит, если дат нет.
+  const noOwnDates =
+    me.data !== undefined &&
+    myDates.data !== undefined &&
+    !me.data.birthday &&
+    myDates.data.length === 0;
+
+  // «Перемотать к напоминанию» (DESIGN.md §8.10): часы встают за 30 дней до
+  // ближайшей своей даты, чьё напоминание ещё не скрыто. Перечитываем
+  // настройки (часы) и users (напоминание) — баннер и точка на табе
+  // появляются сами; ведём на вишлист, где виден баннер.
+  const jumpToNextReminder = () => {
+    setJumpPending(true);
+    jumpToReminder()
+      .then(
+        () => {
+          void queryClient.invalidateQueries({ queryKey: demoKeys.all });
+          void queryClient.invalidateQueries({ queryKey: userKeys.all });
+          setOpen(false);
+          router.push(ROUTES.WISHLIST);
+        },
+        (error: unknown) =>
+          toast(
+            isApiError(error) && error.code === "VALIDATION"
+              ? error.message
+              : "Не получилось. Попробуй ещё раз",
+            { tone: "error" },
+          ),
+      )
+      .finally(() => setJumpPending(false));
+  };
 
   // «Показать обучение снова» (DESIGN.md §8.10): снимает deck_guide и
   // taste_toast — обучающая карточка снова первая.
@@ -164,7 +203,15 @@ export const DemoPanel = () => {
 
   const patch = (next: Partial<DemoSettings>) =>
     updateDemoSettings(next)
-      .then(() => queryClient.invalidateQueries({ queryKey: demoKeys.all }))
+      .then(() => {
+        // Часы сдвинулись — у напоминания другой «Через N дней», а то и
+        // вовсе другое: перечитываем и его (ключ под users).
+        if (next.clockOffsetMs !== undefined)
+          void queryClient.invalidateQueries({
+            queryKey: userKeys.reminders(),
+          });
+        return queryClient.invalidateQueries({ queryKey: demoKeys.all });
+      })
       .catch(() => toast("Не получилось сохранить", { tone: "error" }));
 
   const today = formatDayMonth(toDateKey(clock.at(clockOffset)));
@@ -257,6 +304,22 @@ export const DemoPanel = () => {
                 >
                   Вернуть часы
                 </Button>
+              )}
+            </div>
+            <div className="flex flex-col items-start gap-1.5">
+              <Button
+                variant="secondary"
+                loading={jumpPending}
+                disabled={noOwnDates}
+                aria-describedby={noOwnDates ? jumpHintId : undefined}
+                onClick={jumpToNextReminder}
+              >
+                Перемотать к напоминанию
+              </Button>
+              {noOwnDates && (
+                <p id={jumpHintId} className="text-caption text-rose">
+                  Сначала отправь вишлист с датой
+                </p>
               )}
             </div>
           </section>

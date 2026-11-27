@@ -12,6 +12,8 @@ import { cn } from "@/shared/lib/utils";
 
 type Props = {
   santaReady?: boolean;
+  // Активное напоминание о своей дате (DESIGN.md §7 ReminderBanner, §8.3).
+  wishlistReminder?: boolean;
 };
 
 type Tab = {
@@ -31,7 +33,10 @@ const TABS: Tab[] = [
 
 // Плавающая таблетка (DESIGN.md §7 TabBar). Активный таб — «Бумага» и
 // мандариновая точка 4px; бейджи — бумага с чернилами, не мандарин.
-export const TabBar = ({ santaReady = false }: Props) => {
+export const TabBar = ({
+  santaReady = false,
+  wishlistReminder = false,
+}: Props) => {
   const pathname = usePathname();
   // Бейдж — число активных желаний (DESIGN.md §7 TabBar).
   const wishCount = useWishlistSummary().activeCount;
@@ -62,6 +67,14 @@ export const TabBar = ({ santaReady = false }: Props) => {
                   {wishCount}
                 </b>
               )}
+              {/* Напоминание — мандариновая точка 6px слева сверху: справа
+                  сверху место бейджа (DESIGN.md §7 ReminderBanner). */}
+              {id === "wishlist" && wishlistReminder && (
+                <b
+                  aria-hidden
+                  className="bg-mandarin absolute -top-[3px] -left-[9px] size-1.5 rounded-full shadow-[0_0_0_2px_var(--color-velvet-2)]"
+                />
+              )}
               {id === "santa" && santaReady && (
                 <b
                   aria-label="Конверт готов"
@@ -70,6 +83,9 @@ export const TabBar = ({ santaReady = false }: Props) => {
               )}
             </span>
             <span className="text-micro">{label}</span>
+            {id === "wishlist" && wishlistReminder && (
+              <span className="sr-only">, есть напоминание</span>
+            )}
             {isActive && (
               <span
                 aria-hidden="true"

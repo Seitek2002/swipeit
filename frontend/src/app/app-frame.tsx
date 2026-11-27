@@ -8,6 +8,8 @@ import { usePathname } from "next/navigation";
 import { AppShell } from "@/widgets/app-shell";
 import { TabBar } from "@/widgets/tab-bar";
 
+import { useActiveReminder } from "@/features/date-reminder";
+
 import { useSantaGames } from "@/entities/santa-game";
 
 import { rendersBeforeReady } from "@/shared/config";
@@ -24,12 +26,16 @@ const DemoPanel = dynamic(
 );
 
 // Конверт Санты ждёт вскрытия — точка на табе «Санта» (reference.html).
+// Напоминание о своей дате — точка на табе «Вишлист» (DESIGN.md §8.3).
+// AppTabBar рисуется только у запущенной вкладки, а напоминание спрашивается
+// ещё и только при сессии (useActiveReminder).
 const AppTabBar = () => {
   const games = useSantaGames();
   const ready = (games.data ?? []).some(
     (summary) => summary.me?.envelope === "ready",
   );
-  return <TabBar santaReady={ready} />;
+  const reminder = useActiveReminder();
+  return <TabBar santaReady={ready} wishlistReminder={reminder !== null} />;
 };
 
 // Пока вкладка не запустилась (app/environment.ts), большинство экранов

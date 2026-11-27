@@ -10,9 +10,9 @@ import { ChevronRight } from "lucide-react";
 import { AppHeader } from "@/widgets/app-header";
 
 import { ResetDemoButton } from "@/features/demo-reset";
+import { MyDates } from "@/features/important-dates";
 import {
   AvatarColorPicker,
-  BirthdayPicker,
   NAME_MAX,
   type ProfileDraft,
   draftFromUser,
@@ -51,7 +51,7 @@ import {
 } from "@/shared/ui";
 
 // Профиль (DESIGN.md §8.9, quick-start.html кадр 7): имя и аватар,
-// «Мне нравится», «Показывать подарки», «Друзья», «Режим демонстрации»,
+// «Мои даты», «Мне нравится», «Показывать подарки», «Друзья», «Режим демонстрации»,
 // «Сбросить демо-данные».
 export const ProfilePage = () => {
   const me = useMe();
@@ -189,16 +189,9 @@ const ProfileForm = ({ user }: { user: User }) => {
           onChange={(avatarColor) => update({ avatarColor })}
         />
       </div>
-      <BirthdayPicker
-        day={draft.birthdayDay}
-        month={draft.birthdayMonth}
-        error={errors.birthday}
-        onChange={({ day, month }) =>
-          update({ birthdayDay: day, birthdayMonth: month })
-        }
-      />
-      {/* «Мои даты» — T24. Обе секции ниже сохраняются сразу, без
-          «Сохранить»: это не анкета, а поправка ленты. */}
+      {/* «Мои даты» и «Мне нравится» сохраняются сразу, без «Сохранить»:
+          «Сохранить» отправляет только имя и фон аватара (TASKS T24). */}
+      <MyDates />
       <TasteEdit id={LIKES_ANCHOR} />
       <AudienceSection />
 

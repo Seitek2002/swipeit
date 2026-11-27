@@ -2,7 +2,13 @@
 
 import { useRef, useState } from "react";
 
-import { Copy, QrCode as QrIcon, Send, Share2 } from "lucide-react";
+import {
+  Copy,
+  MessageCircle,
+  QrCode as QrIcon,
+  Send,
+  Share2,
+} from "lucide-react";
 
 import {
   type SharePayload,
@@ -62,9 +68,11 @@ export const ShareActions = ({
       await action(await getPayload());
     } catch (error) {
       fail?.();
-      if (onError?.(error, again ?? (() => void run(action)))) return;
-      toast("Не получилось собрать ссылку. Попробуй ещё раз", {
+      const retry = again ?? (() => void run(action));
+      if (onError?.(error, retry)) return;
+      toast("Не получилось собрать ссылку", {
         tone: "error",
+        action: { label: "Повторить", onClick: retry },
       });
     } finally {
       busyRef.current = false;
@@ -119,12 +127,16 @@ export const ShareActions = ({
         size="lg"
         variant="secondary"
         aria-disabled={busy || undefined}
+        icon={<MessageCircle {...ICON} />}
         onClick={() => openMessenger(whatsappUrl)}
       >
         Отправить в WhatsApp
       </Button>
-      <div className="grid grid-cols-2 gap-2">
+      {/* Строками на всю ширину (DESIGN.md §8.4): в два столбца «Скопировать
+          ссылку» не помещается. */}
+      <div className="flex flex-col gap-2">
         <Button
+          size="lg"
           variant="secondary"
           aria-disabled={busy || undefined}
           icon={<Copy {...ICON} />}
@@ -137,9 +149,10 @@ export const ShareActions = ({
             })
           }
         >
-          Скопировать
+          Скопировать ссылку
         </Button>
         <Button
+          size="lg"
           variant="secondary"
           aria-disabled={busy || undefined}
           icon={<QrIcon {...ICON} />}

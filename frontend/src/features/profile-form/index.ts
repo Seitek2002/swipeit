@@ -8,4 +8,3 @@ export {
   validateProfile,
 } from "./model";
 export { AvatarColorPicker } from "./ui/AvatarColorPicker";
-export { BirthdayPicker } from "./ui/BirthdayPicker";

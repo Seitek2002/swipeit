@@ -11,6 +11,7 @@ import { AppHeader } from "@/widgets/app-header";
 
 import { NAME_CAPTIONS, NameForm, useRequireName } from "@/features/ask-name";
 import { CustomWishSheet } from "@/features/custom-wish";
+import { ReminderBanner, useActiveReminder } from "@/features/date-reminder";
 import {
   GivenSheet,
   type ItemAction,
@@ -29,6 +30,7 @@ import type { Product } from "@/entities/product";
 import { useFriends } from "@/entities/user";
 import { type WishlistItem, useMyWishlist } from "@/entities/wishlist";
 
+import type { Occasion } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { occasionLabel, pluralize } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
@@ -71,6 +73,10 @@ export const WishlistPage = () => {
   const [sheet, setSheet] = useState<null | Sheet>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // Повод напоминания: «Отправить вишлист» в баннере открывает шторку сразу
+  // с ним (DESIGN.md §7 ReminderBanner).
+  const [shareOccasion, setShareOccasion] = useState<Occasion | undefined>();
+  const reminder = useActiveReminder();
   // Имя увидят друзья (DESIGN.md §8.4 шаг 1): нет его — NameSheet первым
   // шагом шторки отправки; NAME_REQUIRED от сервера — поверх и повтор.
   const requireName = useRequireName(NAME_CAPTIONS.wishlist);
@@ -93,7 +99,11 @@ export const WishlistPage = () => {
 
   const unlocked = Boolean(data?.meta.shareUnlockedAt);
   const likesLeft = Math.max(0, UNLOCK_LIKES - (data?.likeCount ?? 0));
-  const occasion = occasionLabel(data?.meta.occasion);
+  // «Без даты» — строки повода нет (DESIGN.md §8.3, §8.4).
+  const occasion =
+    data?.meta.occasion?.kind === "just_because"
+      ? ""
+      : occasionLabel(data?.meta.occasion);
 
   const genderOf = (userId?: string) => {
     const audience = friends.data?.find(({ user }) => user.id === userId)?.user
@@ -119,7 +129,10 @@ export const WishlistPage = () => {
     else commitOrder(topIds, group);
   };
 
-  const handleShare = () => setShareOpen(true);
+  const handleShare = () => {
+    setShareOccasion(undefined);
+    setShareOpen(true);
+  };
 
   const handleAction = (action: ItemAction, item: WishlistItem) => {
     const current = sheet;
@@ -150,7 +163,10 @@ export const WishlistPage = () => {
 
   const groupIds = sheet?.item.priority === "top" ? topIds : normalIds;
   const sheetIndex = sheet ? groupIds.indexOf(sheet.item.id) : -1;
-  const showFooter = tab === "want" && active.length > 0;
+  // Пока виден баннер напоминания, его «Отправить вишлист» — главная кнопка,
+  // липкую прячем (DESIGN.md §7 ReminderBanner): мандарин на экране один.
+  const showFooter =
+    !(reminder && tab === "want") && tab === "want" && active.length > 0;
 
   const renderGroup = (ids: string[], key: "normal" | "top") => (
     <Reorder.Group
@@ -233,6 +249,21 @@ export const WishlistPage = () => {
 
         {data && tab === "want" && active.length > 0 && (
           <ReservationNote data={data} />
+        )}
+        {data && tab === "want" && reminder && (
+          <div className="px-5 pt-3">
+            <ReminderBanner
+              reminder={reminder}
+              onSend={(active) => {
+                setShareOccasion(
+                  active.kind === "birthday"
+                    ? { kind: "birthday" }
+                    : { kind: "important", dateId: active.dateId },
+                );
+                setShareOpen(true);
+              }}
+            />
+          </div>
         )}
         {data && tab === "want" && (
           <GivenHintBanner data={data} onGiven={setHintItem} />
@@ -341,6 +372,7 @@ export const WishlistPage = () => {
         open={shareOpen}
         onClose={() => setShareOpen(false)}
         wishlist={data}
+        initialOccasion={shareOccasion}
         nameStep={
           requireName.needsName ? (
             <NameForm caption={NAME_CAPTIONS.wishlist} />
