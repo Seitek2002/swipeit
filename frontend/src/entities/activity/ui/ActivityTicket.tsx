@@ -22,8 +22,6 @@ type Props = {
   className?: string;
   // В колоде билет растягивается на высоту стола, в списках — по контенту.
   fill?: boolean;
-  // Первые картинки колоды грузим сразу, остальные — лениво.
-  isTop?: boolean;
 };
 
 // Перфорация (DESIGN.md §7, reference .ticket): полукруглые вырезы по бокам
@@ -35,7 +33,7 @@ const TICKET_STYLE = {
   mask: "radial-gradient(circle 11px at 0 var(--perf), #0000 96%, #000 100%) 0 0 / 51% 100% no-repeat, radial-gradient(circle 11px at 100% var(--perf), #0000 96%, #000 100%) 100% 0 / 51% 100% no-repeat",
 } as CSSProperties;
 
-const Photo = ({ activity, isTop }: { activity: Activity; isTop: boolean }) => {
+const Photo = ({ activity }: { activity: Activity }) => {
   const customUrl = useCustomImageUrl(activity.imageKey);
   const src = activity.image
     ? withBasePath(activity.image.src)
@@ -46,7 +44,8 @@ const Photo = ({ activity, isTop }: { activity: Activity; isTop: boolean }) => {
         src={src}
         alt={activity.image?.alt ?? ""}
         draggable={false}
-        loading={isTop ? "eager" : "lazy"}
+        // В колоде на столе не больше трёх билетов — все грузим сразу (§10).
+        loading="eager"
         className="absolute inset-0 size-full object-cover select-none"
       />
     );
@@ -70,7 +69,6 @@ export const ActivityTicket = ({
   activity,
   className,
   fill = false,
-  isTop = false,
 }: Props) => {
   const duration = formatDuration(activity.durationMin, activity.durationMax);
   const where = activity.distanceNote ?? activity.place;
@@ -86,7 +84,7 @@ export const ActivityTicket = ({
         )}
       >
         <div className="bg-paper-2 relative h-(--ph) flex-none overflow-hidden rounded-2xl">
-          <Photo activity={activity} isTop={isTop} />
+          <Photo activity={activity} />
         </div>
         <div
           aria-hidden

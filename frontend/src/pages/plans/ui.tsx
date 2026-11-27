@@ -38,7 +38,7 @@ const PlanCard = ({ summary }: { summary: PlanSummary }) => {
         className="paper rounded-paper shadow-paper flex items-center gap-3 p-3.5"
       >
         <div className="min-w-0 flex-1">
-          <p className="text-title-2 truncate">{plan.title}</p>
+          <p className="text-title-2 line-clamp-2">{plan.title}</p>
           <p
             className={cn(
               "text-caption mt-0.5 flex items-center gap-1.5",

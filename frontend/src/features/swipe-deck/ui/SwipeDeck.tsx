@@ -113,6 +113,8 @@ export const SwipeDeck = <T,>({
   const buttonsRef = useRef<ButtonRefs>({});
   const topApi = useRef<CardApi | null>(null);
   const photoApi = useRef<null | PhotoCardApi>(null);
+  // Подписи ушедших карточек — для объявления «Вернули: …».
+  const decidedLabels = useRef(new Map<string, string>());
   const isPhoto = renderPhotoCard !== undefined;
   const isBusyRef = useRef(false);
   const [enterFrom, setEnterFrom] = useState<{
@@ -158,13 +160,19 @@ export const SwipeDeck = <T,>({
   const undo = () => {
     if (disabled || !canUndo || isBusyRef.current || !onUndo) return;
     const restored = onUndo();
-    if (restored) setEnterFrom(restored);
+    if (!restored) return;
+    setEnterFrom(restored);
+    // Скринридеру — что карточка вернулась (иначе в live-области оставался
+    // текст прошлого свайпа).
+    const label = decidedLabels.current.get(restored.key);
+    setAnnouncement(label ? `Вернули: ${label}` : "Карточка вернулась");
   };
 
   useImperativeHandle(handleRef, () => ({ swipe, undo }));
 
   const handleCommit = (direction: SwipeDirection) => {
     if (!top) return;
+    decidedLabels.current.set(getKey(top), getLabel(top));
     setEnterFrom(null);
     if (announce) setAnnouncement(announce(top, direction));
     onDecision(top, direction);

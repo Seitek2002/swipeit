@@ -133,9 +133,7 @@ export const GiftInfo = ({
         className="mt-2 flex w-full items-end justify-between gap-3 text-left"
       >
         <span className="min-w-0">
-          <span className="text-title-2 line-clamp-2 block">
-            {product.title}
-          </span>
+          <span className="text-title-2 line-clamp-2">{product.title}</span>
           <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             {!hidePrices && (
               <span className="text-price">

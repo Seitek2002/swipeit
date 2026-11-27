@@ -60,7 +60,7 @@ const WardRow = ({ item }: { item: SantaWardItem }) => {
           <p className="text-caption text-ink-soft mt-0.5 line-clamp-2">
             {[variant && `Подойдёт: ${variant}`, item.note && `«${item.note}»`]
               .filter(Boolean)
-              .join(" · ")}
+              .join(". ")}
           </p>
         )}
       </div>

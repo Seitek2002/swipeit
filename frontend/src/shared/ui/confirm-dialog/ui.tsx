@@ -93,7 +93,10 @@ const DialogCard = ({
           </p>
         )}
         <div className="mt-5 grid grid-cols-[1fr_1.3fr] gap-2">
+          {/* Фокус при открытии — на безопасной «Отмене»: Enter не должен
+              запускать необратимое (жеребьёвка, сброс демо). */}
           <Button
+            data-autofocus
             variant="ghost"
             className="text-ink-soft"
             onClick={handleClose}
@@ -102,7 +105,6 @@ const DialogCard = ({
             {cancelLabel}
           </Button>
           <Button
-            data-autofocus
             onClick={onConfirm}
             disabled={isLoading}
             className={cn(

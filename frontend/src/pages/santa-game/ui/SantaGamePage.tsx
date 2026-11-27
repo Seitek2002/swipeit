@@ -158,6 +158,7 @@ const GameContent = () => {
     return (
       <EmptyState
         className="h-full"
+        object="envelope"
         title="Не получилось загрузить игру. Проверь связь и попробуй ещё раз."
         action={
           <Button variant="secondary" onClick={() => void game.refetch()}>

@@ -142,13 +142,15 @@ export const DemoPanel = () => {
     <>
       {/* Язычок у правого края на 45% высоты, а не круг над таб-баром: внизу
           живут кнопки колоды и главные кнопки экранов, сверху — действия шапки.
-          Видимая часть 18 px помещается в боковое поле экрана (20 px), а зона
-          нажатия ~46×48 добирается псевдоэлементом влево. */}
+          Видимая часть 18 px помещается в боковое поле экрана (20 px). Зона
+          нажатия 24×56 — осознанное исключение из 44 px: кнопка только для
+          ведущего демо, а широкая зона перехватывала «⋮» у желаний, «Голос»
+          и поле даты у правого края (QA T20). */}
       <button
         type="button"
         aria-label="Демо-панель"
         onClick={() => setOpen(true)}
-        className="bg-velvet-3 text-champagne border-line shadow-lift absolute top-[45%] right-0 z-[60] grid h-12 w-[18px] -translate-y-1/2 place-items-center rounded-l-[14px] border border-r-0 before:absolute before:inset-y-0 before:right-0 before:-left-[28px] before:content-['']"
+        className="bg-velvet-3 text-champagne border-line shadow-lift absolute top-[45%] right-0 z-[60] grid h-14 w-[18px] -translate-y-1/2 place-items-center rounded-l-[14px] border border-r-0 before:absolute before:inset-y-0 before:right-0 before:-left-[6px] before:content-['']"
       >
         <Sparkles aria-hidden size={14} strokeWidth={1.75} />
       </button>
@@ -163,7 +165,7 @@ export const DemoPanel = () => {
             <span aria-hidden className="bg-mint size-2 rounded-full" />
             {isLan
               ? `Локальная сеть: ${pluralize(presence.data?.devices ?? 0, ["устройство", "устройства", "устройств"])} онлайн`
-              : `На этом устройстве · ${leader ? "боты работают в этой вкладке" : "боты — в другой вкладке"}`}
+              : `На этом устройстве: ${leader ? "боты работают в этой вкладке" : "боты — в другой вкладке"}`}
           </p>
 
           <WatchAs onPicked={() => setOpen(false)} />

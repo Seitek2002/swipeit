@@ -60,7 +60,7 @@ export const Lobby = ({ view, meId }: { meId: string; view: PlanView }) => {
       <div>
         <h2 className="text-title-1">{plan.title}</h2>
         <p className="text-title-3 text-rose mt-0.5">
-          Прямо сейчас ·{" "}
+          Прямо сейчас,{" "}
           {pluralize(activities.length, ["занятие", "занятия", "занятий"])} в
           колоде
         </p>

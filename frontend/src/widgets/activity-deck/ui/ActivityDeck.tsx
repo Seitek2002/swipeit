@@ -191,9 +191,7 @@ export const ActivityDeck = ({ view, meId }: Props) => {
         directions={DIRECTIONS}
         getKey={(activity) => activity.id}
         getLabel={ticketLabel}
-        renderCard={(activity, { isTop }) => (
-          <ActivityTicket activity={activity} fill isTop={isTop} />
-        )}
+        renderCard={(activity) => <ActivityTicket activity={activity} fill />}
         onDecision={handleDecision}
         onUndo={handleUndo}
         canUndo={history.length > 0}

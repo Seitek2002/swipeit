@@ -54,14 +54,14 @@ const CreditRow = ({ row }: { row: Row }) => {
         <p className="text-caption text-rose flex min-w-0 items-center gap-1 whitespace-nowrap">
           <span className="min-w-0 truncate">{credit.author}</span>
           <span aria-hidden className="flex-none">
-            ·
+            —
           </span>
           {credit.licenseUrl ? (
             <a
               href={credit.licenseUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative z-[1] flex-none underline underline-offset-2"
+              className="relative z-[1] flex-none underline underline-offset-2 before:absolute before:-inset-x-1 before:-inset-y-[13px] before:content-['']"
             >
               {credit.license}
             </a>
