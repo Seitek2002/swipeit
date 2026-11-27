@@ -14,9 +14,20 @@ const ConfigSchema = z.object({
     .default("info"),
   // Коммит сборки — в /v1/health, чтобы видеть, что задеплоено (B18).
   COMMIT: z.string().default("dev"),
+  // PostgreSQL. Для разработки — база из backend/docker-compose.yml; в
+  // production обязательна явно (секрет, §10).
+  DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }).optional(),
+  // Размер пула соединений.
+  DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
 });
 
-export type Config = z.infer<typeof ConfigSchema>;
+// База из docker-compose для разработки и тестов.
+export const DEV_DATABASE_URL =
+  "postgres://swipeit:swipeit@127.0.0.1:5433/swipeit";
+
+export type Config = Omit<z.infer<typeof ConfigSchema>, "DATABASE_URL"> & {
+  DATABASE_URL: string;
+};
 
 export class ConfigError extends Error {
   override name = "ConfigError";
@@ -30,5 +41,11 @@ export const loadConfig = (env: NodeJS.ProcessEnv = process.env): Config => {
       .join("\n");
     throw new ConfigError(`Неверные переменные окружения:\n${details}`);
   }
-  return parsed.data;
+  const { DATABASE_URL, ...rest } = parsed.data;
+  if (!DATABASE_URL && rest.NODE_ENV === "production") {
+    throw new ConfigError(
+      "Неверные переменные окружения:\n  DATABASE_URL: обязательна в production",
+    );
+  }
+  return { ...rest, DATABASE_URL: DATABASE_URL ?? DEV_DATABASE_URL };
 };

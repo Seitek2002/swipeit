@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { buildApp } from "../src/app.js";
+import { createDb } from "../src/db/client.js";
+import { createTestDb } from "./db.js";
 import { ConfigError, loadConfig } from "../src/config.js";
 
 describe("каркас сервера", () => {
@@ -25,6 +27,13 @@ describe("каркас сервера", () => {
     expect(() => loadConfig({ PORT: "не число" })).toThrow(ConfigError);
     expect(() => loadConfig({ PORT: "99999" })).toThrow(/PORT/);
     expect(loadConfig({}).PORT).toBe(4100);
+    // База в production — только явно: секрет, а не значение по умолчанию.
+    expect(() => loadConfig({ NODE_ENV: "production" })).toThrow(
+      /DATABASE_URL/,
+    );
+    expect(() => loadConfig({ DATABASE_URL: "mysql://x" })).toThrow(
+      /DATABASE_URL/,
+    );
   });
 
   it("неизвестный путь — 404", async () => {
@@ -53,5 +62,27 @@ describe("остановка", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
     await closed;
+  });
+});
+
+describe("/v1/health и база (B03)", () => {
+  it("база отвечает — 200", async () => {
+    const db = createTestDb();
+    const app = buildApp({ config: loadConfig({ LOG_LEVEL: "silent" }), db });
+    const response = await app.inject({ method: "GET", url: "/v1/health" });
+    expect(response.statusCode).toBe(200);
+    await app.close();
+    await db.close();
+  });
+
+  it("база не отвечает — 503 OFFLINE", async () => {
+    // Порт, где базы нет: соединение сразу отклоняется.
+    const db = createDb("postgres://x:y@127.0.0.1:1/none", 1);
+    const app = buildApp({ config: loadConfig({ LOG_LEVEL: "silent" }), db });
+    const response = await app.inject({ method: "GET", url: "/v1/health" });
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toMatchObject({ code: "OFFLINE" });
+    await app.close();
+    await db.close();
   });
 });

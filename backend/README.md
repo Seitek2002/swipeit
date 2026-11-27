@@ -34,17 +34,27 @@ npm run start -w backend
 | `LOG_LEVEL` | `info`        | Уровень логов pino; `silent` — без логов   |
 | `COMMIT`    | `dev`         | Коммит сборки, показывается в `/v1/health` |
 
-Секреты (база, Telegram, Sentry) появятся в следующих задачах. Их значения — только в `.env` на сервере и в секретах GitHub, не в репозитории.
+Секреты (Telegram, Sentry) появятся в следующих задачах. Их значения — только в `.env` на сервере и в секретах GitHub, не в репозитории.
 
 ## База данных
 
-Postgres для разработки и тестов — в Docker:
+Postgres для разработки и тестов — в Docker (порт только на `127.0.0.1:5433`):
 
 ```bash
 docker compose -f backend/docker-compose.yml up -d
+npm run db:migrate -w backend     # применить миграции к DATABASE_URL
+npm run db:seed:dev -w backend    # 3 человека с вишлистами и дружбой
 ```
 
-Порт открыт только на `127.0.0.1:5433`. Схема и миграции — с задачи B03.
+Схема — `src/db/schema.ts` (Drizzle), миграции — SQL в `src/db/migrations/`. После правки схемы:
+
+```bash
+npm run db:generate -w backend    # drizzle-kit generate → новый SQL-файл
+```
+
+Миграции после первого деплоя в prod — только добавляющие (BACKEND.md §4.2).
+
+Тесты берут отдельную базу `swipeit_test` на том же сервере: перед прогоном она пересоздаётся с миграциями, между тестами таблицы очищаются. Адрес — `TEST_DATABASE_URL`, иначе `DATABASE_URL` с суффиксом `_test`.
 
 ## Проверки
 

@@ -1,10 +1,76 @@
 # Прогресс разработки
 
-> Сейчас: этап 9 — сервер, B03 (схема базы и миграции). T26 Д ждёт секретов Cloudflare.
+> Сейчас: этап 9 — сервер, B04 (обработчики, сессии, ошибки). T26 Д ждёт секретов Cloudflare.
 
 Заполняет Исполнитель после каждой задачи из [TASKS.md](TASKS.md). Новые блоки — сверху.
 
 **Демо:** https://seitek2002.github.io/swipeit/ · репозиторий: https://github.com/Seitek2002/swipeit
+
+## B03 — Схема базы и миграции — ✅ сдано
+
+**Готово когда:**
+- миграции на пустой базе проходят, повторный запуск ничего не меняет;
+- тесты ограничений зелёные;
+- таблицы и отличия от §4.2 — в PROGRESS.
+
+**Что сделано:**
+- **Схема** `backend/src/db/schema.ts` (Drizzle): все 21 таблица §4.2 с ключами, индексами и ограничениями.
+- **Миграция** `src/db/migrations/0000_init.sql` — `drizzle-kit generate`. Скрипты `db:generate`, `db:migrate`, `db:seed:dev`.
+- **Пул** `pg` (`src/db/client.ts`). `/v1/health` проверяет базу (`select 1`): не ответила — `503 { code: "OFFLINE" }`. Пул закрывается после того, как доотвечали начатые запросы.
+- **Конфиг:** `DATABASE_URL` (по умолчанию — база docker-compose; в `production` обязательна явно), `DATABASE_POOL_MAX`.
+- **Тестовая база** `swipeit_test`: перед прогоном пересоздаётся и мигрирует (`test/global-setup.ts`), между тестами — `truncate … cascade`. Файлы тестов — по очереди. В CI — Postgres service container из B01.
+- **`db:seed:dev`:** Айгерим, Азамат, Нурай — дни рождения, вишлисты (5, 3, 2 желания), дружба в обе стороны. Без ботов. Повторный запуск пересоздаёт их же, без дублей.
+
+**Тесты** (сервер 4 → 12):
+- повторная миграция не меняет таблиц;
+- вторая открытая бронь того же желания падает (`23505`), после закрытия — проходит;
+- второй свайп той же карточки в том же контексте падает, через upsert заменяет прежний, в другом контексте — отдельный;
+- у подопечного не бывает двух Сант (`23505`), Санта не дарит сам себе (`23514`);
+- «ММ-ДД», статус плана, «До даты» без дедлайна — `CHECK`;
+- одно живое желание на товар, удалённое не мешает добавить снова;
+- `/v1/health`: база есть — 200, нет — 503;
+- `DATABASE_URL`: в production без неё и не-postgres адрес — ошибка конфига.
+
+**Таблицы:**
+
+| Таблица | Ключ | Индексы и ограничения |
+|---|---|---|
+| `users` | `id` | CHECK `birthday` «ММ-ДД», `audience` |
+| `sessions` | `id` | unique `token_hash` (bytea, SHA-256); `user_id` |
+| `identities` | (`provider`, `subject`) | `user_id`; CHECK `provider` = telegram |
+| `friendships` | (`user_id`, `friend_id`) | `friend_id`; CHECK `source`, не сам с собой |
+| `important_dates` | `id` | `owner_id`; CHECK `date` «ММ-ДД» |
+| `product_swipes` | `id` | unique (`user_id`, `context_key`, `product_id`); (`user_id`, `context_key`, `at`); CHECK `decision` |
+| `wishlist_items` | `id` | (`owner_id`, `status`, `sort_order`); unique (`owner_id`, `product_id`) где активно и не удалено; CHECK вида, приоритета, статуса и источника |
+| `wishlist_meta` | `owner_id` | — |
+| `reservations` | `id` | unique (`owner_ref`, `item_key`) где не закрыта; `owner_ref`; `reserver_id` |
+| `share_links` | `code` | unique (`kind`, `target_id`) где не отозвана; CHECK `kind` |
+| `pick_requests` | `id` | `from_user_id` |
+| `pick_answers` | (`request_id`, `by_user_id`) | — |
+| `custom_activities` | `id` | `created_by` |
+| `plans` | `id` | (`status`, `deadline`); CHECK `mode`, `status`, `match_rule`, дедлайн у «До даты» |
+| `plan_participants` | (`plan_id`, `user_id`) | `user_id` |
+| `plan_swipes` | (`plan_id`, `user_id`, `activity_id`) | CHECK `decision` |
+| `plan_votes` | (`plan_id`, `user_id`) | — |
+| `santa_games` | `id` | (`status`, `draw_at`); CHECK `status`, `budget ≥ 0` |
+| `santa_members` | (`game_id`, `user_id`) | `user_id`; CHECK `state` |
+| `santa_assignments` | (`game_id`, `santa_id`) | unique (`game_id`, `ward_id`); CHECK Санта ≠ подопечный |
+| `uploads` | `key` | `owner_id` |
+
+**Отличия от §4.2 и почему:**
+- **Перечисления** — `text` с `CHECK`, а не `enum` PostgreSQL: новое значение — добавляющая миграция без `ALTER TYPE`.
+- **`identities`** — составной первичный ключ (`provider`, `subject`) вместо отдельного unique: тот же смысл, без лишнего `id`.
+- **`important_dates`** — колонки по `ImportantDate`: `date`, `preset`, `label`, `auto_number`, `created_at`.
+- **`custom_activities`** — поля `Activity` одним `jsonb` (`activity`) плюс `created_by`, `image_key`, `created_at`: занятие не ищут и не меняют по частям (§4.1).
+- **Участники планов и игр и пары Санты** — внешний ключ на `users` без каскада. Профиль при удалении остаётся строкой без имени (`users.deleted_at`, §3.4), строки обезличивает код (B05).
+- **Добавлены защитные `CHECK`:** не дружить с собой, Санта ≠ подопечный, у «До даты» есть дедлайн, у желания есть товар или своё.
+- **Добавлен индекс** `friendships.friend_id` — для «кто дружит со мной» при удалении профиля и рассылке событий друзьям (§5).
+
+**Решения без PM:**
+- **`drizzle-orm` указан ещё и в корне рабочего пространства** (devDependency). Иначе npm кладёт его в `backend/node_modules`, а `drizzle-kit` из корня его не видит («Please install latest version of drizzle-orm»).
+- **`npm install -w backend <пакет>`** падает с внутренней ошибкой npm 11 («Cannot read properties of null»). Зависимости вписываю в `package.json` и ставлю из корня.
+- **Две старые версии esbuild** из `drizzle-kit` — в `allowScripts` (их установочный скрипт).
+- **Docker Desktop запущен на машине** для Postgres.
 
 ## B02 — Общий пакет `@swipeit/core` — ✅ сдано
 
@@ -29,7 +95,7 @@
 - **ESLint ядра запрещает:**
   - React, Next и слои фронта (`no-restricted-imports`);
   - `window`, `document`, `localStorage`, `sessionStorage`, `navigator`, `location`, `indexedDB`, `BroadcastChannel` (`no-restricted-globals`).
-- **Контракт** `packages/core/src/contract.ts`: 83 маршрутов — метод, путь, доступ (`public` или `user`) и режимы (`local`, `lan`, `remote`).
+- **Контракт** `packages/core/src/contract.ts`: 83 маршрута — метод, путь, доступ (`public` или `user`) и режимы (`local`, `lan`, `remote`).
   - Тест мока `mock-server/contract.test.ts`: маршруты контракта для `local` и таблица мока совпадают один в один.
   - Тест ядра: демо-маршрутов (`/auth/demo`, `/demo/*`, `/plans/expire`, `/santa/tick`) нет в `remote`, а входа через Telegram нет в `local`.
 - **Backend на core.** `ApiMode` в `/v1/health` — из `@swipeit/core`. `moduleResolution: Bundler`: сервер всё равно собирает esbuild, а core отдаёт исходники с импортами без расширений. Сборка (`backend/build.mjs`) вшивает core в `dist/server.js`: Node не запускает `.ts` из `node_modules`. Зависимости остаются внешними. Собранный сервер отвечает на `/v1/health`.
@@ -40,6 +106,8 @@
 - core 114 + фронт 362 + сервер 4 = **480**.
 
 Плюс 7 новых: повод и порог без базы (4), контракт (2), мок против контракта (1).
+
+**Демо после переноса:** субагент прошёл на Pages все 4 сценария DEMO.md: вишлист → бронь, ссылка-фильтр → ответ, план «Прямо сейчас» → барабан («Сегодня»), Санта → письмо. Ошибок в консоли нет. `npm run lan` тоже проверен: `/api/health`, новый профиль, лента начинается с диффузора, магазины в фильтре.
 
 **Решения без PM:**
 - Запасной путь из п. 5 (алиас на `frontend/src/shared`) не понадобился: Next собирает пакет из исходников через `transpilePackages`.

@@ -2,12 +2,15 @@ import type { ApiMode } from "@swipeit/core/contract";
 import Fastify, { type FastifyInstance } from "fastify";
 
 import type { Config } from "./config.js";
+import type { Db } from "./db/client.js";
 
 // Режим API сервера — общий тип с фронтом (@swipeit/core, BACKEND.md §9.1).
 const MODE: ApiMode = "remote";
 
 export type AppOptions = {
   config: Config;
+  // База (B03). Без неё — только /v1/health без проверки базы (тесты каркаса).
+  db?: Db;
   // Часы сервера (BACKEND.md §2.5): в тестах — подставные.
   now?: () => number;
 };
@@ -16,6 +19,7 @@ export type AppOptions = {
 // server.ts — слушает порт. Маршруты API — под /v1 (BACKEND.md §4.5).
 export const buildApp = ({
   config,
+  db,
   now = Date.now,
 }: AppOptions): FastifyInstance => {
   const app = Fastify({
@@ -35,13 +39,23 @@ export const buildApp = ({
     if (closing) reply.header("connection", "close");
   });
 
-  app.get("/v1/health", async () => ({
-    app: "swipeit",
-    mode: MODE,
-    apiVersion: 1,
-    now: now(),
-    commit: config.COMMIT,
-  }));
+  // База не ответила — 503 OFFLINE (BACKEND.md §4.5): мониторинг видит, что
+  // сервер жив, но работать не может.
+  app.get("/v1/health", async (_request, reply) => {
+    if (db && !(await db.ping())) {
+      return reply.status(503).send({
+        code: "OFFLINE",
+        message: "База данных недоступна",
+      });
+    }
+    return {
+      app: "swipeit",
+      mode: MODE,
+      apiVersion: 1,
+      now: now(),
+      commit: config.COMMIT,
+    };
+  });
 
   return app;
 };

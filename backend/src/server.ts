@@ -1,5 +1,6 @@
 import { buildApp } from "./app.js";
 import { ConfigError, loadConfig } from "./config.js";
+import { createDb } from "./db/client.js";
 
 // Запуск и остановка (BACKEND.md §2.3). По SIGTERM (docker stop, деплой) —
 // перестаём принимать соединения и ждём начатые запросы: app.close() в
@@ -16,7 +17,10 @@ const main = async () => {
     throw error;
   }
 
-  const app = buildApp({ config });
+  const db = createDb(config.DATABASE_URL, config.DATABASE_POOL_MAX);
+  const app = buildApp({ config, db });
+  // Пул закрывается после того, как доотвечали начатые запросы.
+  app.addHook("onClose", () => db.close());
   await app.listen({ host: config.HOST, port: config.PORT });
 
   let closing = false;
