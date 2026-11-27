@@ -162,4 +162,16 @@ describe("reminderJumpTarget — «Перемотать к напоминани�
     ).toBe("birthday:2028");
     expect(reminderJumpTarget({}, [], now)).toBeNull();
   });
+
+  it("часы только вперёд: окно даты уже началось — следующая", () => {
+    // До дня рождения 10 дней: его окно уже идёт, назад не перематываем.
+    const now = at(2027, 3, 4);
+    const target = reminderJumpTarget(
+      { birthday: "03-14" },
+      [date({ id: "d_1", date: "06-02" })],
+      now,
+    );
+    expect(target?.id).toBe("d_1:2027");
+    expect(target?.at).toBeGreaterThanOrEqual(now);
+  });
 });

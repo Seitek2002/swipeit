@@ -119,7 +119,14 @@ export const stepAfterCalendar = (
 
 // "YYYY-MM-DD" ближайшего наступления "MM-DD".
 export const nextDateOf = (monthDay: string, now: number) => {
-  const date = new Date(now + daysUntil(monthDay, now) * 86_400_000);
+  // Календарной арифметикой, а не «+ N × 24 ч»: при переходе на летнее
+  // время сутки бывают 23 или 25 часов (ревью этапа 7).
+  const today = new Date(now);
+  const date = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() + daysUntil(monthDay, now),
+  );
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 };
 

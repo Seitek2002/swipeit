@@ -24,7 +24,7 @@ import type { WishlistItem } from "../../wishlist/types";
 import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, isApiError, notFound, validation } from "../errors";
-import { publicOccasion } from "../occasion";
+import { occasionForOthers } from "../occasion";
 import { parseInput, requireNamedUser, requireUser } from "./common";
 import { guestItems } from "./guest";
 import { itemKeyOf } from "./wishlist";
@@ -181,6 +181,7 @@ const wardOf = (
   game: SantaGame,
   wardId: string,
   products: Map<string, Product>,
+  now: number,
 ): null | SantaWard => {
   const ward = db.users[wardId];
   if (!ward) return null;
@@ -198,7 +199,8 @@ const wardOf = (
   return {
     ...profileOf(ward),
     // Даты подопечного личные: Санте — только дата и готовый повод.
-    occasion: publicOccasion(meta?.occasion),
+    // Как у гостя по ссылке: ближайшее наступление, а не сохранённая дата.
+    occasion: occasionForOthers(db, wardId, now),
     message: meta?.message,
     wishlist,
     overBudgetCount: wishlist.filter((item) => item.overBudget).length,
@@ -215,6 +217,7 @@ const viewOf = (
   game: SantaGame,
   userId: string,
   products: Map<string, Product>,
+  now: number,
 ): SantaView => {
   const joined = game.participantIds.includes(userId);
   const wardId = game.assignments?.[userId];
@@ -228,7 +231,7 @@ const viewOf = (
           bought: game.boughtIds.includes(userId),
           ward:
             game.status === "drawn" && wardId
-              ? wardOf(db, game, wardId, products)
+              ? wardOf(db, game, wardId, products, now)
               : null,
         }
       : null,
@@ -238,8 +241,13 @@ const viewOf = (
   };
 };
 
-const summaryOf = (db: Db, game: SantaGame, userId: string): SantaSummary => {
-  const view = viewOf(db, game, userId, new Map());
+const summaryOf = (
+  db: Db,
+  game: SantaGame,
+  userId: string,
+  now: number,
+): SantaSummary => {
+  const view = viewOf(db, game, userId, new Map(), now);
   const wardId = game.assignments?.[userId];
   const ward = wardId ? db.users[wardId] : undefined;
   return {
@@ -335,7 +343,7 @@ export const listSantaGames: Handler = async (ctx) => {
     .reverse()
     .filter((game) => membersOf(game).includes(user.id))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((game) => summaryOf(db, game, user.id));
+    .map((game) => summaryOf(db, game, user.id, ctx.clock.now()));
 };
 
 // GET /santa/:id — игра глазами пользователя запроса. Открыть может любой:
@@ -346,7 +354,13 @@ export const getSantaGame: Handler = async (ctx, { params }) => {
   const products = await productMap(ctx);
   const db = await ctx.db.read();
   const user = requireUser(ctx, db);
-  return viewOf(db, findGame(db, params.id), user.id, products);
+  return viewOf(
+    db,
+    findGame(db, params.id),
+    user.id,
+    products,
+    ctx.clock.now(),
+  );
 };
 
 // POST /santa — новая игра. Организатор вступил сразу, друзья — «позваны»:
@@ -391,7 +405,7 @@ export const createSantaGame: Handler = async (ctx, { body }) => {
     game.exclusions = normalizeExclusions(game, input.exclusions);
     checkExclusionsPossible(db, game);
     db.santaGames[game.id] = game;
-    return viewOf(db, game, owner.id, products);
+    return viewOf(db, game, owner.id, products, ctx.clock.now());
   });
   changed(ctx, view.game.id);
   trigger(ctx, "santa:created", view.game.id);
@@ -430,7 +444,7 @@ export const updateSantaGame: Handler = async (ctx, { params, body }) => {
       game.exclusions = normalizeExclusions(game, patch.exclusions);
       checkExclusionsPossible(db, game);
     }
-    return viewOf(db, game, user.id, products);
+    return viewOf(db, game, user.id, products, ctx.clock.now());
   });
   changed(ctx, view.game.id);
   return view;
@@ -456,7 +470,10 @@ export const joinSantaGame: Handler = async (ctx, { params }) => {
       game.participantIds.push(user.id);
       game.invitedIds = game.invitedIds.filter((id) => id !== user.id);
     }
-    return { joined: !already, view: viewOf(db, game, user.id, products) };
+    return {
+      joined: !already,
+      view: viewOf(db, game, user.id, products, ctx.clock.now()),
+    };
   });
   if (joined) changed(ctx, view.game.id);
   return view;
@@ -487,7 +504,7 @@ export const drawSantaGame: Handler = async (ctx, { params }) => {
     requireOwner(game, user, "Жеребьёвку проводит организатор");
     requireGathering(game);
     performDraw(ctx, db, game);
-    return viewOf(db, game, user.id, products);
+    return viewOf(db, game, user.id, products, ctx.clock.now());
   });
   changed(ctx, view.game.id);
   trigger(ctx, "santa:drawn", view.game.id);
@@ -504,7 +521,10 @@ export const openSantaEnvelope: Handler = async (ctx, { params }) => {
     requireDrawnParticipant(game, user);
     const already = game.openedIds.includes(user.id);
     if (!already) game.openedIds.push(user.id);
-    return { opened: !already, view: viewOf(db, game, user.id, products) };
+    return {
+      opened: !already,
+      view: viewOf(db, game, user.id, products, ctx.clock.now()),
+    };
   });
   if (opened) changed(ctx, view.game.id);
   return view;
@@ -527,7 +547,7 @@ export const setSantaBought: Handler = async (ctx, { params, body }) => {
     game.boughtIds = bought ? [...others, user.id] : others;
     return {
       changedNow: was !== bought,
-      view: viewOf(db, game, user.id, products),
+      view: viewOf(db, game, user.id, products, ctx.clock.now()),
     };
   });
   if (changedNow) changed(ctx, view.game.id);

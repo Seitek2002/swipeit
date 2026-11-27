@@ -9,11 +9,16 @@ import {
   useState,
 } from "react";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { Cake, CalendarHeart, Plus, Trash2 } from "lucide-react";
 
 import { useMe } from "@/entities/user";
 
-import type { ImportantDateView } from "@/shared/api";
+import {
+  type ImportantDateView,
+  updateWishlistMeta,
+  wishlistKeys,
+} from "@/shared/api";
 import { IMPORTANT_DATE_LABEL_MAX } from "@/shared/config";
 import { formatBirthday } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
@@ -85,7 +90,7 @@ const ImportantDateRow = ({
   onDeleted,
 }: {
   date: ImportantDateView;
-  onDeleted: (removed: ImportantDateView) => void;
+  onDeleted: (removed: ImportantDateView, occasionReset: boolean) => void;
   onEditDate: (date: ImportantDateView) => void;
 }) => {
   const update = useUpdateDate();
@@ -135,7 +140,9 @@ const ImportantDateRow = ({
       .mutateAsync(date.id)
       // then — а не колбэк mutate: строка к этому моменту уже исчезла из
       // списка, а тост с «Отменить» показать всё равно нужно.
-      .then(({ date: removed }) => onDeleted(removed))
+      .then(({ date: removed, occasionReset }) =>
+        onDeleted(removed, occasionReset),
+      )
       .catch(() =>
         toast("Не получилось удалить", {
           tone: "error",
@@ -248,18 +255,36 @@ export const MyDates = ({
 
   // «Отменить» в тосте: та же дата заново. Не вышло — тост с повтором, чтобы
   // дата не потерялась.
-  const undo = (removed: ImportantDateView) => {
-    restore.mutateAsync(undoInput(removed)).catch(() =>
-      toast("Не получилось вернуть дату", {
-        tone: "error",
-        action: { label: "Повторить", onClick: () => undo(removed) },
-      }),
-    );
+  const queryClient = useQueryClient();
+  // Удалённая дата была поводом вишлиста (повод сбросился на «Просто
+  // так») — возвращаем и повод: дата вернулась под новым id (ревью этапа 7).
+  const undo = (removed: ImportantDateView, occasionReset: boolean) => {
+    restore
+      .mutateAsync(undoInput(removed))
+      .then(async (created) => {
+        if (!occasionReset) return;
+        await updateWishlistMeta({
+          occasion: { kind: "important", dateId: created.id },
+        });
+        void queryClient.invalidateQueries({ queryKey: wishlistKeys.all });
+      })
+      .catch(() =>
+        toast("Не получилось вернуть дату", {
+          tone: "error",
+          action: {
+            label: "Повторить",
+            onClick: () => undo(removed, occasionReset),
+          },
+        }),
+      );
   };
 
-  const handleDeleted = (removed: ImportantDateView) =>
+  const handleDeleted = (removed: ImportantDateView, occasionReset: boolean) =>
     toast("Дата удалена", {
-      action: { label: "Отменить", onClick: () => undo(removed) },
+      action: {
+        label: "Отменить",
+        onClick: () => undo(removed, occasionReset),
+      },
     });
 
   // Запрос по тому, что меняем; null — дата та же, просто закрываем.

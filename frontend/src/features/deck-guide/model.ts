@@ -41,10 +41,11 @@ export const useDeckGuide = () => {
   const queryClient = useQueryClient();
   const userId = useSessionStore((state) => state.activeUserId);
   const me = useMe();
-  // Свайп отмечаем сразу, не дожидаясь ответа сервера: запоминаем снимок
-  // профиля, при котором слой ушёл. Придёт новый профиль (отметка сохранилась
-  // или «Показать обучение снова» её сняла) — решает уже он.
-  const [doneFor, setDoneFor] = useState<unknown>(null);
+  // Свайп отмечаем сразу, не дожидаясь сервера. «done» держит слой
+  // скрытым, даже если до записи отметки пришёл старый /me (ревью этапа 7);
+  // сервер подтвердил — «confirmed»; потом отметка пропала — это «Показать
+  // обучение снова», слой можно показывать снова.
+  const [phase, setPhase] = useState<"confirmed" | "done" | "idle">("idle");
   const [localDone, setLocalDone] = useState(false);
   const [localSeen] = useState(() =>
     typeof window === "undefined" ? true : readLocalSeen(),
@@ -54,7 +55,9 @@ export const useDeckGuide = () => {
   const seen = userId
     ? (me.data?.seenHints ?? []).includes("deck_guide")
     : localSeen;
-  const doneLocally = userId ? doneFor === me.data : localDone;
+  if (userId && phase === "done" && seen) setPhase("confirmed");
+  if (userId && phase === "confirmed" && !seen) setPhase("idle");
+  const doneLocally = userId ? phase !== "idle" : localDone;
   const active = known && !seen && !doneLocally;
 
   const done = () => {
@@ -64,7 +67,7 @@ export const useDeckGuide = () => {
       writeLocalSeen();
       return;
     }
-    setDoneFor(me.data);
+    setPhase("done");
     markHintSeen("deck_guide").then(
       (user) => queryClient.setQueryData(userKeys.me(), user),
       // Отметка не дошла — слой покажется в следующий раз, свайп не пропал.

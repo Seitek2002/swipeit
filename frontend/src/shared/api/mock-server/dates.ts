@@ -154,24 +154,26 @@ export const reminderJumpTarget = (
   now: number,
 ): { at: number; date: string; id: string } | null => {
   const dismissed = new Set(user.dismissedReminders ?? []);
-  let best: { date: string; id: string } | null = null;
+  // Полдень за 30 дней до даты — туда встают часы.
+  const windowStart = (date: string) => {
+    const [year = 0, month = 1, day = 1] = date.split("-").map(Number);
+    return new Date(year, month - 1, day - REMINDER_WINDOW_DAYS, 12).getTime();
+  };
+  let best: { at: number; date: string; id: string } | null = null;
   for (const candidate of candidatesOf(user, dates)) {
     // Скрытые за много лет вперёд в демо не бывают, но цикл ограничен.
     for (let years = 0; years < 50; years += 1) {
       const date = occurrenceFrom(candidate.monthDay, now, years);
       const id = reminderId(candidate.key, date);
       if (dismissed.has(id)) continue;
-      if (!best || date < best.date) best = { date, id };
+      // Часы демо только вперёд: если окно этой даты уже началось, берём
+      // следующее наступление (ревью этапа 7) — иначе дедлайны планов и
+      // «через N дней» уехали бы в прошлое.
+      const at = windowStart(date);
+      if (at < now) continue;
+      if (!best || date < best.date) best = { at, date, id };
       break;
     }
   }
-  if (!best) return null;
-  const [year = 0, month = 1, day = 1] = best.date.split("-").map(Number);
-  const at = new Date(
-    year,
-    month - 1,
-    day - REMINDER_WINDOW_DAYS,
-    12,
-  ).getTime();
-  return { ...best, at };
+  return best;
 };

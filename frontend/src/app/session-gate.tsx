@@ -37,10 +37,12 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
     if (profileMissing) setActiveUser(null);
   }, [profileMissing, setActiveUser]);
 
-  const { isIdle, mutate } = createUser;
+  // Не isIdle: после успешного создания мутация уже не «idle», а сессию
+  // может очистить сброс демо в другой вкладке — тогда создаём заново.
+  const { isPending, isError, mutate } = createUser;
   useEffect(() => {
-    if (shouldCreate && isIdle) mutate(undefined);
-  }, [shouldCreate, isIdle, mutate]);
+    if (shouldCreate && !isPending && !isError) mutate(undefined);
+  }, [shouldCreate, isPending, isError, mutate]);
 
   const waiting = needsProfile && (!ready || !mounted || !userId);
   usePreloaderHold("profile", waiting && !createUser.isError);

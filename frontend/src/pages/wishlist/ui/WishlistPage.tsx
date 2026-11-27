@@ -166,7 +166,7 @@ export const WishlistPage = () => {
   // Пока виден баннер напоминания, его «Отправить вишлист» — главная кнопка,
   // липкую прячем (DESIGN.md §7 ReminderBanner): мандарин на экране один.
   const showFooter =
-    !(reminder && tab === "want") && tab === "want" && active.length > 0;
+    !(reminder && unlocked) && tab === "want" && active.length > 0;
 
   const renderGroup = (ids: string[], key: "normal" | "top") => (
     <Reorder.Group
@@ -250,21 +250,27 @@ export const WishlistPage = () => {
         {data && tab === "want" && active.length > 0 && (
           <ReservationNote data={data} />
         )}
-        {data && tab === "want" && reminder && (
-          <div className="px-5 pt-3">
-            <ReminderBanner
-              reminder={reminder}
-              onSend={(active) => {
-                setShareOccasion(
-                  active.kind === "birthday"
-                    ? { kind: "birthday" }
-                    : { kind: "important", dateId: active.dateId },
-                );
-                setShareOpen(true);
-              }}
-            />
-          </div>
-        )}
+        {/* «Отправить вишлист» в баннере — только когда отправка открыта
+            (5 «Хочу»), иначе он вёл бы в ошибку FORBIDDEN. */}
+        {data &&
+          tab === "want" &&
+          reminder &&
+          unlocked &&
+          active.length > 0 && (
+            <div className="px-5 pt-3">
+              <ReminderBanner
+                reminder={reminder}
+                onSend={(active) => {
+                  setShareOccasion(
+                    active.kind === "birthday"
+                      ? { kind: "birthday" }
+                      : { kind: "important", dateId: active.dateId },
+                  );
+                  setShareOpen(true);
+                }}
+              />
+            </div>
+          )}
         {data && tab === "want" && (
           <GivenHintBanner data={data} onGiven={setHintItem} />
         )}
