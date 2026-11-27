@@ -1,10 +1,46 @@
 # Прогресс разработки
 
-> Сейчас: этап 9 — сервер, B01 (каркас сервера и рабочее пространство). T26 Д ждёт секретов Cloudflare.
+> Сейчас: этап 9 — сервер, B02 (общий пакет `@swipeit/core`). T26 Д ждёт секретов Cloudflare.
 
 Заполняет Исполнитель после каждой задачи из [TASKS.md](TASKS.md). Новые блоки — сверху.
 
 **Демо:** https://seitek2002.github.io/swipeit/ · репозиторий: https://github.com/Seitek2002/swipeit
+
+## B01 — Каркас сервера и рабочее пространство — ✅ сдано
+
+**Готово когда:**
+- `npm run dev -w backend` → `curl localhost:4100/v1/health` отдаёт JSON;
+- `npm run check` в корне зелёный локально и в CI;
+- push в `main` деплоит демо на Pages, как раньше.
+
+**Что сделано:**
+- **Рабочее пространство npm** в корне: `workspaces: ["packages/*", "frontend", "backend"]`, один `package-lock.json`.
+  - Lockfile фронта удалён. Версии зависимостей не сдвинулись: next 16.4.6, react 19.2.4, zod 4.6.7, vitest 3.2.7 и др. — как были.
+  - husky переехал в корень (`prepare`). Хук pre-commit запускает lint-staged из корня: у каждого файла — ближайший конфиг, фронта или сервера.
+  - `turbopack.root` — корень репозитория: зависимости теперь лежат в `../node_modules`.
+  - `catalog:sync` не менялся: он считает пути от своего файла.
+- **`backend/`**: Node 24, Fastify 5, zod 4, TypeScript strict с `noUncheckedIndexedAccess`.
+  - `src/config.ts`: переменные окружения через zod. Неверные — сервер не стартует и пишет какие («PORT: Invalid input: expected number…», выход 1).
+  - `GET /v1/health` → `{ app: "swipeit", mode: "remote", apiVersion: 1, now, commit }`. `commit` — заранее для B18.
+  - Остановка по SIGTERM/SIGINT: `app.close()`, начатые запросы доотвечают. Во время остановки ответы идут с `Connection: close` — иначе занятый keep-alive сокет держал закрытие до тайм-аута. Тест: медленный запрос, во время которого начали остановку, получает 200, и сервер закрывается.
+  - Лимит тела JSON — 100 КБ (§10).
+  - Скрипты: `dev` (tsx watch), `build` (esbuild → `dist/server.js`), `start`, `typecheck`, `lint`, `test`, `check`. ESLint — `@eslint/js` + `typescript-eslint` strict, без React. Prettier — по умолчанию.
+  - `docker-compose.yml`: Postgres 17, порт только на `127.0.0.1:5433`, `TZ=Asia/Bishkek`. `.env.example` с пояснениями. `README.md`: запуск, переменные, база, проверки.
+- **Корневой `npm run check`** — `check` всех пакетов: фронт (469 тестов) и сервер (4 теста).
+- **CI** (`deploy.yml`):
+  - job `frontend` (`npm ci` в корне, кеш по корневому lockfile, Node 24) и job `backend` (Postgres 17 как service container, `check` и `build`) — параллельно;
+  - `deploy` демо зависит только от `frontend`.
+- **Проверено руками:**
+  - `curl` на dev-сервер и на собранный `dist/server.js` — JSON из п. 2;
+  - `npm run lan` — `/api/health` отдаёт `mode: "lan"`, `/gifts/` — 200;
+  - сборка демо с `/swipeit` и обложкой из HTML — как была.
+
+**Решения без PM:**
+- **Новые зависимости сервера** — только из §2.4: `fastify`, `zod`, `esbuild`, `tsx`, `typescript`, `vitest`. Плюс `@eslint/js` и `typescript-eslint` для ESLint без `eslint-config-next`.
+- **Postgres в разработке — на порту 5433**, не 5432: на машине может стоять свой Postgres.
+- **Docker Desktop на машине сейчас не запущен.** Для B01 база не нужна. Запущу его в B03.
+
+**Вопросы к PM:** CLAUDE.md всё ещё говорит, что `backend/` пуст до конца демо (BACKEND.md §15, п. 9).
 
 ## T27 — Правки по UX-аудиту PM — ✅ сдано
 

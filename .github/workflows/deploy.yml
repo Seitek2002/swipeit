@@ -1,6 +1,7 @@
-# Сборка и публикация демо на GitHub Pages (TECH_SPEC §13).
-# Каждый push в main: проверки → статическая сборка с basePath /swipeit →
-# деплой. Если `npm run check` упал — деплоя нет.
+# Проверки и публикация (TECH_SPEC §13, BACKEND.md §11.5).
+# Каждый push в main: проверки фронта и сервера — параллельно. Демо на GitHub
+# Pages собирается с basePath /swipeit и зависит только от фронта: сервер
+# демо не трогает. Если `check` фронта упал — деплоя нет.
 name: Deploy to GitHub Pages
 
 on:
@@ -18,30 +19,29 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  # Хуки git в CI не нужны.
+  HUSKY: 0
+
 jobs:
-  build:
+  frontend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    env:
-      # Хуки git в CI не нужны.
-      HUSKY: 0
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - uses: actions/configure-pages@v6
 
+      # Рабочее пространство npm: один lockfile в корне.
       - run: npm ci
-      - run: npm run catalog:sync
-      - run: npm run check
-      - run: npm run build
+      - run: npm run catalog:sync -w frontend
+      - run: npm run check -w frontend
+      - run: npm run build -w frontend
         env:
           NEXT_PUBLIC_BASE_PATH: /swipeit
 
@@ -49,8 +49,41 @@ jobs:
         with:
           path: frontend/out
 
+  backend:
+    runs-on: ubuntu-latest
+    # Postgres для тестов сервера (BACKEND.md §12); схема — с задачи B03.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: swipeit
+          POSTGRES_PASSWORD: swipeit
+          POSTGRES_DB: swipeit_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U swipeit"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      TZ: Asia/Bishkek
+      DATABASE_URL: postgres://swipeit:swipeit@localhost:5432/swipeit_test
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+      - run: npm run check -w backend
+      - run: npm run build -w backend
+
   deploy:
-    needs: build
+    needs: frontend
     runs-on: ubuntu-latest
     environment:
       name: github-pages

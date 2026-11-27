@@ -1,1 +1,3 @@
-cd frontend && npx lint-staged
+# lint-staged из корня: у каждого файла — ближайший конфиг (frontend/ или
+# backend/ package.json).
+npx lint-staged

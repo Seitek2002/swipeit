@@ -5,8 +5,10 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 
-# окружение
+# окружение: секреты — только в .env на машине, пример — .env.example
 .env*.local
+.env
+!.env.example
 
 # данные режима «Локальная сеть» (TECH_SPEC §5)
 frontend/.lan-data/
@@ -19,3 +21,6 @@ frontend/public/catalog/
 npm-debug.log*
 coverage/
 .vercel
+
+# сборка сервера (esbuild)
+backend/dist/

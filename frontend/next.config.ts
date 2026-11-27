@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import path from "node:path";
+
 // Конфиг — ровно из TECH_SPEC §3. Статическая сборка (`output: "export"`):
 // никакого серверного кода, `next build` выдаёт папку `out/`, которую можно
 // положить на GitHub Pages, в Capacitor или раздать LAN-сервером (§7a).
@@ -13,9 +15,11 @@ const nextConfig: NextConfig = {
   // На GitHub Pages сайт живёт в подпапке /swipeit (TECH_SPEC §13). Локально и
   // в режиме «Локальная сеть» — пустой basePath.
   basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? "",
-  // Без явного root Next ищет lockfile вверх по дереву и может принять за
-  // корень воркспейса домашнюю папку (так было в imbir-nextjs).
-  turbopack: { root: __dirname },
+  // Корень — рабочее пространство npm (BACKEND.md §2.3): зависимости лежат в
+  // ../node_modules, а позже и пакет packages/core. Явно, а не поиском
+  // lockfile вверх по дереву: иначе корнем могла стать домашняя папка (так
+  // было в imbir-nextjs).
+  turbopack: { root: path.join(__dirname, "..") },
   // Значок Next в режиме разработки лежит в левом нижнем углу прямо поверх
   // таб-бара и мешает проверять экраны на ширине телефона.
   devIndicators: false,
