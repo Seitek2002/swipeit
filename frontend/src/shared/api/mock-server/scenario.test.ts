@@ -212,7 +212,14 @@ describe("POST /demo/scenario/new-year", () => {
       ownerId: DEMO_USER_ID,
       mode: "deadline",
       status: "swiping",
-      deadline: new Date(NOW + 3 * DAY).toISOString(),
+      // Последние 20:00 не позже чем через 3 дня (U15): «×3» из DEMO.md
+      // доходит до итогов.
+      deadline: (() => {
+        const date = new Date(NOW + 3 * DAY);
+        date.setHours(20, 0, 0, 0);
+        if (date.getTime() > NOW + 3 * DAY) date.setDate(date.getDate() - 1);
+        return date.toISOString();
+      })(),
     });
     expect(plan.participantIds).toHaveLength(4);
     expect(plan.participantIds[0]).toBe(DEMO_USER_ID);

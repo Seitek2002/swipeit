@@ -264,7 +264,7 @@ const buildPlan = (
     title: "Новогодние каникулы",
     ownerId: DEMO_USER_ID,
     mode: "deadline",
-    deadline: new Date(now + 3 * DAY).toISOString(),
+    deadline: eveningIn(now, 3),
     status: "swiping",
     participantIds: [DEMO_USER_ID, ...PLAN_FINISHED_BOTS, PLAN_SWIPING_BOT],
     readyIds: [],
@@ -361,6 +361,17 @@ const exchangeDateFor = (now: number) => {
   const year = new Date(now).getFullYear();
   const date = `${year}-12-27`;
   return date < toDateKey(now) ? `${year + 1}-12-27` : date;
+};
+
+// Последние 20:00 не позже чем через days дней: «До 1 декабря, 20:00», а не
+// «02:13» — время загрузки сценария до минуты (auto-tasks U15). Не позже —
+// чтобы «Перемотать на 1 день» ×3 из DEMO.md всегда доходило до итогов.
+const eveningIn = (now: number, days: number) => {
+  const limit = now + days * DAY;
+  const date = new Date(limit);
+  date.setHours(20, 0, 0, 0);
+  if (date.getTime() > limit) date.setDate(date.getDate() - 1);
+  return date.toISOString();
 };
 
 const buildSanta = (db: Db, { now }: ScenarioInput): SantaGame => {
