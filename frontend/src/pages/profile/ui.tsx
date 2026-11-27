@@ -99,7 +99,7 @@ const ProfileForm = ({ user }: { user: User }) => {
     <div className={cn("flex flex-col gap-6 pb-6", isDirty && "pb-24")}>
       <div className="flex items-center gap-4">
         <Avatar
-          name={draft.name.trim() || user.name}
+          name={draft.name.trim() || (user.name ?? "")}
           color={draft.avatarColor}
           size={64}
         />

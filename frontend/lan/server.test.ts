@@ -171,12 +171,14 @@ describe("LAN-сервер", () => {
   });
 
   it("онлайн по hello из WebSocket и событие users при смене", async () => {
+    const created = await api("POST", "/users", { body: { name: "Телефон" } });
+    const phoneId = (created.data as { id: string }).id;
     const watcher = await connect();
     const phone = await connect();
-    phone.socket.send(JSON.stringify({ type: "hello", userId: "u_phone" }));
+    phone.socket.send(JSON.stringify({ type: "hello", userId: phoneId }));
     await waitFor(async () => {
       const { data } = await api("GET", "/presence");
-      return (data as { online: string[] }).online.includes("u_phone");
+      return (data as { online: string[] }).online.includes(phoneId);
     });
     expect(watcher.events).toContainEqual({
       type: "db:changed",
@@ -190,6 +192,72 @@ describe("LAN-сервер", () => {
       return (data as { online: string[] }).online.length === 0;
     });
     watcher.socket.close();
+  });
+
+  it("профиль без имени не виден в /presence, друзьях и плашке сети, пока не назовётся", async () => {
+    const created = await api("POST", "/users");
+    expect(created.status).toBe(200);
+    const nameless = created.data as { id: string; name?: string };
+    expect(nameless.name).toBeUndefined();
+    const other = (await api("POST", "/users", { body: { name: "Бакыт" } }))
+      .data as { id: string };
+
+    const phone = await connect();
+    phone.socket.send(JSON.stringify({ type: "hello", userId: nameless.id }));
+    const presence = async () =>
+      (await api("GET", "/presence")).data as {
+        devices: number;
+        online: string[];
+      };
+    // Вкладка-устройство считается, а человек — нет.
+    await waitFor(async () => (await presence()).devices === 1);
+    expect((await presence()).online).toEqual([]);
+
+    const friendIds = async () =>
+      (
+        (await api("GET", "/friends", { userId: other.id })).data as Array<{
+          user: { id: string };
+        }>
+      ).map((friend) => friend.user.id);
+    const plaqueIds = async () =>
+      (
+        (await api("GET", "/demo/users", { userId: other.id })).data as Array<{
+          id: string;
+        }>
+      ).map((user) => user.id);
+    expect(await friendIds()).not.toContain(nameless.id);
+    expect(await plaqueIds()).not.toContain(nameless.id);
+    // Себя в «Смотреть как» безымянный видит.
+    const own = (await api("GET", "/demo/users", { userId: nameless.id }))
+      .data as Array<{ id: string }>;
+    expect(own.map((user) => user.id)).toContain(nameless.id);
+
+    await api("PATCH", "/me", {
+      userId: nameless.id,
+      body: { name: "Айпери" },
+    });
+    expect((await presence()).online).toEqual([nameless.id]);
+    expect(await friendIds()).toContain(nameless.id);
+    expect(await plaqueIds()).toContain(nameless.id);
+    phone.socket.close();
+  });
+
+  it("NAME_REQUIRED — HTTP 409 с кодом", async () => {
+    const created = await api("POST", "/users");
+    const userId = (created.data as { id: string }).id;
+    const plan = await api("POST", "/plans", {
+      userId,
+      body: {
+        title: "Пятница",
+        mode: "live",
+        participantIds: [],
+        matchRule: "all",
+        filters: { categories: [], budgetPerPerson: { min: 0, max: null } },
+        customActivityIds: [],
+      },
+    });
+    expect(plan.status).toBe(409);
+    expect(plan.data).toMatchObject({ code: "NAME_REQUIRED" });
   });
 
   it("события обработчиков приходят всем по /ws", async () => {

@@ -65,6 +65,8 @@ import {
   getUser,
   listFriends,
   loginDemo,
+  markHintSeen,
+  resetHints,
   updateMe,
 } from "./handlers/users";
 import {
@@ -90,6 +92,7 @@ export const ROUTE_TABLE: Route[] = [
   { method: "POST", pattern: "/users", handler: createUser },
   { method: "GET", pattern: "/me", handler: getMe },
   { method: "PATCH", pattern: "/me", handler: updateMe },
+  { method: "POST", pattern: "/me/hints", handler: markHintSeen },
   { method: "GET", pattern: "/users/:id", handler: getUser },
   { method: "GET", pattern: "/friends", handler: listFriends },
   { method: "GET", pattern: "/catalog/feed", handler: getFeed },
@@ -184,6 +187,7 @@ export const ROUTE_TABLE: Route[] = [
   { method: "GET", pattern: "/activities", handler: listActivities },
   { method: "POST", pattern: "/activities", handler: createCustomActivity },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },
+  { method: "POST", pattern: "/demo/hints/reset", handler: resetHints },
   {
     method: "POST",
     pattern: "/demo/scenario/new-year",

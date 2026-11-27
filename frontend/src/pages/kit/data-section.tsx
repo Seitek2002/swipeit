@@ -63,9 +63,9 @@ export const DataSection = () => {
           onClick={() =>
             me.data &&
             updateMe.mutate({
-              name: me.data.name.endsWith(" 2")
-                ? me.data.name.slice(0, -2)
-                : `${me.data.name} 2`,
+              name: (me.data.name ?? "").endsWith(" 2")
+                ? (me.data.name ?? "").slice(0, -2)
+                : `${me.data.name ?? ""} 2`,
             })
           }
         >
@@ -85,7 +85,7 @@ export const DataSection = () => {
         {me.isLoading && <Spinner />}
         {me.data ? (
           <span className="flex items-center gap-3">
-            <Avatar name={me.data.name} color={me.data.avatarColor} />
+            <Avatar name={me.data.name ?? ""} color={me.data.avatarColor} />
             Текущий пользователь: {me.data.name}
           </span>
         ) : (

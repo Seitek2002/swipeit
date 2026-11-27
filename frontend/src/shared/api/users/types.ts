@@ -23,18 +23,32 @@ export const BotProfileSchema = z.object({
   speedFactor: z.number().positive(),
 });
 
+// "MM-DD" — год не спрашиваем: дни рождения и праздники повторяются.
+export const MonthDaySchema = z
+  .string()
+  .regex(/^\d{2}-\d{2}$/, "Дата — в виде ММ-ДД")
+  .refine(isValidMonthDay, "Такой даты нет");
+
+// Одноразовые подсказки, которые человек уже видел (TECH_SPEC §5 HintId):
+// обучающая карточка ленты и тост «Подстроили ленту под твои „Хочу“».
+export const HINT_IDS = ["deck_guide", "taste_toast"] as const;
+export const HintIdSchema = z.enum(HINT_IDS);
+
 export const UserSchema = z.object({
   id: z.string().min(1),
-  name: z.string().min(1),
+  // Нет, пока человек не назвался: имя спрашиваем, когда его увидят другие
+  // (DESIGN §8.1). Профили из старого онбординга с именем читаются как есть.
+  name: z.string().min(1).optional(),
   avatarColor: z.enum(AVATAR_COLORS),
-  // "MM-DD" — год не спрашиваем.
-  birthday: z
-    .string()
-    .regex(/^\d{2}-\d{2}$/)
-    .refine(isValidMonthDay, "Такой даты нет")
-    .optional(),
+  birthday: MonthDaySchema.optional(),
+  // Выбраны самим человеком в профиле; у нового профиля пусто.
   interests: z.array(z.string()),
+  // Устарело с этапа 7: лента берёт ProductFilters.audience. Поле оставлено
+  // для старых баз и ботов, у новых профилей — "all".
   audience: z.enum(AUDIENCES),
+  // Все поля этапа 7 — необязательные: база, сохранённая до обновления,
+  // читается без сброса (TECH_SPEC §5 «Совместимость»).
+  seenHints: z.array(HintIdSchema).optional(),
   isBot: z.boolean(),
   bot: BotProfileSchema.optional(),
   createdAt: z.string(),
@@ -42,22 +56,47 @@ export const UserSchema = z.object({
 
 export type BotProfile = z.infer<typeof BotProfileSchema>;
 export type User = z.infer<typeof UserSchema>;
+export type HintId = z.infer<typeof HintIdSchema>;
+
+// GET /me: профиль и вычисленные сервером поля (в базе не хранятся).
+export type MeResponse = User;
+
+// Профиль, который видят другие: всегда с именем (безымянных в друзьях и
+// участниках нет — TECH_SPEC §7a, NAME_REQUIRED).
+export type NamedUser = User & { name: string };
 
 // Друг в списке: профиль и сколько дней до его дня рождения (null — дата не
 // указана). Ближайшие — сверху (DESIGN.md §8.9).
-export type FriendSummary = { daysToBirthday: null | number; user: User };
+export type FriendSummary = { daysToBirthday: null | number; user: NamedUser };
 
-export type NewUserInput = Pick<
-  User,
-  "audience" | "avatarColor" | "birthday" | "interests" | "name"
->;
-export type UpdateMeInput = Partial<NewUserInput>;
+const NAME_MAX = 40;
+export const NameSchema = z
+  .string()
+  .trim()
+  .min(1, "Напиши имя")
+  .max(NAME_MAX, `Имя — до ${NAME_MAX} символов`);
 
-export const NewUserInputSchema = UserSchema.pick({
-  name: true,
-  avatarColor: true,
-  birthday: true,
-  interests: true,
-  audience: true,
+// POST /users — с этапа 7 без тела: профиль создаётся сам, под прелоадером
+// (DESIGN §8.1). Поля оставлены необязательными для совместимости: ими
+// пользуются тесты и старые клиенты (имя на /pick/ до T22).
+export const NewUserInputSchema = z.object({
+  name: NameSchema.optional(),
+  avatarColor: z.enum(AVATAR_COLORS).optional(),
+  birthday: MonthDaySchema.optional(),
+  interests: z.array(z.string()).optional(),
+  audience: z.enum(AUDIENCES).optional(),
 });
-export const UpdateMeInputSchema = NewUserInputSchema.partial();
+export type NewUserInput = z.input<typeof NewUserInputSchema>;
+
+// PATCH /me — имя и фон аватара можно поменять в любой момент.
+export const UpdateMeInputSchema = z.object({
+  name: NameSchema.optional(),
+  avatarColor: z.enum(AVATAR_COLORS).optional(),
+  birthday: MonthDaySchema.optional(),
+  interests: z.array(z.string()).optional(),
+  audience: z.enum(AUDIENCES).optional(),
+});
+export type UpdateMeInput = z.input<typeof UpdateMeInputSchema>;
+
+// POST /me/hints — подсказка показана.
+export const MarkHintInputSchema = z.object({ id: HintIdSchema });

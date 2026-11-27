@@ -125,7 +125,9 @@ export const SantaCreatePage = () => {
   const [pairOpen, setPairOpen] = useState(false);
 
   const people: Person[] = [
-    ...(me ? [{ id: me.id, name: me.name, avatarColor: me.avatarColor }] : []),
+    ...(me
+      ? [{ id: me.id, name: me.name ?? "", avatarColor: me.avatarColor }]
+      : []),
     ...(friends.data ?? [])
       .filter(({ user }) => invited.includes(user.id))
       .map(({ user }) => ({

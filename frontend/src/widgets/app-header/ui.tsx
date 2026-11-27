@@ -74,7 +74,7 @@ export const AppHeader = ({
             className="grid size-11 place-items-center rounded-full"
           >
             {me ? (
-              <Avatar name={me.name} color={me.avatarColor} decorative />
+              <Avatar name={me.name ?? ""} color={me.avatarColor} decorative />
             ) : (
               <span className="bg-avatar-plum text-ink grid size-9 place-items-center rounded-full text-[15px] font-semibold">
                 ?

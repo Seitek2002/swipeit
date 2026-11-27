@@ -1,5 +1,5 @@
 import { getTransport } from "../transport";
-import type { User } from "../users/types";
+import type { MeResponse, User } from "../users/types";
 import type { DemoSettings, NewYearScenarioResult } from "./types";
 
 export const resetDemo = (): Promise<{ ok: true }> =>
@@ -23,3 +23,8 @@ export const updateDemoSettings = (
 
 export const getDemoUsers = (): Promise<User[]> =>
   getTransport().request<User[]>("GET", "/demo/users");
+
+// «Показать обучение снова»: снять отметки deck_guide и taste_toast у
+// текущего профиля — обучающая карточка снова первая.
+export const resetDemoHints = (): Promise<MeResponse> =>
+  getTransport().request<MeResponse>("POST", "/demo/hints/reset");

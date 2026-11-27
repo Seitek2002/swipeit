@@ -7,6 +7,7 @@ import type { Transport } from "./transport";
 const KNOWN_CODES: ApiErrorCode[] = [
   "CONFLICT",
   "FORBIDDEN",
+  "NAME_REQUIRED",
   "NOT_FOUND",
   "OFFLINE",
   "STORAGE_FULL",

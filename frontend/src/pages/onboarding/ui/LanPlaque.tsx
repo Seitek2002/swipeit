@@ -37,7 +37,7 @@ export const LanPlaque = () => {
         <AvatarStack
           people={people.map((user) => ({
             id: user.id,
-            name: user.name,
+            name: user.name ?? "",
             color: user.avatarColor,
           }))}
           max={3}

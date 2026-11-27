@@ -1,12 +1,12 @@
 import type { z } from "zod";
 
-import type { User } from "../../users/types";
+import type { NamedUser, User } from "../../users/types";
 import type { HandlerContext } from "../context";
 import type { Db } from "../db";
-import { ApiError, notFound, validation } from "../errors";
+import { ApiError, nameRequired, notFound, validation } from "../errors";
 
 // Пользователь запроса. Без сессии — FORBIDDEN; сессия есть, а профиля в базе
-// нет (базу сбросили) — NOT_FOUND: клиент по нему уводит в онбординг.
+// нет (базу сбросили) — NOT_FOUND: клиент по нему создаёт профиль заново.
 export const requireUser = (ctx: HandlerContext, db: Db): User => {
   if (!ctx.userId) {
     throw new ApiError(403, "FORBIDDEN", "Сначала представься");
@@ -15,6 +15,17 @@ export const requireUser = (ctx: HandlerContext, db: Db): User => {
   if (!user) throw notFound("Профиль не найден");
   return user;
 };
+
+// Пользователь с именем — для действий, где его увидят другие (TECH_SPEC §6
+// NAME_REQUIRED). Имя сужено до string: дальше его кладут в ссылки и планы.
+
+export const requireNamed = (user: User): NamedUser => {
+  if (!user.name) throw nameRequired();
+  return user as NamedUser;
+};
+
+export const requireNamedUser = (ctx: HandlerContext, db: Db): NamedUser =>
+  requireNamed(requireUser(ctx, db));
 
 // Тело и параметры запроса — недоверенные данные (в lan они приходят с
 // чужого телефона), поэтому всегда через zod.

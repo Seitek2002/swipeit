@@ -12,7 +12,7 @@ import type { PickAnswer, PickRequest } from "../../pick/types";
 import { type Handler, nowIso } from "../context";
 import type { Db } from "../db";
 import { validation } from "../errors";
-import { parseInput, requireUser } from "./common";
+import { parseInput, requireNamedUser, requireUser } from "./common";
 import { OccasionInputSchema } from "./guest";
 
 // «Выбери подарок сам» (TECH_SPEC §6, §8; DESIGN.md §8.6). Ссылка-фильтр
@@ -54,7 +54,8 @@ const picksOf = (db: Db, userId: string, requestId: string) =>
 export const createPickRequest: Handler = async (ctx, { body }) => {
   const input = parseInput(CreateBodySchema, body);
   const request = await ctx.db.write((db): PickRequest => {
-    const user = requireUser(ctx, db);
+    // Друг увидит «Азамат хочет подарить тебе подарок» — без имени нельзя.
+    const user = requireNamedUser(ctx, db);
     const created: PickRequest = {
       id: `pk_${nanoid(10)}`,
       from: {
@@ -91,7 +92,8 @@ export const getMyPicks: Handler = async (ctx, { params }) => {
 export const answerPickRequest: Handler = async (ctx, { params }) => {
   const requestId = params.id ?? "";
   const db = await ctx.db.read();
-  const user = requireUser(ctx, db);
+  // Отправитель увидит «Айгерим выбрала 5 подарков»: имя едет в ссылке.
+  const user = requireNamedUser(ctx, db);
   const picks = picksOf(db, user.id, requestId);
   if (picks.length === 0)
     throw validation("Сначала выбери хотя бы один подарок");

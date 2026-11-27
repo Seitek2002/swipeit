@@ -113,10 +113,11 @@ export type CustomActivityInput = z.input<typeof CustomActivityInputSchema>;
 
 // Участник в ответах API — сразу с именем и цветом, чтобы экран не
 // дозапрашивал профили по одному.
-export type PlanParticipant = Pick<
-  User,
-  "avatarColor" | "id" | "isBot" | "name"
->;
+// Имя есть всегда: в план входят только профили с именем (NAME_REQUIRED),
+// для старых данных сервер подставляет пустую строку.
+export type PlanParticipant = Pick<User, "avatarColor" | "id" | "isBot"> & {
+  name: string;
+};
 
 // GET /plans/:id и ответы действий лобби. activities — колода в общем
 // порядке, когда она сформирована; до старта — занятия, из которых она

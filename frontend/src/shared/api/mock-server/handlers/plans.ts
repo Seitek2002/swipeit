@@ -22,7 +22,7 @@ import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, notFound, validation } from "../errors";
 import { matchesPlanFilters } from "./activities";
-import { parseInput, requireUser } from "./common";
+import { parseInput, requireNamedUser, requireUser } from "./common";
 
 // «Че делать будем?» — список, создание, вступление, лобби, свайп колоды и
 // совпадения, результаты и решение, дедлайны «До даты» (TECH_SPEC §5, §6,
@@ -65,7 +65,7 @@ const participantsOf = (db: Db, plan: PlanSession): PlanParticipant[] =>
     .filter((user): user is User => Boolean(user))
     .map(({ id, name, avatarColor, isBot }) => ({
       id,
-      name,
+      name: name ?? "",
       avatarColor,
       isBot,
     }));
@@ -181,12 +181,15 @@ export const createPlan: Handler = async (ctx, { body }) => {
   }
   const catalog = await ctx.catalog.activities();
   const view = await ctx.db.write((db): PlanView => {
-    const owner = requireUser(ctx, db);
+    // Участники увидят организатора по имени (DESIGN §8.7).
+    const owner = requireNamedUser(ctx, db);
     const invited = unique(input.participantIds).filter(
       (id) => id !== owner.id,
     );
     for (const id of invited) {
-      if (!db.users[id]) throw validation("Такого друга нет");
+      // Безымянного никто не узнает — в списке друзей его нет (§7a).
+      const friend = db.users[id];
+      if (!friend || !friend.name) throw validation("Такого друга нет");
       if (!isFriend(ctx, db, owner.id, id)) {
         throw validation(
           "Позвать можно только друзей — остальным отправь ссылку",
@@ -241,8 +244,9 @@ export const createPlan: Handler = async (ctx, { body }) => {
 export const joinPlan: Handler = async (ctx, { params }) => {
   const catalog = await ctx.catalog.activities();
   const { joined, view } = await ctx.db.write((db) => {
-    const user = requireUser(ctx, db);
+    // Сначала — есть ли план: на битую ссылку имя спрашивать незачем.
     const plan = findPlan(db, params.id);
+    const user = requireNamedUser(ctx, db);
     const already = plan.participantIds.includes(user.id);
     if (!already) {
       if (plan.status === "results" || plan.status === "decided") {
