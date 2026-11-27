@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createSeededRandom } from "../mock-server/random";
+import { createSeededRandom } from "./random";
 import { drawAssignments, drawIssueOf } from "./draw";
 
 // drawAssignments (TECH_SPEC §6): 3–30 участников, исключения, невозможные

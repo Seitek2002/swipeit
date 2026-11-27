@@ -1,6 +1,10 @@
+import type { ApiMode } from "@swipeit/core/contract";
 import Fastify, { type FastifyInstance } from "fastify";
 
 import type { Config } from "./config.js";
+
+// Режим API сервера — общий тип с фронтом (@swipeit/core, BACKEND.md §9.1).
+const MODE: ApiMode = "remote";
 
 export type AppOptions = {
   config: Config;
@@ -33,7 +37,7 @@ export const buildApp = ({
 
   app.get("/v1/health", async () => ({
     app: "swipeit",
-    mode: "remote",
+    mode: MODE,
     apiVersion: 1,
     now: now(),
     commit: config.COMMIT,

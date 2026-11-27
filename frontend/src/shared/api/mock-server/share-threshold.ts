@@ -1,20 +1,20 @@
+// Порог отправки в моке: обёртка над Db вокруг правила @swipeit/core
+// (BACKEND.md B02).
+import {
+  SHARE_UNLOCK_WISHES,
+  countActiveWishItems,
+  shouldUnlockShare,
+} from "@swipeit/core/logic/share-threshold";
+
 import type { Db } from "./db";
 
-// Порог отправки (TECH_SPEC §6 «Порог отправки», решение владельца от
-// 27.11.2026): вишлист можно отправить, когда в «Хочу» впервые набралось
-// 5 желаний — «Хочу» и «Очень хочу» из своей ленты и свои желания поровну.
-export const SHARE_UNLOCK_WISHES = 5;
+export { SHARE_UNLOCK_WISHES };
 
-// Желания в «Хочу» (status "active"): по ним лента над колодой и «Ещё N
-// желаний — и можно отправить». До открытия «Мимо», удаление и «Подарили»
-// честно уменьшают счёт.
 export const countActiveWishes = (db: Db, userId: string): number =>
-  (db.wishlistItems[userId] ?? []).filter((item) => item.status === "active")
-    .length;
+  countActiveWishItems(db.wishlistItems[userId] ?? []);
 
 // Одна проверка для всех, кто добавляет желание в «Хочу»: порог пройден
 // впервые — ставим shareUnlockedAt и говорим клиенту (бант или тост).
-// Однажды открывшись, отправка больше не закрывается.
 export const checkShareUnlock = (
   db: Db,
   userId: string,
@@ -24,8 +24,8 @@ export const checkShareUnlock = (
     ownerId: userId,
     hideReservationCount: false,
   });
-  if (meta.shareUnlockedAt) return false;
-  if (countActiveWishes(db, userId) < SHARE_UNLOCK_WISHES) return false;
+  if (!shouldUnlockShare(countActiveWishes(db, userId), meta.shareUnlockedAt))
+    return false;
   meta.shareUnlockedAt = at;
   return true;
 };

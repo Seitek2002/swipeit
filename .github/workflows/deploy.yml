@@ -40,6 +40,8 @@ jobs:
       # Рабочее пространство npm: один lockfile в корне.
       - run: npm ci
       - run: npm run catalog:sync -w frontend
+      # Общий контракт и чистая логика — их собирает и фронт, и сервер.
+      - run: npm run check -w @swipeit/core
       - run: npm run check -w frontend
       - run: npm run build -w frontend
         env:

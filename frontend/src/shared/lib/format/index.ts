@@ -1,20 +1,3 @@
-export {
-  birthdayInDays,
-  daysUntilBirthday,
-  formatBirthday,
-  formatDayMonth,
-  formatRemaining,
-  nextBirthdayDate,
-  occasionLabel,
-  remainingVerb,
-  toDateKey,
-} from "./dates";
-export {
-  formatBudget,
-  formatNumber,
-  formatPrice,
-  NBSP,
-  NNBSP,
-} from "./format-price";
-export { plural, pluralize } from "./plural";
-export { dative, genitive } from "./names";
+// Перенесено в пакет @swipeit/core (BACKEND.md B02): общий контракт и
+// чистая логика для фронта, мока, LAN-сервера и backend.
+export * from "@swipeit/core/format";

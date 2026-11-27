@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { ImportantDate } from "../users/types";
+import type { ImportantDate } from "../api/users/types";
 import {
   activeReminder,
   daysUntil,

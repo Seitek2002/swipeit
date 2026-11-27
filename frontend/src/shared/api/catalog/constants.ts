@@ -1,9 +1,3 @@
-import type { ProductFilters } from "./types";
-
-// Константы — отдельно от схем zod в types.ts: их читают сторы на старте, и
-// иначе вместе с ними в первый бандл попадал бы весь zod (Lighthouse, T20).
-export const EMPTY_FILTERS: ProductFilters = {
-  budget: { min: 0, max: null },
-  categories: [],
-  marketplaces: [],
-};
+// Перенесено в пакет @swipeit/core (BACKEND.md B02): общий контракт и
+// чистая логика для фронта, мока, LAN-сервера и backend.
+export * from "@swipeit/core/api/catalog/constants";

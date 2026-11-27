@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { CATEGORY_IDS, type CategoryId } from "@/shared/config";
+import { CATEGORY_IDS, type CategoryId } from "../config/index";
 
-import { EMPTY_FILTERS } from "../catalog/constants";
-import type { Product } from "../catalog/types";
-import type { ProductSwipe } from "../wishlist/types";
+import { EMPTY_FILTERS } from "../api/catalog/constants";
+import type { Product } from "../api/catalog/types";
+import type { ProductSwipe } from "../api/wishlist/types";
 import {
   PAGE_SIZE,
   audienceShift,

@@ -1,10 +1,49 @@
 # Прогресс разработки
 
-> Сейчас: этап 9 — сервер, B02 (общий пакет `@swipeit/core`). T26 Д ждёт секретов Cloudflare.
+> Сейчас: этап 9 — сервер, B03 (схема базы и миграции). T26 Д ждёт секретов Cloudflare.
 
 Заполняет Исполнитель после каждой задачи из [TASKS.md](TASKS.md). Новые блоки — сверху.
 
 **Демо:** https://seitek2002.github.io/swipeit/ · репозиторий: https://github.com/Seitek2002/swipeit
+
+## B02 — Общий пакет `@swipeit/core` — ✅ сдано
+
+**Готово когда:**
+- `check` и `build` фронта зелёные; число тестов до и после записано;
+- демо на Pages и `npm run lan` работают;
+- backend импортирует `@swipeit/core`, его `typecheck` зелёный.
+
+**Что сделано:**
+- **`packages/core`** (`@swipeit/core`) — перенесено `git mv`, история сохранена:
+  - zod-схемы и типы `shared/api/*/types.ts` (catalog, demo, pick, plans, santa, users, wishlist) и `catalog/constants` → `api/*`;
+  - `mock-server/errors.ts` → `errors.ts`;
+  - чистые функции → `logic/`: `taste`, `feed`, `dates`, `random`, `catalog-parse`, `plans/matches`, `santa/draw`;
+  - `shared/lib/share-codec` → `share-codec/`, `shared/lib/format` → `format/`, `shared/lib/realtime/types` → `realtime/types`;
+  - из `shared/config` — то, что без UI: `catalog`, `occasions`, `avatar-colors` → `config/`. `routes`, `site`, `tokens` остались во фронте.
+- **Тесты переехали вместе с кодом:** лента, даты, совпадения плана, жеребьёвка, кодек, форматирование. Из `taste.test.ts` в core ушла чистая часть (`computeTaste`, `inferInterests`); тесты обработчиков вкуса остались в моке.
+- **Правила без базы.** `normalizeOccasion`, `freshOccasion`, `occasionForOthers` и порог отправки разделены:
+  - в core — правило, на вход данные: `normalizeOccasionFrom`, `freshOccasionFrom`, `occasionForOthersFrom`, `publicOccasion`, `countActiveWishItems`, `shouldUnlockShare`;
+  - в моке — обёртки над `Db` с прежними именами (`mock-server/occasion.ts`, `share-threshold.ts`), обработчики мока не менялись.
+- **Старые пути во фронте — реэкспорты** (`export * from "@swipeit/core/…"`): импорты в слоях и в LAN-сервере не менялись. В `next.config` — `transpilePackages: ["@swipeit/core"]`.
+- **Пакет отдаёт исходники TypeScript** через `exports`: `@swipeit/core/config`, `/format`, `/share-codec`, `/<путь>`.
+- **ESLint ядра запрещает:**
+  - React, Next и слои фронта (`no-restricted-imports`);
+  - `window`, `document`, `localStorage`, `sessionStorage`, `navigator`, `location`, `indexedDB`, `BroadcastChannel` (`no-restricted-globals`).
+- **Контракт** `packages/core/src/contract.ts`: 83 маршрутов — метод, путь, доступ (`public` или `user`) и режимы (`local`, `lan`, `remote`).
+  - Тест мока `mock-server/contract.test.ts`: маршруты контракта для `local` и таблица мока совпадают один в один.
+  - Тест ядра: демо-маршрутов (`/auth/demo`, `/demo/*`, `/plans/expire`, `/santa/tick`) нет в `remote`, а входа через Telegram нет в `local`.
+- **Backend на core.** `ApiMode` в `/v1/health` — из `@swipeit/core`. `moduleResolution: Bundler`: сервер всё равно собирает esbuild, а core отдаёт исходники с импортами без расширений. Сборка (`backend/build.mjs`) вшивает core в `dist/server.js`: Node не запускает `.ts` из `node_modules`. Зависимости остаются внешними. Собранный сервер отвечает на `/v1/health`.
+- **CI:** в job `frontend` добавлен `check` ядра.
+
+**Тесты, до → после:**
+- фронт 469 + сервер 4 = **473**;
+- core 114 + фронт 362 + сервер 4 = **480**.
+
+Плюс 7 новых: повод и порог без базы (4), контракт (2), мок против контракта (1).
+
+**Решения без PM:**
+- Запасной путь из п. 5 (алиас на `frontend/src/shared`) не понадобился: Next собирает пакет из исходников через `transpilePackages`.
+- В тестах ядра и сервера разрешён `!` (non-null assertion). ESLint там — strict от `typescript-eslint`, строже, чем у фронта.
 
 ## B01 — Каркас сервера и рабочее пространство — ✅ сдано
 

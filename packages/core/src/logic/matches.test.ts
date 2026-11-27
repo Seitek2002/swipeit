@@ -6,7 +6,7 @@ import {
   tallyVotes,
   voteCandidates,
 } from "./matches";
-import type { PlanSession } from "./types";
+import type { PlanSession } from "../api/plans/types";
 
 // Совпадения плана: правила «все» и «большинство», «почти», сортировка;
 // пул барабана и голоса (T15).

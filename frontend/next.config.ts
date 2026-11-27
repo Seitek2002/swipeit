@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: { unoptimized: true },
   reactCompiler: true,
+  // Общий контракт и чистая логика (BACKEND.md B02) — исходники TypeScript из
+  // рабочего пространства, собираются вместе с фронтом.
+  transpilePackages: ["@swipeit/core"],
   // На GitHub Pages сайт живёт в подпапке /swipeit (TECH_SPEC §13). Локально и
   // в режиме «Локальная сеть» — пустой basePath.
   basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? "",
