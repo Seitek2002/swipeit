@@ -77,6 +77,16 @@ const ShareButton = ({
   </button>
 );
 
+// Код появился — прокрутить к нему; без анимации, если её просили убрать.
+const revealQr = (node: HTMLDivElement | null) => {
+  if (!node) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  node.scrollIntoView({
+    block: "nearest",
+    behavior: reduce ? "auto" : "smooth",
+  });
+};
+
 export const ShareActions = ({
   getPayload,
   onError,
@@ -165,11 +175,15 @@ export const ShareActions = ({
         />
       </div>
       {qrUrl && (
-        <QrCode
-          value={qrUrl}
-          label={qrLabel}
-          className="mx-auto mt-2 size-56"
-        />
+        // Кнопки — внизу шторки, и код появлялся за краем экрана: выглядело
+        // как «не нажалось» (auto-tasks U06). Показываем его целиком.
+        <div ref={revealQr}>
+          <QrCode
+            value={qrUrl}
+            label={qrLabel}
+            className="mx-auto mt-2 size-56"
+          />
+        </div>
       )}
     </div>
   );
