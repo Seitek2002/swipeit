@@ -48,6 +48,9 @@ const buyLinkOf = (item: Item, product?: Product): BuyLink | undefined => {
 type Props = {
   // Внизу страницы: «Собрать свой вишлист» у гостя по ссылке (T09).
   footer?: ReactNode;
+  // Под шапкой вишлиста (имя, повод, сообщение): «Предложить выбрать
+  // подарок» на профиле друга (DESIGN.md §8.6 «Где начать»).
+  headerAction?: ReactNode;
   // Пол для «Вишлист Азамата»; у гостя по ссылке неизвестен.
   ownerGender?: "female" | "male";
   // Брони привязаны к id владельца (TECH_SPEC §5 Reservation.ownerId).
@@ -159,6 +162,7 @@ export const GuestWishlistView = ({
   ownerId,
   ownerGender,
   footer,
+  headerAction,
   readOnly = false,
   titleAs: Title = "h1",
 }: Props) => {
@@ -190,6 +194,7 @@ export const GuestWishlistView = ({
             {wishlist.meta.message}
           </p>
         )}
+        {headerAction && <div className="mt-4">{headerAction}</div>}
       </div>
       {wishlist.items.length === 0 ? (
         <p className="text-body text-rose px-5 pt-6">
