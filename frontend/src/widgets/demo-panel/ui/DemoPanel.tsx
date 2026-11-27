@@ -76,13 +76,19 @@ const WatchAs = ({ onPicked }: { onPicked: () => void }) => {
       <ul className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 pt-1 pb-1">
         {(users.data ?? []).map((user) => {
           const active = user.id === activeUserId;
+          const name = user.name?.trim();
           return (
             <li key={user.id} className="flex-none">
               <button
                 type="button"
                 aria-pressed={active}
                 onClick={() => pick(user)}
-                className="flex w-16 flex-col items-center gap-1.5"
+                // Имя обрезается по ширине аватара, а «Без имени» шире 64px —
+                // для него кнопка раздвигается, чтобы подпись читалась целиком.
+                className={cn(
+                  "flex flex-col items-center gap-1.5",
+                  name ? "w-16" : "min-w-16",
+                )}
               >
                 <span
                   className={cn(
@@ -99,11 +105,12 @@ const WatchAs = ({ onPicked }: { onPicked: () => void }) => {
                 </span>
                 <span
                   className={cn(
-                    "text-caption w-full truncate text-center",
+                    "text-caption text-center",
+                    name ? "w-full truncate" : "whitespace-nowrap",
                     active ? "text-paper" : "text-rose",
                   )}
                 >
-                  {user.name?.trim() || "Без имени"}
+                  {name || "Без имени"}
                 </span>
               </button>
             </li>
