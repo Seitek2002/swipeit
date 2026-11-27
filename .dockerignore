@@ -1,0 +1,9 @@
+node_modules
+**/node_modules
+frontend
+!frontend/package.json
+.git
+docs
+**/dist
+**/.next
+**/out

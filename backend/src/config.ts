@@ -19,6 +19,12 @@ const ConfigSchema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }).optional(),
   // Размер пула соединений.
   DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
+  // Каталог Товароведа (BACKEND.md §8): products.json, activities.json,
+  // meta.json. По умолчанию — catalog/ рядом с backend/.
+  CATALOG_DIR: z.string().min(1).default("../catalog"),
+  // Дни считаются по календарю Бишкека (BACKEND.md §2.5): процесс живёт в
+  // этом поясе, даже если сервер в UTC.
+  TZ: z.string().min(1).default("Asia/Bishkek"),
 });
 
 // База из docker-compose для разработки и тестов.

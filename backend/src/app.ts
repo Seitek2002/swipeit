@@ -1,18 +1,33 @@
 import type { ApiMode } from "@swipeit/core/contract";
-import Fastify, { type FastifyInstance } from "fastify";
+import { createCryptoRandom, type Random } from "@swipeit/core/logic/random";
+import Fastify, { type FastifyInstance, LogController } from "fastify";
+import { randomUUID } from "node:crypto";
+import type { Writable } from "node:stream";
 
-import type { Config } from "./config.js";
-import type { Db } from "./db/client.js";
+import type { ServerCatalog } from "./catalog/load";
+import type { Config } from "./config";
+import type { Clock } from "./context";
+import type { Db } from "./db/client";
+import { registerErrors } from "./errors";
+import { createEventHub, type EventHub } from "./realtime/hub";
+import { registerRoutes } from "./routes";
 
 // Режим API сервера — общий тип с фронтом (@swipeit/core, BACKEND.md §9.1).
 const MODE: ApiMode = "remote";
 
 export type AppOptions = {
+  // Каталог в памяти (B04). Нужен вместе с базой для маршрутов API.
+  catalog?: ServerCatalog;
+  // Часы сервера (BACKEND.md §2.5): в тестах — подставные. Date.now() в
+  // обработчиках запрещён — только ctx.clock.
+  clock?: Clock;
   config: Config;
   // База (B03). Без неё — только /v1/health без проверки базы (тесты каркаса).
   db?: Db;
-  // Часы сервера (BACKEND.md §2.5): в тестах — подставные.
-  now?: () => number;
+  hub?: EventHub;
+  // Поток логов (тест «в логах нет токена»).
+  logStream?: Writable;
+  random?: Random;
 };
 
 // Fastify-приложение без запуска: тесты зовут его через app.inject, а
@@ -20,13 +35,28 @@ export type AppOptions = {
 export const buildApp = ({
   config,
   db,
-  now = Date.now,
+  catalog,
+  clock = { now: () => Date.now() },
+  random = createCryptoRandom(),
+  hub = createEventHub(),
+  logStream,
 }: AppOptions): FastifyInstance => {
   const app = Fastify({
-    logger: config.LOG_LEVEL === "silent" ? false : { level: config.LOG_LEVEL },
+    logger:
+      config.LOG_LEVEL === "silent"
+        ? false
+        : {
+            level: config.LOG_LEVEL,
+            ...(logStream ? { stream: logStream } : {}),
+          },
     // Лимит JSON — 100 КБ (BACKEND.md §10).
     bodyLimit: 100 * 1024,
+    // requestId — в каждой строке лога и в ответе с ошибкой (§4.5, §12).
+    genReqId: () => randomUUID(),
+    logController: new LogController({ requestIdLogLabel: "requestId" }),
   });
+
+  registerErrors(app);
 
   // Мягкая остановка (SIGTERM): начатые запросы доотвечают, но с
   // «Connection: close». Иначе keep-alive соединение, занятое в момент
@@ -35,27 +65,32 @@ export const buildApp = ({
   app.addHook("preClose", async () => {
     closing = true;
   });
-  app.addHook("onSend", async (_request, reply) => {
+  app.addHook("onSend", async (request, reply) => {
+    reply.header("x-request-id", request.id);
     if (closing) reply.header("connection", "close");
   });
 
   // База не ответила — 503 OFFLINE (BACKEND.md §4.5): мониторинг видит, что
   // сервер жив, но работать не может.
-  app.get("/v1/health", async (_request, reply) => {
+  app.get("/v1/health", async (request, reply) => {
     if (db && !(await db.ping())) {
       return reply.status(503).send({
         code: "OFFLINE",
         message: "База данных недоступна",
+        requestId: request.id,
       });
     }
     return {
       app: "swipeit",
       mode: MODE,
       apiVersion: 1,
-      now: now(),
+      now: clock.now(),
       commit: config.COMMIT,
+      ...(catalog ? { catalogVersion: catalog.version } : {}),
     };
   });
+
+  if (db && catalog) registerRoutes(app, { db, catalog, clock, random, hub });
 
   return app;
 };

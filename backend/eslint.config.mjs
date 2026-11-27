@@ -17,6 +17,28 @@ export default tseslint.config(
       ],
     },
   },
+  // Время в обработчиках — только ctx.clock (BACKEND.md §2.5): в тестах часы
+  // подставные, а Date.now() их обошёл бы.
+  {
+    files: ["src/domains/**/*.ts", "src/auth/**/*.ts"],
+    rules: {
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "Date",
+          property: "now",
+          message: "Время — только через ctx.clock.now().",
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "NewExpression[callee.name='Date'][arguments.length=0]",
+          message: "Время — только через ctx.clock.now().",
+        },
+      ],
+    },
+  },
   // В тестах «!» после find() — обычное «здесь точно есть»: упадёт сам тест.
   {
     files: ["**/*.test.ts"],

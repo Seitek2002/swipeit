@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { buildApp } from "../src/app.js";
-import { createDb } from "../src/db/client.js";
-import { createTestDb } from "./db.js";
-import { ConfigError, loadConfig } from "../src/config.js";
+import { buildApp } from "../src/app";
+import { createDb } from "../src/db/client";
+import { createTestDb } from "./db";
+import { ConfigError, loadConfig } from "../src/config";
 
 describe("каркас сервера", () => {
   it("GET /v1/health — признак сервера, версия API и часы", async () => {
     const app = buildApp({
       config: loadConfig({ LOG_LEVEL: "silent", COMMIT: "abc123" }),
-      now: () => 1_800_000_000_000,
+      clock: { now: () => 1_800_000_000_000 },
     });
     const response = await app.inject({ method: "GET", url: "/v1/health" });
     expect(response.statusCode).toBe(200);

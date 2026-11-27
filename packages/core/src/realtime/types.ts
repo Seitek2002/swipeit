@@ -24,7 +24,9 @@ export type RealtimeEvent =
   | { activityId: string; planId: string; type: "plan:match" }
   | { at: number; botId: string; text: string; type: "bot:action" }
   | { by: string; id: string; name: BotTrigger; type: "trigger" }
-  | { by: string; id?: string; scope: RealtimeScope[]; type: "db:changed" }
+  // by — кто сделал: его пишут мок и LAN, сервер — нет (BACKEND.md §5: в
+  // событии брони by выдал бы бронирующего, а фронт его не читает).
+  | { by?: string; id?: string; scope: RealtimeScope[]; type: "db:changed" }
   // Расширение TECH_SPEC §7. Триггер для ботов: id — чего касается (владелец
   // вишлиста, план, игра), by — кто сделал.
   | {
