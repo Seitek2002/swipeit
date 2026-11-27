@@ -241,14 +241,20 @@ export const getShare: ServerHandler = async (ctx, { params }) => {
 // серверу userId) — «ext:<id>» (§6.4): такие брони видят гости той же
 // ссылки, владелец — нет.
 type OwnerRef =
-  { kind: "ext"; ref: string } | { kind: "user"; owner: UserRow; ref: string };
+  | { kind: "ext"; ref: string }
+  | { kind: "missing" }
+  | { kind: "user"; owner: UserRow; ref: string };
 
+// Снимок старой ссылки — только «ew_…» (id снимка) или «ext:…». Любой «u_…»
+// — пользователь: нет его на сервере — ответ тот же, что у чужого без
+// доступа (ревью R5): иначе по 200 и 403 можно проверять, есть ли такой id.
 const ownerRefOf = async (tx: Tx, ownerId: string): Promise<OwnerRef> => {
   if (ownerId.startsWith("ext:")) return { kind: "ext", ref: ownerId };
-  const owner = ownerId.startsWith("u_") ? await readUser(tx, ownerId) : null;
-  return owner
-    ? { kind: "user", owner, ref: owner.id }
-    : { kind: "ext", ref: `ext:${ownerId}` };
+  if (!ownerId.startsWith("u_")) {
+    return { kind: "ext", ref: `ext:${ownerId}` };
+  }
+  const owner = await readUser(tx, ownerId);
+  return owner ? { kind: "user", owner, ref: owner.id } : { kind: "missing" };
 };
 
 // Доступ к броням настоящего вишлиста — друг или верный код ссылки (§4.4).
@@ -268,6 +274,10 @@ export const getReservations: ServerHandler = async (ctx, { query }) => {
   const input = parseInput(ReservationsQueryInputSchema, query);
   const me = await readMe(ctx);
   const target = await ownerRefOf(ctx.tx, input.ownerId);
+  if (target.kind === "missing") {
+    const view: ReservationsView = { role: "guest", items: [] };
+    return view;
+  }
 
   let activeKeys = new Set<string>();
   if (target.kind === "user") {
@@ -342,6 +352,9 @@ export const createReservation: ServerHandler = async (ctx, { body }) => {
     throw forbidden("Это твой вишлист — бронируют друзья");
   }
   const target = await ownerRefOf(ctx.tx, input.ownerId);
+  if (target.kind === "missing") {
+    throw forbidden("Бронировать могут только друзья по ссылке");
+  }
 
   if (target.kind === "user") {
     // Подделанная старая ссылка с id настоящего владельца не трогает его

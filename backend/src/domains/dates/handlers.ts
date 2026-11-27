@@ -237,7 +237,10 @@ export const dismissReminder: ServerHandler = async (ctx, { params }) => {
   const id = parseInput(ReminderIdSchema, params.id);
   const now = ctx.clock.now();
   const row = await lockMe(ctx);
-  const dismissedReminders = [...new Set([...row.dismissedReminders, id])];
+  // Последние 50 скрытых (ревью R8): старше года — уже не нужны.
+  const dismissedReminders = [
+    ...new Set([...row.dismissedReminders, id]),
+  ].slice(-50);
   await ctx.tx
     .update(users)
     .set({ dismissedReminders })

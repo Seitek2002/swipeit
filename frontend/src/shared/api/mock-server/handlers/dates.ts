@@ -191,9 +191,10 @@ export const dismissReminder: Handler = async (ctx, { params }) => {
   const now = ctx.clock.now();
   const reminders = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
+    // Последние 50 скрытых — как на сервере.
     user.dismissedReminders = [
       ...new Set([...(user.dismissedReminders ?? []), id]),
-    ];
+    ].slice(-50);
     return remindersOf(db, user, now);
   });
   changed(ctx, ["users"]);

@@ -207,6 +207,32 @@ describe.each(CLIENTS)("вишлист — %s", (_name, create) => {
     ).toMatchObject({ status: "active", order: 0 });
   });
 
+  it("ревью R7, R8: ссылка только http(s), дата «подарили» и id ссылки-фильтра проверяются", async () => {
+    expect(
+      await code(
+        addCustom({ title: "Шарф", url: "javascript:alert(document.domain)" }),
+      ),
+    ).toBe("VALIDATION");
+    expect(
+      (await addCustom({ title: "Шарф", url: "https://kivano.kg/x" })).source,
+    ).toMatchObject({ custom: { url: "https://kivano.kg/x" } });
+    const id = await like(0);
+    expect(
+      await code(
+        api.call(me, "POST", `/wishlist/items/${id}/given`, { at: "вчера" }),
+      ),
+    ).toBe("VALIDATION");
+    expect(
+      await code(
+        api.call(me, "POST", "/swipes", {
+          productId: products[1]?.id,
+          decision: "like",
+          context: { kind: "pick", requestId: "x".repeat(3000) },
+        }),
+      ),
+    ).toBe("VALIDATION");
+  });
+
   it("повод, сообщение и «Не показывать мне даже это»", async () => {
     const meta = await api.call<WishlistMeta>(me, "PATCH", "/wishlist/meta", {
       occasion: { kind: "march_8", date: "1999-01-01" },

@@ -2,13 +2,29 @@ import { z } from "zod";
 
 import { CustomWishSchema, OccasionSchema } from "./types";
 
+// Вариант из «Подробнее» («Цвет: чёрный, Размер: M»): ключей немного,
+// строки короткие (ревью R8) — у каталога вариантов не больше пары групп.
+export const VariantChoiceInputSchema = z
+  .record(z.string().max(40), z.string().max(60))
+  .refine((choice) => Object.keys(choice).length <= 10, {
+    message: "Слишком много вариантов",
+  });
+
 // Тела запросов своего вишлиста — общие для мока и сервера (BACKEND.md B07).
 
 // POST /wishlist/items — своё желание: название, цена, ссылка, фото.
 export const CustomWishInputSchema = CustomWishSchema.extend({
   title: z.string().trim().min(1, "Напиши, что хочешь").max(80),
-  // Длиннее ссылка не влезет в ссылку на вишлист (share-codec).
-  url: z.string().trim().max(500, "Ссылка слишком длинная").optional(),
+  // Длиннее ссылка не влезет в ссылку на вишлист (share-codec). Только
+  // http(s): ссылка уходит друзьям, «javascript:» и прочее — нет (ревью R7).
+  url: z
+    .string()
+    .trim()
+    .max(500, "Ссылка слишком длинная")
+    .refine((url) => /^https?:\/\//i.test(url), {
+      message: "Проверь ссылку: она начинается с https://",
+    })
+    .optional(),
 }).refine(
   (custom) =>
     custom.priceMin === undefined ||
@@ -20,7 +36,7 @@ export const CustomWishInputSchema = CustomWishSchema.extend({
 // PATCH /wishlist/items/:id — вариант, заметка, «Очень хочу».
 export const PatchItemInputSchema = z.object({
   priority: z.enum(["normal", "top"]).optional(),
-  variantChoice: z.record(z.string(), z.string()).optional(),
+  variantChoice: VariantChoiceInputSchema.optional(),
   // Пустая строка — убрать заметку.
   note: z.string().max(140, "Заметка — до 140 символов").optional(),
 });
@@ -32,7 +48,15 @@ export const ReorderInputSchema = z.object({ ids: z.array(z.string()) });
 export const GivenInputSchema = z.object({
   fromUserId: z.string().optional(),
   fromName: z.string().trim().max(40).optional(),
-  at: z.string().min(1),
+  // Дата вручения — ISO-строка (ревью R8: без формата и длины принималось
+  // что угодно).
+  at: z
+    .string()
+    .min(1)
+    .max(40)
+    .refine((value) => !Number.isNaN(Date.parse(value)), {
+      message: "Неверная дата",
+    }),
 });
 
 // POST /wishlist/items/:id/restore — { undo: true } сразу после «подарили».

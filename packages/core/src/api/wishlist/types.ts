@@ -11,7 +11,8 @@ export const SwipeDecisionSchema = z.enum(["like", "superlike", "pass"]);
 
 export const SwipeContextSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("self") }),
-  z.object({ kind: z.literal("pick"), requestId: z.string() }),
+  // requestId — в уникальном индексе свайпов: длина ограничена (ревью R8).
+  z.object({ kind: z.literal("pick"), requestId: z.string().min(1).max(60) }),
 ]);
 
 // POST /swipes — решение по карточке. Вариант из шторки «Подробнее» («мне —
@@ -20,7 +21,12 @@ export const SwipeInputSchema = z.object({
   productId: z.string().min(1),
   decision: SwipeDecisionSchema,
   context: SwipeContextSchema,
-  variantChoice: z.record(z.string(), z.string()).optional(),
+  variantChoice: z
+    .record(z.string().max(40), z.string().max(60))
+    .refine((choice) => Object.keys(choice).length <= 10, {
+      message: "Слишком много вариантов",
+    })
+    .optional(),
 });
 
 // POST /swipes/undo и /swipes/restart.
