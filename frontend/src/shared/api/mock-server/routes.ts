@@ -10,6 +10,7 @@ import {
 import {
   getSettings,
   listDemoUsers,
+  loadNewYearScenario,
   resetDemo,
   updateSettings,
 } from "./handlers/demo";
@@ -183,6 +184,11 @@ export const ROUTE_TABLE: Route[] = [
   { method: "GET", pattern: "/activities", handler: listActivities },
   { method: "POST", pattern: "/activities", handler: createCustomActivity },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },
+  {
+    method: "POST",
+    pattern: "/demo/scenario/new-year",
+    handler: loadNewYearScenario,
+  },
   { method: "GET", pattern: "/demo/settings", handler: getSettings },
   { method: "GET", pattern: "/demo/users", handler: listDemoUsers },
   { method: "PATCH", pattern: "/demo/settings", handler: updateSettings },

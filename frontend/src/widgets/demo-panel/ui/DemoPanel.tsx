@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
 
 import { ResetDemoButton } from "@/features/demo-reset";
+import { LoadNewYearButton } from "@/features/demo-scenario";
 
 import { type User, usePresence } from "@/entities/user";
 
@@ -247,6 +248,7 @@ export const DemoPanel = () => {
             )}
           </section>
 
+          <LoadNewYearButton network={isLan} onDone={() => setOpen(false)} />
           <ResetDemoButton label="Сбросить всё" network={isLan} />
         </div>
       </BottomSheet>

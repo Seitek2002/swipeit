@@ -48,7 +48,8 @@ const claimChain = (api: BotApi, key: string) => {
 
 // Шансы лайка: база бота, +0.35 за любимую категорию (TECH_SPEC §5
 // BotProfile), немного — за «Недорого». Потолок — чтобы и любимое иногда
-// уходило влево, а совпадения не были гарантированы.
+// уходило влево, а совпадения не были гарантированы. Экспорт — для
+// сценария «Новый год»: там боты «уже досвайпали» по тем же шансам.
 const FAVOURITE_BONUS = 0.35;
 const CHEAP_BONUS = 0.1;
 const MAX_LIKE = 0.95;
@@ -59,7 +60,7 @@ const byGender = (bot: User, male: string, female: string, any: string) =>
 
 const readyWord = (bot: User) => byGender(bot, "готов", "готова", "готов(а)");
 
-const likeChance = (bot: User, activity: Activity) => {
+export const likeChance = (bot: User, activity: Activity) => {
   const profile = bot.bot;
   let chance = profile?.likeProbability ?? 0.5;
   const favourites: readonly string[] = profile?.likesCategories ?? [];

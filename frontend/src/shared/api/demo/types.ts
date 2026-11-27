@@ -14,6 +14,14 @@ export const DemoSettingsSchema = z.object({
 
 export type DemoSettings = z.infer<typeof DemoSettingsSchema>;
 
+// Ответ POST /demo/scenario/new-year: id плана и игры Санты сценария —
+// демо-панель может сразу открыть их. Сессию (Айгерим) ставит клиент.
+export type NewYearScenarioResult = {
+  ok: true;
+  planId: string;
+  santaId: string;
+};
+
 export const DEFAULT_DEMO_SETTINGS: DemoSettings = {
   botSpeed: "normal",
   noDelays: false,

@@ -26,6 +26,7 @@ export {
 export {
   getDemoSettings,
   getDemoUsers,
+  loadNewYearScenario,
   resetDemo,
   updateDemoSettings,
 } from "./demo/requests";
@@ -33,6 +34,7 @@ export {
   DEFAULT_DEMO_SETTINGS,
   type DemoSettings,
   DemoSettingsSchema,
+  type NewYearScenarioResult,
 } from "./demo/types";
 // Боты режима local: запуск во вкладке-лидере и признак лидерства для
 // демо-панели. Сам движок — внутри мок-сервера.
