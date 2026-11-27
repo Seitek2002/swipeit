@@ -245,7 +245,14 @@ export const Results = ({ view, meId }: Props) => {
             {voting && (
               <Button
                 size="sm"
-                variant={myVote === row.activity.id ? "primary" : "secondary"}
+                // Свой голос — бумага с галочкой, а не мандарин: мандарин на
+                // экране один (DESIGN.md §1, принцип 2; auto-tasks V07).
+                variant={myVote === row.activity.id ? "paper" : "secondary"}
+                icon={
+                  myVote === row.activity.id ? (
+                    <Check aria-hidden size={16} strokeWidth={2.25} />
+                  ) : undefined
+                }
                 aria-pressed={myVote === row.activity.id}
                 aria-label={`${myVote === row.activity.id ? "Мой голос" : "Голос"} за: ${row.activity.title}`}
                 loading={vote.isPending && vote.variables === row.activity.id}
@@ -260,7 +267,7 @@ export const Results = ({ view, meId }: Props) => {
       {/* Действия — в липком низу (auto-tasks U08): при 9 совпадениях
           «Крутить барабан» уезжал на второй экран. Список прокручивается над
           ним, бархатный градиент отделяет кнопки от карточек. */}
-      <div className="from-velvet sticky bottom-0 z-10 -mx-5 -mb-4 flex flex-col gap-2 bg-linear-to-t from-75% to-transparent px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+      <div className="from-velvet sticky bottom-0 z-10 -mx-5 -mb-[calc(var(--tabbar-space)+1rem)] flex flex-col gap-2 bg-linear-to-t from-85% to-transparent px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+var(--tabbar-space)+12px)]">
         {voting ? (
           isOwner && (
             <>
@@ -278,6 +285,8 @@ export const Results = ({ view, meId }: Props) => {
                 <Button
                   key={id}
                   size="lg"
+                  // Ничья — несколько «Утвердить»: ни одна не главная (V07).
+                  variant={tally.leaders.length > 1 ? "secondary" : "primary"}
                   loading={approve.isPending && approve.variables === id}
                   onClick={() => approve.mutate(id)}
                 >
