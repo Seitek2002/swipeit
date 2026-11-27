@@ -28,6 +28,11 @@ export const ReservationNote = ({ data }: { data: WishlistResponse }) => {
       .catch(() => toast("Не получилось сохранить", { tone: "error" }));
   };
 
+  // Броней нет и счётчик не скрыт — скрывать нечего: строка с переключателем
+  // была первой строкой вишлиста и сбивала с толку (auto-tasks U11). Скрытый
+  // счётчик — переключатель остаётся, чтобы вернуть его.
+  if (!hidden && count === 0) return null;
+
   return (
     <div className="mx-5 mt-3.5">
       {!hidden && count > 0 && (
