@@ -67,17 +67,52 @@ export const usePresence = () => {
   });
 };
 
+// Свой профиль до «Войти как демо-пользователь» — чтобы вернуться в него
+// (auto-tasks V03): раньше путь назад был только через «Смотреть как».
+const OWN_USER_KEY = "swipeit:ownUserId";
+
+export const readOwnUserId = (): null | string => {
+  try {
+    return localStorage.getItem(OWN_USER_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const rememberOwnUser = (userId: null | string) => {
+  try {
+    if (userId) localStorage.setItem(OWN_USER_KEY, userId);
+    else localStorage.removeItem(OWN_USER_KEY);
+  } catch {
+    // Хранилище запрещено — вернуться можно через «Смотреть как».
+  }
+};
+
 // Вход демо-пользователем «Айгерим»: сессия вкладки → её id, кэш — заново.
+// Свой профиль запоминаем: в профиле Айгерим будет «Вернуться в свой».
 export const useLoginDemo = () => {
   const queryClient = useQueryClient();
   const setActiveUser = useSessionStore((state) => state.setActiveUser);
   return useMutation({
     mutationFn: loginDemoFn,
     onSuccess: (user) => {
+      const previous = useSessionStore.getState().activeUserId;
+      if (previous && previous !== user.id) rememberOwnUser(previous);
       setActiveUser(user.id);
       queryClient.clear();
     },
   });
+};
+
+// «Вернуться в свой профиль» из демо-Айгерим.
+export const useReturnToOwnUser = () => {
+  const queryClient = useQueryClient();
+  const setActiveUser = useSessionStore((state) => state.setActiveUser);
+  return (ownUserId: string) => {
+    setActiveUser(ownUserId);
+    rememberOwnUser(null);
+    queryClient.clear();
+  };
 };
 
 // Правка своего профиля: ответ сразу кладём в кэш, остальные вкладки узнают

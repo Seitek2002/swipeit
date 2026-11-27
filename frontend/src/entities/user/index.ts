@@ -1,8 +1,10 @@
 export {
   useCreateUser,
   useFriends,
+  readOwnUserId,
   useLoginDemo,
   useMe,
+  useReturnToOwnUser,
   usePresence,
   useUpdateMe,
   useUser,
