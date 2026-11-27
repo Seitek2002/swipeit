@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 
-import { ChevronDown, Gift, Star } from "lucide-react";
+import { ChevronDown, ExternalLink, Gift, Star } from "lucide-react";
+
+import { ProductDetailsSheet } from "@/features/product-details";
 
 import {
+  type Product,
+  cheapestOffer,
   describeVariant,
   imageForChoice,
+  storeLabel,
   useProduct,
 } from "@/entities/product";
 import type { SantaWardItem } from "@/entities/santa-game";
@@ -15,7 +20,27 @@ import { withBasePath } from "@/shared/lib/base-path";
 import { formatPrice } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 
-const WardRow = ({ item }: { item: SantaWardItem }) => {
+type OpenDetails = (product: Product, choice?: Record<string, string>) => void;
+
+// Куда идти покупать (auto-tasks U10): товар — в самый дешёвый магазин, своё
+// желание — по ссылке подопечного.
+const buyLinkOf = (item: SantaWardItem, product?: Product) => {
+  if (product) {
+    const offer = cheapestOffer(product);
+    return { href: offer.url, label: `Купить на ${storeLabel(offer)}` };
+  }
+  return item.custom?.url
+    ? { href: item.custom.url, label: "Где купить" }
+    : null;
+};
+
+const WardRow = ({
+  item,
+  onOpen,
+}: {
+  item: SantaWardItem;
+  onOpen: OpenDetails;
+}) => {
   const { data: product } = useProduct(item.productId);
   const image = product
     ? imageForChoice(product, item.variantChoice)
@@ -24,9 +49,18 @@ const WardRow = ({ item }: { item: SantaWardItem }) => {
   const variant = product ? describeVariant(product, item.variantChoice) : "";
   const price =
     item.priceMin === null ? "" : formatPrice(item.priceMin, item.priceMax);
+  const buy = buyLinkOf(item, product);
   return (
-    <li className="paper rounded-paper shadow-paper flex items-center gap-3 p-2.5">
-      <div className="bg-paper-2 relative grid size-16 flex-none place-items-center overflow-hidden rounded-[14px]">
+    <li className="paper rounded-paper shadow-paper flex items-start gap-3 p-2.5">
+      {/* Фото открывает подробности (только посмотреть — выбор подопечного),
+          как у гостя (auto-tasks U10). */}
+      <button
+        type="button"
+        disabled={!product}
+        onClick={() => product && onOpen(product, item.variantChoice)}
+        aria-label={product ? `Подробнее: ${title}` : title}
+        className="bg-paper-2 relative grid size-16 flex-none place-items-center overflow-hidden rounded-[14px]"
+      >
         {image ? (
           <img
             src={withBasePath(image.src)}
@@ -41,7 +75,7 @@ const WardRow = ({ item }: { item: SantaWardItem }) => {
             className="text-ink-soft"
           />
         )}
-      </div>
+      </button>
       <div className="min-w-0 flex-1">
         <p className="text-title-3 line-clamp-2">
           {item.priority === "top" && (
@@ -63,6 +97,18 @@ const WardRow = ({ item }: { item: SantaWardItem }) => {
               .join(". ")}
           </p>
         )}
+        {buy && (
+          // Следующий шаг Санты — купить: «мандарин-чернила», как у гостя.
+          <a
+            href={buy.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-mandarin-ink -mb-1.5 flex min-h-11 items-center gap-1.5 text-[15px] leading-5 font-semibold"
+          >
+            {buy.label}
+            <ExternalLink aria-hidden size={16} strokeWidth={2} />
+          </a>
+        )}
       </div>
     </li>
   );
@@ -78,6 +124,12 @@ export const WardWishlist = ({
   name: string;
 }) => {
   const [showOver, setShowOver] = useState(false);
+  const [details, setDetails] = useState<{
+    choice?: Record<string, string>;
+    product: Product;
+  } | null>(null);
+  const open: OpenDetails = (product, choice) =>
+    setDetails({ product, choice });
   const inBudget = items.filter((item) => !item.overBudget);
   const overBudget = items.filter((item) => item.overBudget);
 
@@ -100,7 +152,7 @@ export const WardWishlist = ({
       )}
       <ul className="flex flex-col gap-3">
         {inBudget.map((item) => (
-          <WardRow key={item.key} item={item} />
+          <WardRow key={item.key} item={item} onOpen={open} />
         ))}
       </ul>
       {overBudget.length > 0 && (
@@ -122,12 +174,17 @@ export const WardWishlist = ({
           {showOver && (
             <ul className="flex flex-col gap-3 opacity-80">
               {overBudget.map((item) => (
-                <WardRow key={item.key} item={item} />
+                <WardRow key={item.key} item={item} onOpen={open} />
               ))}
             </ul>
           )}
         </>
       )}
+      <ProductDetailsSheet
+        product={details?.product ?? null}
+        choice={details?.choice}
+        onClose={() => setDetails(null)}
+      />
     </section>
   );
 };
