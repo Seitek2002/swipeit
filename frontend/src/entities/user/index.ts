@@ -3,6 +3,7 @@ export {
   useFriends,
   useLoginDemo,
   useMe,
+  usePresence,
   useUpdateMe,
   useUser,
 } from "./api";

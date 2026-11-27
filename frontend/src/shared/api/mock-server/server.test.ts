@@ -293,3 +293,43 @@ describe("демо", () => {
     });
   });
 });
+
+describe("режим lan", () => {
+  it("все люди сервера — друзья друг другу (и боты тоже)", async () => {
+    const clock = createFixedClock(NOW);
+    const lan = createMockServer({
+      catalog: createMemoryCatalog(products),
+      clock,
+      db: createMemoryDb(async () =>
+        createSeedDb({ products, now: clock.now() }),
+      ),
+      mode: "lan",
+      realtime: createRecordingRealtime(),
+      random: createSeededRandom("lan"),
+      settings: createMemorySettings(),
+    });
+    const newUser = (name: string) =>
+      lan.handle({
+        method: "POST",
+        path: "/users",
+        userId: null,
+        body: {
+          name,
+          avatarColor: "mint",
+          interests: [],
+          audience: "all",
+        },
+      }) as Promise<{ id: string }>;
+    const first = await newUser("Первый");
+    const second = await newUser("Второй");
+    const friends = (await lan.handle({
+      method: "GET",
+      path: "/friends",
+      userId: first.id,
+    })) as FriendSummary[];
+    const ids = friends.map((friend) => friend.user.id);
+    expect(ids).toContain(second.id);
+    expect(ids).toContain("u_azamat");
+    expect(ids).not.toContain(first.id);
+  });
+});

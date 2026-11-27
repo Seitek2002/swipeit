@@ -1,8 +1,12 @@
-import type { z } from "zod";
+import { z } from "zod";
 
 import {
   type Activity,
   ActivitySchema,
+  type CatalogMeta,
+  CatalogMetaSchema,
+  type PhotoCredit,
+  PhotoCreditSchema,
   type Product,
   ProductSchema,
 } from "../catalog/types";
@@ -15,6 +19,9 @@ const parseList = <T>(
   raw: unknown,
   schema: z.ZodType<T>,
   label: string,
+  // Поле, по которому ищем повторы: у товаров и занятий — id, у авторов
+  // фото — activityId (одно фото на занятие).
+  idField = "id",
 ): ParsedCatalog<T> => {
   if (!Array.isArray(raw))
     return { items: [], dropped: [`${label}: не массив`] };
@@ -24,8 +31,8 @@ const parseList = <T>(
   raw.forEach((entry, index) => {
     const result = schema.safeParse(entry);
     const id =
-      typeof entry === "object" && entry !== null && "id" in entry
-        ? String((entry as { id: unknown }).id)
+      typeof entry === "object" && entry !== null && idField in entry
+        ? String((entry as Record<string, unknown>)[idField])
         : `#${index}`;
     if (!result.success) {
       const issue = result.error.issues[0];
@@ -49,3 +56,34 @@ export const parseProducts = (raw: unknown): ParsedCatalog<Product> =>
 
 export const parseActivities = (raw: unknown): ParsedCatalog<Activity> =>
   parseList(raw, ActivitySchema, "activities.json");
+
+// meta.json: шапка (дата сбора, курсы) обязательна — без неё файл битый
+// целиком (meta: null); авторы фото проверяются по одному, как карточки.
+const MetaHeadSchema = CatalogMetaSchema.extend({
+  activityPhotoCredits: z.array(z.unknown()),
+});
+
+export const parseCatalogMeta = (
+  raw: unknown,
+): { dropped: string[]; meta: CatalogMeta | null } => {
+  const head = MetaHeadSchema.safeParse(raw);
+  if (!head.success) {
+    const issue = head.error.issues[0];
+    return {
+      meta: null,
+      dropped: [
+        `meta.json: ${issue?.path.join(".") || "файл"} — ${issue?.message ?? "не по схеме"}`,
+      ],
+    };
+  }
+  const credits = parseList<PhotoCredit>(
+    head.data.activityPhotoCredits,
+    PhotoCreditSchema,
+    "meta.json",
+    "activityId",
+  );
+  return {
+    meta: { ...head.data, activityPhotoCredits: credits.items },
+    dropped: credits.dropped,
+  };
+};

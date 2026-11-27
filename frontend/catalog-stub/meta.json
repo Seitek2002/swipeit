@@ -1,0 +1,120 @@
+{
+  "collectedAt": "2026-11-27",
+  "rates": {
+    "source": "nbkr.kg",
+    "date": "2026-11-27",
+    "RUB": 1.0575,
+    "USD": 87.45,
+    "CNY": 13.1308
+  },
+  "activityPhotoCredits": [
+    {
+      "activityId": "a_001",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_001.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_001.svg"
+    },
+    {
+      "activityId": "a_002",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_002.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_002.svg"
+    },
+    {
+      "activityId": "a_003",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_003.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_003.svg"
+    },
+    {
+      "activityId": "a_004",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_004.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_004.svg"
+    },
+    {
+      "activityId": "a_005",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_005.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_005.svg"
+    },
+    {
+      "activityId": "a_006",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_006.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_006.svg"
+    },
+    {
+      "activityId": "a_007",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_007.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_007.svg"
+    },
+    {
+      "activityId": "a_008",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_008.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_008.svg"
+    },
+    {
+      "activityId": "a_009",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_009.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_009.svg"
+    },
+    {
+      "activityId": "a_010",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_010.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_010.svg"
+    },
+    {
+      "activityId": "a_011",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_011.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_011.svg"
+    },
+    {
+      "activityId": "a_012",
+      "author": "SwipeIt",
+      "url": "https://github.com/Seitek2002/swipeit/blob/main/frontend/catalog-stub/activities/a_012.svg",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "Заглушка SwipeIt",
+      "file": "a_012.svg"
+    }
+  ]
+}

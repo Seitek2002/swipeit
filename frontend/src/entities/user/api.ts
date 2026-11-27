@@ -8,6 +8,8 @@ import {
   friendKeys,
   getFriends,
   getMe,
+  getMode,
+  getPresence,
   getUser,
   loginDemoFn,
   updateMe,
@@ -45,6 +47,18 @@ export const useUser = (id: string | undefined) => {
     queryKey: userKeys.detail(id ?? ""),
     queryFn: () => getUser(id ?? ""),
     enabled: mounted && Boolean(id),
+  });
+};
+
+// Кто онлайн в «Локальной сети» — мятная точка у друга (DESIGN.md §8.11).
+// В local не спрашиваем: там все «друзья» живут в этом браузере.
+export const usePresence = () => {
+  const mounted = useMounted();
+  return useQuery({
+    queryKey: friendKeys.presence(),
+    queryFn: getPresence,
+    enabled: mounted && getMode() === "lan",
+    select: (data) => new Set(data.online),
   });
 };
 

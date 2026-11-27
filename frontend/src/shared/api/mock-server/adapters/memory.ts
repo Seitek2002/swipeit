@@ -1,6 +1,6 @@
 import type { RealtimeEvent } from "@/shared/lib/realtime/types";
 
-import type { Activity, Product } from "../../catalog/types";
+import type { Activity, CatalogMeta, Product } from "../../catalog/types";
 import { DEFAULT_DEMO_SETTINGS, type DemoSettings } from "../../demo/types";
 import type {
   CatalogAccess,
@@ -53,12 +53,21 @@ export const createMemoryDb = (
   };
 };
 
+// Тестам, которым авторы фото не важны, хватает пустого meta.json.
+export const EMPTY_CATALOG_META: CatalogMeta = {
+  collectedAt: "",
+  rates: { source: "", date: "", RUB: 0, USD: 0, CNY: 0 },
+  activityPhotoCredits: [],
+};
+
 export const createMemoryCatalog = (
   products: Product[],
   activities: Activity[] = [],
+  meta: CatalogMeta = EMPTY_CATALOG_META,
 ): CatalogAccess => ({
   products: async () => products,
   activities: async () => activities,
+  meta: async () => meta,
 });
 
 export const createMemorySettings = (

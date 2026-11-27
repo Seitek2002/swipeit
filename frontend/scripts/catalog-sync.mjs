@@ -58,7 +58,9 @@ if (hasCatalog) {
       `catalog:sync — занятия Товароведа: ${count(path.join(SOURCE, "activities.json"))}`,
     );
   } else if (hasStub) {
-    copyFrom(STUB, ["activities.json", "activities"]);
+    // Вместе с занятиями — и meta.json заглушки: авторы фото в meta.json
+    // Товароведа относятся к его занятиям, а не к заглушке.
+    copyFrom(STUB, ["activities.json", "activities", "meta.json"]);
     console.log("catalog:sync — занятий у Товароведа нет, взяты из заглушки");
   }
 } else if (hasStub) {

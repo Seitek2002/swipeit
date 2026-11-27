@@ -87,3 +87,8 @@ export const getProduct: Handler = async (ctx, { params }) => {
   if (!product) throw notFound("Товар не найден");
   return product;
 };
+
+// GET /catalog/meta — meta.json: курсы и авторы фото занятий (страница
+// «Авторы фото»). Пользователь не нужен: страница открывается и до
+// онбординга.
+export const getCatalogMeta: Handler = async (ctx) => ctx.catalog.meta();

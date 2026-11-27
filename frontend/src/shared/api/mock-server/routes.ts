@@ -1,6 +1,12 @@
 import type { Handler } from "./context";
 import { validation } from "./errors";
-import { getCount, getFeed, getProduct } from "./handlers/catalog";
+import { createCustomActivity, listActivities } from "./handlers/activities";
+import {
+  getCatalogMeta,
+  getCount,
+  getFeed,
+  getProduct,
+} from "./handlers/catalog";
 import {
   getSettings,
   listDemoUsers,
@@ -23,6 +29,14 @@ import {
   getMyPicks,
   importPickAnswer,
 } from "./handlers/pick";
+import {
+  createPlan,
+  getPlan,
+  joinPlan,
+  listPlans,
+  setReady,
+  startPlan,
+} from "./handlers/plans";
 import { createSwipe, restartSwipes, undoSwipe } from "./handlers/swipes";
 import {
   createUser,
@@ -60,6 +74,7 @@ export const ROUTE_TABLE: Route[] = [
   { method: "GET", pattern: "/catalog/feed", handler: getFeed },
   { method: "GET", pattern: "/catalog/count", handler: getCount },
   { method: "GET", pattern: "/catalog/products/:id", handler: getProduct },
+  { method: "GET", pattern: "/catalog/meta", handler: getCatalogMeta },
   { method: "POST", pattern: "/swipes", handler: createSwipe },
   { method: "POST", pattern: "/swipes/undo", handler: undoSwipe },
   { method: "POST", pattern: "/swipes/restart", handler: restartSwipes },
@@ -107,6 +122,14 @@ export const ROUTE_TABLE: Route[] = [
     handler: answerPickRequest,
   },
   { method: "POST", pattern: "/pick-answers", handler: importPickAnswer },
+  { method: "GET", pattern: "/plans", handler: listPlans },
+  { method: "POST", pattern: "/plans", handler: createPlan },
+  { method: "GET", pattern: "/plans/:id", handler: getPlan },
+  { method: "POST", pattern: "/plans/:id/join", handler: joinPlan },
+  { method: "POST", pattern: "/plans/:id/ready", handler: setReady },
+  { method: "POST", pattern: "/plans/:id/start", handler: startPlan },
+  { method: "GET", pattern: "/activities", handler: listActivities },
+  { method: "POST", pattern: "/activities", handler: createCustomActivity },
   { method: "POST", pattern: "/demo/reset", handler: resetDemo },
   { method: "GET", pattern: "/demo/settings", handler: getSettings },
   { method: "GET", pattern: "/demo/users", handler: listDemoUsers },

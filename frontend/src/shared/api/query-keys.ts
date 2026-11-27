@@ -1,6 +1,7 @@
 import type { RealtimeScope } from "@/shared/lib/realtime/types";
 
 import type { ProductFilters } from "./catalog/types";
+import type { PlanFilters } from "./plans/types";
 
 // Фабрики ключей React Query по доменам (как в imbir: all → lists → detail).
 // Ключи — только отсюда: строки мимо фабрики не достаёт точечная
@@ -15,6 +16,7 @@ export const userKeys = {
 export const friendKeys = {
   all: ["friends"] as const,
   list: () => [...friendKeys.all, "list"] as const,
+  presence: () => [...friendKeys.all, "presence"] as const,
 };
 
 export const catalogKeys = {
@@ -24,6 +26,8 @@ export const catalogKeys = {
   count: (context: string, filters: ProductFilters) =>
     [...catalogKeys.all, "count", context, filters] as const,
   product: (id: string) => [...catalogKeys.all, "product", id] as const,
+  // meta.json не меняется, пока открыта вкладка — его не инвалидируем.
+  meta: () => [...catalogKeys.all, "meta"] as const,
 };
 
 export const wishlistKeys = {
@@ -45,6 +49,20 @@ export const pickKeys = {
   answer: (encoded: string) => [...pickKeys.all, "answer", encoded] as const,
 };
 
+export const planKeys = {
+  all: ["plans"] as const,
+  list: () => [...planKeys.all, "list"] as const,
+  detail: (id: string) => [...planKeys.all, "detail", id] as const,
+};
+
+// Занятия каталога (GET /activities). Каталог только для чтения, поэтому
+// в SCOPE_KEYS его нет.
+export const activityKeys = {
+  all: ["activities"] as const,
+  list: (filters?: PlanFilters) =>
+    [...activityKeys.all, "list", filters ?? null] as const,
+};
+
 export const demoKeys = {
   all: ["demo"] as const,
   settings: () => [...demoKeys.all, "settings"] as const,
@@ -62,7 +80,7 @@ export const SCOPE_KEYS: Record<
   swipes: [catalogKeys.all, pickKeys.all],
   wishlist: [wishlistKeys.all],
   reservations: [reservationKeys.all, wishlistKeys.all],
-  plans: [],
+  plans: [planKeys.all],
   santa: [],
   settings: [demoKeys.all],
 };

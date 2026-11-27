@@ -21,6 +21,7 @@ import {
 
 import { useCreateUser, useLoginDemo, useMe } from "@/entities/user";
 
+import { getMode } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import {
   Brand,
@@ -34,6 +35,7 @@ import {
 } from "@/shared/ui";
 
 import { HangingTags } from "./HangingTags";
+import { LanPlaque } from "./LanPlaque";
 
 type Step = "interests" | "name" | "welcome";
 
@@ -103,6 +105,7 @@ export const OnboardingPage = () => {
           <p className="text-body-lg text-rose mt-2.5">
             Друзья увидят — и угадают с подарком.
           </p>
+          <LanPlaque />
         </div>
         <Footer>
           <div className="flex flex-col gap-1 pt-4">
@@ -119,8 +122,9 @@ export const OnboardingPage = () => {
             </Button>
           </div>
           <p className="text-caption text-rose px-2 text-center">
-            Это демо: всё хранится только в твоём браузере, а друзья внутри —
-            демо-боты
+            {getMode() === "lan"
+              ? "Это демо в локальной сети: данные хранятся на ноутбуке ведущего"
+              : "Это демо: всё хранится только в твоём браузере, а друзья внутри — демо-боты"}
           </p>
         </Footer>
       </Screen>

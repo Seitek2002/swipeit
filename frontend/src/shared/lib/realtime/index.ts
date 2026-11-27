@@ -2,6 +2,13 @@ import { createLocalRealtime } from "./local";
 import type { Realtime } from "./types";
 
 export {
+  type ConnectionStatus,
+  getConnectionStatus,
+  subscribeConnection,
+  useConnectionStatus,
+} from "./connection";
+export { createWsRealtime, type WsRealtime } from "./ws";
+export {
   ALL_SCOPES,
   type Realtime,
   type RealtimeEvent,

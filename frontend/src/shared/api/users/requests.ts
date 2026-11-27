@@ -18,3 +18,8 @@ export const getUser = (id: string): Promise<User> =>
 
 export const getFriends = (): Promise<FriendSummary[]> =>
   getTransport().request<FriendSummary[]>("GET", "/friends");
+
+// Кто сейчас онлайн в «Локальной сети» (только lan: маршрут LAN-сервера,
+// TECH_SPEC §7a).
+export const getPresence = (): Promise<{ online: string[] }> =>
+  getTransport().request<{ online: string[] }>("GET", "/presence");

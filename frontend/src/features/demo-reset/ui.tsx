@@ -15,6 +15,8 @@ type Props = {
   className?: string;
   // В демо-панели — «Сбросить всё» (DESIGN.md §8.10).
   label?: string;
+  // В «Локальной сети» сброс действует на всех (DESIGN.md §8.10).
+  network?: boolean;
 };
 
 // «Сбросить демо-данные» (DESIGN.md §8.9): ConfirmDialog → база заново из
@@ -23,6 +25,7 @@ type Props = {
 export const ResetDemoButton = ({
   className,
   label = "Сбросить демо-данные",
+  network = false,
 }: Props) => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -57,8 +60,16 @@ export const ResetDemoButton = ({
         onConfirm={() => reset.mutate()}
         isLoading={reset.isPending}
         variant="danger"
-        title="Сбросить демо-данные?"
-        description="Профиль, вишлист, планы и игры удалятся с этого устройства. Начнёшь заново со знакомства."
+        title={
+          network
+            ? "Сбросить данные у всех участников сети?"
+            : "Сбросить демо-данные?"
+        }
+        description={
+          network
+            ? "Профили, вишлисты, планы и игры удалятся на ноутбуке — у всех телефонов сети. Все начнут заново со знакомства."
+            : "Профиль, вишлист, планы и игры удалятся с этого устройства. Начнёшь заново со знакомства."
+        }
         confirmLabel="Сбросить"
       />
     </>

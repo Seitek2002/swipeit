@@ -1,8 +1,14 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-// «Последний пользователь» устройства: новая вкладка начинает с него.
-const LAST_USER_KEY = "swipeit:lastUserId";
+// «Последний пользователь» устройства: новая вкладка начинает с него. В lan
+// ключ свой у каждого сервера — swipeit:lan:<serverId>:userId (TECH_SPEC
+// §7a), чтобы разные ноутбуки не путались.
+let lastUserKey = "swipeit:lastUserId";
+
+export const setLastUserKey = (key: string) => {
+  lastUserKey = key;
+};
 
 type SessionState = {
   activeUserId: null | string;
@@ -16,7 +22,7 @@ type SessionState = {
 
 const readLastUser = (): null | string => {
   try {
-    return localStorage.getItem(LAST_USER_KEY);
+    return localStorage.getItem(lastUserKey);
   } catch {
     return null;
   }
@@ -32,8 +38,8 @@ export const useSessionStore = create<SessionState>()(
         set({ activeUserId: userId });
         if (!remember) return;
         try {
-          if (userId) localStorage.setItem(LAST_USER_KEY, userId);
-          else localStorage.removeItem(LAST_USER_KEY);
+          if (userId) localStorage.setItem(lastUserKey, userId);
+          else localStorage.removeItem(lastUserKey);
         } catch {
           // Хранилище запрещено (приватный режим) — сессия живёт в памяти.
         }
@@ -42,6 +48,9 @@ export const useSessionStore = create<SessionState>()(
     {
       name: "swipeit:session",
       storage: createJSONStorage(() => sessionStorage),
+      // Сессию читаем после определения режима (app/environment.ts): в lan
+      // «последний пользователь» лежит под ключом сервера.
+      skipHydration: true,
       onRehydrateStorage: () => (state) => {
         if (state && !state.activeUserId) {
           const last = readLastUser();

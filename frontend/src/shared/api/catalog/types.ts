@@ -82,6 +82,39 @@ export const ActivitySchema = z.object({
   image: z.object({ src: z.string().min(1), alt: z.string() }).optional(),
   isCustom: z.boolean().optional(),
   createdBy: z.string().optional(),
+  // Расширение TECH_SPEC §5: фото своего занятия — ключ в IndexedDB (local)
+  // или на LAN-сервере (lan), как у своего желания (CustomWish.imageKey).
+  imageKey: z.string().optional(),
+});
+
+// public/catalog/meta.json (TECH_SPEC §5): курсы валют и авторы фото
+// занятий. Фото с Wikimedia Commons под CC BY / CC BY-SA без автора
+// показывать нельзя — отсюда страница «Авторы фото».
+export const PhotoCreditSchema = z.object({
+  activityId: z.string().min(1),
+  author: z.string().min(1),
+  // Страница файла на Wikimedia Commons.
+  url: z.string().min(1),
+  // «CC BY-SA 4.0», «CC0», «Public domain».
+  license: z.string().min(1),
+  // Нет у CC0 и Public domain.
+  licenseUrl: z.string().optional(),
+  source: z.string(),
+  file: z.string().optional(),
+});
+
+export const CatalogRatesSchema = z.object({
+  source: z.string(),
+  date: z.string(),
+  RUB: z.number(),
+  USD: z.number(),
+  CNY: z.number(),
+});
+
+export const CatalogMetaSchema = z.object({
+  collectedAt: z.string(),
+  rates: CatalogRatesSchema,
+  activityPhotoCredits: z.array(PhotoCreditSchema),
 });
 
 // Фильтры ленты и ссылки «Выбери подарок сам». max = null — без верхней границы.
@@ -100,6 +133,8 @@ export type VariantGroup = z.infer<typeof VariantGroupSchema>;
 export type Offer = z.infer<typeof OfferSchema>;
 export type Product = z.infer<typeof ProductSchema>;
 export type Activity = z.infer<typeof ActivitySchema>;
+export type PhotoCredit = z.infer<typeof PhotoCreditSchema>;
+export type CatalogMeta = z.infer<typeof CatalogMetaSchema>;
 export type ProductFilters = z.infer<typeof ProductFiltersSchema>;
 
 export const EMPTY_FILTERS: ProductFilters = {

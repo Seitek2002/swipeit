@@ -1,13 +1,16 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import Link from "next/link";
 
 import { ChevronRight, Gift } from "lucide-react";
 
 import { AppHeader } from "@/widgets/app-header";
 
-import { type FriendSummary, useFriends } from "@/entities/user";
+import { type FriendSummary, useFriends, usePresence } from "@/entities/user";
 
+import { getMode } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { formatBirthday, pluralize } from "@/shared/lib/format";
 import {
@@ -72,18 +75,46 @@ const SoonCard = ({ friend }: { friend: FriendSummary }) => (
   </Link>
 );
 
-const FriendRow = ({ friend }: { friend: FriendSummary }) => (
+const FriendSection = ({
+  title,
+  children,
+}: {
+  children: ReactNode;
+  title: string;
+}) => (
+  <section className="mt-5 px-5">
+    <h2 className="text-label">{title}</h2>
+    <ul className="mt-1">{children}</ul>
+  </section>
+);
+
+const FriendRow = ({
+  friend,
+  online = false,
+}: {
+  friend: FriendSummary;
+  online?: boolean;
+}) => (
   <li>
     <Link
       href={ROUTES.FRIEND_PROFILE(friend.user.id)}
       className="border-line flex min-h-[68px] items-center gap-3.5 border-b py-2.5"
     >
-      <Avatar
-        name={friend.user.name}
-        color={friend.user.avatarColor}
-        size={44}
-        decorative
-      />
+      <span className="relative flex-none">
+        <Avatar
+          name={friend.user.name}
+          color={friend.user.avatarColor}
+          size={44}
+          decorative
+        />
+        {online && (
+          <span
+            role="img"
+            aria-label="онлайн"
+            className="bg-mint border-velvet absolute right-0 bottom-0 size-3 rounded-full border-2"
+          />
+        )}
+      </span>
       <span className="min-w-0 flex-1">
         <span className="text-body text-paper block font-semibold">
           {friend.user.name}
@@ -104,7 +135,10 @@ const FriendRow = ({ friend }: { friend: FriendSummary }) => (
 // его вишлист в гостевом виде.
 export const FriendsPage = () => {
   const friends = useFriends();
+  const presence = usePresence();
   const list = friends.data ?? [];
+  const people = list.filter((friend) => !friend.user.isBot);
+  const bots = list.filter((friend) => friend.user.isBot);
   // Список уже отсортирован сервером: ближайшие дни рождения — первыми.
   const nearest = list[0];
   const soon =
@@ -143,11 +177,38 @@ export const FriendsPage = () => {
         ) : (
           <>
             {soon && <SoonCard friend={soon} />}
-            <ul className="mt-3 px-5">
-              {list.map((friend) => (
-                <FriendRow key={friend.user.id} friend={friend} />
-              ))}
-            </ul>
+            {getMode() === "lan" ? (
+              <>
+                {/* Сеть (DESIGN.md §8.11): люди с мятной точкой онлайна
+                    сверху, боты — ниже. */}
+                <FriendSection title="В этой сети">
+                  {people.length === 0 ? (
+                    <li className="text-caption text-rose py-3">
+                      Пока никого. Дай друзьям адрес из терминала ноутбука.
+                    </li>
+                  ) : (
+                    people.map((friend) => (
+                      <FriendRow
+                        key={friend.user.id}
+                        friend={friend}
+                        online={presence.data?.has(friend.user.id)}
+                      />
+                    ))
+                  )}
+                </FriendSection>
+                <FriendSection title="Демо-друзья">
+                  {bots.map((friend) => (
+                    <FriendRow key={friend.user.id} friend={friend} />
+                  ))}
+                </FriendSection>
+              </>
+            ) : (
+              <ul className="mt-3 px-5">
+                {list.map((friend) => (
+                  <FriendRow key={friend.user.id} friend={friend} />
+                ))}
+              </ul>
+            )}
           </>
         )}
       </ScreenBody>

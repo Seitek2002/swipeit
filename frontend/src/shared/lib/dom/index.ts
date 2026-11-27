@@ -1,6 +1,8 @@
 export {
   deleteCustomImage,
+  type RemoteImageStore,
   saveCustomImage,
+  setRemoteImageStore,
   useCustomImageUrl,
 } from "./custom-images";
 export { vibrate } from "./haptics";

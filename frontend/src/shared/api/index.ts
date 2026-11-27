@@ -1,13 +1,20 @@
 // Публичный API слоя данных: запросы по доменам, ключи, типы-контракты.
 // Внутренности мок-сервера наружу не торчат — только ошибка API.
 
-export { getCatalogCount, getFeed, getProduct } from "./catalog/requests";
+export {
+  getCatalogCount,
+  getCatalogMeta,
+  getFeed,
+  getProduct,
+} from "./catalog/requests";
 export {
   type Activity,
   ActivitySchema,
+  type CatalogMeta,
   EMPTY_FILTERS,
   type FeedResponse,
   type Offer,
+  type PhotoCredit,
   type Product,
   type ProductFilters,
   ProductFiltersSchema,
@@ -35,7 +42,15 @@ export {
   subscribeBotLeader,
 } from "./mock-server/adapters/browser/bots";
 export { type ApiErrorCode, ApiError, isApiError } from "./mock-server/errors";
-export { type ApiMode, detectMode } from "./mode";
+export { httpTransport } from "./http-transport";
+export {
+  type ApiMode,
+  apiUrl,
+  detectEnvironment,
+  detectMode,
+  type Environment,
+  getMode,
+} from "./mode";
 export {
   answerPickRequest,
   createPickRequest,
@@ -43,12 +58,35 @@ export {
   importPickAnswer,
 } from "./pick/requests";
 export { type PickAnswer, type PickRequest } from "./pick/types";
-export { type PlanSession } from "./plans/types";
 export {
+  createCustomActivity,
+  createPlan,
+  getActivities,
+  getPlan,
+  getPlans,
+  joinPlan,
+  setPlanReady,
+  startPlan,
+} from "./plans/requests";
+export {
+  type CreatePlanInput,
+  CreatePlanInputSchema,
+  type CustomActivityInput,
+  CustomActivityInputSchema,
+  type PlanFilters,
+  PlanFiltersSchema,
+  type PlanParticipant,
+  type PlanSession,
+  type PlanSummary,
+  type PlanView,
+} from "./plans/types";
+export {
+  activityKeys,
   catalogKeys,
   demoKeys,
   friendKeys,
   pickKeys,
+  planKeys,
   SCOPE_KEYS,
   reservationKeys,
   userKeys,
@@ -64,6 +102,7 @@ export {
 export {
   createUser,
   getFriends,
+  getPresence,
   getMe,
   getUser,
   loginDemoFn,

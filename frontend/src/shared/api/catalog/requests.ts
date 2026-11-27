@@ -1,5 +1,10 @@
 import { getTransport } from "../transport";
-import type { FeedResponse, Product, ProductFilters } from "./types";
+import type {
+  CatalogMeta,
+  FeedResponse,
+  Product,
+  ProductFilters,
+} from "./types";
 
 type FeedParams = {
   // "self" или "pick:<requestId>".
@@ -42,3 +47,7 @@ export const getProduct = (id: string): Promise<Product> =>
     "GET",
     `/catalog/products/${encodeURIComponent(id)}`,
   );
+
+// Курсы и авторы фото занятий — для страницы «Авторы фото» (/credits/).
+export const getCatalogMeta = (): Promise<CatalogMeta> =>
+  getTransport().request<CatalogMeta>("GET", "/catalog/meta");

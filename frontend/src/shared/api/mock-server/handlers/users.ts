@@ -121,7 +121,13 @@ export const listFriends: Handler = async (ctx) => {
   const db = await ctx.db.read();
   const me = requireUser(ctx, db);
   const now = ctx.clock.now();
-  const friends: FriendSummary[] = (db.friends[me.id] ?? [])
+  // В lan все люди сервера — друзья друг другу и демо-ботам (TECH_SPEC
+  // §7a): список строится из всех профилей, а не из связей.
+  const ids =
+    ctx.mode === "lan"
+      ? Object.keys(db.users).filter((id) => id !== me.id)
+      : (db.friends[me.id] ?? []);
+  const friends: FriendSummary[] = ids
     .map((id) => db.users[id])
     .filter((user): user is User => Boolean(user))
     .map((user) => ({

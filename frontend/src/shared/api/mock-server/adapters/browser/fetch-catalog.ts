@@ -1,9 +1,13 @@
 import { withBasePath } from "@/shared/lib/base-path";
 
-import type { Activity, Product } from "../../../catalog/types";
-import { parseActivities, parseProducts } from "../../catalog-parse";
+import type { Activity, CatalogMeta, Product } from "../../../catalog/types";
+import {
+  parseActivities,
+  parseCatalogMeta,
+  parseProducts,
+} from "../../catalog-parse";
 import type { CatalogAccess } from "../../context";
-import { ApiError } from "../../errors";
+import { ApiError, isApiError, notFound } from "../../errors";
 
 const loadJson = async (path: string): Promise<unknown> => {
   const response = await fetch(withBasePath(path));
@@ -17,6 +21,7 @@ const loadJson = async (path: string): Promise<unknown> => {
 export const createFetchCatalog = (): CatalogAccess => {
   let products: null | Promise<Product[]> = null;
   let activities: null | Promise<Activity[]> = null;
+  let meta: null | Promise<CatalogMeta> = null;
 
   const fail = (error: unknown): never => {
     console.warn("swipeit: каталог не загрузился", error);
@@ -63,6 +68,27 @@ export const createFetchCatalog = (): CatalogAccess => {
           return fail(error);
         });
       return activities;
+    },
+    meta: () => {
+      meta ??= loadJson("/catalog/meta.json")
+        .then((raw) => {
+          const parsed = parseCatalogMeta(raw);
+          if (parsed.dropped.length > 0) {
+            console.warn(
+              `swipeit: пропущено битых записей об авторах фото: ${parsed.dropped.length}`,
+              parsed.dropped,
+            );
+          }
+          // Шапка файла битая — это не «нет сети», а ошибка каталога.
+          if (!parsed.meta) throw notFound("Список авторов фото повреждён");
+          return parsed.meta;
+        })
+        .catch((error: unknown) => {
+          meta = null;
+          if (isApiError(error)) throw error;
+          return fail(error);
+        });
+      return meta;
     },
   };
 };

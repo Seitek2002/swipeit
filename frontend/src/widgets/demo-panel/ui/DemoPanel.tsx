@@ -7,18 +7,20 @@ import { Sparkles } from "lucide-react";
 
 import { ResetDemoButton } from "@/features/demo-reset";
 
-import type { User } from "@/entities/user";
+import { type User, usePresence } from "@/entities/user";
 
 import {
   type DemoSettings,
   demoKeys,
+  getDemoSettings,
   getDemoUsers,
+  getMode,
   isBotLeader,
   subscribeBotLeader,
   updateDemoSettings,
 } from "@/shared/api";
-import { clock } from "@/shared/lib/clock";
-import { formatDayMonth, toDateKey } from "@/shared/lib/format";
+import { clock, useClockOffset } from "@/shared/lib/clock";
+import { formatDayMonth, pluralize, toDateKey } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 import { useDemoSettingsStore, useSessionStore } from "@/shared/store";
 import { Avatar, BottomSheet, Button, Chip, Switch, toast } from "@/shared/ui";
@@ -106,7 +108,17 @@ export const DemoPanel = () => {
   useBotLogFeed();
   const queryClient = useQueryClient();
   const demoMode = useDemoSettingsStore((state) => state.demoMode);
-  const settings = useDemoSettingsStore((state) => state.settings);
+  const storedSettings = useDemoSettingsStore((state) => state.settings);
+  const isLan = getMode() === "lan";
+  // Настройки — через API: в lan они общие и живут на ноутбуке.
+  const settingsQuery = useQuery({
+    queryKey: demoKeys.settings(),
+    queryFn: getDemoSettings,
+    placeholderData: storedSettings,
+  });
+  const settings = settingsQuery.data ?? storedSettings;
+  const presence = usePresence();
+  const clockOffset = useClockOffset();
   const activeUserId = useSessionStore((state) => state.activeUserId);
   const entries = useBotLog((state) => state.entries);
   const leader = useSyncExternalStore(
@@ -123,7 +135,7 @@ export const DemoPanel = () => {
       .then(() => queryClient.invalidateQueries({ queryKey: demoKeys.all }))
       .catch(() => toast("Не получилось сохранить", { tone: "error" }));
 
-  const today = formatDayMonth(toDateKey(clock.at(settings.clockOffsetMs)));
+  const today = formatDayMonth(toDateKey(clock.at(clockOffset)));
 
   return (
     <>
@@ -144,10 +156,9 @@ export const DemoPanel = () => {
         <div className="flex flex-col gap-6 pb-4">
           <p className="text-caption text-rose flex items-center gap-2">
             <span aria-hidden className="bg-mint size-2 rounded-full" />
-            На этом устройстве ·{" "}
-            {leader
-              ? "боты работают в этой вкладке"
-              : "боты — в другой вкладке"}
+            {isLan
+              ? `Локальная сеть: ${pluralize(presence.data?.size ?? 0, ["устройство", "устройства", "устройств"])} онлайн`
+              : `На этом устройстве · ${leader ? "боты работают в этой вкладке" : "боты — в другой вкладке"}`}
           </p>
 
           <WatchAs onPicked={() => setOpen(false)} />
@@ -236,7 +247,7 @@ export const DemoPanel = () => {
             )}
           </section>
 
-          <ResetDemoButton label="Сбросить всё" />
+          <ResetDemoButton label="Сбросить всё" network={isLan} />
         </div>
       </BottomSheet>
     </>

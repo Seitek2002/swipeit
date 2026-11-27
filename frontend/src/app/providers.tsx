@@ -16,9 +16,15 @@ import {
   startBrowserBots,
 } from "@/shared/api";
 import { useTapHaptics } from "@/shared/lib/dom";
-import { getRealtime } from "@/shared/lib/realtime";
+import {
+  getConnectionStatus,
+  getRealtime,
+  subscribeConnection,
+} from "@/shared/lib/realtime";
 import { useSessionStore } from "@/shared/store";
-import { Toaster, toast } from "@/shared/ui";
+import { Splash, Toaster, toast } from "@/shared/ui";
+
+import { startEnvironment } from "./environment";
 
 // Подписчик шины реального времени (TECH_SPEC §7): по db:changed перечитывает
 // нужные запросы, по toast показывает тост. Компоненты сами на шину не
@@ -65,6 +71,29 @@ const SessionCacheReset = () => {
   return null;
 };
 
+// Потеря связи с ноутбуком (DESIGN.md §8.11): тост без автозакрытия со
+// спиннером; вернулась — «Снова в сети» и перечитать всё: пока связи не было,
+// события могли пройти мимо (TECH_SPEC §7).
+const ConnectionNotices = () => {
+  const queryClient = useQueryClient();
+  useEffect(
+    () =>
+      subscribeConnection(() => {
+        if (getConnectionStatus() === "offline") {
+          toast("Нет связи с ноутбуком. Переподключаемся…", {
+            tone: "loading",
+            duration: null,
+          });
+        } else {
+          toast("Снова в сети");
+          void queryClient.invalidateQueries();
+        }
+      }),
+    [queryClient],
+  );
+  return null;
+};
+
 // Боты (TECH_SPEC §7): в local их исполняет одна вкладка-лидер, в lan —
 // сервер, и вкладки их не запускают.
 const BotsLeader = () => {
@@ -78,6 +107,22 @@ const BotsLeader = () => {
     };
   }, []);
   return null;
+};
+
+// Пока режим не определён, шина, транспорт и сессия ещё не настроены —
+// ничего, что ходит в API или слушает шину, не рендерим (TECH_SPEC §6).
+const EnvironmentGate = ({ children }: { children: ReactNode }) => {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void startEnvironment().then(() => {
+      if (!cancelled) setReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return ready ? children : <Splash />;
 };
 
 export const Providers = ({ children }: { children: ReactNode }) => {
@@ -106,10 +151,13 @@ export const Providers = ({ children }: { children: ReactNode }) => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <RealtimeBridge />
-      <SessionCacheReset />
-      <BotsLeader />
-      {children}
+      <EnvironmentGate>
+        <RealtimeBridge />
+        <SessionCacheReset />
+        <ConnectionNotices />
+        <BotsLeader />
+        {children}
+      </EnvironmentGate>
       <Toaster />
       {/* Кнопка devtools висит поверх экрана телефона и мешает проверять
           вёрстку — включается только по NEXT_PUBLIC_RQ_DEVTOOLS=1. */}

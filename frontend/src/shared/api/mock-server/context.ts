@@ -1,6 +1,6 @@
 import type { RealtimeEvent } from "@/shared/lib/realtime/types";
 
-import type { Activity, Product } from "../catalog/types";
+import type { Activity, CatalogMeta, Product } from "../catalog/types";
 import type { DemoSettings } from "../demo/types";
 import type { Db } from "./db";
 import type { Random } from "./random";
@@ -25,6 +25,8 @@ export type Clock = { now(): number };
 
 export type CatalogAccess = {
   activities(): Promise<Activity[]>;
+  // meta.json: курсы и авторы фото занятий (страница «Авторы фото»).
+  meta(): Promise<CatalogMeta>;
   products(): Promise<Product[]>;
 };
 

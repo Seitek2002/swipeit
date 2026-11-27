@@ -31,6 +31,7 @@ import {
 } from "@/shared/api";
 import { withBasePath } from "@/shared/lib/base-path";
 import { formatPrice } from "@/shared/lib/format";
+import { useConnectionStatus } from "@/shared/lib/realtime";
 import { Button, EmptyState, toast } from "@/shared/ui";
 
 import { RIBBON_SEGMENTS, WishRibbon } from "./WishRibbon";
@@ -79,6 +80,9 @@ export const GiftDeck = ({
   const queryClient = useQueryClient();
   const summary = useWishlistSummary();
   const deckRef = useRef<SwipeDeckHandle>(null);
+  // Нет связи с ноутбуком (lan) — колода неактивна, чтобы ни один свайп не
+  // потерялся (DESIGN.md §8.11).
+  const offline = useConnectionStatus() === "offline";
   const contextKey = contextKeyOf(context);
 
   const [queue, setQueue] = useState<Product[]>([]);
@@ -337,6 +341,7 @@ export const GiftDeck = ({
             onOpenDetails={() => setDetails(product)}
           />
         )}
+        disabled={offline}
         onDecision={handleDecision}
         onUndo={handleUndo}
         canUndo={history.length > 0}
