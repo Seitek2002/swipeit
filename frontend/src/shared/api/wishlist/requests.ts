@@ -22,7 +22,7 @@ export const createSwipe = (input: {
 
 export const undoSwipe = (
   context: SwipeContext,
-): Promise<{ likeCount: number; productId: string }> =>
+): Promise<{ productId: string; wishCount: number }> =>
   getTransport().request("POST", "/swipes/undo", { context });
 
 export const restartSwipes = (
@@ -35,8 +35,21 @@ export const getMyWishlist = (): Promise<WishlistResponse> =>
 
 const itemPath = (id: string) => `/wishlist/items/${encodeURIComponent(id)}`;
 
-export const createCustomWish = (custom: CustomWish): Promise<WishlistItem> =>
-  getTransport().request<WishlistItem>("POST", "/wishlist/items", custom);
+// Ответ — само желание и порог отправки (TECH_SPEC §6 «Порог отправки»):
+// пятым может стать и своё желание.
+export type CreateCustomWishResponse = WishlistItem & {
+  shareJustUnlocked: boolean;
+  wishCount: number;
+};
+
+export const createCustomWish = (
+  custom: CustomWish,
+): Promise<CreateCustomWishResponse> =>
+  getTransport().request<CreateCustomWishResponse>(
+    "POST",
+    "/wishlist/items",
+    custom,
+  );
 
 export const updateWishlistItem = (
   id: string,

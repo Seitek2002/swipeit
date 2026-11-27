@@ -52,9 +52,15 @@ export const CustomWishSheet = ({ open, onClose }: Props) => {
 
   const create = useMutation({
     mutationFn: createCustomWish,
-    onSuccess: () => {
+    onSuccess: (created) => {
       void queryClient.invalidateQueries({ queryKey: wishlistKeys.all });
-      toast("Желание добавлено");
+      // Пятым стало своё желание (DESIGN.md §8.3): без банта — кнопка
+      // отправки и так под пальцем.
+      toast(
+        created.shareJustUnlocked
+          ? "Вишлист готов — можно отправить друзьям"
+          : "Желание добавлено",
+      );
       reset();
       onClose();
     },

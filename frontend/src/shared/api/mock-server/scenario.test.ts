@@ -161,7 +161,7 @@ describe("POST /demo/scenario/new-year", () => {
     expect(active.filter((item) => item.priority === "top")).toHaveLength(2);
     expect(active.filter((item) => item.note)).toHaveLength(1);
     expect(active.some((item) => item.variantChoice)).toBe(true);
-    expect(wishlist.likeCount).toBe(7);
+    expect(wishlist.wishCount).toBe(7);
     expect(wishlist.meta).toMatchObject({
       occasion: { kind: "new_year", date: "2026-12-31" },
       message: expect.any(String),

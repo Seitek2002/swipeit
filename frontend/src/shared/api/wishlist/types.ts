@@ -128,15 +128,16 @@ export type WishlistMeta = z.infer<typeof WishlistMetaSchema>;
 export type Reservation = z.infer<typeof ReservationSchema>;
 export type ExternalWishlist = z.infer<typeof ExternalWishlistSchema>;
 
-// Ответ на свайп: сколько «Хочу» уже есть и открылся ли шеринг прямо сейчас
-// (по shareJustUnlocked клиент запускает бант, TECH_SPEC §6).
+// Ответ на свайп: сколько желаний в «Хочу» (свои тоже) и открылся ли шеринг
+// прямо сейчас (по shareJustUnlocked клиент запускает бант, TECH_SPEC §6
+// «Порог отправки»).
 // tasteJustFormed — впервые вывелись 2 интереса, а тост «Подстроили ленту
 // под твои „Хочу“» ещё не показывали (TECH_SPEC §6 «Вкус»).
 export type SwipeResponse = {
-  likeCount: number;
   shareJustUnlocked: boolean;
   shareUnlocked: boolean;
   tasteJustFormed: boolean;
+  wishCount: number;
   wishlistItemId?: string;
 };
 
@@ -144,10 +145,11 @@ export type WishlistResponse = {
   // Подсказка после повода: забронированные желания (DESIGN.md §8.3, P1).
   givenHintIds: string[];
   items: WishlistItem[];
-  likeCount: number;
   meta: WishlistMeta;
   // null — владелец скрыл счётчик («Не показывать мне даже это»).
   reservationCount: null | number;
+  // Желаний в «Хочу» — для «Ещё N желаний — и можно отправить».
+  wishCount: number;
 };
 
 // Вишлист глазами гостя: по ссылке (снимок) или друга из списка (T11).

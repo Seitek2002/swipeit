@@ -22,7 +22,8 @@ export const useWishlistSummary = () => {
   return {
     activeCount:
       data?.items.filter((item) => item.status === "active").length ?? 0,
-    likeCount: data?.likeCount ?? 0,
+    // Желаний в «Хочу» (из ленты и свои) — порог отправки (TECH_SPEC §6).
+    wishCount: data?.wishCount ?? 0,
     shareUnlocked: Boolean(data?.meta.shareUnlockedAt),
     isLoaded: Boolean(data),
   };

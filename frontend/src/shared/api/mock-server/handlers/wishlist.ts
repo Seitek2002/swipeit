@@ -10,9 +10,9 @@ import {
 import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, notFound } from "../errors";
+import { checkShareUnlock, countActiveWishes } from "../share-threshold";
 import { parseInput, requireUser } from "./common";
 import { ownerReservationInfo } from "./guest";
-import { countSelfLikes } from "./swipes";
 
 const listOf = (db: Db, userId: string) => (db.wishlistItems[userId] ??= []);
 
@@ -41,7 +41,7 @@ export const getMyWishlist: Handler = async (ctx) => {
       ownerId: user.id,
       hideReservationCount: false,
     },
-    likeCount: countSelfLikes(db, user.id),
+    wishCount: countActiveWishes(db, user.id),
     ...ownerReservationInfo(db, user.id, ctx.clock.now()),
   };
   return response;
@@ -64,7 +64,7 @@ export const createCustomWish: Handler = async (ctx, { body }) => {
   ) {
     throw new ApiError(400, "VALIDATION", "Цена «от» больше цены «до»");
   }
-  const item = await ctx.db.write((db) => {
+  const result = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const items = listOf(db, user.id);
     const created: WishlistItem = {
@@ -77,10 +77,16 @@ export const createCustomWish: Handler = async (ctx, { body }) => {
       addedAt: nowIso(ctx.clock),
     };
     items.push(created);
-    return created;
+    // Своё желание считается в порог отправки наравне с «Хочу» из ленты.
+    const shareJustUnlocked = checkShareUnlock(db, user.id, created.addedAt);
+    return {
+      ...created,
+      wishCount: countActiveWishes(db, user.id),
+      shareJustUnlocked,
+    };
   });
   changed(ctx, ["wishlist"]);
-  return item;
+  return result;
 };
 
 const PatchItemSchema = z.object({
@@ -137,6 +143,7 @@ export const undeleteItem: Handler = async (ctx, { params, body }) => {
       if (entry.order >= item.order) entry.order += 1;
     });
     items.push(item);
+    checkShareUnlock(db, user.id, nowIso(ctx.clock));
   });
   changed(ctx, ["wishlist"]);
   return item;
@@ -237,6 +244,7 @@ export const restoreItem: Handler = async (ctx, { params, body }) => {
     }
     target.status = "active";
     delete target.given;
+    checkShareUnlock(db, user.id, nowIso(ctx.clock));
     return target;
   });
   changed(ctx, ["wishlist", "reservations"]);

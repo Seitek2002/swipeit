@@ -146,7 +146,7 @@ describe("свайпы друга по ссылке", () => {
     await swipe(friend.id, requestId, first.id, "like");
     const own = await call<WishlistResponse>("GET", "/wishlist", friend.id);
     expect(own.items).toHaveLength(0);
-    expect(own.likeCount).toBe(0);
+    expect(own.wishCount).toBe(0);
     const after = await feed(friend.id, requestId);
     expect(after.items.map((product) => product.id)).not.toContain(first.id);
   });

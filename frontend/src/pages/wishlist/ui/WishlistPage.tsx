@@ -48,7 +48,8 @@ import {
 import { GivenHintBanner, ReservationNote } from "./OwnerNotices";
 import { WishRow, useItemDisplay } from "./WishRow";
 
-const UNLOCK_LIKES = 5;
+// Порог отправки: 5 желаний в «Хочу», свои тоже (TECH_SPEC §6).
+const UNLOCK_WISHES = 5;
 
 type Tab = "given" | "want";
 type Sheet = {
@@ -98,7 +99,7 @@ export const WishlistPage = () => {
   const byId = new Map(active.map((item) => [item.id, item]));
 
   const unlocked = Boolean(data?.meta.shareUnlockedAt);
-  const likesLeft = Math.max(0, UNLOCK_LIKES - (data?.likeCount ?? 0));
+  const likesLeft = Math.max(0, UNLOCK_WISHES - (data?.wishCount ?? 0));
   // «Без даты» — строки повода нет (DESIGN.md §8.3, §8.4).
   const occasion =
     data?.meta.occasion?.kind === "just_because"
@@ -280,7 +281,7 @@ export const WishlistPage = () => {
             {active.length === 0 ? (
               <EmptyState
                 className="pt-6 pb-4"
-                title="Пока пусто. Свайпни пару подарков — они появятся здесь."
+                title="Пока пусто. Свайпай вправо то, что хочешь: с пяти желаний вишлист можно отправить друзьям."
                 action={
                   <Link
                     href={ROUTES.GIFTS}

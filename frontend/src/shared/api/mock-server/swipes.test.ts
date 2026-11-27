@@ -18,10 +18,10 @@ import {
   createRecordingRealtime,
 } from "./adapters/memory";
 import { parseProducts } from "./catalog-parse";
-import { SHARE_UNLOCK_LIKES } from "./handlers/swipes";
 import { createSeededRandom } from "./random";
 import { createSeedDb } from "./seed";
 import { type MockServer, createMockServer } from "./server";
+import { SHARE_UNLOCK_WISHES } from "./share-threshold";
 
 // Маршруты свайпов мок-сервера в окружении node, с базой в памяти.
 // Каталог — заглушка catalog-stub (24 товара).
@@ -44,7 +44,7 @@ let server: MockServer;
 let realtime: ReturnType<typeof createRecordingRealtime>;
 
 const call = <T>(
-  method: "GET" | "PATCH" | "POST",
+  method: "DELETE" | "GET" | "PATCH" | "POST",
   path: string,
   userId: null | string,
   body?: unknown,
@@ -146,24 +146,24 @@ describe("свайп в своей ленте", () => {
     const user = await newUser();
     const response = await swipe(user.id, id(0), "pass");
     expect(response.wishlistItemId).toBeUndefined();
-    expect(response.likeCount).toBe(0);
+    expect(response.wishCount).toBe(0);
     const list = await wishlist(user.id);
     expect(list.items).toHaveLength(0);
-    expect(list.likeCount).toBe(0);
+    expect(list.wishCount).toBe(0);
   });
 });
 
 describe("порог шеринга", () => {
-  it("likeCount растёт только от «Хочу» и «Очень хочу»", async () => {
+  it("wishCount растёт только от «Хочу» и «Очень хочу»", async () => {
     const user = await newUser();
-    expect((await swipe(user.id, id(0), "like")).likeCount).toBe(1);
-    expect((await swipe(user.id, id(1), "pass")).likeCount).toBe(1);
-    expect((await swipe(user.id, id(2), "superlike")).likeCount).toBe(2);
-    expect((await wishlist(user.id)).likeCount).toBe(2);
+    expect((await swipe(user.id, id(0), "like")).wishCount).toBe(1);
+    expect((await swipe(user.id, id(1), "pass")).wishCount).toBe(1);
+    expect((await swipe(user.id, id(2), "superlike")).wishCount).toBe(2);
+    expect((await wishlist(user.id)).wishCount).toBe(2);
   });
 
   it("на 5-м лайке шеринг открывается, на 6-м — уже открыт", async () => {
-    expect(SHARE_UNLOCK_LIKES).toBe(5);
+    expect(SHARE_UNLOCK_WISHES).toBe(5);
     const user = await newUser();
     const responses = await likeFirst(user.id, 4);
     expect(responses.every((r) => !r.shareUnlocked)).toBe(true);
@@ -171,7 +171,7 @@ describe("порог шеринга", () => {
 
     const fifth = await swipe(user.id, id(4), "like");
     expect(fifth).toMatchObject({
-      likeCount: 5,
+      wishCount: 5,
       shareJustUnlocked: true,
       shareUnlocked: true,
     });
@@ -180,7 +180,7 @@ describe("порог шеринга", () => {
 
     const sixth = await swipe(user.id, id(5), "like");
     expect(sixth).toMatchObject({
-      likeCount: 6,
+      wishCount: 6,
       shareJustUnlocked: false,
       shareUnlocked: true,
     });
@@ -192,18 +192,18 @@ describe("отмена свайпа", () => {
     const user = await newUser();
     await swipe(user.id, id(0), "like");
     await swipe(user.id, id(1), "superlike");
-    const result = await call<{ likeCount: number; productId: string }>(
+    const result = await call<{ productId: string; wishCount: number }>(
       "POST",
       "/swipes/undo",
       user.id,
       { context: SELF },
     );
-    expect(result).toEqual({ productId: id(1), likeCount: 1 });
+    expect(result).toEqual({ productId: id(1), wishCount: 1 });
     const list = await wishlist(user.id);
     expect(list.items.map((item) => item.source)).toEqual([
       { kind: "product", productId: id(0) },
     ]);
-    expect(list.likeCount).toBe(1);
+    expect(list.wishCount).toBe(1);
   });
 
   it("после отмены ниже 5 лайков шеринг остаётся открытым", async () => {
@@ -211,7 +211,7 @@ describe("отмена свайпа", () => {
     await likeFirst(user.id, 5);
     await call("POST", "/swipes/undo", user.id, { context: SELF });
     const list = await wishlist(user.id);
-    expect(list.likeCount).toBe(4);
+    expect(list.wishCount).toBe(4);
     expect(list.items).toHaveLength(4);
     expect(list.meta.shareUnlockedAt).toBeTruthy();
     // Повторный 5-й лайк не запускает бант второй раз.
@@ -250,11 +250,11 @@ describe("свайпы и лента", () => {
     const like = await swipe(user.id, id(0), "like", PICK);
     const superlike = await swipe(user.id, id(1), "superlike", PICK);
     expect(like.wishlistItemId).toBeUndefined();
-    expect(like.likeCount).toBe(0);
-    expect(superlike.likeCount).toBe(0);
+    expect(like.wishCount).toBe(0);
+    expect(superlike.wishCount).toBe(0);
     const list = await wishlist(user.id);
     expect(list.items).toHaveLength(0);
-    expect(list.likeCount).toBe(0);
+    expect(list.wishCount).toBe(0);
 
     const pick = await feedIds(user.id, "pick:r1");
     expect(pick).not.toContain(id(0));
@@ -283,7 +283,7 @@ describe("свайпы и лента", () => {
     expect(self).not.toContain(id(0));
     // Пропуск в подборе для друга остался.
     expect(await feedIds(user.id, "pick:r1")).not.toContain(id(3));
-    expect((await wishlist(user.id)).likeCount).toBe(1);
+    expect((await wishlist(user.id)).wishCount).toBe(1);
   });
 });
 
@@ -338,5 +338,41 @@ describe("realtime", () => {
       type: "db:changed",
       scope: ["swipes"],
     });
+  });
+});
+
+describe("порог отправки: свои желания считаются (TECH_SPEC §6)", () => {
+  type Created = { shareJustUnlocked: boolean; wishCount: number };
+  const custom = (userId: string, title: string) =>
+    call<Created & { id: string }>("POST", "/wishlist/items", userId, {
+      title,
+    });
+
+  it("3 «Хочу» + 2 своих → открыто, shareJustUnlocked один раз", async () => {
+    const user = await newUser();
+    await likeFirst(user.id, 3);
+    const fourth = await custom(user.id, "Свитер");
+    expect(fourth).toMatchObject({ wishCount: 4, shareJustUnlocked: false });
+    const fifth = await custom(user.id, "Шарф");
+    expect(fifth).toMatchObject({ wishCount: 5, shareJustUnlocked: true });
+    expect((await wishlist(user.id)).meta.shareUnlockedAt).toBeDefined();
+    const sixth = await swipe(user.id, id(5), "like");
+    expect(sixth).toMatchObject({ wishCount: 6, shareJustUnlocked: false });
+  });
+
+  it("до открытия удаление уменьшает wishCount, после — не закрывает", async () => {
+    const user = await newUser();
+    await likeFirst(user.id, 3);
+    const own = await custom(user.id, "Свитер");
+    await call("DELETE", `/wishlist/items/${own.id}`, user.id);
+    expect((await wishlist(user.id)).wishCount).toBe(3);
+
+    await custom(user.id, "Шарф");
+    const unlocked = await custom(user.id, "Плед");
+    expect(unlocked.shareJustUnlocked).toBe(true);
+    await call("DELETE", `/wishlist/items/${unlocked.id}`, user.id);
+    const after = await wishlist(user.id);
+    expect(after.wishCount).toBe(4);
+    expect(after.meta.shareUnlockedAt).toBeDefined();
   });
 });

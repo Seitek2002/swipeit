@@ -122,7 +122,8 @@ export const GiftDeck = ({
 
   useEffect(() => () => clearTimeout(bowTimer.current), []);
 
-  const likeCount = likes ?? summary.likeCount;
+  // Лента над колодой — по желаниям в «Хочу», свои тоже (TECH_SPEC §6).
+  const likeCount = likes ?? summary.wishCount;
   const showRibbon =
     !hideRibbon && summary.isLoaded && (!summary.shareUnlocked || drawingBow);
 
@@ -274,7 +275,7 @@ export const GiftDeck = ({
     swipedRef.current = [...swipedRef.current, product];
     const myEpoch = epoch.current;
     if (isLike(direction)) {
-      setLikes((count) => (count ?? summary.likeCount) + 1);
+      setLikes((count) => (count ?? summary.wishCount) + 1);
       onLike?.(product, direction);
     }
     // Подробности карточки показывают первый вариант выбранным («Мне
@@ -291,7 +292,7 @@ export const GiftDeck = ({
       }),
     ).then(
       (response) => {
-        setLikes(response.likeCount);
+        setLikes(response.wishCount);
         if (response.tasteJustFormed && context.kind === "self") {
           showTasteToast();
         }
@@ -331,7 +332,7 @@ export const GiftDeck = ({
       setLikes((count) => Math.max(0, (count ?? 1) - 1));
     enqueue(() => undoSwipe(context)).then(
       (response) => {
-        setLikes(response.likeCount);
+        setLikes(response.wishCount);
         refreshAfterSwipe();
       },
       () => toast("Не получилось вернуть", { tone: "error" }),

@@ -9,6 +9,7 @@ import { type Handler, nowIso } from "../context";
 import type { Db } from "../db";
 import { notFound } from "../errors";
 import { contextKey } from "../feed";
+import { checkShareUnlock, countActiveWishes } from "../share-threshold";
 import {
   computeTaste,
   inferInterests,
@@ -19,7 +20,6 @@ import { parseInput, requireUser } from "./common";
 
 // Порог шеринга: после 5 «Хочу» вишлист можно отправить (решение владельца
 // от 26.11.2026). Считаются лайки, а не свайпы вообще.
-export const SHARE_UNLOCK_LIKES = 5;
 
 const SwipeBodySchema = z.object({
   productId: z.string().min(1),
@@ -52,17 +52,9 @@ const refreshTaste = (db: Db, user: User, products: readonly Product[]) => {
   return before.join() !== inferInterests(taste, user).join();
 };
 
-export const countSelfLikes = (db: Db, userId: string) =>
-  db.productSwipes.filter(
-    (swipe) =>
-      swipe.userId === userId &&
-      swipe.context.kind === "self" &&
-      isLike(swipe.decision),
-  ).length;
-
 // POST /swipes — решение по карточке. «Хочу» и «Очень хочу» в своей ленте
-// кладут товар в вишлист; на 5-м лайке ставится shareUnlockedAt, и ответ
-// говорит клиенту запустить бант (TECH_SPEC §6).
+// кладут товар в вишлист; на 5-м желании в «Хочу» ставится shareUnlockedAt,
+// и ответ говорит клиенту запустить бант (TECH_SPEC §6 «Порог отправки»).
 export const createSwipe: Handler = async (ctx, { body }) => {
   const input = parseInput(SwipeBodySchema, body);
   const products = await ctx.catalog.products();
@@ -143,17 +135,9 @@ export const createSwipe: Handler = async (ctx, { body }) => {
       }
     }
 
-    const likeCount = countSelfLikes(db, user.id);
-    const meta = (db.wishlistMeta[user.id] ??= {
-      ownerId: user.id,
-      hideReservationCount: false,
-    });
-    let shareJustUnlocked = false;
-    if (!meta.shareUnlockedAt && likeCount >= SHARE_UNLOCK_LIKES) {
-      // Однажды открывшись, шеринг больше не закрывается.
-      meta.shareUnlockedAt = at;
-      shareJustUnlocked = true;
-    }
+    const shareJustUnlocked = checkShareUnlock(db, user.id, at);
+    const wishCount = countActiveWishes(db, user.id);
+    const meta = db.wishlistMeta[user.id];
     // Вкус — только по своей ленте: выбор по чужой ссылке-фильтру его не
     // трогает (TECH_SPEC §6 «Вкус»).
     let tasteJustFormed = false;
@@ -162,8 +146,8 @@ export const createSwipe: Handler = async (ctx, { body }) => {
       tasteJustFormed = isTasteJustFormed(tasteBefore, user.taste, user);
     }
     return {
-      likeCount,
-      shareUnlocked: Boolean(meta.shareUnlockedAt),
+      wishCount,
+      shareUnlocked: Boolean(meta?.shareUnlockedAt),
       shareJustUnlocked,
       tasteJustFormed,
       wishlistItemId,
@@ -213,7 +197,7 @@ export const undoSwipe: Handler = async (ctx, { body }) => {
     }
     return {
       productId: swipe.productId,
-      likeCount: countSelfLikes(db, user.id),
+      wishCount: countActiveWishes(db, user.id),
       wishlistChanged: context.kind === "self" && isLike(swipe.decision),
       interestsChanged:
         context.kind === "self" && refreshTaste(db, user, products),
@@ -228,7 +212,7 @@ export const undoSwipe: Handler = async (ctx, { body }) => {
     ],
     by: ctx.userId ?? "",
   });
-  return { productId: result.productId, likeCount: result.likeCount };
+  return { productId: result.productId, wishCount: result.wishCount };
 };
 
 // POST /swipes/restart — «Начать заново» в конце колоды: пропущенные
