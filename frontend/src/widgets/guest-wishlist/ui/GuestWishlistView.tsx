@@ -2,7 +2,7 @@
 
 import { type ReactNode, useState } from "react";
 
-import { Gift } from "lucide-react";
+import { Gift, Star } from "lucide-react";
 
 import { NAME_CAPTIONS, useRequireName } from "@/features/ask-name";
 import { ProductDetailsSheet } from "@/features/product-details";
@@ -127,6 +127,20 @@ const GuestWishCard = ({
         </button>
         <div className="px-1 pt-3">
           <h3 className="text-title-2">{title}</h3>
+          {/* «Очень хочу» владельца видно и гостю (auto-tasks U05): такие
+              желания и так стоят первыми — теперь понятно почему.
+              «Мандарин-чернила», а не шампань: на бумаге шампань бледная. */}
+          {item.priority === "top" && (
+            <p className="text-caption text-mandarin-ink mt-1 flex items-center gap-1 font-semibold">
+              <Star
+                aria-hidden
+                size={14}
+                strokeWidth={1.75}
+                className="fill-current"
+              />
+              Очень хочет
+            </p>
+          )}
           {price && <p className="text-price mt-1.5">{price}</p>}
           {variant && (
             <p className="text-caption text-ink-soft mt-1.5">
