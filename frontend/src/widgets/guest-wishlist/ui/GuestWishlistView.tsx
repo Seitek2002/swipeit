@@ -2,17 +2,23 @@
 
 import { type ReactNode, useState } from "react";
 
-import { ExternalLink, Gift } from "lucide-react";
+import { Gift } from "lucide-react";
 
 import { NAME_CAPTIONS, useRequireName } from "@/features/ask-name";
 import { ProductDetailsSheet } from "@/features/product-details";
-import { type NameGuard, ReserveControl } from "@/features/reserve-gift";
+import {
+  type BuyLink,
+  type NameGuard,
+  ReserveControl,
+} from "@/features/reserve-gift";
 
 import {
   type Product,
+  cheapestOffer,
   describeVariant,
   imageForChoice,
-  storeLabels,
+  storeLabel,
+  storeOffers,
   useProduct,
 } from "@/entities/product";
 
@@ -22,6 +28,22 @@ import { formatPrice, genitive, occasionLabel } from "@/shared/lib/format";
 import { Avatar, StoreTag } from "@/shared/ui";
 
 type Item = GuestWishlist["items"][number];
+
+// Куда идти покупать после брони (DESIGN.md §8.5): товар — в самый дешёвый
+// магазин, своё желание — по ссылке, которую дал владелец.
+const buyLinkOf = (item: Item, product?: Product): BuyLink | undefined => {
+  if (product) {
+    const offer = cheapestOffer(product);
+    return { href: offer.url, store: storeLabel(offer) };
+  }
+  const url = item.custom?.url;
+  if (!url) return undefined;
+  try {
+    return { href: url, store: new URL(url).hostname.replace(/^www\./, "") };
+  } catch {
+    return { href: url };
+  }
+};
 
 type Props = {
   // Внизу страницы: «Собрать свой вишлист» у гостя по ссылке (T09).
@@ -105,19 +127,13 @@ const GuestWishCard = ({
           )}
           <div className="mt-3 flex flex-wrap gap-1.5">
             {product &&
-              storeLabels(product).map((store) => (
-                <StoreTag key={store}>{store}</StoreTag>
+              storeOffers(product).map(({ label, offer }) => (
+                <StoreTag key={label} href={offer.url}>
+                  {label}
+                </StoreTag>
               ))}
             {item.custom?.url && (
-              <a
-                href={item.custom.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-chip bg-paper-2 text-ink-soft inline-flex h-7 items-center gap-1 px-2.5 text-[13px] font-medium"
-              >
-                Где купить
-                <ExternalLink aria-hidden size={14} strokeWidth={1.75} />
-              </a>
+              <StoreTag href={item.custom.url}>Где купить</StoreTag>
             )}
           </div>
           {!readOnly && (
@@ -126,6 +142,7 @@ const GuestWishCard = ({
                 ownerId={ownerId}
                 itemKey={item.key}
                 nameGuard={nameGuard}
+                buy={buyLinkOf(item, product)}
               />
             </div>
           )}

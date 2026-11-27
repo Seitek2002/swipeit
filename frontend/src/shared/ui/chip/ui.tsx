@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 
-import { Check, Lock, X } from "lucide-react";
+import { Check, ExternalLink, Lock, X } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 
@@ -90,21 +90,36 @@ export const Chip = ({
   );
 };
 
+const storeTagBase =
+  "rounded-chip bg-paper-2 text-ink-soft inline-flex h-7 items-center px-2.5 text-[13px] leading-[18px] font-medium whitespace-nowrap";
+
 // Чип-магазин на бирке: «Бумага-2» с «Чернилами-мягкими», только название
-// текстом, без логотипов (DESIGN.md §7 Chip).
+// текстом, без логотипов (DESIGN.md §7 Chip). С href — ссылка в магазин в
+// новой вкладке с ExternalLink: серая плашка без значка не выглядит
+// нажимаемой (UX-аудит 27.11.2026, M3). Зона нажатия — 44px по высоте.
 export const StoreTag = ({
   children,
   className,
+  href,
 }: {
   children: ReactNode;
   className?: string;
-}) => (
-  <span
-    className={cn(
-      "rounded-chip bg-paper-2 text-ink-soft inline-flex h-7 items-center px-2.5 text-[13px] leading-[18px] font-medium whitespace-nowrap",
-      className,
-    )}
-  >
-    {children}
-  </span>
-);
+  href?: string;
+}) =>
+  href ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        storeTagBase,
+        "relative gap-1 before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']",
+        className,
+      )}
+    >
+      {children}
+      <ExternalLink aria-hidden size={14} strokeWidth={1.75} />
+    </a>
+  ) : (
+    <span className={cn(storeTagBase, className)}>{children}</span>
+  );

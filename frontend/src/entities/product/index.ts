@@ -1,5 +1,6 @@
 export { useFeedPage, useProduct } from "./api";
 export {
+  cheapestOffer,
   colorSwatches,
   describeVariant,
   EMPTY_FILTERS,
@@ -11,6 +12,7 @@ export {
   type ProductImage,
   storeLabel,
   storeLabels,
+  storeOffers,
   type VariantGroup,
   type VariantOption,
 } from "./model";
