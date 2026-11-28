@@ -152,6 +152,26 @@ describe("лимиты по сессии (R01)", () => {
     expect((await call(first, "GET", "/me")).statusCode).toBe(429);
     expect((await call(second, "GET", "/me")).statusCode).toBe(200);
   }, 120_000);
+
+  it("R09: шаги клиента — 31-й за минуту 429, через минуту снова можно", async () => {
+    const person = asPerson(await signUp());
+    for (let index = 0; index < 30; index += 1) {
+      expect(
+        (await call(person, "POST", "/me/funnel", { step: "offline_seen" }))
+          .statusCode,
+      ).toBe(200);
+    }
+    const blocked = await call(person, "POST", "/me/funnel", {
+      step: "offline_seen",
+    });
+    expect(blocked.statusCode).toBe(429);
+    expect((await call(person, "GET", "/me")).statusCode).toBe(200);
+    clock.advance(60_000);
+    expect(
+      (await call(person, "POST", "/me/funnel", { step: "offline_seen" }))
+        .statusCode,
+    ).toBe(200);
+  });
 });
 
 describe("защита (B17)", () => {

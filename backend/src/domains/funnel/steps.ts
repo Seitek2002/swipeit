@@ -1,3 +1,4 @@
+import { CLIENT_FUNNEL_STEPS } from "@swipeit/core/api/funnel";
 import { toDateKey } from "@swipeit/core/format";
 import { and, eq, sql } from "drizzle-orm";
 
@@ -50,6 +51,8 @@ export const FUNNEL_STEPS = [
   "santa_removed_after_draw",
   // R04: жеребьёвка в игре, где есть тёзки (двойник с другого телефона?).
   "santa_drawn_with_namesakes",
+  // R09: шаги клиента — POST /me/funnel.
+  ...CLIENT_FUNNEL_STEPS,
 ] as const;
 
 export type FunnelStep = (typeof FUNNEL_STEPS)[number];

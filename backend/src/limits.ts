@@ -9,6 +9,8 @@ export type LimitConfig = {
   // Все запросы.
   allIp: Rule;
   allSession: Rule;
+  // Шаги воронки клиента (R09) — на сессию.
+  funnel: Rule;
   // Брони — на человека.
   reservations: Rule;
   // GET /share/:code (и /s/:code — B16).
@@ -23,6 +25,7 @@ const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 
 export const limitConfigFrom = (env: {
+  RATE_FUNNEL: number;
   RATE_ALL_IP: number;
   RATE_ALL_SESSION: number;
   RATE_RESERVATIONS: number;
@@ -38,6 +41,7 @@ export const limitConfigFrom = (env: {
   shareSession: { limit: env.RATE_SHARE_SESSION, windowMs: MINUTE },
   shareIp: { limit: env.RATE_SHARE_IP, windowMs: MINUTE },
   reservations: { limit: env.RATE_RESERVATIONS, windowMs: MINUTE },
+  funnel: { limit: env.RATE_FUNNEL, windowMs: MINUTE },
 });
 
 export type Limiter = {
@@ -94,6 +98,9 @@ export const rulesFor = (
         ? { name: "share", rule: config.shareSession }
         : { name: "share", rule: config.shareIp },
     );
+  }
+  if (routeKey === "POST /me/funnel" && hasSession) {
+    rules.push({ name: "funnel", rule: config.funnel });
   }
   if (routeKey === "POST /reservations" && hasSession) {
     rules.push({ name: "reservations", rule: config.reservations });

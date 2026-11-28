@@ -54,6 +54,8 @@ export {
   isNameRequired,
 } from "./mock-server/errors";
 export { httpTransport } from "./http-transport";
+// Клиентские шаги воронки (remote, auto-tasks-pm-3 R09).
+export { type ClientFunnelStep, flushFunnelSteps, trackStep } from "./funnel";
 // Приглашения в план и игру короткой ссылкой (remote, BACKEND.md §6.2).
 export { createInviteLink, getShareTarget } from "./invites/requests";
 export {

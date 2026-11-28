@@ -579,3 +579,50 @@ describe("X03 и X07: вишлист по ссылке и превью приг�
     expect(santa.json()).toMatchObject({ role: "guest", me: null });
   });
 });
+
+describe("брони без профиля (B15)", () => {
+  it("гость по короткой ссылке без профиля видит занятое; без кода или с чужим кодом — пусто", async () => {
+    const { owner, productIds } = await readyOwner();
+    const { code } = await share(owner);
+    const friend = await server.newUser({ name: "Бакыт" });
+    const made = await reserve(friend, {
+      ownerId: owner.id,
+      itemKey: productIds[0] ?? "",
+      share: code,
+    });
+    expect(made.statusCode).toBe(200);
+
+    const anonymous = (query: string) =>
+      server.request(null, "GET", `/reservations?ownerId=${owner.id}${query}`);
+    const seen = await anonymous(`&share=${code}`);
+    expect(seen.statusCode).toBe(200);
+    expect(seen.json()).toEqual({
+      role: "guest",
+      items: [
+        {
+          id: made.json().id,
+          itemKey: productIds[0],
+          mine: false,
+          closed: false,
+        },
+      ],
+    });
+    expect(seen.body).not.toContain(friend.id);
+    for (const query of ["", "&share=AAAAAAAAAA"]) {
+      expect((await anonymous(query)).json()).toEqual({
+        role: "guest",
+        items: [],
+      });
+    }
+    // Бронировать без профиля по-прежнему нельзя: сначала профиль (§3.1).
+    expect(
+      (
+        await server.request(null, "POST", "/reservations", {
+          ownerId: owner.id,
+          itemKey: productIds[1] ?? "",
+          share: code,
+        })
+      ).statusCode,
+    ).toBe(401);
+  });
+});

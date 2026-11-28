@@ -31,6 +31,7 @@ export { Switch } from "./switch";
 export { TextArea, TextField } from "./text-field";
 export { toast, Toaster, type ToastTone, useCurrentToast } from "./toast";
 export {
+  IN_APP_JOIN_NOTE_KEY,
   InAppBrowserNote,
   InAppBrowserText,
   copyPageLink,

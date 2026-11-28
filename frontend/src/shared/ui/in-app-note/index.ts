@@ -1,4 +1,5 @@
 export {
+  IN_APP_JOIN_NOTE_KEY,
   InAppBrowserNote,
   InAppBrowserText,
   copyPageLink,

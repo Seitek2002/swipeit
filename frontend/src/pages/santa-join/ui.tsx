@@ -28,6 +28,7 @@ import { REMOTE_COPY, ROUTES } from "@/shared/config";
 import { useAppMode } from "@/shared/lib/app-status";
 import { useInviteCode } from "@/shared/lib/dom";
 import { pluralize } from "@/shared/lib/format";
+import { inAppJoinText } from "@/shared/lib/in-app-browser";
 import { useSessionStore } from "@/shared/store";
 import {
   AvatarStack,
@@ -35,6 +36,8 @@ import {
   Button,
   ContentSkeleton,
   EmptyState,
+  IN_APP_JOIN_NOTE_KEY,
+  InAppBrowserNote,
   Screen,
   ScreenBody,
   buttonClassName,
@@ -282,6 +285,17 @@ const JoinContent = () => {
           После жеребьёвки ты узнаешь, кому даришь, — и увидишь его вишлист в
           рамках бюджета. Кто дарит тебе, останется сюрпризом.
         </p>
+        {!closed && (
+          // Встроенный браузер мессенджера (R04): вступишь здесь — из Chrome
+          // потом откроется другой профиль, и человек вступит второй раз.
+          // Один раз за сессию, как в Q08.
+          <InAppBrowserNote
+            tone="velvet"
+            className="mt-4"
+            sessionKey={IN_APP_JOIN_NOTE_KEY}
+            text={(browser) => inAppJoinText(browser, "santa")}
+          />
+        )}
       </div>
       <div className="flex-none px-5 pt-2 pb-[calc(env(safe-area-inset-bottom)+16px)]">
         {closed ? (

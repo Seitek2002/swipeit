@@ -9,7 +9,10 @@ export type { HttpMethod };
 // refetch — фоновое перечитывание экрана, а не открытие: сервер remote по
 // заголовку x-swipeit-refetch: 1 не ставит дружбу по ссылке (Q07). Мок и
 // LAN его не читают.
-export type RequestOptions = { refetch?: boolean };
+//
+// quiet — служебный запрос без последствий для экрана (воронка R09): 401 не
+// открывает «Сессия закончилась», 429 не считается увиденным человеком.
+export type RequestOptions = { quiet?: boolean; refetch?: boolean };
 
 export type Transport = {
   request<T>(

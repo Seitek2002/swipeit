@@ -5,6 +5,7 @@ import {
   type RemoteInfo,
   apiUrl,
   detectEnvironment,
+  flushFunnelSteps,
   getDemoSettings,
   getMe,
   httpTransport,
@@ -15,12 +16,14 @@ import {
   remoteTransport,
   remoteWsUrl,
   setTransport,
+  trackStep,
   uploadRemoteImage,
   warmLocalApi,
 } from "@/shared/api";
 import { setLanClock } from "@/shared/lib/clock";
 import { setRemoteImageStore, setShareOrigin } from "@/shared/lib/dom";
 import { warmPreloadedImages } from "@/shared/lib/image-cache";
+import { detectInAppBrowser } from "@/shared/lib/in-app-browser";
 import {
   createRemoteRealtime,
   createWsRealtime,
@@ -126,6 +129,17 @@ const syncRemoteClock = async (base: string) => {
   }
 };
 
+// Где открыли (auto-tasks-pm-3 R09): встроенный браузер мессенджера и
+// поставленное приложение. iOS не знает display-mode у «На экран Домой» в
+// старых версиях — там navigator.standalone.
+const trackLaunchSteps = () => {
+  if (detectInAppBrowser(navigator.userAgent)) trackStep("in_app_browser_seen");
+  const standalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  if (standalone) trackStep("pwa_standalone");
+};
+
 // Первая сверка часов держит запуск не дольше этого: сервер может не
 // ответить, а «Нет связи» покажет WebSocket.
 const CLOCK_WAIT_MS = 1500;
@@ -155,15 +169,21 @@ const startRemote = async ({ base }: RemoteInfo) => {
     if (!userId) markRemoteSessionExpired();
   }
   useSessionStore.getState().setActiveUser(userId);
+  // Профиля ещё нет — шаги подождут его (shared/api/funnel).
+  trackLaunchSteps();
+  flushFunnelSteps();
 
   const realtime = createRemoteRealtime(remoteWsUrl(base), {
     getToken: getRemoteToken,
     onUnauthorized: markRemoteSessionExpired,
   });
   setRealtime(realtime);
-  // Профиль создан (появился токен) или сменился — новый сокет с новым hello.
+  // Профиль создан (появился токен) или сменился — новый сокет с новым hello
+  // и шаги воронки, которые ждали профиля.
   useSessionStore.subscribe((state, previous) => {
-    if (state.activeUserId !== previous.activeUserId) realtime.reconnect();
+    if (state.activeUserId === previous.activeUserId) return;
+    realtime.reconnect();
+    flushFunnelSteps();
   });
   // Другая вкладка вышла, удалила профиль или создала новый — токен сменился,
   // эта вкладка открывается заново тем же человеком, что и остальные.
@@ -171,10 +191,16 @@ const startRemote = async ({ base }: RemoteInfo) => {
     if (event.key === REMOTE_TOKEN_KEY) window.location.reload();
   });
   // Вернулась связь — сверить часы заново (сервер мог перезапуститься).
+  // Пока связи нет, висит тост «Нет связи с сервером» (app/providers), но и
+  // запрос воронки не дойдёт — offline_seen уходит, когда связь вернулась.
+  let offlineSeen = false;
   subscribeConnection(() => {
-    if (getConnectionStatus() === "online") {
-      void syncRemoteClock(base).catch(() => undefined);
+    if (getConnectionStatus() === "offline") {
+      offlineSeen = true;
+      return;
     }
+    void syncRemoteClock(base).catch(() => undefined);
+    if (offlineSeen) trackStep("offline_seen");
   });
   await Promise.race([
     syncRemoteClock(base).catch(() => undefined),

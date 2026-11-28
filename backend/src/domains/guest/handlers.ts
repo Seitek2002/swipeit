@@ -353,7 +353,8 @@ const canReserve = async (
 // Без доступа — пустой список: не говорим, есть ли такой вишлист.
 export const getReservations: ServerHandler = async (ctx, { query }) => {
   const input = parseInput(ReservationsQueryInputSchema, query);
-  const me = await readMe(ctx);
+  // Без профиля — гость по короткой ссылке (B15): видит занятое по коду.
+  const me = ctx.userId ? await readMe(ctx) : null;
   const target = await ownerRefOf(ctx.tx, input.ownerId);
   if (target.kind === "missing") {
     const view: ReservationsView = { role: "guest", items: [] };
@@ -362,7 +363,7 @@ export const getReservations: ServerHandler = async (ctx, { query }) => {
 
   let activeKeys = new Set<string>();
   if (target.kind === "user") {
-    if (target.owner.id === me.id) {
+    if (me && target.owner.id === me.id) {
       const items = await itemsOf(ctx.tx, me.id);
       const meta = rowToMeta(me.id, await readMeta(ctx.tx, me.id));
       const info = await ownerReservationInfo(
@@ -378,7 +379,10 @@ export const getReservations: ServerHandler = async (ctx, { query }) => {
       };
       return view;
     }
-    if (!(await canReserve(ctx.tx, me.id, target.owner.id, input.share))) {
+    const allowed = me
+      ? await canReserve(ctx.tx, me.id, target.owner.id, input.share)
+      : await isWishlistCode(ctx.tx, input.share, target.owner.id);
+    if (!allowed) {
       const view: ReservationsView = { role: "guest", items: [] };
       return view;
     }
@@ -405,7 +409,7 @@ export const getReservations: ServerHandler = async (ctx, { query }) => {
       .map((row) => ({
         id: row.id,
         itemKey: row.itemKey,
-        mine: row.reserverId === me.id,
+        mine: row.reserverId === me?.id,
         closed: Boolean(row.closedAt),
       })),
   };

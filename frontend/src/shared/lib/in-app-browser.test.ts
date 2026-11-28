@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { detectInAppBrowser } from "./in-app-browser";
+import { detectInAppBrowser, inAppJoinText } from "./in-app-browser";
 
 describe("detectInAppBrowser (Q08)", () => {
   it("узнаёт Telegram Android, Instagram iOS и Facebook", () => {
@@ -33,5 +33,16 @@ describe("detectInAppBrowser (Q08)", () => {
       ),
     ).toBeNull();
     expect(detectInAppBrowser("")).toBeNull();
+  });
+});
+
+describe("inAppJoinText (R04)", () => {
+  it("игра и план — свой текст с названием браузера", () => {
+    expect(inAppJoinText("telegram", "santa")).toBe(
+      "Ты в браузере Telegram — игра сохранится только здесь. Чтобы открывать её из Chrome, скопируй ссылку и вступи там",
+    );
+    expect(inAppJoinText("instagram", "plan")).toBe(
+      "Ты в браузере Instagram — план сохранится только здесь. Чтобы открывать его из Chrome, скопируй ссылку и вступи там",
+    );
   });
 });

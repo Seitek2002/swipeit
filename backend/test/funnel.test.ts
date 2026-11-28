@@ -408,6 +408,26 @@ describe("воронка P09", () => {
     expect((await counts()).santa_drawn_with_namesakes).toBe(1);
   });
 
+  it("R09: шаги клиента — по одному на человека, неизвестный шаг — VALIDATION, без профиля — 401", async () => {
+    const first = await server.newUser({ name: "Айгерим" });
+    const second = await server.newUser({ name: "Азамат" });
+    const step = (user: TestUser | null, name: string) =>
+      server.request(user, "POST", "/me/funnel", { step: name });
+    expect((await step(first, "share_channel_copy")).statusCode).toBe(200);
+    await step(first, "share_channel_copy");
+    await step(second, "share_channel_copy");
+    await step(second, "in_app_browser_seen");
+    const wrong = await step(first, "hacked_step");
+    expect(wrong.statusCode).toBe(400);
+    expect(wrong.json()).toMatchObject({ code: "VALIDATION" });
+    expect((await step(null, "offline_seen")).statusCode).toBe(401);
+    const after = await counts();
+    expect(after.share_channel_copy).toBe(2);
+    expect(after.in_app_browser_seen).toBe(1);
+    expect(after.offline_seen).toBeUndefined();
+    expect(after.hacked_step).toBeUndefined();
+  });
+
   it("в funnel_daily нет id людей, имён и кодов ссылок", async () => {
     const { owner, guest, loner, code } = await scenario();
     const { rows } = await database.pool.query<{ row: string }>(

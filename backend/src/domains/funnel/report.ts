@@ -34,6 +34,15 @@ export const FUNNEL_CONVERSIONS: [from: FunnelStep, to: FunnelStep][] = [
   ["wishlist_shared", "share_with_birthday"],
   // R06: участники Санты собирают вишлист для своего Санты.
   ["santa_joined", "santa_member_wishlist"],
+  // R09: как делятся вишлистом, где открывают, что видели.
+  ["wishlist_shared", "share_channel_system"],
+  ["wishlist_shared", "share_channel_copy"],
+  ["wishlist_shared", "share_channel_qr"],
+  ["profile_created", "in_app_browser_seen"],
+  ["profile_created", "pwa_standalone"],
+  ["profile_created", "session_expired_seen"],
+  ["profile_created", "offline_seen"],
+  ["profile_created", "rate_limited_seen"],
 ];
 
 // Откуда пришли профили за период (Q01): users.created_via. Только

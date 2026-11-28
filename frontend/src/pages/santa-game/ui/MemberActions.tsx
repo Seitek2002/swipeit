@@ -18,13 +18,16 @@ import {
 import { ROUTES } from "@/shared/config";
 import { Button, ConfirmDialog, toast } from "@/shared/ui";
 
+import { removeMemberCopy } from "../model/member-actions";
+
 const onError = (error: Error) =>
   toast(isApiError(error) ? error.message : "Не получилось. Попробуй ещё раз", {
     tone: "error",
   });
 
-// «Убрать из игры» у строки участника — организатору до жеребьёвки
-// (auto-tasks-pm-2 Q05): ссылку переслали дальше или коллега передумал.
+// «Убрать из игры» у строки участника — организатору (auto-tasks-pm-2 Q05):
+// ссылку переслали дальше или коллега передумал. После жеребьёвки (R05) —
+// коллега заболел или уволился: Санта убранного получит новое письмо.
 // Убранный снова вступить не сможет.
 export const RemoveMemberButton = ({
   view,
@@ -35,6 +38,11 @@ export const RemoveMemberButton = ({
 }) => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const copy = removeMemberCopy({
+    name: member.name,
+    gameTitle: view.game.title,
+    drawn: view.game.status === "drawn",
+  });
   const remove = useMutation({
     mutationFn: () => removeSantaMember(view.game.id, member.id),
     onSuccess: (next) => {
@@ -62,8 +70,8 @@ export const RemoveMemberButton = ({
         onClose={() => setOpen(false)}
         onConfirm={() => remove.mutate()}
         isLoading={remove.isPending}
-        title="Убрать из игры?"
-        description={`${member.name} не будет участвовать в «${view.game.title}» и не сможет вступить снова`}
+        title={copy.title}
+        description={copy.description}
         confirmLabel="Убрать"
         variant="danger"
       />

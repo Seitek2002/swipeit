@@ -4,6 +4,7 @@ import { type ReactNode, useRef, useState } from "react";
 
 import { Copy, QrCode as QrIcon, Share2 } from "lucide-react";
 
+import { trackStep } from "@/shared/api";
 import {
   type SharePayload,
   canNativeShare,
@@ -23,6 +24,10 @@ type Props = {
   // Ссылка собирается по требованию: перед отправкой сохраняется повод,
   // сообщение и т. п.
   getPayload: () => Promise<SharePayload>;
+  // Что отправляем. Для вишлиста нажатие кнопки — шаг воронки remote
+  // (share_channel_*, auto-tasks-pm-3 R09: находят ли WhatsApp за
+  // «Поделиться»). Остальные отправки воронка не считает.
+  kind?: "wishlist";
   // Ошибку, которую экран разбирает сам (NAME_REQUIRED → спросить имя),
   // он забирает себе: вернул true — тоста нет, retry повторяет нажатие.
   onError?: (error: unknown, retry: () => void) => boolean;
@@ -31,6 +36,14 @@ type Props = {
   // тогда и первая кнопка отправки вторичная: мандарин один (DESIGN.md §1).
   secondary?: boolean;
 };
+
+type Channel = "copy" | "qr" | "system";
+
+const CHANNEL_STEP = {
+  system: "share_channel_system",
+  copy: "share_channel_copy",
+  qr: "share_channel_qr",
+} as const;
 
 const ICON = { size: 22, strokeWidth: 1.75, "aria-hidden": true } as const;
 
@@ -92,6 +105,7 @@ const revealQr = (node: HTMLDivElement | null) => {
 
 export const ShareActions = ({
   getPayload,
+  kind,
   onError,
   qrLabel,
   secondary = false,
@@ -107,18 +121,26 @@ export const ShareActions = ({
 
   // fail — убрать то, что нажатие успело открыть; again — как повторить
   // нажатие, когда экран разобрал ошибку сам (onError).
+  //
+  // channel — какой кнопкой отправили: шаг воронки по нажатию, а не по
+  // успеху (человек мог закрыть системное окно — кнопку он всё равно нашёл).
   const run = async (
     action: (payload: SharePayload) => Promise<void> | void,
-    { fail, again }: { again?: () => void; fail?: () => void } = {},
+    {
+      channel,
+      fail,
+      again,
+    }: { again?: () => void; channel?: Channel; fail?: () => void } = {},
   ) => {
     if (busyRef.current) return;
+    if (channel && kind === "wishlist") trackStep(CHANNEL_STEP[channel]);
     busyRef.current = true;
     setBusy(true);
     try {
       await action(await getPayload());
     } catch (error) {
       fail?.();
-      const retry = again ?? (() => void run(action));
+      const retry = again ?? (() => void run(action, { channel }));
       if (onError?.(error, retry)) return;
       toast("Не получилось собрать ссылку", {
         tone: "error",
@@ -131,19 +153,22 @@ export const ShareActions = ({
   };
 
   const copy = () =>
-    void run(async (payload) => {
-      const ok = await copyText(
-        copyWithText && payload.text
-          ? `${payload.text} ${payload.url}`
-          : payload.url,
-      );
-      const done = copyWithText
-        ? "Текст со ссылкой скопирован"
-        : "Ссылка скопирована";
-      toast(ok ? done : "Не получилось скопировать", {
-        tone: ok ? "success" : "error",
-      });
-    });
+    void run(
+      async (payload) => {
+        const ok = await copyText(
+          copyWithText && payload.text
+            ? `${payload.text} ${payload.url}`
+            : payload.url,
+        );
+        const done = copyWithText
+          ? "Текст со ссылкой скопирован"
+          : "Ссылка скопирована";
+        toast(ok ? done : "Не получилось скопировать", {
+          tone: ok ? "success" : "error",
+        });
+      },
+      { channel: "copy" },
+    );
 
   // Главная — первая кнопка ряда, если на экране нет своей главной.
   const primaryFirst = !secondary;
@@ -159,7 +184,10 @@ export const ShareActions = ({
             primary={primaryFirst}
             busy={busy}
             onClick={() =>
-              void run((payload) => shareNative(payload).then(() => undefined))
+              void run(
+                (payload) => shareNative(payload).then(() => undefined),
+                { channel: "system" },
+              )
             }
           />
         )}
@@ -181,7 +209,9 @@ export const ShareActions = ({
           onClick={() =>
             qrUrl
               ? setQrUrl(null)
-              : void run((payload) => setQrUrl(payload.url))
+              : void run((payload) => setQrUrl(payload.url), {
+                  channel: "qr",
+                })
           }
         />
       </div>

@@ -25,6 +25,7 @@ import {
   updateDate,
 } from "./domains/dates/handlers";
 import { getUser, listFriends } from "./domains/friends/handlers";
+import { reachClientStep } from "./domains/funnel/handlers";
 import {
   createReservation,
   createShareLink,
@@ -109,6 +110,7 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "PATCH /me": updateMe,
   "POST /me/hints": markHintSeen,
   "POST /auth/logout": logout,
+  "POST /me/funnel": reachClientStep,
   "DELETE /me": deleteMe,
   "GET /me/dates": listDates,
   "POST /me/dates": createDate,

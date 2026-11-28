@@ -50,6 +50,11 @@ import {
   toast,
 } from "@/shared/ui";
 
+import {
+  ASK_OWNER_TO_REMOVE,
+  canRemoveMember,
+  leaveAction,
+} from "../model/member-actions";
 import { type MemberStatus, memberStatus } from "../model/member-status";
 import { BoughtSheet } from "./BoughtSheet";
 import { EditGameAction } from "./EditGame";
@@ -94,8 +99,6 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
   const joined = view.members.filter((member) => member.joined);
   const invited = view.members.filter((member) => !member.joined);
   const drawn = view.game.status === "drawn";
-  // Убрать участника — организатор до жеребьёвки (Q05).
-  const canRemove = !drawn && view.game.ownerId === meId;
   // Мне мало желаний в бюджете этой игры (R06) — подсказка в моей строке.
   const nudge = useSantaNudge();
   const needWishes = nudge?.gameId === view.game.id;
@@ -137,7 +140,7 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
                 needWishes,
               })}
             />
-            {canRemove && member.id !== view.game.ownerId && (
+            {canRemoveMember(view, meId, member.id) && (
               <RemoveMemberButton view={view} member={member} />
             )}
           </li>
@@ -247,6 +250,9 @@ const GameContent = () => {
   // Жеребьёвка по дате не прошла (R08): организатору — почему и что
   // делать, остальным — что ждём его.
   const failedNote = drawFailedNote(view);
+  // «Выйти из игры» до жеребьёвки или подпись «напиши организатору» после
+  // (R05): выйти самому после неё нельзя — подопечный остался бы без подарка.
+  const leave = leaveAction(view);
   // Подопечный приходит сразу после жеребьёвки, но показываем только во
   // вскрытом конверте — анимация не ждёт сети.
   const ward = envelope === "opened" ? (view.me?.ward ?? null) : null;
@@ -426,8 +432,14 @@ const GameContent = () => {
             secondary={isOwner || view.role === "invited"}
           />
           <DemoLinkNote />
-          {!isOwner && <LeaveGameButton view={view} />}
+          {leave === "leave" && <LeaveGameButton view={view} />}
         </section>
+      )}
+
+      {leave === "ask-owner" && (
+        <p className="text-caption text-rose text-center">
+          {ASK_OWNER_TO_REMOVE}
+        </p>
       )}
     </div>
   );

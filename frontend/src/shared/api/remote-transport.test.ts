@@ -126,6 +126,23 @@ describe("remoteTransport", () => {
     expect(useRemoteSessionStore.getState().expired).toBe(false);
   });
 
+  it("quiet (воронка R09): 401 — ошибка, но не «Сессия закончилась»", async () => {
+    setRemoteToken("old");
+    fetchMock.mockResolvedValueOnce(
+      json(401, { code: "UNAUTHORIZED", message: "Сессия закончилась" }),
+    );
+    await expect(
+      remoteTransport.request(
+        "POST",
+        "/me/funnel",
+        { step: "share_channel_copy" },
+        undefined,
+        { quiet: true },
+      ),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    expect(useRemoteSessionStore.getState().expired).toBe(false);
+  });
+
   it("200 не JSON (прокси, HTML) — сбой связи", async () => {
     fetchMock.mockResolvedValueOnce(new Response("<html>", { status: 200 }));
     await expect(remoteTransport.request("GET", "/me")).rejects.toMatchObject({

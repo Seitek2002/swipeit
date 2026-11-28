@@ -395,6 +395,7 @@ export const WishlistShareSheet = ({
         ) : current === "send" ? (
           <>
             <ShareActions
+              kind="wishlist"
               getPayload={getPayload}
               onError={onShareError}
               qrLabel="QR-код ссылки на вишлист"

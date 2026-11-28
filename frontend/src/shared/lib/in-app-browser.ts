@@ -19,3 +19,14 @@ export const IN_APP_BROWSER_NAMES: Record<InAppBrowser, string> = {
   instagram: "Instagram",
   facebook: "Facebook",
 };
+
+// Приглашение в игру или план во встроенном браузере (auto-tasks-pm-3 R04):
+// вступишь здесь — потом из Chrome откроется другой профиль, и человек
+// вступит второй раз. В Санте это два подопечных у одного человека.
+export const inAppJoinText = (
+  browser: InAppBrowser,
+  place: "plan" | "santa",
+): string =>
+  place === "santa"
+    ? `Ты в браузере ${IN_APP_BROWSER_NAMES[browser]} — игра сохранится только здесь. Чтобы открывать её из Chrome, скопируй ссылку и вступи там`
+    : `Ты в браузере ${IN_APP_BROWSER_NAMES[browser]} — план сохранится только здесь. Чтобы открывать его из Chrome, скопируй ссылку и вступи там`;

@@ -66,6 +66,7 @@ const ConfigSchema = z.object({
   RATE_SHARE_SESSION: z.coerce.number().int().min(1).default(60),
   RATE_SHARE_IP: z.coerce.number().int().min(1).default(300),
   RATE_RESERVATIONS: z.coerce.number().int().min(1).default(30),
+  RATE_FUNNEL: z.coerce.number().int().min(1).default(30),
 });
 
 // База из docker-compose для разработки и тестов.

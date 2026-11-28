@@ -1,6 +1,7 @@
 import { getRemoteToken, markRemoteSessionExpired } from "@/shared/store";
 
 import { CLIENT_BUILD } from "./client-build";
+import { trackStep } from "./funnel";
 import { ApiError } from "./mock-server/errors";
 import { getRemoteApiBase, remoteApiUrl } from "./remote-base";
 import { remoteErrorFromResponse } from "./remote-errors";
@@ -37,6 +38,8 @@ export const uploadRemoteImage = async (blob: Blob): Promise<string> => {
   if (!response.ok) {
     const error = remoteErrorFromResponse(response.status, data);
     if (error.code === "UNAUTHORIZED" && token) markRemoteSessionExpired();
+    // Лимит фото (R01) — «Слишком часто» человек увидит под фото (R09).
+    if (error.code === "RATE_LIMITED") trackStep("rate_limited_seen");
     throw error;
   }
   if (typeof data?.key !== "string") {

@@ -1,6 +1,7 @@
 import { getRemoteToken, markRemoteSessionExpired } from "@/shared/store";
 
 import { CLIENT_BUILD } from "./client-build";
+import { trackStep } from "./funnel";
 import { toQuery } from "./http-transport";
 import { ApiError } from "./mock-server/errors";
 import { getRemoteApiBase, remoteApiUrl } from "./remote-base";
@@ -76,7 +77,15 @@ export const remoteTransport: Transport = {
       // токена 401 — не конец сессии, а маршрут только для профиля: гость
       // приглашения спросил план до «Вступить». Иначе после вступления его
       // встретил бы экран «Сессия закончилась».
-      if (error.code === "UNAUTHORIZED" && token) markRemoteSessionExpired();
+      //
+      // Служебный запрос (quiet, воронка) экран не трогает: ни «Сессия
+      // закончилась», ни шага rate_limited_seen — иначе 429 на /me/funnel
+      // слал бы /me/funnel снова.
+      if (!options?.quiet) {
+        if (error.code === "UNAUTHORIZED" && token) markRemoteSessionExpired();
+        // «Слишком часто» дойдёт до человека текстом ошибки (R07, R09).
+        if (error.code === "RATE_LIMITED") trackStep("rate_limited_seen");
+      }
       throw error;
     }
     // Вместо API ответило что-то другое (прокси, статика с HTML) — сбой

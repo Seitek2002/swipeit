@@ -39,6 +39,8 @@ export const CONTRACT: readonly ContractRoute[] = [
   route("POST", "/auth/demo", "public", DEMO),
   route("POST", "/auth/telegram", "public", REMOTE),
   route("POST", "/auth/logout", "user", REMOTE),
+  // Шаги воронки, которые видит только клиент (auto-tasks-pm-3 R09).
+  route("POST", "/me/funnel", "user", REMOTE),
   route("DELETE", "/me", "user", REMOTE),
 
   // Профиль, даты, друзья
@@ -82,7 +84,9 @@ export const CONTRACT: readonly ContractRoute[] = [
   route("GET", "/share/:code", "public", REMOTE),
   route("GET", "/users/:id/wishlist"),
   route("POST", "/external-wishlists", "public"),
-  route("GET", "/reservations"),
+  // Гость по короткой ссылке без профиля тоже видит, что занято (B15): с
+  // верным кодом share — без «моих» броней.
+  route("GET", "/reservations", "public"),
   route("POST", "/reservations"),
   route("DELETE", "/reservations/:id"),
   // «Я дарю» — свои брони на «Друзьях» (auto-tasks P02).
