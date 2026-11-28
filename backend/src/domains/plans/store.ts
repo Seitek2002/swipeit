@@ -133,6 +133,18 @@ export const savePlan = async (
   await tx.update(plans).set(planColumns(after)).where(eq(plans.id, after.id));
 
   const at = new Date(now);
+  // Вышел из плана (Q04) — строки участника нет.
+  for (const userId of before.participantIds) {
+    if (after.participantIds.includes(userId)) continue;
+    await tx
+      .delete(planParticipants)
+      .where(
+        and(
+          eq(planParticipants.planId, after.id),
+          eq(planParticipants.userId, userId),
+        ),
+      );
+  }
   for (const userId of after.participantIds) {
     const row = memberRow(after, userId, at);
     if (!before.participantIds.includes(userId)) {

@@ -82,6 +82,7 @@ export {
 } from "./plans/matches";
 export {
   closePlan,
+  leavePlan,
   addPlanActivities,
   cancelPlanDecision,
   createCustomActivity,

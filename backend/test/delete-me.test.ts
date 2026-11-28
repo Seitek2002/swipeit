@@ -219,7 +219,6 @@ describe("DELETE /me (§3.4)", () => {
 
     expect(await rowsMentioning(me.id)).toEqual({
       users: 1,
-      plans: 1, // pl_shared: организатор — обезличенный профиль
       plan_participants: 2, // pl_shared и pl_done
       santa_members: 1, // sg_drawn
       santa_assignments: 2, // пара после жеребьёвки
@@ -236,6 +235,12 @@ describe("DELETE /me (§3.4)", () => {
       taste: null,
       deletedAt: expect.any(Date),
     });
+    // Организатор pl_shared — тот, кто вступил следующим (Q04).
+    const [shared] = await db
+      .select()
+      .from(schema.plans)
+      .where(eq(schema.plans.id, "pl_shared"));
+    expect(shared?.ownerId).toBe(other.id);
     const [activity] = await db
       .select()
       .from(schema.customActivities)
@@ -257,6 +262,68 @@ describe("DELETE /me (§3.4)", () => {
       (await server.request(other, "GET", `/users/${me.id}`)).statusCode,
     ).toBe(404);
     expect((await server.request(other, "GET", "/friends")).json()).toEqual([]);
+  });
+
+  it("Q04: организатор плана на троих удалил профиль — организатор второй вступивший, план идёт дальше", async () => {
+    const owner = await server.newUser({ name: "Организатор" });
+    const second = await server.newUser({ name: "Второй" });
+    const third = await server.newUser({ name: "Третий" });
+    const created = (
+      await server.request(owner, "POST", "/plans", {
+        title: "Пятница",
+        mode: "live",
+        participantIds: [],
+        filters: { categories: [], budgetPerPerson: { min: 0, max: null } },
+      })
+    ).json() as { plan: { id: string } };
+    const id = created.plan.id;
+    expect(
+      (await server.request(second, "POST", `/plans/${id}/join`)).statusCode,
+    ).toBe(200);
+    await server.request(third, "POST", `/plans/${id}/join`);
+    await server.request(third, "POST", `/plans/${id}/ready`, { ready: true });
+
+    expect((await server.request(owner, "DELETE", "/me")).statusCode).toBe(200);
+
+    const view = (
+      await server.request(second, "GET", `/plans/${id}`)
+    ).json() as {
+      plan: { ownerId: string; participantIds: string[]; readyIds: string[] };
+    };
+    expect(view.plan.ownerId).toBe(second.id);
+    expect(view.plan.participantIds).toEqual([second.id, third.id]);
+    expect([...view.plan.readyIds].sort()).toEqual(
+      [second.id, third.id].sort(),
+    );
+    // Новый организатор может запустить план.
+    const started = await server.request(second, "POST", `/plans/${id}/start`);
+    expect(started.statusCode).toBe(200);
+    // В базе удалённый профиль больше не организатор ни одного плана.
+    expect(
+      await db
+        .select()
+        .from(schema.plans)
+        .where(eq(schema.plans.ownerId, owner.id)),
+    ).toEqual([]);
+  });
+
+  it("Q04: организатор был в плане один — плана нет", async () => {
+    const owner = await server.newUser({ name: "Один" });
+    const created = (
+      await server.request(owner, "POST", "/plans", {
+        title: "Сам",
+        mode: "live",
+        participantIds: [],
+        filters: { categories: [], budgetPerPerson: { min: 0, max: null } },
+      })
+    ).json() as { plan: { id: string } };
+    await server.request(owner, "DELETE", "/me");
+    expect(
+      await db
+        .select()
+        .from(schema.plans)
+        .where(eq(schema.plans.id, created.plan.id)),
+    ).toEqual([]);
   });
 
   it("без чужих планов и игр профиль удаляется целиком", async () => {

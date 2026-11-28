@@ -16,7 +16,7 @@ import {
 } from "../src/db/schema";
 import { NOW, testCatalog } from "./contract/client";
 import { createTestDb, resetDb } from "./db";
-import { createTestServer, type TestUser } from "./server";
+import { createTestServer, makeClock, type TestUser } from "./server";
 
 // Короткие ссылки, гостевой вишлист и брони (BACKEND.md B08).
 const database = createTestDb();
@@ -434,7 +434,10 @@ describe("приглашения в план и игру (POST /share-links)", (
 });
 
 describe("ревью сервера: дружба по ссылке", () => {
-  it("R1: безымянный открыл ссылку и забронировал с именем — у владельца не появляется «новый друг»", async () => {
+  it("R1 + Q07: безымянный открыл ссылку и забронировал с именем — «новый друг» не появляется ни сразу, ни при перечитывании; через сутки — друг", async () => {
+    // Свой сервер с часами, которые тест двигает.
+    const clock = makeClock();
+    server = await createTestServer(database, clock);
     const { owner, productIds } = await readyOwner();
     const { code } = await share(owner);
     const friendsOf = async () =>
@@ -455,9 +458,40 @@ describe("ревью сервера: дружба по ссылке", () => {
     });
     expect(made.statusCode).toBe(200);
     expect(await friendsOf()).toEqual(before);
-    // С именем — при следующем открытии ссылки — становится другом.
+    // Экран гостя перечитывает ссылку раз в 30 с — дружбы нет (Q07).
+    clock.advance(30_000);
+    await server.request(nameless, "GET", `/share/${code}`);
+    expect(await friendsOf()).toEqual(before);
+    // Через сутки после брони — новое открытие ставит дружбу.
+    clock.advance(25 * 3600_000);
     await server.request(nameless, "GET", `/share/${code}`);
     expect(await friendsOf()).toEqual([nameless.id]);
+  });
+
+  it("Q07: фоновое перечитывание (x-swipeit-refetch: 1) дружбу не ставит; посетитель с именем без брони — друг сразу", async () => {
+    const { owner } = await readyOwner();
+    const { code } = await share(owner);
+    const friendsOf = async () =>
+      (
+        (await server.request(owner, "GET", "/friends")).json() as Array<{
+          user: { id: string };
+        }>
+      ).map((entry) => entry.user.id);
+
+    const visitor = await server.newUser({ name: "Бакыт" });
+    const refetch = await server.app.inject({
+      method: "GET",
+      url: `/v1/share/${code}`,
+      headers: {
+        authorization: `Bearer ${visitor.token}`,
+        "x-swipeit-refetch": "1",
+      },
+    });
+    expect(refetch.statusCode).toBe(200);
+    expect(await friendsOf()).toEqual([]);
+
+    await server.request(visitor, "GET", `/share/${code}`);
+    expect(await friendsOf()).toEqual([visitor.id]);
   });
 
   it("R3: двое одновременно открывают вишлисты друг друга — без deadlock, все 200", async () => {

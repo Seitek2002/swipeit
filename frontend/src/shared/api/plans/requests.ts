@@ -86,6 +86,10 @@ export const votePlan = (
 export const closePlan = (id: string): Promise<PlanView> =>
   getTransport().request<PlanView>("POST", `${planPath(id)}/close`);
 
+// «Выйти из плана» — участник, не организатор (Q04).
+export const leavePlan = (id: string): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/leave`);
+
 export const decidePlan = (
   id: string,
   input: DecidePlanInput,

@@ -675,6 +675,55 @@ describe.each(CLIENTS)("«Че делать будем?» — %s", (_name, creat
     });
   });
 
+  describe("«Выйти из плана» (Q04)", () => {
+    it("из колоды: остальные долистали → итоги; свайпов и «готов» ушедшего нет", async () => {
+      const { owner, azamat, nurai, id, started } = await startLive();
+      const { deck } = started.plan;
+      for (const caller of [owner, azamat]) {
+        for (const card of deck) await swipe(caller, id, card);
+      }
+      await swipe(nurai, id, deck[0] ?? "", "pass");
+      const left = await act(nurai, id, "/leave");
+      expect(left.plan.status).toBe("results");
+      expect(left.plan.participantIds).toEqual([owner.id, azamat.id]);
+      expect(left.plan.swipes[nurai.id]).toBeUndefined();
+      expect(left.plan.readyIds).not.toContain(nurai.id);
+      expect(left.plan.finishedIds).not.toContain(nurai.id);
+      expect(left.participants.map((p) => p.id)).toEqual([owner.id, azamat.id]);
+      // Плана больше нет в её списке.
+      expect(
+        (await api.call<PlanSummary[]>(nurai, "GET", "/plans")).map(
+          (s) => s.plan.id,
+        ),
+      ).toEqual([]);
+    });
+
+    it("из лобби; повтор ничего не меняет; организатор — FORBIDDEN; после итогов — CONFLICT", async () => {
+      const { owner, azamat, nurai } = await trio();
+      const lobby = await createPlan(owner, {
+        participantIds: [azamat.id, nurai.id],
+      });
+      const id = lobby.plan.id;
+      await act(azamat, id, "/ready");
+      const left = await act(azamat, id, "/leave");
+      expect(left.plan.status).toBe("lobby");
+      expect(left.plan.participantIds).toEqual([owner.id, nurai.id]);
+      expect(left.plan.readyIds).toEqual([owner.id]);
+      const again = await act(azamat, id, "/leave");
+      expect(again.plan.participantIds).toEqual([owner.id, nurai.id]);
+      await fails(act(owner, id, "/leave"), "FORBIDDEN");
+      await fails(act(nurai, "pl_nope", "/leave"), "NOT_FOUND");
+
+      // Нурай и организатор долистали → итоги; выйти уже нельзя.
+      await act(nurai, id, "/ready");
+      const started = await act(owner, id, "/start");
+      for (const caller of [owner, nurai]) {
+        for (const card of started.plan.deck) await swipe(caller, id, card);
+      }
+      await fails(act(nurai, id, "/leave"), "CONFLICT");
+    });
+  });
+
   describe("«Показать итоги сейчас»", () => {
     it("только организатор и когда долистали хотя бы двое", async () => {
       const { owner, azamat, nurai } = await trio();

@@ -600,6 +600,39 @@ export const closePlan: ServerHandler = async (ctx, { params }) => {
   return viewOf(ctx.tx, plan, source);
 };
 
+// POST /plans/:id/leave — «Выйти из плана» (Q04): как в моке. Строки
+// свайпов и голоса ушедшего удаляет savePlan по разнице.
+export const leavePlan: ServerHandler = async (ctx, { params }) => {
+  const me = await readMe(ctx);
+  const {
+    result: didChange,
+    source,
+    plan,
+  } = await withPlan(ctx, params.id ?? "", (plan) => {
+    if (!plan.participantIds.includes(me.id)) return false;
+    if (plan.ownerId === me.id) {
+      throw forbidden("Организатор не может выйти из плана");
+    }
+    if (plan.status === "results" || plan.status === "decided") {
+      throw conflict("Выбор уже закончился");
+    }
+    const others = (ids: string[]) => ids.filter((id) => id !== me.id);
+    plan.participantIds = others(plan.participantIds);
+    plan.readyIds = others(plan.readyIds);
+    plan.finishedIds = others(plan.finishedIds);
+    plan.swipes = Object.fromEntries(
+      Object.entries(plan.swipes).filter(([id]) => id !== me.id),
+    );
+    plan.votes = Object.fromEntries(
+      Object.entries(plan.votes).filter(([id]) => id !== me.id),
+    );
+    completeIfAllFinished(plan);
+    return true;
+  });
+  if (didChange) changed(ctx, plan.id);
+  return viewOf(ctx.tx, plan, source);
+};
+
 // POST /plans/:id/decide/cancel — «Отменить решение»: все снова на
 // результатах, голоса — заново, остальным — тост.
 export const cancelPlanDecision: ServerHandler = async (ctx, { params }) => {

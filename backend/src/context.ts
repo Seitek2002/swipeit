@@ -20,6 +20,10 @@ export type ServerContext = {
   catalog: ServerCatalog;
   clock: Clock;
   events: EventSink;
+  // Фоновое перечитывание экрана (заголовок x-swipeit-refetch: 1, B15):
+  // такой запрос ничего не делает «от имени человека» — например, не ставит
+  // дружбу по ссылке (Q07).
+  isRefetch: boolean;
   log: FastifyBaseLogger;
   // Начало коротких ссылок: url = publicShareUrl/s/<код> (§6.2).
   publicShareUrl: string;

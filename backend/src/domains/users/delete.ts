@@ -1,7 +1,7 @@
 import { AVATAR_COLORS } from "@swipeit/core/config";
 import { eq, or, sql } from "drizzle-orm";
 
-import type { ServerHandler, Tx } from "../../context";
+import type { ServerContext, ServerHandler, Tx } from "../../context";
 import {
   customActivities,
   friendships,
@@ -28,8 +28,9 @@ import { lockMe } from "./queries";
 // В чужих планах и играх он остаётся строкой «Удалённый профиль» без имени:
 // строка участника, пара Санты после жеребьёвки. Его свайпы и голоса в
 // планах удаляются. Свой план или своя игра, где больше никого нет, —
-// удаляются целиком; где есть другие — остаются им, организатор — тот же
-// обезличенный профиль.
+// удаляются целиком; где есть другие — остаются им. Организатор плана —
+// тот, кто вступил раньше всех (Q04); организатор игры Санты — пока тот же
+// обезличенный профиль (передача — Q05, вместе с B11).
 //
 // Профиль, на который больше ничего не ссылается, удаляется физически;
 // иначе остаётся строка users без личного (deleted_at). Строки базы — без
@@ -66,6 +67,50 @@ const leaveActive = async (tx: Tx, id: string) => {
     where m.game_id = g.id and m.user_id = ${id} and g.owner_id <> ${id}
       and g.status = 'gathering'
   `);
+};
+
+// Свои планы, где остались другие (Q04): организатором становится тот, кто
+// вступил раньше всех, — иначе план нельзя ни запустить, ни закрыть, ни
+// решить. В лобби организатор «готов» всегда. Новому организатору — тост.
+const handOverPlans = async (ctx: ServerContext, id: string) => {
+  const { rows } = await ctx.tx.execute<{
+    id: string;
+    owner_id: string;
+    title: string;
+  }>(sql`
+    update plans p set owner_id = (
+      select pp.user_id from plan_participants pp
+      where pp.plan_id = p.id and pp.user_id <> ${id}
+      order by pp.seq limit 1
+    )
+    where p.owner_id = ${id}
+    returning p.id, p.owner_id, p.title
+  `);
+  for (const plan of rows) {
+    await ctx.tx.execute(sql`
+      update plan_participants set ready = true
+      where plan_id = ${plan.id} and user_id = ${plan.owner_id}
+    `);
+    ctx.events.publish({
+      type: "toast",
+      text: `Теперь ты организатор плана «${plan.title}»`,
+      forUserId: plan.owner_id,
+    });
+  }
+};
+
+// Идущие планы, из которых человек ушёл: остальные уже долистали — к
+// итогам, ждать больше некого (как completeIfAllFinished).
+const completeLeftPlans = async (tx: Tx, planIds: readonly string[]) => {
+  for (const planId of planIds) {
+    await tx.execute(sql`
+      update plans p set status = 'results'
+      where p.id = ${planId} and p.status = 'swiping' and not exists (
+        select 1 from plan_participants pp
+        where pp.plan_id = p.id and not pp.finished
+      )
+    `);
+  }
 };
 
 // Свои занятия, которых нет ни в одном оставшемся плане. Занятия в чужих
@@ -115,7 +160,17 @@ export const deleteMe: ServerHandler = async (ctx) => {
   const id = me.id;
 
   await deleteLonelyOwned(tx, id);
+  await handOverPlans(ctx, id);
+  const activePlans = await tx.execute<{ plan_id: string }>(sql`
+    select pp.plan_id from plan_participants pp
+    join plans p on p.id = pp.plan_id
+    where pp.user_id = ${id} and p.status in ('lobby', 'swiping')
+  `);
   await leaveActive(tx, id);
+  await completeLeftPlans(
+    tx,
+    activePlans.rows.map((row) => row.plan_id),
+  );
   await tx.delete(planSwipes).where(eq(planSwipes.userId, id));
   await tx.delete(planVotes).where(eq(planVotes.userId, id));
   await deleteOwnActivities(tx, id);

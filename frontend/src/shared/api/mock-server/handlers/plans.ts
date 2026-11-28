@@ -658,6 +658,42 @@ export const closePlan: Handler = async (ctx, { params }) => {
   return result.view;
 };
 
+// POST /plans/:id/leave — «Выйти из плана» (auto-tasks-pm-2 Q04): человек
+// передумал. Уходит из участников, «Готов» и «Долистал», его свайпы и голос
+// не попадают в итоги; остальные долистали — сразу итоги. Организатор выйти
+// не может (план держится на нём), после итогов — тоже. Повтор ничего не
+// меняет.
+export const leavePlan: Handler = async (ctx, { params }) => {
+  const catalog = await ctx.catalog.activities();
+  const result = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    if (!plan.participantIds.includes(user.id)) {
+      return { changed: false, view: viewOf(db, plan, catalog) };
+    }
+    if (plan.ownerId === user.id) {
+      throw forbidden("Организатор не может выйти из плана");
+    }
+    if (plan.status === "results" || plan.status === "decided") {
+      throw conflict("Выбор уже закончился");
+    }
+    const others = (ids: string[]) => ids.filter((id) => id !== user.id);
+    plan.participantIds = others(plan.participantIds);
+    plan.readyIds = others(plan.readyIds);
+    plan.finishedIds = others(plan.finishedIds);
+    plan.swipes = Object.fromEntries(
+      Object.entries(plan.swipes).filter(([id]) => id !== user.id),
+    );
+    plan.votes = Object.fromEntries(
+      Object.entries(plan.votes).filter(([id]) => id !== user.id),
+    );
+    completeIfAllFinished(plan);
+    return { changed: true, view: viewOf(db, plan, catalog) };
+  });
+  if (result.changed) changed(ctx, result.view.plan.id);
+  return result.view;
+};
+
 // POST /plans/:id/decide/cancel — «Отменить решение»: только организатор.
 // Все снова на экране результатов, голоса — заново. Остальным людям —
 // тост (боты тостов не читают).

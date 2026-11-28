@@ -25,7 +25,7 @@ import { hashString } from "@swipeit/core/logic/random";
 import { parseInput } from "@swipeit/core/parse-input";
 import type { RealtimeScope } from "@swipeit/core/realtime/types";
 import { decodeWishlist, sharedItemKey } from "@swipeit/core/share-codec";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import type { ServerContext, ServerHandler, Tx } from "../../context";
@@ -192,6 +192,31 @@ export const createShareLink: ServerHandler = async (ctx, { body }) => {
   return ensureShareLink(ctx, input.kind, input.targetId, me.id);
 };
 
+// Бронь посетителя на вишлист владельца за последние сутки (Q07), в том
+// числе закрытая «подарили». Снятая бронь удаляется из базы — её не видно.
+const FRIEND_AFTER_RESERVATION_MS = 24 * 3600_000;
+const reservedRecently = async (
+  ctx: ServerContext,
+  ownerId: string,
+  visitorId: string,
+) => {
+  const [row] = await ctx.tx
+    .select({ id: reservations.id })
+    .from(reservations)
+    .where(
+      and(
+        eq(reservations.ownerRef, ownerId),
+        eq(reservations.reserverId, visitorId),
+        gt(
+          reservations.at,
+          new Date(ctx.clock.now() - FRIEND_AFTER_RESERVATION_MS),
+        ),
+      ),
+    )
+    .limit(1);
+  return Boolean(row);
+};
+
 // GET /share/:code — по виду ссылки (§6.2). Вишлист: открывший с профилем
 // становится другом владельцу (§4.3) — в момент открытия, а не брони, чтобы
 // новый друг не подсказал владельцу, кто бронировал.
@@ -212,7 +237,16 @@ export const getShare: ServerHandler = async (ctx, { params }) => {
         // появлялся бы у владельца ровно в момент брони, выдавая, кто
         // бронировал. Безымянному хватает доступа по коду ссылки; другом
         // он станет, открыв ссылку уже с именем.
-        if (visitor?.name) {
+        // Q07: дружба не выдаёт, кто бронировал. Фоновое перечитывание
+        // дружбу не ставит, и бронь на этот вишлист меньше суток назад —
+        // тоже: иначе гость без имени бронирует (имя попадает в профиль), а
+        // через 30 с перечитывание делало бы его «новым другом» владельца
+        // ровно рядом с «+1 бронь».
+        if (
+          visitor?.name &&
+          !ctx.isRefetch &&
+          !(await reservedRecently(ctx, owner.id, visitor.id))
+        ) {
           await makeFriends(
             ctx.tx,
             owner.id,

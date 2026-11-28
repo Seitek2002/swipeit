@@ -57,6 +57,7 @@ import {
   finishPlan,
   getPlan,
   joinPlan,
+  leavePlan,
   listPlans,
   setPlanRule,
   setReady,
@@ -65,6 +66,16 @@ import {
   undoPlanSwipe,
   votePlan,
 } from "./domains/plans/handlers";
+import {
+  createSantaGame,
+  drawSantaGame,
+  getSantaGame,
+  joinSantaGame,
+  listSantaGames,
+  openSantaEnvelope,
+  setSantaBought,
+  updateSantaGame,
+} from "./domains/santa/handlers";
 import { deleteMe } from "./domains/users/delete";
 import {
   createCustomWish,
@@ -147,11 +158,20 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "POST /plans/:id/finish": finishPlan,
   "POST /plans/:id/votes": votePlan,
   "POST /plans/:id/close": closePlan,
+  "POST /plans/:id/leave": leavePlan,
   "POST /plans/:id/decide": decidePlan,
   "POST /plans/:id/decide/cancel": cancelPlanDecision,
   "POST /plans/:id/rule": setPlanRule,
   "POST /plans/:id/activities": addPlanActivities,
   "POST /activities": createCustomActivity,
+  "GET /santa": listSantaGames,
+  "POST /santa": createSantaGame,
+  "GET /santa/:id": getSantaGame,
+  "PATCH /santa/:id": updateSantaGame,
+  "POST /santa/:id/join": joinSantaGame,
+  "POST /santa/:id/draw": drawSantaGame,
+  "POST /santa/:id/open": openSantaEnvelope,
+  "POST /santa/:id/bought": setSantaBought,
 };
 
 export type RouteDeps = {
@@ -197,6 +217,7 @@ export const registerRoutes = (app: FastifyInstance, deps: RouteDeps) => {
               userId: session?.userId ?? null,
               sessionId: session?.sessionId ?? null,
               userAgent: request.headers["user-agent"] ?? null,
+              isRefetch: request.headers["x-swipeit-refetch"] === "1",
               clock: deps.clock,
               random: deps.random,
               catalog: deps.catalog,
