@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -61,6 +67,12 @@ type Props = {
   onLike?: (product: Product, direction: SwipeDirection) => void;
   // Любой свайп: например, свернуть плашку Санты над колодой (Y03).
   onSwipe?: () => void;
+  // «Хочу» отменён: «Вернуть» или свайп не сохранился — для того же счётчика.
+  onUnlike?: (product: Product) => void;
+  // Колода остановлена — вместо карточек этот экран, свайпать нечего (лимит
+  // «Сколько можно выбрать» в ссылке-фильтре). «Вернуть» остаётся: вернул
+  // карточку — колода снова идёт, если родитель снял остановку.
+  stopped?: ReactNode;
 };
 
 const DECISIONS: Record<SwipeDirection, SwipeDecision> = {
@@ -100,6 +112,8 @@ export const GiftDeck = ({
   onEditFilters,
   onLike,
   onSwipe,
+  onUnlike,
+  stopped,
 }: Props) => {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -183,11 +197,17 @@ export const GiftDeck = ({
   // (а не в эффекте): иначе на кадр мелькнула бы старая колода.
   const deckKey = `${contextKey}:${JSON.stringify(filters)}`;
   const [shownKey, setShownKey] = useState(deckKey);
+  // Карточка с обучающим слоем (см. ниже useDeckGuide).
+  const [guideId, setGuideId] = useState<null | string>(null);
   if (shownKey !== deckKey) {
     setShownKey(deckKey);
     setQueue([]);
     setHistory([]);
     setStatus("loading");
+    // Новая колода — слой ложится на её первую карточку (UX-аудит G08):
+    // раньше он оставался «приклеенным» к товару старой колоды, а под
+    // фильтром «до 2 000 сом» того товара нет — и подсказок не было нигде.
+    setGuideId(null);
   }
 
   useEffect(() => {
@@ -202,9 +222,8 @@ export const GiftDeck = ({
 
   // Обучающая карточка (DESIGN.md §7 DeckGuide) — обычная первая карточка
   // ленты, пока подсказка deck_guide не отмечена. Слой «приклеен» к товару:
-  // смена верхней карточки его не переносит.
+  // смена верхней карточки его не переносит, а новая колода (фильтры) — да.
   const guide = useDeckGuide();
-  const [guideId, setGuideId] = useState<null | string>(null);
   const top = queue[0];
   if (guide.active && guideId === null && top) setGuideId(top.id);
   if (!guide.active && guideId !== null) setGuideId(null);
@@ -299,7 +318,7 @@ export const GiftDeck = ({
   };
 
   const handleNeedMore = () => {
-    if (status === "idle") void loadMore(queue);
+    if (status === "idle" && !stopped) void loadMore(queue);
   };
 
   const handleDecision = (product: Product, direction: SwipeDirection) => {
@@ -350,8 +369,10 @@ export const GiftDeck = ({
         setHistory((current) =>
           current.filter((entry) => entry.product.id !== product.id),
         );
-        if (isLike(direction))
+        if (isLike(direction)) {
           setLikes((count) => Math.max(0, (count ?? 1) - 1));
+          onUnlike?.(product);
+        }
       },
     );
   };
@@ -364,8 +385,10 @@ export const GiftDeck = ({
     // же, а не выбранный до свайпа.
     delete variants.current[last.product.id];
     setQueue((current) => [last.product, ...current]);
-    if (isLike(last.direction))
+    if (isLike(last.direction)) {
       setLikes((count) => Math.max(0, (count ?? 1) - 1));
+      onUnlike?.(last.product);
+    }
     enqueue(() => undoSwipe(context)).then(
       (response) => {
         setLikes(response.wishCount);
@@ -414,7 +437,7 @@ export const GiftDeck = ({
       />
     ) : (
       <EmptyState
-        title="Ты посмотрел всё в этих фильтрах"
+        title="В этих фильтрах подарки закончились"
         action={
           <>
             {onEditFilters && (
@@ -441,7 +464,7 @@ export const GiftDeck = ({
       )}
       <SwipeDeck
         handleRef={deckRef}
-        items={queue}
+        items={stopped ? [] : queue}
         getKey={(product) => product.id}
         getLabel={(product) =>
           hidePrices
@@ -477,7 +500,7 @@ export const GiftDeck = ({
                 ? `Добавлено в вишлист: ${product.title}`
                 : `Выбрано: ${product.title}`
         }
-        empty={empty}
+        empty={stopped ?? empty}
       />
       <WishlistReadySheet
         open={readyOpen}

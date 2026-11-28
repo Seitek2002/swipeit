@@ -15,7 +15,8 @@ type Props = {
   view: SantaView;
 };
 
-// «Напомнить тем, кто без вишлиста» по-настоящему (auto-tasks P08, PRD §7.2):
+// «Напомнить про вишлист» по-настоящему (auto-tasks P08, PRD §7.2): зовёт и
+// тех, у кого мало в бюджете (Z03) — потому не «тем, кто без вишлиста».
 // раньше кнопка показывала тост «Напомнили…» и никому ничего не отправляла.
 // Теперь — шторка с готовым текстом и ссылкой на игру: «Поделиться»,
 // «Скопировать», «QR-код».
@@ -28,7 +29,7 @@ export const RemindWithoutWishlist = ({ view, names }: Props) => {
   return (
     <>
       <Button variant="secondary" onClick={() => setOpen(true)}>
-        Напомнить тем, кто без вишлиста
+        Напомнить про вишлист
       </Button>
       <BottomSheet
         open={open}
@@ -41,7 +42,7 @@ export const RemindWithoutWishlist = ({ view, names }: Props) => {
         <ShareActions
           getPayload={async () => ({
             title: view.game.title,
-            text: remindWishlistText(names, view.game.title),
+            text: remindWishlistText(names, view.game),
             url: await inviteUrl(
               "santa",
               view.game.id,

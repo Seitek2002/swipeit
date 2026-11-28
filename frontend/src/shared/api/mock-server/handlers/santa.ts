@@ -8,6 +8,7 @@ import {
   newOwnerText,
   termsChangedText,
 } from "@swipeit/core/logic/santa-update";
+import { countInSantaBudget } from "@swipeit/core/logic/santa-wishlist";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
@@ -110,10 +111,6 @@ const profileOf = ({
   isBot,
 }: User): PlanParticipant => ({ id, name: name ?? "", avatarColor, isBot });
 
-// «Вишлист готов» — есть хотя бы одно активное желание.
-const hasWishlist = (db: Db, userId: string) =>
-  (db.wishlistItems[userId] ?? []).some((item) => item.status === "active");
-
 // Организатор — первым, остальные по порядку вступления: после «Передать
 // роль» (S04) он может быть не первым вступившим.
 const ownerFirst = (game: SantaGame) => [
@@ -123,10 +120,13 @@ const ownerFirst = (game: SantaGame) => [
 
 // Гостю (превью по ссылке, X07) — только профиль и joined (S05): готов ли
 // чей-то вишлист и кто вскрыл письмо, знать ему незачем.
+// hasWishlist — есть хотя бы одно активное желание, wishesInBudget —
+// сколько их в бюджете игры (core santa-wishlist, Z03), как на сервере.
 const memberList = (
   db: Db,
   game: SantaGame,
   role: SantaView["role"],
+  products: Map<string, Product>,
 ): SantaMember[] =>
   ownerFirst(game)
     .map((id) => db.users[id])
@@ -134,11 +134,16 @@ const memberList = (
     .map((user) => {
       const joined = game.participantIds.includes(user.id);
       if (role === "guest") return { ...profileOf(user), joined };
+      const wishes = guestItems(db, user.id);
       return {
         ...profileOf(user),
-        hasWishlist: hasWishlist(db, user.id),
+        hasWishlist: wishes.length > 0,
         joined,
         opened: game.openedIds.includes(user.id),
+        wishesInBudget: countInSantaBudget(
+          wishes.map((item) => priceOf(guestItemView(item), products).min),
+          game.budget,
+        ),
       };
     });
 
@@ -285,7 +290,7 @@ const viewOf = (
   const owner = role === "owner";
   return {
     game: publicOf(game, role),
-    members: memberList(db, game, role),
+    members: memberList(db, game, role, products),
     role,
     me: joined
       ? {
@@ -299,6 +304,8 @@ const viewOf = (
       : null,
     boughtCount: game.boughtIds.length,
     openedCount: game.openedIds.length,
+    // Убрали меня (Z01) — только мне.
+    ...((game.removedIds ?? []).includes(userId) ? { removed: true } : {}),
     drawIssue: owner ? drawIssue(db, game) : null,
     drawFailed: game.drawFailed
       ? owner
@@ -312,9 +319,10 @@ const summaryOf = (
   db: Db,
   game: SantaGame,
   userId: string,
+  products: Map<string, Product>,
   now: number,
 ): SantaSummary => {
-  const view = viewOf(db, game, userId, new Map(), now);
+  const view = viewOf(db, game, userId, products, now);
   const wardId = game.assignments?.[userId];
   const ward = wardId ? db.users[wardId] : undefined;
   return {
@@ -402,6 +410,7 @@ const checkExclusionsPossible = (db: Db, game: SantaGame) => {
 
 // GET /santa — мои игры (участвую или позван), новые сверху.
 export const listSantaGames: Handler = async (ctx) => {
+  const products = await productMap(ctx);
   const db = await ctx.db.read();
   const user = requireUser(ctx, db);
   // reverse — при равном времени новее та, что добавлена позже; sort
@@ -410,7 +419,7 @@ export const listSantaGames: Handler = async (ctx) => {
     .reverse()
     .filter((game) => membersOf(game).includes(user.id))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((game) => summaryOf(db, game, user.id, ctx.clock.now()));
+    .map((game) => summaryOf(db, game, user.id, products, ctx.clock.now()));
 };
 
 // GET /santa/:id — игра глазами пользователя запроса. Открыть может любой:

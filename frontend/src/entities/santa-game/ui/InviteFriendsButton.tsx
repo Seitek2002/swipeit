@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 
 import { UserPlus } from "lucide-react";
 
+import { clock } from "@/shared/lib/clock";
 import {
   canNativeShare,
   copyText,
@@ -54,7 +55,7 @@ export const InviteFriendsButton = ({
     try {
       const payload = {
         title: game.title,
-        text: santaInviteText(game),
+        text: santaInviteText(game, clock.now()),
         url: await inviteUrl("santa", game.id),
       };
       if (canNativeShare()) {

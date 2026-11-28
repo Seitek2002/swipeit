@@ -53,7 +53,7 @@ describe.each(CLIENTS)("вишлист — %s", (_name, create) => {
       (error: { code?: string }) => error.code,
     );
 
-  it("своё желание — в конец, активное, обычный приоритет; в пустом — order 0", async () => {
+  it("своё желание — в начало, активное, обычный приоритет; в пустом — order 0", async () => {
     const first = await addCustom({ title: "Книга", priceMin: 500 });
     expect(first).toMatchObject({
       order: 0,
@@ -63,9 +63,12 @@ describe.each(CLIENTS)("вишлист — %s", (_name, create) => {
       wishCount: 1,
       shareJustUnlocked: false,
     });
-    await like(0);
+    const liked = await like(0);
     const second = await addCustom({ title: "  Свитер  " });
-    expect(second.order).toBe(2);
+    // Новые желания — первыми (просьба владельца): номер на единицу меньше
+    // верхнего.
+    expect(second.order).toBe(-2);
+    expect(await ids()).toEqual([second.id, liked, first.id]);
     expect(second.source).toEqual({
       kind: "custom",
       custom: { title: "Свитер" },
@@ -127,13 +130,13 @@ describe.each(CLIENTS)("вишлист — %s", (_name, create) => {
       "DELETE",
       `/wishlist/items/${b}`,
     );
-    expect(removed).toMatchObject({ id: b, order: 1 });
-    expect(await ids()).toEqual([a, c]);
+    expect(removed).toMatchObject({ id: b, order: -1 });
+    expect(await ids()).toEqual([c, a]);
     expect((await wishlist()).wishCount).toBe(2);
     // Клиент шлёт желание целиком (мок его читает, сервер — нет).
     await api.call(me, "POST", `/wishlist/items/${b}/undelete`, removed);
-    expect(await ids()).toEqual([a, b, c]);
-    expect((await find(b))?.order).toBe(1);
+    expect(await ids()).toEqual([c, b, a]);
+    expect((await find(b))?.order).toBe(-1);
     expect(await code(api.call(me, "DELETE", "/wishlist/items/wi_nope"))).toBe(
       "NOT_FOUND",
     );
@@ -149,23 +152,34 @@ describe.each(CLIENTS)("вишлист — %s", (_name, create) => {
         }),
       ),
     );
-    expect(await ids()).toEqual([b, c]);
+    expect(await ids()).toEqual([c, b]);
   });
 
-  it("ручной порядок; не упомянутые — в конец, в своём порядке", async () => {
+  it("новые — первыми: добавили A, потом B → B выше A", async () => {
+    const a = await like(0);
+    const b = (await addCustom({ title: "Свитер" })).id;
+    expect(await ids()).toEqual([b, a]);
+    const c = await like(1);
+    expect(await ids()).toEqual([c, b, a]);
+  });
+
+  it("ручной порядок; не упомянутые — в конец, в своём порядке; новое после него — наверх", async () => {
+    // Лайкнутые по очереди встают наверх: в списке — от нового к старому.
     const all = [await like(0), await like(1), await like(2), await like(3)];
-    await api.call(me, "POST", "/wishlist/reorder", {
-      ids: [...all].reverse(),
-    });
     expect(await ids()).toEqual([...all].reverse());
+    await api.call(me, "POST", "/wishlist/reorder", { ids: all });
+    expect(await ids()).toEqual(all);
     await api.call(me, "POST", "/wishlist/reorder", { ids: [all[2]] });
-    expect(await ids()).toEqual([all[2], all[3], all[1], all[0]]);
+    expect(await ids()).toEqual([all[2], all[0], all[1], all[3]]);
     expect((await wishlist()).items.map((item) => item.order)).toEqual([
       0, 1, 2, 3,
     ]);
+    // Новое желание после ручного порядка — наверх, ручной порядок цел.
+    const fresh = await like(4);
+    expect(await ids()).toEqual([fresh, all[2], all[0], all[1], all[3]]);
   });
 
-  it("«Мне это подарили» и «Отменить»; «Вернуть» из «Подарили» — в конец", async () => {
+  it("«Мне это подарили» и «Отменить»; «Вернуть» из «Подарили» — в начало", async () => {
     const a = await like(0);
     const b = await like(1);
     const c = await like(2);
@@ -190,7 +204,7 @@ describe.each(CLIENTS)("вишлист — %s", (_name, create) => {
       `/wishlist/items/${b}/restore`,
       { undo: true },
     );
-    expect(undone).toMatchObject({ status: "active", order: 1 });
+    expect(undone).toMatchObject({ status: "active", order: -1 });
     expect(undone.given).toBeUndefined();
 
     await api.call(me, "POST", `/wishlist/items/${b}/given`, { at: GIVEN_AT });
@@ -199,8 +213,9 @@ describe.each(CLIENTS)("вишлист — %s", (_name, create) => {
       "POST",
       `/wishlist/items/${b}/restore`,
     );
-    expect(back).toMatchObject({ status: "active", order: 3 });
-    expect(await ids()).toEqual([a, c, b]);
+    // Вернулось как новое желание — наверх.
+    expect(back).toMatchObject({ status: "active", order: -3 });
+    expect(await ids()).toEqual([b, c, a]);
     // Активное restore не трогает.
     expect(
       await api.call<WishlistItem>(me, "POST", `/wishlist/items/${a}/restore`),

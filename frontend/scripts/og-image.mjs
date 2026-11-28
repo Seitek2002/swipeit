@@ -124,7 +124,7 @@ svg.illus { width:96%; height:96%; overflow:visible; stroke:var(--ink); stroke-w
   ${tag(ILL.camera, tint("mint", 55), { x: 1040, len: 150, rot: 9 })}
   <div class="copy">
     <div class="brand">${BOW}<span class="word">swipeit</span></div>
-    <h1>Свайпай подарки, которые хочешь сам.</h1>
+    <h1>Свайпай подарки, которые хочется тебе.</h1>
     <p>Друзья увидят — и угадают с подарком.</p>
   </div>
 </body></html>`;

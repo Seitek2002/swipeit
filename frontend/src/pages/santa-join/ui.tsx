@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, Suspense, useEffect } from "react";
+import { type ReactNode, Suspense, useEffect, useState } from "react";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -9,12 +9,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   NAME_CAPTIONS,
+  NAME_MAX,
   NamesakeNote,
   findNamesake,
   useRequireName,
 } from "@/features/ask-name";
 
-import { santaTerms, useSantaGame } from "@/entities/santa-game";
+import { ownerName, santaTerms, useSantaGame } from "@/entities/santa-game";
 import { type User, useCreateUser, useMe } from "@/entities/user";
 
 import {
@@ -32,6 +33,7 @@ import { inAppJoinText } from "@/shared/lib/in-app-browser";
 import { useSessionStore } from "@/shared/store";
 import {
   AvatarStack,
+  BottomSheet,
   Brand,
   Button,
   ContentSkeleton,
@@ -40,29 +42,96 @@ import {
   InAppBrowserNote,
   Screen,
   ScreenBody,
+  TextField,
   buttonClassName,
   toast,
 } from "@/shared/ui";
 
-import { DRAWN_INVITE_TEXT, lostProfileMessage } from "./model";
+import {
+  type ClosedInvite,
+  LOST_PROFILE_ACTION,
+  closedInvite,
+  lostProfileHint,
+  lostProfileMessage,
+} from "./model";
 
-// Кнопка под текстом разыгранной игры (S04): сообщение организатору — в
-// буфер, вставить в чат с ним.
-const CopyLostProfileMessage = ({ text }: { text: string }) => (
-  <Button
-    variant="ghost"
-    className="w-full"
-    onClick={() =>
-      void copyText(text).then((ok) =>
-        ok
-          ? toast("Сообщение скопировано — отправь его организатору")
-          : toast("Не получилось скопировать", { tone: "error" }),
-      )
-    }
-  >
-    Скопировать сообщение организатору
-  </Button>
-);
+// Длинная подпись кнопки переносится, а не упирается в края на 360 px.
+const WRAP = "h-auto min-h-12 whitespace-normal py-3 text-center leading-5";
+
+// Вступить уже нельзя (Z01): куда дальше — свой вишлист или своя игра. Тому,
+// кто в игре был, но телефон его не узнал, — тихая кнопка и шторка с именем
+// «Как тебя звали в игре?»: сообщение организатору собирается из него.
+const ClosedActions = ({
+  closed,
+  myName,
+  owner,
+  title,
+}: {
+  closed: ClosedInvite;
+  myName?: string;
+  owner?: string;
+  title: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const copy = () =>
+    void copyText(lostProfileMessage({ name, title })).then((ok) => {
+      if (!ok) {
+        toast("Не получилось скопировать", { tone: "error" });
+        return;
+      }
+      setOpen(false);
+      toast(
+        `Сообщение скопировано — отправь его организатору${owner ? ` (${owner})` : ""}`,
+      );
+    });
+  return (
+    <div className="flex flex-col gap-2">
+      <Link href={ROUTES.GIFTS} className={buttonClassName({ size: "lg" })}>
+        {REMOTE_COPY.buildOwnWishlist}
+      </Link>
+      <Link
+        href={ROUTES.SANTA_CREATE}
+        className={buttonClassName({ size: "lg", variant: "secondary" })}
+      >
+        Создать свою игру
+      </Link>
+      {closed.lostProfile && (
+        <>
+          <Button
+            variant="ghost"
+            className={WRAP}
+            onClick={() => {
+              setName(myName ?? "");
+              setOpen(true);
+            }}
+          >
+            {LOST_PROFILE_ACTION}
+          </Button>
+          <BottomSheet
+            open={open}
+            onClose={() => setOpen(false)}
+            title="Телефон тебя не узнал"
+          >
+            <div className="flex flex-col gap-4 pb-2">
+              <p className="text-body text-rose">{lostProfileHint(owner)}</p>
+              <TextField
+                label="Как тебя звали в игре?"
+                value={name}
+                maxLength={NAME_MAX}
+                autoComplete="off"
+                onChange={(event) => setName(event.target.value)}
+              />
+              <Button size="lg" className="w-full" onClick={copy}>
+                Скопировать сообщение организатору
+              </Button>
+            </div>
+          </BottomSheet>
+        </>
+      )}
+    </div>
+  );
+};
 
 // Игра по ссылке не найдена. В local она живёт в браузере, где её создали
 // (TECH_SPEC §8): на другом устройстве id не найдётся — объясняем и
@@ -86,11 +155,16 @@ const NotHere = ({ demo }: { demo: boolean }) => (
           {REMOTE_COPY.buildOwnWishlist}
         </Link>
         {demo && (
+          // Обещаем ровно то, что откроется (Z05): форма с названием и
+          // тремя отмеченными демо-друзьями.
           <Link
-            href={ROUTES.SANTA_CREATE}
-            className={buttonClassName({ variant: "secondary" })}
+            href={ROUTES.SANTA_CREATE_DEMO}
+            className={buttonClassName({
+              variant: "secondary",
+              className: WRAP,
+            })}
           >
-            Посмотреть игру с демо-друзьями
+            Создать игру с демо-друзьями
           </Link>
         )}
       </div>
@@ -271,9 +345,12 @@ const JoinContent = () => {
     return <ContentSkeleton />;
   }
 
-  const owner = view.members.find((member) => member.id === view.game.ownerId);
+  const owner = ownerName(view);
   const joined = view.members.filter((member) => member.joined);
-  const closed = view.game.status === "drawn";
+  const closed = closedInvite({
+    drawn: view.game.status === "drawn",
+    removed: Boolean(view.removed),
+  });
 
   return (
     <div className="flex h-full flex-col">
@@ -281,7 +358,7 @@ const JoinContent = () => {
       <div className="flex-1 px-5 pt-4">
         <p className="text-title-3 text-rose">
           {owner
-            ? `${owner.name} зовёт в Тайного Санту`
+            ? `${owner} зовёт в Тайного Санту`
             : "Тебя зовут в Тайного Санту"}
         </p>
         <h1 className="text-title-1 mt-1">{view.game.title}</h1>
@@ -302,9 +379,9 @@ const JoinContent = () => {
           </p>
         </div>
         {closed ? (
-          // Разыграна, а меня в ней нет (S04): скорее всего, телефон потерял
-          // профиль — не тупик, а что сделать.
-          <p className="text-body text-rose mt-5">{DRAWN_INVITE_TEXT}</p>
+          // Разыграна без меня или меня убрали (Z01): прямо — почему, а
+          // внизу — куда дальше.
+          <p className="text-body-lg text-paper mt-5">{closed.text}</p>
         ) : (
           <p className="text-body text-rose mt-5">
             После жеребьёвки ты узнаешь, кому даришь, — и увидишь его вишлист в
@@ -325,11 +402,11 @@ const JoinContent = () => {
       </div>
       <div className="flex-none px-5 pt-2 pb-[calc(env(safe-area-inset-bottom)+16px)]">
         {closed ? (
-          <CopyLostProfileMessage
-            text={lostProfileMessage({
-              name: me.data?.name,
-              title: view.game.title,
-            })}
+          <ClosedActions
+            closed={closed}
+            myName={me.data?.name}
+            owner={owner}
+            title={view.game.title}
           />
         ) : (
           <div className="flex flex-col gap-2">

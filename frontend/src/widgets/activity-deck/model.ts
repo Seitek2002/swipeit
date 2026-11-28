@@ -89,11 +89,15 @@ const freshNames = (lagging: readonly Lagging[]) =>
   lagging.filter((person) => !person.started).map((person) => person.name);
 
 // Строка под кольцами в шапке колоды: «листают» — только те, кто начал;
-// у кого 0 карточек — «ещё не открывали» (Y08).
+// у кого 0 карточек — «ещё не открывали» (Y08). Своя колода кончилась —
+// строки нет: кто листает и кто не открывал, пишет «Колода закончилась»
+// (deckEndLines), а дважды одно и то же не нужно (auto-tasks-ux-6).
 export const deckStatus = (
   others: number,
   lagging: readonly Lagging[],
-): string => {
+  myDeckDone = false,
+): null | string => {
+  if (myDeckDone) return null;
   if (others === 0) return "Ты листаешь один";
   if (lagging.length === 0) return "Остальные уже всё пролистали";
   const started = startedNames(lagging);

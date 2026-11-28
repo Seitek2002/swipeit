@@ -28,8 +28,10 @@ export {
   toLocalInput,
 } from "./form";
 export {
+  memberWishlistStatus,
   SANTA_WISHES_ENOUGH,
   type SantaNudge,
+  type SantaWishlistStatus,
   santaWishlistNudge,
 } from "./nudge";
 export { drawIsDue, santaTabDot } from "./tab-dot";
@@ -40,6 +42,7 @@ export {
   gatheringIssue,
   gatheringStatus,
   needsMoreMembers,
+  ownerName,
   type SantaMember,
   type SantaSummary,
   type SantaView,

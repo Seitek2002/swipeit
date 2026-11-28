@@ -24,7 +24,10 @@ export const QrCode = ({ value, label, className }: Props) => {
     QRCode.toString(value, {
       type: "svg",
       margin: 2,
-      errorCorrectionLevel: "M",
+      // L, а не M: в демо в QR — адрес на 450–550 символов (?d=…), и с M
+      // узор выходил слишком мелким для камеры через стол. С экрана код не
+      // царапается — запас на повреждения ему не нужен.
+      errorCorrectionLevel: "L",
       color: { dark: COLORS.ink, light: COLORS.paper },
     }).then((result) => {
       if (!cancelled) setSvg(result);

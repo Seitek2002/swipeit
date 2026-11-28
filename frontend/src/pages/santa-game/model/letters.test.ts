@@ -84,6 +84,30 @@ describe("«Сообщить в чат» после жеребьёвки (Q06)",
     );
   });
 
+  it("8 и больше, и письма ещё никто не открыл, — «все N участников»", () => {
+    const many = (count: number) =>
+      Array.from({ length: count }, (_, index) =>
+        member(index === 0 ? "me" : `u${index}`, `Гость ${index}`),
+      );
+    expect(lettersMessage({ ...base, members: many(30) })).toBe(
+      "Жеребьёвка в «Офис» прошла — все 30 участников, откройте письмо и узнайте, кому дарите. Бюджет до 2 000 сом. Обмен подарками 25 декабря.",
+    );
+    // Отправитель уже открыл — всё равно все остальные ждут.
+    const opened = many(8).map((one, index) =>
+      index === 0 ? { ...one, opened: true } : one,
+    );
+    expect(lettersMessage({ ...base, members: opened })).toMatch(
+      /прошла — все 8 участников, откройте/,
+    );
+    // Кто-то уже открыл — по именам, не больше пяти.
+    const some = many(8).map((one, index) =>
+      index === 3 ? { ...one, opened: true } : one,
+    );
+    expect(lettersMessage({ ...base, members: some })).toMatch(
+      /прошла: Гость 1, Гость 2, Гость 4, Гость 5 и ещё 2 — откройте/,
+    );
+  });
+
   it("не открыл только отправитель — без имён и без «все открыли» (X08)", () => {
     expect(
       lettersMessage({
@@ -121,9 +145,28 @@ describe("«Напомнить тем, кто без вишлиста» (P08, Y0
       "me",
     );
     expect(names).toEqual(["Нурай", "Бакыт"]);
-    expect(remindWishlistText(names, "Офис")).toBe(
-      "Нурай, Бакыт — соберите вишлист для Тайного Санты «Офис», так Санте будет проще выбрать подарок",
+    expect(
+      remindWishlistText(names, { title: "Офис", budget: 1500 }).replace(
+        / /g,
+        " ",
+      ),
+    ).toBe(
+      "Нурай, Бакыт — соберите вишлист для Тайного Санты «Офис»: хотя бы 3 желания до 1 500 сом, так Санте будет проще выбрать подарок",
     );
+  });
+
+  it("зовёт и тех, у кого 1–2 желания в бюджете (Z03)", () => {
+    expect(
+      remindWishlistNames(
+        [
+          { ...person("me", "Айгерим", true), wishesInBudget: 1 },
+          { ...person("n", "Нурай", true), wishesInBudget: 2 },
+          { ...person("b", "Бакыт", true), wishesInBudget: 3 },
+          { ...person("a", "Азамат", true), wishesInBudget: 0 },
+        ],
+        "me",
+      ),
+    ).toEqual(["Нурай", "Азамат"]);
   });
 
   it("организатор без вишлиста себя не зовёт; кроме него никого — пусто", () => {

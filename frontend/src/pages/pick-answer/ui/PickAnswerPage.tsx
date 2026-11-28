@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Star } from "lucide-react";
 
 import { ProductDetailsSheet } from "@/features/product-details";
@@ -22,6 +22,8 @@ import {
 import {
   type PickAnswer,
   type PickRequest,
+  catalogKeys,
+  getProduct,
   getShare,
   importPickAnswer,
   isApiError,
@@ -45,6 +47,52 @@ import {
 } from "@/shared/ui";
 
 type Pick = PickAnswer["picks"][number];
+
+// Сколько ждём подарки ответа, прежде чем предложить «Попробовать ещё раз»
+// (auto-tasks-ux-6 G01): на телефоне, где SwipeIt ещё не открывали, запрос
+// товара мог так и не завершиться — ни данными, ни ошибкой, — и скелеты
+// висели, пока человек сам не обновит страницу.
+const PICKS_TIMEOUT_MS = 10_000;
+
+// Подарки ответа ещё грузятся (ни данных, ни ошибки) дольше PICKS_TIMEOUT_MS.
+// «Попробовать ещё раз» обрывает зависшие запросы и начинает их заново: и
+// поставленный на паузу повтор, и запрос, который не ответил вовсе.
+const useStuckPicks = (picks: readonly Pick[]) => {
+  const queryClient = useQueryClient();
+  const ids = picks.map((pick) => pick.productId);
+  // Тот же кэш, что у useProduct в карточках, — лишних запросов нет.
+  const loading = useQueries({
+    queries: ids.map((id) => ({
+      queryKey: catalogKeys.product(id),
+      queryFn: () => getProduct(id),
+      staleTime: Infinity,
+    })),
+    combine: (results) =>
+      results.some((result) => result.data === undefined && !result.isError),
+  });
+  const [attempt, setAttempt] = useState(0);
+  const [timedOut, setTimedOut] = useState<null | number>(null);
+  useEffect(() => {
+    if (!loading) return;
+    const timer = setTimeout(() => setTimedOut(attempt), PICKS_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [loading, attempt]);
+
+  const retry = async () => {
+    setAttempt((current) => current + 1);
+    await Promise.all(
+      ids.map((id) =>
+        queryClient.cancelQueries({ queryKey: catalogKeys.product(id) }),
+      ),
+    );
+    await Promise.all(
+      ids.map((id) =>
+        queryClient.refetchQueries({ queryKey: catalogKeys.product(id) }),
+      ),
+    );
+  };
+  return { stuck: loading && timedOut === attempt, retry };
+};
 
 // «Айгерим выбрала 5 подарков»: род — по полю из ссылки; без него —
 // нейтрально.
@@ -250,6 +298,7 @@ const AnswerView = ({
   } | null>(null);
   // Свой запрос на этом устройстве — напоминаем, о какой подборке речь.
   const occasion = request ? occasionLabel(request.occasion) : "";
+  const picks = useStuckPicks(answer.picks);
 
   return (
     <>
@@ -263,15 +312,21 @@ const AnswerView = ({
           </p>
         )}
       </div>
-      <ul className="flex flex-col gap-4 px-5 pt-[18px] pb-6">
-        {answer.picks.map((pick) => (
-          <PickCard
-            key={pick.productId}
-            pick={pick}
-            onOpen={(product, choice) => setDetails({ product, choice })}
-          />
-        ))}
-      </ul>
+      {picks.stuck ? (
+        <div className="px-5 pt-[18px] pb-6">
+          <LoadFailed onRetry={() => void picks.retry()} />
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-4 px-5 pt-[18px] pb-6">
+          {answer.picks.map((pick) => (
+            <PickCard
+              key={pick.productId}
+              pick={pick}
+              onOpen={(product, choice) => setDetails({ product, choice })}
+            />
+          ))}
+        </ul>
+      )}
       <div className="px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+12px)] text-center">
         <Link
           href={ROUTES.GIFTS}

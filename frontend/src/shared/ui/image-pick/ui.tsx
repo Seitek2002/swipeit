@@ -17,6 +17,8 @@ import { toast } from "../toast";
 type Props = {
   // Подпись для скринридера у превью: «Фото желания», «Фото занятия».
   alt: string;
+  // Подпись под заголовком: что будет с фото дальше.
+  hint?: string;
   label?: string;
   // Пока фото сжимается и сохраняется — форму отправлять рано.
   onBusyChange?: (busy: boolean) => void;
@@ -30,6 +32,7 @@ type Props = {
 export const ImagePickField = ({
   alt,
   label = "Фото, если хочешь",
+  hint,
   value,
   onChange,
   onBusyChange,
@@ -71,7 +74,15 @@ export const ImagePickField = ({
 
   return (
     <div>
-      <p className="text-caption text-rose mb-2">{label}</p>
+      <p className="text-caption text-rose mb-2">
+        {label}
+        {hint && (
+          <>
+            <br />
+            {hint}
+          </>
+        )}
+      </p>
       {preview ? (
         <div className="relative size-28">
           <img

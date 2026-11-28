@@ -1,12 +1,12 @@
 "use client";
 
-import { type ReactNode, Suspense, useEffect, useId } from "react";
+import { type ReactNode, Suspense, useEffect } from "react";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy } from "lucide-react";
+import { Copy, X } from "lucide-react";
 
 import {
   GuestWishlistHeader,
@@ -38,6 +38,7 @@ import {
   BrokenLink,
   Button,
   EmptyState,
+  IconButton,
   InAppBrowserText,
   Screen,
   ScreenBody,
@@ -88,20 +89,67 @@ const NextStepPlaque = ({
   // Предупреждение здесь — всегда, раз главная кнопка без него непонятна;
   // шторка «Вишлист готов» его уже не повторит (Q08: раз за сессию).
   useMarkInAppNoteShown(browser);
-  const whereId = useId();
   const href = step === "send" ? `${ROUTES.WISHLIST}?share=1` : ROUTES.GIFTS;
   const label =
     step === "send" ? "Отправить свой вишлист" : "Собрать свой вишлист";
-  const dismiss = (
-    <Button
-      size="sm"
-      variant="ghost"
-      className="text-ink-soft"
-      onClick={onDismiss}
-    >
-      Не сейчас
-    </Button>
-  );
+
+  if (browser) {
+    // Встроенный браузер, 360 px (UX-аудит G04): «Скопировать ссылку для
+    // Chrome» вылезала за плашку на 21 px, подпись «здесь, в Telegram» висела
+    // отдельной строкой, а карточка с плашкой была 610 px при пределе 600.
+    // Теперь «Не сейчас» — крестик в углу, обе кнопки — во всю ширину
+    // плашки, а «здесь, в Telegram» — вторая строка своей кнопки.
+    return (
+      <div
+        role="status"
+        className="bg-paper-2 rounded-field flex flex-col gap-2.5 px-3.5 pt-3 pb-3"
+      >
+        <div className="flex items-start gap-2">
+          {/* Во встроенном браузере плашка и так длиннее: карточка с ней
+              должна уместиться в экран 360×640 (Y10). */}
+          <p className="text-body text-ink min-w-0 flex-1">
+            {step === "send"
+              ? "Подарок выбран. Ответь своим вишлистом — тебе тоже угадают с подарком."
+              : "Подарок выбран. А что хочешь ты?"}
+          </p>
+          <IconButton
+            label="Не сейчас"
+            tone="on-paper"
+            className="-mt-2.5 -mr-2.5"
+            onClick={onDismiss}
+          >
+            <X aria-hidden size={18} strokeWidth={2} />
+          </IconButton>
+        </div>
+        <InAppBrowserText browser={browser} text={inAppPlaqueText} />
+        {/* «…для Chrome»: рядом «Написать в чат, что беру» — две кнопки
+            «Скопировать…» подряд гость путал (Y10). Подпись короче, что
+            делает кнопка — говорят иконка и имя. */}
+        <Button
+          size="sm"
+          className="w-full"
+          aria-label="Ссылка для Chrome: скопировать"
+          icon={<Copy aria-hidden size={16} strokeWidth={2} />}
+          onClick={copyPageLink}
+        >
+          Ссылка для Chrome
+        </Button>
+        <Link
+          href={href}
+          className={buttonClassName({
+            variant: "secondary",
+            size: "sm",
+            className: "h-auto min-h-11 w-full flex-col gap-0 py-1",
+          })}
+        >
+          {label}
+          <span className="text-caption text-rose font-normal">
+            здесь, в {IN_APP_BROWSER_NAMES[browser]}
+          </span>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -111,52 +159,21 @@ const NextStepPlaque = ({
       <p className="text-body text-ink">
         {step === "send"
           ? "Подарок выбран. Ответь своим вишлистом — тебе тоже угадают с подарком."
-          : browser
-            ? // Во встроенном браузере плашка и так длиннее: карточка с ней
-              // должна уместиться в экран 360×640 (Y10).
-              "Подарок выбран. А что хочешь ты?"
-            : "Подарок выбран. А что хочешь ты? Собери свой вишлист за 2 минуты — друзья угадают с подарком."}
+          : "Подарок выбран. А что хочешь ты? Собери свой вишлист за 2 минуты — друзья угадают с подарком."}
       </p>
-      {browser ? (
-        <>
-          <InAppBrowserText browser={browser} text={inAppPlaqueText} />
-          {/* «…для Chrome»: рядом «Написать в чат, что беру» — две кнопки
-              «Скопировать…» подряд гость путал (Y10). */}
-          <Button
-            size="sm"
-            className="self-start"
-            icon={<Copy aria-hidden size={16} strokeWidth={2} />}
-            onClick={copyPageLink}
-          >
-            Скопировать ссылку для Chrome
-          </Button>
-          <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
-            <span className="flex flex-col items-start gap-1">
-              <Link
-                href={href}
-                aria-describedby={whereId}
-                className={buttonClassName({
-                  variant: "secondary",
-                  size: "sm",
-                })}
-              >
-                {label}
-              </Link>
-              <span id={whereId} className="text-caption text-ink-soft">
-                здесь, в {IN_APP_BROWSER_NAMES[browser]}
-              </span>
-            </span>
-            {dismiss}
-          </div>
-        </>
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-          <Link href={href} className={buttonClassName({ size: "sm" })}>
-            {label}
-          </Link>
-          {dismiss}
-        </div>
-      )}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+        <Link href={href} className={buttonClassName({ size: "sm" })}>
+          {label}
+        </Link>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-ink-soft"
+          onClick={onDismiss}
+        >
+          Не сейчас
+        </Button>
+      </div>
     </div>
   );
 };
@@ -218,7 +235,7 @@ const GuestScreen = ({
                 Собрать свой вишлист
               </Link>
               <p className="text-caption text-rose mt-2.5">
-                Свайпай подарки, которые хочешь сам, — друзья угадают с
+                Свайпай подарки, которые хочется тебе, — друзья угадают с
                 подарком.
               </p>
             </>

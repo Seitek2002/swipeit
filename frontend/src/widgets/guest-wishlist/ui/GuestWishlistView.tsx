@@ -17,6 +17,7 @@ import {
   type ReserveAccess,
   ReserveActionButton,
   ReserveControl,
+  useReservations,
 } from "@/features/reserve-gift";
 
 import {
@@ -39,6 +40,7 @@ import { useCustomImageUrl } from "@/shared/lib/dom";
 import { formatPrice } from "@/shared/lib/format";
 import { Chip, StoreTag } from "@/shared/ui";
 
+import { addReservedKey, afterReserveKey } from "../model/after-reserve";
 import { type BudgetLimit, budgetChips, fitsBudget } from "../model/budget";
 import { GuestWishlistHeader } from "./GuestWishlistHeader";
 
@@ -144,7 +146,7 @@ const GuestWishCard = ({
   // Дата повода ("YYYY-MM-DD") и имя владельца — для «Напомнить в
   // календаре» после брони (P07). Нет даты — ссылки нет.
   occasionDate?: string;
-  onOpen: (product: Product, choice?: Record<string, string>) => void;
+  onOpen: (item: Item, product: Product) => void;
   onReserved: () => void;
   ownerId: string;
   ownerName: string;
@@ -177,7 +179,7 @@ const GuestWishCard = ({
           <button
             type="button"
             disabled={!product}
-            onClick={() => product && onOpen(product, item.variantChoice)}
+            onClick={() => product && onOpen(item, product)}
             aria-label={product ? `Подробнее: ${title}` : title}
             className="bg-paper-2 relative grid size-[120px] flex-none place-items-center overflow-hidden rounded-[14px] [@media(max-height:700px)]:size-24"
           >
@@ -295,13 +297,24 @@ export const GuestWishlistView = ({
   reservationChat = false,
   titleAs: Title = "h1",
 }: Props) => {
+  // «Подробнее»: последний открытый товар держим и после закрытия — шторка
+  // уезжает вниз вместе со своей кнопкой брони, а не пустой.
   const [details, setDetails] = useState<{
-    choice?: Record<string, string>;
+    item: Item;
     product: Product;
   } | null>(null);
-  // Карточка первой брони на этой странице и «Не сейчас».
-  const [promoKey, setPromoKey] = useState<null | string>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  // Желания, забронированные на этой странице, и «Не сейчас». Плашка — под
+  // первым, бронь которого ещё твоя (G03): сняли — плашка уходит.
+  const [reservedKeys, setReservedKeys] = useState<string[]>([]);
   const [promoDismissed, setPromoDismissed] = useState(false);
+  const reservations = useReservations(ownerId, access);
+  const promoKey = afterReserveKey(
+    reservedKeys,
+    (itemKey) => reservations.stateOf(itemKey).state === "mine",
+  );
+  const onReserved = (itemKey: string) =>
+    setReservedKeys((keys) => addReservedKey(keys, itemKey));
   const promo =
     renderAfterReserve && !promoDismissed
       ? renderAfterReserve(() => setPromoDismissed(true))
@@ -372,8 +385,11 @@ export const GuestWishlistView = ({
               ownerId={ownerId}
               readOnly={readOnly}
               nameGuard={requireName}
-              onOpen={(product, choice) => setDetails({ product, choice })}
-              onReserved={() => setPromoKey((key) => key ?? item.key)}
+              onOpen={(open, product) => {
+                setDetails({ item: open, product });
+                setDetailsOpen(true);
+              }}
+              onReserved={() => onReserved(item.key)}
               occasionDate={wishlist.meta.occasion?.date}
               ownerName={wishlist.owner.name}
               reservationChat={reservationChat}
@@ -384,9 +400,23 @@ export const GuestWishlistView = ({
       )}
       {footer}
       <ProductDetailsSheet
-        product={details?.product ?? null}
-        choice={details?.choice}
-        onClose={() => setDetails(null)}
+        product={detailsOpen ? (details?.product ?? null) : null}
+        choice={details?.item.variantChoice}
+        onClose={() => setDetailsOpen(false)}
+        // Забронировать прямо из «Подробнее» (UX-аудит G09) — та же бронь,
+        // что на карточке, с тем же вопросом имени.
+        footer={
+          details && !readOnly ? (
+            <ReserveControl
+              compact
+              access={access}
+              ownerId={ownerId}
+              itemKey={details.item.key}
+              nameGuard={requireName}
+              onReserved={() => onReserved(details.item.key)}
+            />
+          ) : undefined
+        }
       />
       {requireName.sheet}
     </>

@@ -143,8 +143,12 @@ export const createSwipe: ServerHandler = async (ctx, { body }) => {
       row.createdVia === null ||
       row.createdVia === "feed" ||
       row.createdVia === "wishlist_link";
-    if (fromFeed && at.getTime() - row.createdAt.getTime() <= 10_000) {
-      await reachStep(ctx.tx, user.id, "first_swipe_10s", at.getTime());
+    if (fromFeed) {
+      // Знаменатель «за 10 секунд» — ровно те, кому шаг положен (M07).
+      await reachStep(ctx.tx, user.id, "first_swipe_feed", at.getTime());
+      if (at.getTime() - row.createdAt.getTime() <= 10_000) {
+        await reachStep(ctx.tx, user.id, "first_swipe_10s", at.getTime());
+      }
     }
   }
 

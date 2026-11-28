@@ -64,9 +64,35 @@ export const drawLabel = (
     : gatheringStatus(view);
 };
 
-// Текст приглашения в игру — «Позвать по ссылке» и «Позвать друзей» (Y06).
-export const santaInviteText = (game: SantaView["game"]) =>
-  `Тайный Санта «${game.title}»: ${santaTerms(game)} Вступай!`;
+const timeOf = (iso: string) =>
+  new Date(iso).toLocaleTimeString("ru", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+// Текст приглашения в игру — «Позвать по ссылке», «Позвать друзей» (Y06) и
+// «Позвать» в карточке списка. Игра «По дате» (Z04) — до когда вступить:
+// кто не успел до жеребьёвки, в игру уже не попадёт. Дата прошла (жеребьёвка
+// не прошла, R08) — срок не пишем, как у «Когда все соберутся».
+export const santaInviteText = (
+  game: Pick<SantaView["game"], "budget" | "drawAt" | "exchangeDate" | "title">,
+  now: number,
+) => {
+  const head = `Тайный Санта «${game.title}»: бюджет до ${formatPrice(game.budget)}, обмен ${formatDayMonth(game.exchangeDate)}.`;
+  return game.drawAt && Date.parse(game.drawAt) > now
+    ? `${head} Вступай до ${formatDayMonth(game.drawAt)}, ${timeOf(game.drawAt)} — потом жеребьёвка`
+    : `${head} Вступай!`;
+};
+
+// Имя организатора (Z02) — в «напиши организатору (Данияр)». После
+// «Передать роль» (S04) он меняется посреди игры. Имени нет — undefined.
+export const ownerName = (
+  view: Pick<SantaView, "members"> & {
+    game: Pick<SantaView["game"], "ownerId">;
+  },
+): string | undefined =>
+  view.members.find((member) => member.id === view.game.ownerId)?.name.trim() ||
+  undefined;
 
 // Вступивших меньше трёх (Y06): тянуть пары рано — главное действие
 // «Позвать друзей», а не выключенная «Провести жеребьёвку».

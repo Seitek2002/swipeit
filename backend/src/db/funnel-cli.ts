@@ -1,10 +1,11 @@
 import path from "node:path";
 
 import { loadCatalog } from "../catalog/load";
-import { loadConfig } from "../config";
+import { applyTimeZone, loadConfig } from "../config";
 import { formatLive, readLive } from "../domains/funnel/live";
 import {
   formatFunnel,
+  readCompanies,
   readFunnel,
   readProfilesByVia,
 } from "../domains/funnel/report";
@@ -30,6 +31,8 @@ if (since !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(since)) {
 }
 
 const config = loadConfig();
+// День и граница --since — по Бишкеку, где бы ни запускали (M11).
+applyTimeZone(config.TZ);
 const database = createDb(config.DATABASE_URL, 1);
 try {
   const now = Date.now();
@@ -38,6 +41,7 @@ try {
       await readFunnel(database.db, days, now, since),
       days,
       await readProfilesByVia(database.db, days, now, since),
+      { companies: await readCompanies(database.db, days, now, since) },
     ),
   );
   if (args.includes("--live")) {
@@ -46,7 +50,13 @@ try {
       { warn: () => undefined },
     );
     console.log("");
-    console.log(formatLive(await readLive(database.db, catalog, now)));
+    console.log(
+      formatLive(
+        await readLive(database.db, catalog, now, {
+          botEnabled: Boolean(config.TELEGRAM_BOT_TOKEN),
+        }),
+      ),
+    );
   }
 } finally {
   await database.close();

@@ -109,7 +109,7 @@ export const Results = ({ view, meId }: Props) => {
   const [customOpen, setCustomOpen] = useState(false);
   // Кого ждём в голосовании (X04): пока не все, «Утвердить» — вторичная и
   // спрашивает подтверждение; все — главная и утверждает сразу.
-  const progress = voteProgress(participants, plan.votes, votable);
+  const progress = voteProgress(participants, plan.votes, votable, meId);
   const warning = approveWarning(progress);
   const [confirmId, setConfirmId] = useState<null | string>(null);
 

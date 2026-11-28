@@ -70,6 +70,9 @@ export const createUser: ServerHandler = async (ctx, { body }) => {
       id,
       avatarColor: ctx.random.pick(AVATAR_COLORS),
       createdVia: via ?? null,
+      // Репетиция с верным токеном (M01): пометка до reachStep — шаг
+      // profile_created и все следующие не считаются.
+      ...(ctx.rehearsal ? { funnelInternal: true } : {}),
       createdAt,
     })
     .returning();

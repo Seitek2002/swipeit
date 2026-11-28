@@ -40,7 +40,7 @@ export const AppShell = ({ children, overlay, tabBar }: Props) => {
       <aside className="wide:flex hidden w-[320px] flex-col gap-6">
         <Brand size="lg" />
         <p className="text-title-3 text-rose">
-          Свайпай подарки, которые хочешь сам. Друзья увидят — и угадают с
+          Свайпай подарки, которые хочется тебе. Друзья увидят — и угадают с
           подарком.
         </p>
         <div className="mt-4 flex items-center gap-5">

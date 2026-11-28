@@ -1,5 +1,6 @@
 import { toDateKey } from "@swipeit/core/format";
 import { daysUntil } from "@swipeit/core/logic/dates";
+import { SANTA_WISHES_ENOUGH } from "@swipeit/core/logic/santa-wishlist";
 import { and, eq, gt, isNull, lte } from "drizzle-orm";
 
 import type { ServerContext } from "../../context";
@@ -17,8 +18,6 @@ const DAY = 86_400_000;
 // Напоминаем днём по Бишкеку: в полночь «до обмена 3 дня» никому не нужно.
 const REMIND_FROM_HOUR = 10;
 const REMIND_TO_HOUR = 21;
-// Порог «мало желаний» — как у идей P05 и шага ward_empty.
-const FEW_WISHES = 3;
 const EXCHANGE_SOON_DAYS = 3;
 
 export const isRemindHour = (now: number) => {
@@ -49,7 +48,9 @@ const remindDrawTomorrow = async (ctx: ServerContext, now: number) => {
     }
     const few: string[] = [];
     for (const userId of await botRecipients(ctx.tx, game.participantIds)) {
-      if ((await wishesInBudget(ctx, userId, game.budget)) < FEW_WISHES) {
+      if (
+        (await wishesInBudget(ctx, userId, game.budget)) < SANTA_WISHES_ENOUGH
+      ) {
         few.push(userId);
       }
     }

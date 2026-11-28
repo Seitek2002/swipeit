@@ -1,54 +1,22 @@
-import { eq } from "drizzle-orm";
-
-import { loadConfig } from "../config";
+import { applyTimeZone, loadConfig } from "../config";
+import { runTeamCommand } from "../domains/funnel/team";
 import { createDb } from "./client";
-import { shareLinks, users } from "./schema";
 
-// npm run funnel:team -w backend -- <код короткой ссылки> [--undo]
-// npm run funnel:team -w backend -- --user <id> [--undo]
-// Пометить свой профиль команды (Q03): его шаги воронка не считает. Код —
-// с короткой ссылки своего вишлиста: id профиля в интерфейсе не виден.
+// npm run funnel:team -w backend -- --help
+// В образе: node dist/funnel-team.js --recent, затем --pick 1.
+// Пометить свой профиль команды (Q03, M08): его шаги воронка не считает.
+// Что умеет и чего не делать — в справке (domains/funnel/team.ts).
 const args = process.argv.slice(2);
-const undo = args.includes("--undo");
-const userFlag = args.indexOf("--user");
-const userArg = userFlag === -1 ? undefined : args[userFlag + 1];
-const code = args.find(
-  (arg, index) => !arg.startsWith("--") && args[index - 1] !== "--user",
-);
-if (!userArg && !code) {
-  console.error("Нужен код короткой ссылки или --user <id>");
-  process.exit(1);
-}
 
 const config = loadConfig();
+// Время создания в выводе — по Бишкеку, где бы ни запускали (M11).
+applyTimeZone(config.TZ);
 const database = createDb(config.DATABASE_URL, 1);
 try {
-  let userId = userArg;
-  if (!userId && code) {
-    const [link] = await database.db
-      .select({ ownerId: shareLinks.ownerId })
-      .from(shareLinks)
-      .where(eq(shareLinks.code, code))
-      .limit(1);
-    userId = link?.ownerId;
-  }
-  const [row] = userId
-    ? await database.db
-        .update(users)
-        .set({ funnelInternal: !undo })
-        .where(eq(users.id, userId))
-        .returning({ id: users.id })
-    : [];
-  if (!row) {
-    console.error(code && !userArg ? "Ссылка не найдена" : "Профиль не найден");
-    process.exitCode = 1;
-  } else {
-    console.log(
-      undo
-        ? "Пометка снята: шаги профиля снова считаются."
-        : "Профиль помечен своим: дальше его шаги не считаются. Уже набранные счётчики остаются как есть.",
-    );
-  }
+  const result = await runTeamCommand(database.db, args, Date.now());
+  if (result.exitCode === 0) console.log(result.text);
+  else console.error(result.text);
+  process.exitCode = result.exitCode;
 } finally {
   await database.close();
 }

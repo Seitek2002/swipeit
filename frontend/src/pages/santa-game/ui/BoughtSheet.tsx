@@ -101,7 +101,7 @@ const BoughtSheet = ({
   );
   const marked = current !== undefined;
   return (
-    <BottomSheet open={open} onClose={onClose} title="Что купил?">
+    <BottomSheet open={open} onClose={onClose} title="Какой подарок?">
       <p className="text-caption text-rose mb-2">
         Отметим это желание выбранным — друзья подопечного не купят второе такое
         же

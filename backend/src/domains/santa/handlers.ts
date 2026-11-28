@@ -29,6 +29,10 @@ import {
 } from "@swipeit/core/logic/draw";
 import { occasionForOthersFrom } from "@swipeit/core/logic/occasion";
 import {
+  countInSantaBudget,
+  SANTA_WISHES_ENOUGH,
+} from "@swipeit/core/logic/santa-wishlist";
+import {
   AFTER_DRAW_PATCH_MESSAGE,
   lockedAfterDraw,
   newOwnerText,
@@ -64,12 +68,7 @@ import {
   notifySantaDrawn,
 } from "../notifications/events";
 import { readMe, readUser, type UserRow } from "../users/queries";
-import {
-  countActiveWishes,
-  itemKeyOf,
-  readMeta,
-  rowToMeta,
-} from "../wishlist/queries";
+import { itemKeyOf, readMeta, rowToMeta } from "../wishlist/queries";
 import { repairAfterRemoval } from "./repair";
 import {
   insertGame,
@@ -209,17 +208,24 @@ const priceOf = (ctx: ServerContext, item: WishlistItem) => {
   };
 };
 
-// Сколько желаний подопечного в бюджете игры (по нижней цене). Тот же счёт
-// — у напоминания «Добавь пару желаний» (S10).
-export const wishesInBudget = async (
+// Сколько желаний человека в бюджете игры (по нижней цене, core
+// santa-wishlist). Тот же счёт — у строки участника и подтверждения
+// жеребьёвки (Z03), у ward_empty и у напоминания «Добавь пару желаний» (S10).
+const inBudgetOf = (
   ctx: ServerContext,
-  wardId: string,
+  items: readonly WishlistItem[],
   budget: number,
 ) =>
-  (await guestItemsOf(ctx.tx, wardId)).filter((item) => {
-    const { min } = priceOf(ctx, item);
-    return min !== null && min <= budget;
-  }).length;
+  countInSantaBudget(
+    items.map((item) => priceOf(ctx, item).min),
+    budget,
+  );
+
+export const wishesInBudget = async (
+  ctx: ServerContext,
+  userId: string,
+  budget: number,
+) => inBudgetOf(ctx, await guestItemsOf(ctx.tx, userId), budget);
 
 // Подопечный с вишлистом — активные желания, как у гостя (T11).
 const wardOf = async (
@@ -296,7 +302,7 @@ const ownerFirst = (game: StoredGame) => [
 ];
 
 const memberList = async (
-  tx: Tx,
+  ctx: ServerContext,
   game: StoredGame,
   people: Map<string, Person>,
   role: SantaView["role"],
@@ -310,11 +316,14 @@ const memberList = async (
       result.push({ ...profileOf(person), joined });
       continue;
     }
+    // Активные желания без повторов — как у гостя и в письме Санты.
+    const wishes = await guestItemsOf(ctx.tx, id);
     result.push({
       ...profileOf(person),
-      hasWishlist: (await countActiveWishes(tx, id)) > 0,
+      hasWishlist: wishes.length > 0,
       joined,
       opened: game.openedIds.includes(id),
+      wishesInBudget: inBudgetOf(ctx, wishes, game.budget),
     });
   }
   return result;
@@ -350,7 +359,7 @@ const viewOf = async (
       : null;
   return {
     game: publicOf(game, role),
-    members: await memberList(ctx.tx, game, people, role),
+    members: await memberList(ctx, game, people, role),
     role,
     me: joined
       ? {
@@ -364,6 +373,8 @@ const viewOf = async (
       : null,
     boughtCount: game.boughtIds.length,
     openedCount: game.openedIds.length,
+    // Убрали меня (Z01) — только мне.
+    ...(game.removedIds.includes(userId) ? { removed: true } : {}),
     drawIssue: owner ? drawIssue(game, people) : null,
     drawFailed: game.drawFailed
       ? owner
@@ -842,7 +853,10 @@ export const openSantaEnvelope: ServerHandler = async (ctx, { params }) => {
     const wardId = await wardIdOf(ctx.tx, game.id, me.id);
     await reachStep(ctx.tx, me.id, "envelope_opened", ctx.clock.now());
     // Меньше трёх желаний в бюджете — тот же порог, что у идей P05 (Q02).
-    if (wardId && (await wishesInBudget(ctx, wardId, game.budget)) < 3) {
+    if (
+      wardId &&
+      (await wishesInBudget(ctx, wardId, game.budget)) < SANTA_WISHES_ENOUGH
+    ) {
       await reachStep(ctx.tx, me.id, "ward_empty", ctx.clock.now());
     }
     changed(ctx, game);

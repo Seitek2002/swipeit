@@ -19,7 +19,9 @@ import { toast } from "../toast";
 
 type Props = {
   // «Скопировать» кладёт текст вместе со ссылкой — для сообщения в чат
-  // («Жеребьёвка прошла: …», Q06), а не только ссылку.
+  // («Жеребьёвка прошла: …», Q06), а не только ссылку. Ссылка — с новой
+  // строки (G02): голый адрес на 500 символов в чате никто не читает, а
+  // на компьютере «Поделиться» нет — остаётся только «Скопировать».
   copyWithText?: boolean;
   // Ссылка собирается по требованию: перед отправкой сохраняется повод,
   // сообщение и т. п.
@@ -157,7 +159,7 @@ export const ShareActions = ({
       async (payload) => {
         const ok = await copyText(
           copyWithText && payload.text
-            ? `${payload.text} ${payload.url}`
+            ? `${payload.text}\n${payload.url}`
             : payload.url,
         );
         const done = copyWithText
@@ -222,7 +224,10 @@ export const ShareActions = ({
           <QrCode
             value={qrUrl}
             label={qrLabel}
-            className="mx-auto mt-2 size-56"
+            // Во всю ширину шторки (до 320 px), а не 224 px: модули длинной
+            // ссылки крупнее и считываются с другого телефона. На низком
+            // экране — не выше 45 % высоты: шторке нужно место и для формы.
+            className="mx-auto mt-2 size-[min(20rem,45dvh)] max-w-full"
           />
         </div>
       )}

@@ -65,6 +65,7 @@ import {
   stepAfterCalendar,
   whenOptions,
 } from "./model";
+import { rememberSent } from "./sent";
 
 type Props = {
   // Повод напоминания (ReminderBanner «Отправить вишлист»): шторка сразу
@@ -328,6 +329,7 @@ export const WishlistShareSheet = ({
     await updateWishlistMeta(occasion ? { occasion, message } : { message });
     void queryClient.invalidateQueries({ queryKey: wishlistKeys.all });
     const { url } = await shareWishlist();
+    if (wishlist) rememberSent(wishlist.items);
     return {
       title: "Мой вишлист",
       text: occasionLine
@@ -396,6 +398,7 @@ export const WishlistShareSheet = ({
           <>
             <ShareActions
               kind="wishlist"
+              copyWithText
               getPayload={getPayload}
               onError={onShareError}
               qrLabel="QR-код ссылки на вишлист"

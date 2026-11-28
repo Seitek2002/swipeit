@@ -10,20 +10,30 @@ import {
   occasionFromDraft,
 } from "@/entities/wishlist";
 
-import { type Occasion, createPickRequest } from "@/shared/api";
-import { CATEGORY_IDS, CATEGORY_LABELS } from "@/shared/config";
+import { type Occasion, createPickRequest, upToGifts } from "@/shared/api";
+import {
+  AUDIENCES,
+  AUDIENCE_LABELS,
+  CATEGORY_IDS,
+  CATEGORY_LABELS,
+} from "@/shared/config";
 import { absoluteUrl } from "@/shared/lib/dom";
 import {
   BottomSheet,
   Chip,
   RangeSlider,
+  SegmentedControl,
   ShareActions,
   Switch,
   TextArea,
   TextField,
 } from "@/shared/ui";
 
-import { canHidePrices, effectiveHidePrices } from "./model";
+import {
+  PICK_LIMIT_OPTIONS,
+  canHidePrices,
+  effectiveHidePrices,
+} from "./model";
 
 type Props = {
   // Условия словами — их показывает экран, который открыл шторку.
@@ -73,12 +83,15 @@ export const PickRequestSheet = ({
   const [draft, setDraft] = useState(() => occasionDraftOf(defaultOccasion));
   const [message, setMessage] = useState("");
   const [hidePrices, setHidePrices] = useState(false);
+  // «Сколько можно выбрать»: null — сколько угодно.
+  const [maxPicks, setMaxPicks] = useState<null | number>(null);
   const created = useRef<{ key: string; url: Promise<string> } | null>(null);
 
   const getPayload = async () => {
     const input: Input = {
       filters,
       hidePrices: effectiveHidePrices(filters, hidePrices),
+      maxPicks: maxPicks ?? undefined,
       toName: toName.trim() || undefined,
       occasion: occasionFromDraft(draft) ?? undefined,
       message: message.trim() || undefined,
@@ -94,8 +107,10 @@ export const PickRequestSheet = ({
     const url = await created.current.url;
     const name = me?.name?.trim() || "Друг";
     return {
-      title: "Выбери подарок сам",
-      text: `${name} хочет подарить тебе подарок. Выбери сам, что тебе нравится`,
+      // Без рода (G07): «Выбери подарок сам» читалось бы как обращение к
+      // мужчине.
+      title: "Подарок на твой выбор",
+      text: `${name} хочет подарить тебе подарок. Выбери, что тебе нравится`,
       url: absoluteUrl(url),
     };
   };
@@ -104,11 +119,13 @@ export const PickRequestSheet = ({
     <BottomSheet
       open={open}
       onClose={onClose}
-      title={askName ? "Как тебя зовут?" : "Выбери подарок сам"}
+      // «Выбери подарок сам» — экран друга; отправителю — что он делает.
+      title={askName ? "Как тебя зовут?" : "Предложить выбрать подарок"}
       height={askName ? "auto" : "full"}
       footer={
         askName ? undefined : (
           <ShareActions
+            copyWithText
             getPayload={getPayload}
             onError={onShareError}
             qrLabel="QR-код ссылки-фильтра"
@@ -121,7 +138,11 @@ export const PickRequestSheet = ({
       ) : (
         <div className="flex flex-col gap-5 pb-2">
           <div className="paper rounded-paper shadow-paper px-4 py-3.5">
-            <p className="text-caption text-ink-soft">Друг выберет подарки</p>
+            <p className="text-caption text-ink-soft">
+              {maxPicks
+                ? `Друг выберет ${upToGifts(maxPicks)}`
+                : "Друг выберет подарки"}
+            </p>
             <p className="text-title-3 mt-0.5 italic">{conditions}</p>
           </div>
           {onFiltersChange && (
@@ -131,6 +152,25 @@ export const PickRequestSheet = ({
                 value={filters.budget}
                 onChange={(budget) => onFiltersChange({ ...filters, budget })}
               />
+              {/* Как в фильтрах ленты (G05): иначе подруге на день рождения
+                  выпадали бритвы «для мужчин». */}
+              <div>
+                <p className="text-label mb-3">Показывать подарки</p>
+                <SegmentedControl
+                  label="Показывать подарки"
+                  value={filters.audience ?? "all"}
+                  options={AUDIENCES.map((audience) => ({
+                    value: audience,
+                    label: AUDIENCE_LABELS[audience],
+                  }))}
+                  onChange={(audience) =>
+                    onFiltersChange({
+                      ...filters,
+                      audience: audience === "all" ? undefined : audience,
+                    })
+                  }
+                />
+              </div>
               <div>
                 <p className="text-label mb-3">Категории</p>
                 <div
@@ -163,6 +203,26 @@ export const PickRequestSheet = ({
               </div>
             </>
           )}
+          <div>
+            <p className="text-label mb-3">Сколько можно выбрать</p>
+            <div
+              role="group"
+              aria-label="Сколько можно выбрать"
+              className="flex flex-wrap gap-2"
+            >
+              {PICK_LIMIT_OPTIONS.map((option) => (
+                <Chip
+                  key={option ?? "any"}
+                  selected={maxPicks === option}
+                  // «3» без контекста скринридеру непонятно.
+                  aria-label={option === null ? undefined : upToGifts(option)}
+                  onClick={() => setMaxPicks(option)}
+                >
+                  {option ?? "Сколько угодно"}
+                </Chip>
+              ))}
+            </div>
+          </div>
           <TextField
             label="Кому"
             placeholder="Имя друга"

@@ -4,11 +4,18 @@ import { privacyText } from "./privacy-model";
 
 // «Что SwipeIt хранит» (auto-tasks-pm-4 S11).
 describe("privacyText", () => {
-  it("демо — одна строка про браузер", () => {
+  it("демо — строка про браузер и про вишлист в ссылке (Z06)", () => {
     expect(privacyText("local", { telegram: true })).toEqual({
       kind: "demo",
-      text: "Это демо: всё хранится только в этом браузере.",
+      text: "Это демо: всё хранится в этом браузере. Отправленный вишлист лежит в самой ссылке — его увидит любой, у кого она есть.",
     });
+  });
+
+  it("локальная сеть — про ноутбук и тоже про вишлист в ссылке", () => {
+    const text = privacyText("lan", { telegram: false });
+    if (text.kind !== "demo") throw new Error("ждали demo");
+    expect(text.text).toContain("на ноутбуке");
+    expect(text.text).toContain("лежит в самой ссылке");
   });
 
   it("remote без входа через Telegram — без пункта про Telegram", () => {
@@ -30,8 +37,12 @@ describe("privacyText", () => {
     );
   });
 
-  it("тексты без рода: ни «ввёл», ни «отметил»", () => {
-    const text = privacyText("remote", { telegram: true });
-    expect(JSON.stringify(text)).not.toMatch(/ввёл|отметил/);
+  it("тексты без рода: ни «ввёл», ни «отметил», ни «отправил»", () => {
+    const texts = [
+      privacyText("remote", { telegram: true }),
+      privacyText("local", { telegram: false }),
+      privacyText("lan", { telegram: false }),
+    ];
+    expect(JSON.stringify(texts)).not.toMatch(/ввёл|отметил|отправил/);
   });
 });

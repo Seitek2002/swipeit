@@ -12,6 +12,6 @@ export const reservationChatText = ({
   const name = ownerName.trim();
   const gift = `Беру „${title.trim()}“`;
   return name
-    ? `${gift} из вишлиста ${name} — не дублируйте`
+    ? `${gift} (вишлист: ${name}) — не дублируйте`
     : `${gift} — не дублируйте`;
 };

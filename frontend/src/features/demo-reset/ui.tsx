@@ -10,6 +10,16 @@ import { withBasePath } from "@/shared/lib/base-path";
 import { useSessionStore } from "@/shared/store";
 import { Button, ConfirmDialog, toast } from "@/shared/ui";
 
+import { clearDemoDeviceState } from "./model";
+
+const localStorageOrNothing = () => {
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+};
+
 type Props = {
   className?: string;
   // В демо-панели — «Сбросить всё» (DESIGN.md §8.10).
@@ -36,6 +46,9 @@ export const ResetDemoButton = ({
       setOpen(false);
       setActiveUser(null);
       queryClient.clear();
+      // Фильтры, имя гостя и прочее с устройства — тоже (G10): прямо перед
+      // перезагрузкой, чтобы сторы не успели записать их обратно.
+      clearDemoDeviceState(localStorageOrNothing());
       // Полная перезагрузка: снова прелоадер, новый пустой профиль и
       // обучающая карточка (DESIGN.md §8.1), а не остатки старого кэша.
       window.location.assign(withBasePath(ROUTES.GIFTS));

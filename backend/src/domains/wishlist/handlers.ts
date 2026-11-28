@@ -224,17 +224,16 @@ export const undeleteItem: ServerHandler = async (ctx, { params }) => {
 };
 
 // POST /wishlist/reorder { ids } — новый ручной порядок: ids — все желания в
-// нужном порядке, не упомянутые встают в конец, сохраняя свой порядок.
+// нужном порядке, не упомянутые встают в конец, сохраняя свой порядок
+// (номера новых желаний бывают отрицательными — сравниваем парой ключей).
 export const reorderItems: ServerHandler = async (ctx, { body }) => {
   const { ids } = parseInput(ReorderInputSchema, body);
   const me = await lockMe(ctx);
   const items = await itemsOf(ctx.tx, me.id);
   const position = new Map(ids.map((id, index) => [id, index]));
-  const tail = ids.length;
+  const rank = (item: WishlistItem) => position.get(item.id) ?? ids.length;
   const ordered = [...items].sort(
-    (a, b) =>
-      (position.get(a.id) ?? tail + a.order) -
-      (position.get(b.id) ?? tail + b.order),
+    (a, b) => rank(a) - rank(b) || a.order - b.order,
   );
   for (const [index, item] of ordered.entries()) {
     if (item.order === index) continue;
@@ -298,8 +297,8 @@ export const markGiven: ServerHandler = async (ctx, { params, body }) => {
   return rowToItem(row ?? target);
 };
 
-// POST /wishlist/items/:id/restore — вернуть из «Подарили» в конец, брони не
-// восстанавливаются. { undo: true } — «Отменить» сразу после «Мне это
+// POST /wishlist/items/:id/restore — вернуть из «Подарили» в начало списка,
+// как новое желание; брони не восстанавливаются. { undo: true } — «Отменить» сразу после «Мне это
 // подарили»: прежнее место, закрытые этим действием брони снова открыты.
 export const restoreItem: ServerHandler = async (ctx, { params, body }) => {
   const { undo = false } = parseInput(RestoreInputSchema, body ?? {});

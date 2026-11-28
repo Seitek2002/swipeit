@@ -41,12 +41,18 @@ export const resolveSession = async (
   db: Database,
   token: string,
   clock: Clock,
-): Promise<null | { sessionId: string; userId: string }> => {
+): Promise<null | {
+  // Свой профиль команды (funnel_internal): его ошибки в отчёте — отдельно.
+  internal: boolean;
+  sessionId: string;
+  userId: string;
+}> => {
   const [row] = await db
     .select({
       id: sessions.id,
       userId: sessions.userId,
       lastUsedAt: sessions.lastUsedAt,
+      internal: users.funnelInternal,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
@@ -74,7 +80,7 @@ export const resolveSession = async (
       .set({ lastUsedAt: new Date(now) })
       .where(eq(sessions.id, row.id));
   }
-  return { sessionId: row.id, userId: row.userId };
+  return { sessionId: row.id, userId: row.userId, internal: row.internal };
 };
 
 export const revokeSession = (tx: Tx, sessionId: string, clock: Clock) =>

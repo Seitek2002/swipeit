@@ -2,7 +2,7 @@ import path from "node:path";
 
 import { buildApp } from "./app";
 import { loadCatalog } from "./catalog/load";
-import { ConfigError, loadConfig } from "./config";
+import { applyTimeZone, ConfigError, loadConfig } from "./config";
 import { createDb } from "./db/client";
 
 // Запуск и остановка (BACKEND.md §2.3). По SIGTERM (docker stop, деплой) —
@@ -20,7 +20,7 @@ const main = async () => {
   }
   // Часовой пояс — до первого обращения к датам (§2.5). Node подхватывает
   // TZ, заданный в процессе; в Dockerfile он стоит и снаружи.
-  process.env.TZ = config.TZ;
+  applyTimeZone(config.TZ);
 
   const db = createDb(config.DATABASE_URL, config.DATABASE_POOL_MAX);
   const bootLog = {

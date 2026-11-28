@@ -12,6 +12,8 @@ type Props = {
   // Подпись NameSheet, если сервер ответит NAME_REQUIRED.
   caption: (name: string) => string;
   count: number;
+  // Лимит «Сколько можно выбрать» выбран целиком: дальше не свайпнуть.
+  full?: boolean;
   onClose: () => void;
   open: boolean;
   request: SharedPickRequest;
@@ -24,10 +26,9 @@ export const SendPicksSheet = ({
   onClose,
   request,
   count,
+  full = false,
   caption,
 }: Props) => {
-  // Имя — в именительном (P11).
-  const to = request.from.name;
   // Имя друга едет в ссылке-ответе: NAME_REQUIRED — NameSheet поверх и повтор.
   const requireName = useRequireName(caption, request.toName);
 
@@ -45,7 +46,7 @@ export const SendPicksSheet = ({
       <BottomSheet
         open={open}
         onClose={onClose}
-        title={`Отправить выбор: ${to}`}
+        title="Отправить выбор"
         footer={
           <ShareActions
             getPayload={getPayload}
@@ -54,9 +55,14 @@ export const SendPicksSheet = ({
           />
         }
       >
+        {/* Имя — подлежащим, в именительном (P11, G07): без склонения. */}
         <p className="text-body text-rose pb-2">
-          В ссылке — {pluralize(count, ["подарок", "подарка", "подарков"])} и
-          выбранные варианты. Можно свайпать дальше и отправить ссылку ещё раз.
+          {request.from.name} получит ссылку: в ней —{" "}
+          {pluralize(count, ["подарок", "подарка", "подарков"])} и выбранные
+          варианты.{" "}
+          {full
+            ? "Чтобы заменить подарок, верни карточку и отправь ссылку ещё раз."
+            : "Можно свайпать дальше и отправить ссылку ещё раз."}
         </p>
       </BottomSheet>
       {requireName.sheet}

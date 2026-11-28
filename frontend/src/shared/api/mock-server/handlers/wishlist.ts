@@ -28,8 +28,11 @@ const findItem = (db: Db, userId: string, id: string): WishlistItem => {
   return item;
 };
 
-const nextOrder = (items: WishlistItem[]) =>
-  Math.max(-1, ...items.map((item) => item.order)) + 1;
+// Номер нового желания — «в начало списка» (просьба владельца: новые
+// желания первыми), как nextOrderFor сервера: на единицу меньше самого
+// верхнего, в пустом — 0. Его же берут свайпы и «Вернуть» из «Подарили».
+export const nextOrder = (items: readonly WishlistItem[]) =>
+  Math.min(1, ...items.map((item) => item.order)) - 1;
 
 const changed = (
   ctx: HandlerContext,
@@ -135,20 +138,17 @@ export const undeleteItem: Handler = async (ctx, { params, body }) => {
 };
 
 // POST /wishlist/reorder { ids } — новый ручной порядок (ids — все желания
-// в нужном порядке; не упомянутые встают в конец).
+// в нужном порядке; не упомянутые встают в конец в своём порядке). Номера
+// новых желаний бывают отрицательными — сравниваем парой ключей.
 export const reorderItems: Handler = async (ctx, { body }) => {
   const { ids } = parseInput(ReorderInputSchema, body);
   await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const items = listOf(db, user.id);
     const position = new Map(ids.map((id, index) => [id, index]));
-    const tail = ids.length;
+    const rank = (item: WishlistItem) => position.get(item.id) ?? ids.length;
     [...items]
-      .sort(
-        (a, b) =>
-          (position.get(a.id) ?? tail + a.order) -
-          (position.get(b.id) ?? tail + b.order),
-      )
+      .sort((a, b) => rank(a) - rank(b) || a.order - b.order)
       .forEach((item, index) => {
         item.order = index;
       });
@@ -191,8 +191,8 @@ export const markGiven: Handler = async (ctx, { params, body }) => {
   return item;
 };
 
-// POST /wishlist/items/:id/restore — вернуть из «Подарили» в конец вишлиста,
-// брони не восстанавливаются (TECH_SPEC §6). { undo: true } — «Отменить» в
+// POST /wishlist/items/:id/restore — вернуть из «Подарили» в начало
+// вишлиста, как новое желание; брони не восстанавливаются (TECH_SPEC §6). { undo: true } — «Отменить» в
 // тосте сразу после «Мне это подарили»: желание встаёт на прежнее место, а
 // закрытые этим действием брони снова открыты — будто ничего не было.
 export const restoreItem: Handler = async (ctx, { params, body }) => {

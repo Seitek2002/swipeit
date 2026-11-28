@@ -1,3 +1,4 @@
+import { applyTimeZone, ConfigError, timeZoneOf } from "../config";
 import { normalizeBase } from "../rehearsal/client";
 import { runRehearsal } from "../rehearsal/run";
 
@@ -13,6 +14,15 @@ import { runRehearsal } from "../rehearsal/run";
 // --inject-leak — проверка проверки: подложить чужого подопечного в ответ,
 // шаг 7 обязан упасть. Выход: 0 — всё прошло, 1 — упала проверка, 2 —
 // неверные аргументы.
+// Время в выводе — по Бишкеку, где бы ни запускали (M11).
+try {
+  applyTimeZone(timeZoneOf());
+} catch (error) {
+  if (!(error instanceof ConfigError)) throw error;
+  console.error(error.message);
+  process.exit(2);
+}
+
 const args = process.argv.slice(2);
 const valueOf = (...flags: string[]) => {
   for (const flag of flags) {

@@ -1,6 +1,10 @@
 import type { ApiMode } from "@swipeit/core/contract";
 import { createCryptoRandom, type Random } from "@swipeit/core/logic/random";
-import Fastify, { type FastifyInstance, LogController } from "fastify";
+import Fastify, {
+  type FastifyInstance,
+  type FastifyRequest,
+  LogController,
+} from "fastify";
 import { randomUUID } from "node:crypto";
 import type { Writable } from "node:stream";
 
@@ -8,7 +12,13 @@ import type { ServerCatalog } from "./catalog/load";
 import type { Config } from "./config";
 import type { Clock } from "./context";
 import type { Db } from "./db/client";
-import { errorStats, registerErrors } from "./errors";
+import {
+  createErrorLog,
+  HEALTH_503,
+  registerErrors,
+  routeOf,
+  writeErrorsDaily,
+} from "./errors";
 import { resolveSession } from "./auth/sessions";
 import {
   createTelegramAuth,
@@ -21,6 +31,7 @@ import {
 } from "./domains/notifications/sender";
 import { createDiskStorage } from "./domains/uploads/storage";
 import { registerHttpGuards } from "./http-guards";
+import { REHEARSAL_HEADER } from "./ops-auth";
 import { createLimiter, limitConfigFrom } from "./limits";
 import { registerOps } from "./routes-ops";
 import { registerPreview } from "./routes-preview";
@@ -82,6 +93,30 @@ export const buildApp = ({
         : {
             level: config.LOG_LEVEL,
             ...(logStream ? { stream: logStream } : {}),
+            // Журнал читает администратор — коллега из того же офиса
+            // (auto-tasks-metrics-1 M12). Вместо адреса — шаблон маршрута:
+            // в адресе коды коротких ссылок и приглашений (/v1/share/<код>,
+            // /s/<код>), а по коду можно открыть чужой вишлист. Неизвестный
+            // маршрут — без адреса. Заголовков Fastify в журнал не пишет;
+            // токены всё равно закрыты — на случай, если кто-то залогирует
+            // запрос целиком.
+            serializers: {
+              req: (request: FastifyRequest) => ({
+                method: request.method,
+                url: routeOf(request),
+                host: request.host,
+                remoteAddress: request.ip,
+              }),
+            },
+            redact: {
+              paths: [
+                "req.headers.authorization",
+                `req.headers["${REHEARSAL_HEADER}"]`,
+                "headers.authorization",
+                `headers["${REHEARSAL_HEADER}"]`,
+              ],
+              censor: "[скрыто]",
+            },
           },
     // Лимит JSON — 100 КБ (BACKEND.md §10).
     bodyLimit: 100 * 1024,
@@ -90,7 +125,24 @@ export const buildApp = ({
     logController: new LogController({ requestIdLogLabel: "requestId" }),
   });
 
-  registerErrors(app);
+  // Ответы с ошибкой: в памяти процесса и по дням в базе (M05).
+  const errorLog = createErrorLog({
+    clock,
+    ...(db ? { write: writeErrorsDaily(db.db) } : {}),
+  });
+  registerErrors(app, errorLog, { opsToken: config.OPS_TOKEN });
+  // Остановка: дописать в базу то, что ещё ждёт в очереди, — но не дольше
+  // 2 с: база без ответа не держит остановку.
+  app.addHook("onClose", async () => {
+    let timer: NodeJS.Timeout | undefined;
+    await Promise.race([
+      errorLog.flush(),
+      new Promise((resolve) => {
+        timer = setTimeout(resolve, 2_000);
+      }),
+    ]);
+    clearTimeout(timer);
+  });
 
   // Без TRUST_PROXY в production все люди за прокси — один IP, и лимит
   // ляжет на сам прокси (R01).
@@ -115,15 +167,19 @@ export const buildApp = ({
   });
 
   // База не ответила — 503 OFFLINE (BACKEND.md §4.5): мониторинг видит, что
-  // сервер жив, но работать не может.
+  // сервер жив, но работать не может. Каждый такой ответ — +1 к «/health
+  // отвечал 503» (M05): в базу уйдёт, когда она вернётся.
   app.get("/v1/health", async (request, reply) => {
     if (db && !(await db.ping())) {
+      errorLog.count(HEALTH_503, false);
       return reply.status(503).send({
         code: "OFFLINE",
         message: "База данных недоступна",
         requestId: request.id,
       });
     }
+    // База снова отвечает — дослать счётчики, что ждали в памяти.
+    if (db && errorLog.hasPending()) void errorLog.flush();
     return {
       app: "swipeit",
       mode: MODE,
@@ -131,7 +187,7 @@ export const buildApp = ({
       now: clock.now(),
       commit: config.COMMIT,
       // Запуск процесса (S08): по нему видно перезапуски.
-      startedAt: errorStats().startedAt.toISOString(),
+      startedAt: errorLog.startedAt.toISOString(),
       // Старее этой сборки фронт показывает «Обнови приложение» (B17).
       minClientBuild: config.MIN_CLIENT_BUILD,
       ...(catalog ? { catalogVersion: catalog.version } : {}),
@@ -179,6 +235,7 @@ export const buildApp = ({
       hub: events,
       limiter: createLimiter(clock.now),
       limits: limitConfigFrom(config),
+      opsToken: config.OPS_TOKEN,
       publicShareUrl: config.PUBLIC_SHARE_URL,
     });
     registerPreview(app, {
@@ -191,8 +248,11 @@ export const buildApp = ({
       db,
       catalog,
       clock,
+      errorLog,
       online,
       token: config.OPS_TOKEN,
+      // Без токена бота сообщения только в журнале (S10, M09).
+      botEnabled: Boolean(config.TELEGRAM_BOT_TOKEN),
     });
     registerUploads(app, {
       db,

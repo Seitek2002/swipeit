@@ -13,7 +13,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "SwipeIt",
     short_name: "SwipeIt",
     description:
-      "Свайпай подарки, которые хочешь сам, — друзья угадают с подарком. Планы с друзьями и Тайный Санта.",
+      "Свайпай подарки, которые хочется тебе, — друзья угадают с подарком. Планы с друзьями и Тайный Санта.",
     lang: "ru",
     start_url: `${BASE_PATH}/`,
     scope: `${BASE_PATH}/`,

@@ -128,14 +128,15 @@ export const describeFilters = (
   { hidePrices = false }: { hidePrices?: boolean } = {},
 ): string => {
   const parts: string[] = [];
+  // «Для неё, в категории Красота» (G05): кому — первым.
+  if (filters.audience && filters.audience !== "all") {
+    parts.push(AUDIENCE_LABELS[filters.audience]);
+  }
   const categories = filters.categories.map(
     (category: CategoryId) => CATEGORY_LABELS[category],
   );
   if (categories.length === 1) parts.push(`в категории ${categories[0]}`);
   if (categories.length > 1) parts.push(`в категориях ${joinAnd(categories)}`);
-  if (filters.audience && filters.audience !== "all") {
-    parts.push(AUDIENCE_LABELS[filters.audience]);
-  }
   if (!hidePrices && !isDefaultBudget(filters)) {
     parts.push(formatBudget(filters.budget.min, filters.budget.max));
   }

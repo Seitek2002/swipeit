@@ -3,6 +3,7 @@ import {
   PickAnswerImportSchema,
   PickRequestInputSchema,
 } from "@swipeit/core/api/pick/inputs";
+import { fitsPickLimit, upToGifts } from "@swipeit/core/api/pick/limit";
 import type { PickAnswer, PickRequest } from "@swipeit/core/api/pick/types";
 import type { Occasion } from "@swipeit/core/api/wishlist/types";
 import { nameRequired, validation } from "@swipeit/core/errors";
@@ -24,6 +25,20 @@ import { reachStep } from "../funnel/steps";
 
 type RequestRow = typeof pickRequests.$inferSelect;
 
+// «Сколько можно выбрать» хранится в той же jsonb-колонке filters под
+// служебным ключом — без новой миграции. Наружу фильтры уходят без него.
+type StoredFilters = ProductFilters & { maxPicks?: number };
+
+const storedFilters = (
+  filters: ProductFilters,
+  maxPicks?: number,
+): StoredFilters => (maxPicks ? { ...filters, maxPicks } : filters);
+
+const readStoredFilters = (row: Pick<RequestRow, "filters">) => {
+  const { maxPicks, ...filters } = row.filters as StoredFilters;
+  return { filters: filters as ProductFilters, maxPicks };
+};
+
 // Пол — по «Показывать подарки: для неё / для него»; «всем» — без рода.
 const genderOf = (user: UserRow): { gender?: "female" | "male" } =>
   user.audience === "female" || user.audience === "male"
@@ -39,16 +54,20 @@ const personOf = (user: UserRow) => ({
 
 // Запрос из базы — тот же PickRequest, что у мока. Отправитель — его
 // нынешний профиль (ссылка живая).
-const toRequest = (row: RequestRow, from: UserRow): PickRequest => ({
-  id: row.id,
-  from: personOf(from),
-  ...(row.toName ? { toName: row.toName } : {}),
-  filters: row.filters as ProductFilters,
-  hidePrices: row.hidePrices,
-  ...(row.occasion ? { occasion: row.occasion as Occasion } : {}),
-  ...(row.message ? { message: row.message } : {}),
-  createdAt: row.createdAt.toISOString(),
-});
+const toRequest = (row: RequestRow, from: UserRow): PickRequest => {
+  const { filters, maxPicks } = readStoredFilters(row);
+  return {
+    id: row.id,
+    from: personOf(from),
+    ...(row.toName ? { toName: row.toName } : {}),
+    filters,
+    hidePrices: row.hidePrices,
+    ...(maxPicks ? { maxPicks } : {}),
+    ...(row.occasion ? { occasion: row.occasion as Occasion } : {}),
+    ...(row.message ? { message: row.message } : {}),
+    createdAt: row.createdAt.toISOString(),
+  };
+};
 
 const readRequest = async (tx: Tx, id: string) => {
   const [row] = await tx
@@ -79,7 +98,7 @@ export const createPickRequest: ServerHandler = async (ctx, { body }) => {
       id: `pk_${nanoid(10)}`,
       fromUserId: me.id,
       toName: input.toName || null,
-      filters: input.filters,
+      filters: storedFilters(input.filters, input.maxPicks),
       hidePrices: input.hidePrices,
       occasion: occasion ?? null,
       message: input.message || null,
@@ -153,10 +172,18 @@ export const answerPickRequest: ServerHandler = async (ctx, { params }) => {
     answeredAt: answeredAt.toISOString(),
   };
   const [request] = await ctx.tx
-    .select({ id: pickRequests.id })
+    .select({ id: pickRequests.id, filters: pickRequests.filters })
     .from(pickRequests)
     .where(eq(pickRequests.id, requestId))
     .limit(1);
+  // «Сколько можно выбрать»: лишние «Хочу» экран друга не даёт поставить —
+  // сюда они доходят только мимо него.
+  const maxPicks = request ? readStoredFilters(request).maxPicks : undefined;
+  if (!fitsPickLimit(picks.length, maxPicks)) {
+    throw validation(
+      `Можно выбрать ${upToGifts(maxPicks ?? 0)} — верни лишнее и отправь снова`,
+    );
+  }
   if (!request) {
     return { url: `/pick/answer/?d=${encodePickAnswer(answer)}`, answer };
   }

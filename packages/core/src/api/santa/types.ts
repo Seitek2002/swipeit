@@ -135,10 +135,13 @@ export type UpdateSantaInput = z.input<typeof UpdateSantaInputSchema>;
 
 // ── Ответы API ──────────────────────────────────────────────────────
 
-// Участник игры: профиль и статус вишлиста («вишлист готов» — есть хотя бы
-// одно активное желание). joined: false — позван, но ещё не вступил.
-// Гостю (role: "guest" — превью по ссылке, X07) — только профиль и joined:
-// hasWishlist и opened ему не приходят (S05).
+// Участник игры: профиль и вишлист. hasWishlist — есть хотя бы одно
+// активное желание; wishesInBudget — сколько из них в бюджете игры (по
+// нижней цене): по нему считают «вишлист готов / мало в бюджете / без
+// вишлиста» (logic/santa-wishlist, auto-tasks-ux-6 Z03). joined: false —
+// позван, но ещё не вступил. Гостю (role: "guest" — превью по ссылке, X07)
+// — только профиль и joined: hasWishlist, wishesInBudget и opened ему не
+// приходят (S05).
 export type SantaMember = PlanParticipant & {
   hasWishlist?: boolean;
   joined: boolean;
@@ -146,6 +149,7 @@ export type SantaMember = PlanParticipant & {
   // организатору видно, кому напомнить. Покупка — по-прежнему только
   // счётчиком.
   opened?: boolean;
+  wishesInBudget?: number;
 };
 
 // Конверт (DESIGN.md §7 SantaEnvelope): sealed — до жеребьёвки, ready —
@@ -202,6 +206,10 @@ export type SantaView = {
   // Сначала вступившие (организатор первым), потом позванные.
   members: SantaMember[];
   openedCount: number;
+  // Организатор убрал меня из этой игры (Z01): вступить снова нельзя, и
+  // экран приглашения говорит об этом прямо. Только самому убранному — кого
+  // ещё убрали, другим не видно.
+  removed?: boolean;
   role: "guest" | "invited" | "owner" | "participant";
   // Жеребьёвка по дате не прошла (R08): когда и почему. Пока игра не
   // изменилась, по дате её больше не пробуют. Нет поля или null — всё в

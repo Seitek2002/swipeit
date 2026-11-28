@@ -134,6 +134,11 @@ describe("статус в шапке колоды (Y08)", () => {
     );
   });
 
+  it("своя колода кончилась — в шапке строки нет, она в «Колода закончилась»", () => {
+    expect(deckStatus(2, [busy("Азамат"), fresh("Мээрим")], true)).toBeNull();
+    expect(deckStatus(0, [], true)).toBeNull();
+  });
+
   it("конец колоды — по строке на начавших и не открывавших", () => {
     expect(deckEndLines([busy("Азамат")])).toEqual(["Азамат ещё листает"]);
     expect(deckEndLines([fresh("Мээрим"), fresh("Азамат")])).toEqual([

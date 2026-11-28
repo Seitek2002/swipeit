@@ -95,7 +95,14 @@ export {
   getMyPicks,
   importPickAnswer,
 } from "./pick/requests";
-export { type PickAnswer, type PickRequest } from "./pick/types";
+export {
+  PICK_LIMIT_MAX,
+  type PickAnswer,
+  type PickRequest,
+  fitsPickLimit,
+  minPicksFor,
+  upToGifts,
+} from "./pick/types";
 export {
   computeMatches,
   countedParticipants,
@@ -194,6 +201,13 @@ export {
   type UpdateSantaInput,
   UpdateSantaInputSchema,
 } from "./santa/types";
+export {
+  countInSantaBudget,
+  inSantaBudget,
+  SANTA_WISHES_ENOUGH,
+  type SantaWishlistStatus,
+  santaWishlistStatus,
+} from "./santa/wishlist";
 export {
   getTransport,
   type HttpMethod,

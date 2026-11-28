@@ -116,16 +116,24 @@ export const SantaEnvelope = ({ state, letter, onOpen }: Props) => {
     if (event.key === " " || event.key === "Enter") holdEnd();
   };
 
+  // Низкий экран (360×640, Z07): конверт и письмо — три четверти размера,
+  // чтобы главная кнопка под конвертом целиком помещалась над таб-баром.
+  // Высота области: 18 + 196 × 0,75 и 18 + 324 × 0,75 — то же, что у
+  // полного размера, только уменьшенное от нижнего края.
   return (
     <div
-      className="relative"
+      className={cn(
+        "relative",
+        opened
+          ? "h-[342px] [@media(max-height:699px)]:h-[261px]"
+          : "h-[238px] [@media(max-height:699px)]:h-[165px]",
+      )}
       style={{
-        height: opened ? 342 : 238,
         transition: reduceMotion ? "none" : `height 600ms ${EASE}`,
       }}
     >
       <div
-        className="absolute bottom-[18px] left-1/2 -ml-[150px] h-[196px] w-[300px]"
+        className="absolute bottom-[18px] left-1/2 -ml-[150px] h-[196px] w-[300px] origin-bottom [@media(max-height:699px)]:scale-75"
         style={{ perspective: 900 }}
       >
         <div className="bg-paper-2 shadow-paper absolute inset-0 rounded-xl" />

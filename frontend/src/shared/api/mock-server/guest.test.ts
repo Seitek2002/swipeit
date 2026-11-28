@@ -626,7 +626,8 @@ describe("ревью этапа 2", () => {
       null,
     );
     const keys = view.items.map((item) => item.key);
-    expect(keys).toEqual([`custom:${first.id}`, `custom:${second.id}`]);
+    // Новые желания — первыми: второе выше первого.
+    expect(keys).toEqual([`custom:${second.id}`, `custom:${first.id}`]);
     await reserve(null, {
       ownerId: owner.id,
       itemKey: keys[0] ?? "",

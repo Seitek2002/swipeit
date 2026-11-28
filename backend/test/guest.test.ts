@@ -114,7 +114,10 @@ describe("сценарий B08: отправил → забронировали 
       avatarColor: expect.any(String),
       userId: owner.id,
     });
-    expect(wishlist.items.map((item) => item.key)).toEqual(productIds);
+    // Новые желания — первыми (просьба владельца 28.11): последний «Хочу» сверху.
+    expect(wishlist.items.map((item) => item.key)).toEqual(
+      [...productIds].reverse(),
+    );
 
     // Бронь по коду; имя из формы остаётся в профиле (§3.1).
     const key = productIds[0] ?? "";
@@ -224,7 +227,8 @@ describe("сценарий B08: отправил → забронировали 
     ).json() as {
       wishlist: GuestWishlist;
     };
-    expect(wishlist.items.at(-1)?.custom).toEqual({
+    // Своё желание добавлено последним — значит, оно первое.
+    expect(wishlist.items.at(0)?.custom).toEqual({
       title: "Шарф",
       imageKey: "up_photo",
     });

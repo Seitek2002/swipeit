@@ -541,6 +541,31 @@ describe("обучающая карточка (п. 2)", () => {
     expect(explore.slice(1).every((p) => p.category === "tech")).toBe(true);
   });
 
+  it("обучающий товар забронирован (guideId нет) + бюджет 2 000 — первая карточка в бюджете (G08)", () => {
+    // Обработчик не передаёт guideId, если обучающий товар — своя бронь у
+    // друга. Слой обучения клиент кладёт на первую карточку колоды — она
+    // должна пройти фильтр, и в разведке тоже.
+    const budget = { ...EMPTY_FILTERS, budget: { min: 0, max: 2000 } };
+    // Цены вразброс: самые популярные — дороже бюджета, как AirPods 4.
+    const priced = products.map((p) => {
+      const price = Math.round(300 + p.popularity * 15000);
+      return { ...p, priceMin: price, priceMax: price };
+    });
+    expect(priced.some((p) => p.priceMin > 2000)).toBe(true);
+    for (const explore of [true, false]) {
+      const ranked = rankProducts({
+        ...base,
+        products: priced,
+        explore,
+        filters: budget,
+        excludeIds: new Set<string>(),
+      });
+      expect(ranked.length).toBeGreaterThan(0);
+      expect(ranked[0]!.priceMin).toBeLessThanOrEqual(2000);
+      expect(ranked.every((p) => p.priceMin <= 2000)).toBe(true);
+    }
+  });
+
   it("нет в каталоге — лента как без него", () => {
     const ranked = rankProducts({ ...base, products, guideId: "p_none" });
     expect(ranked.map((p) => p.id)).toEqual(

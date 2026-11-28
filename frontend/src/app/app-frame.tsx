@@ -9,6 +9,7 @@ import { AppShell } from "@/widgets/app-shell";
 import { TabBar } from "@/widgets/tab-bar";
 
 import { useActiveReminder } from "@/features/date-reminder";
+import { useSentReminder } from "@/features/wishlist-share";
 
 import {
   planNeedsMe,
@@ -17,6 +18,7 @@ import {
   usePlans,
 } from "@/entities/plan";
 import { santaTabDot, useSantaGames } from "@/entities/santa-game";
+import { useMyWishlist } from "@/entities/wishlist";
 
 import { REMOTE_COPY, rendersBeforeReady } from "@/shared/config";
 import { useAppMode, useAppReady, useAppStatus } from "@/shared/lib/app-status";
@@ -42,6 +44,8 @@ const AppTabBar = () => {
   const games = useSantaGames();
   const santa = santaTabDot(games.data ?? []);
   const reminder = useActiveReminder();
+  // Вишлист не менялся с последней отправки — точки нет, как и баннера (G06).
+  const sent = useSentReminder(useMyWishlist().data?.items);
   // Ждут меня в плане (Q09) — по отметке «видел» этого устройства.
   const plans = usePlans();
   const meId = useSessionStore((state) => state.activeUserId);
@@ -54,7 +58,7 @@ const AppTabBar = () => {
       santaReady={santa.envelopeReady}
       santaDrawDue={santa.drawDue}
       plansNeedMe={plansNeedMe}
-      wishlistReminder={reminder !== null}
+      wishlistReminder={reminder !== null && sent !== "hidden"}
     />
   );
 };

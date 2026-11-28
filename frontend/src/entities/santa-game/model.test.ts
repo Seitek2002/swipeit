@@ -6,6 +6,8 @@ import {
   drawLabel,
   gatheringIssue,
   gatheringStatus,
+  ownerName,
+  santaInviteText,
 } from "./model";
 
 type LabelView = Parameters<typeof drawLabel>[0];
@@ -97,5 +99,35 @@ describe("строка сбора у участника (S05)", () => {
   it("drawIssue от сервера у участника не читаем", () => {
     const leaked = { ...participant, drawIssue: "Азамату некому дарить" };
     expect(gatheringIssue(leaked)).toBeNull();
+  });
+});
+
+describe("текст приглашения в Санту (Z04)", () => {
+  const plain = (text: string) => text.replace(/ /g, " ");
+  // Локальное время — тест не зависит от часового пояса машины.
+  const drawAt = new Date(2026, 11, 5, 16, 36).toISOString();
+  const now = new Date(2026, 10, 28, 12, 0).getTime();
+  const base = { title: "Офис 2026", budget: 1500, exchangeDate: "2026-12-12" };
+
+  it("«По дате» — до когда вступить, бюджет со строчной", () => {
+    expect(plain(santaInviteText({ ...base, drawAt }, now))).toBe(
+      "Тайный Санта «Офис 2026»: бюджет до 1 500 сом, обмен 12 декабря. Вступай до 5 декабря, 16:36 — потом жеребьёвка",
+    );
+  });
+
+  it("«Когда все соберутся» и прошедшая дата жеребьёвки — без срока", () => {
+    const expected =
+      "Тайный Санта «Офис 2026»: бюджет до 1 500 сом, обмен 12 декабря. Вступай!";
+    expect(plain(santaInviteText(base, now))).toBe(expected);
+    const later = new Date(2026, 11, 6).getTime();
+    expect(plain(santaInviteText({ ...base, drawAt }, later))).toBe(expected);
+  });
+});
+
+describe("имя организатора (Z02)", () => {
+  it("по ownerId, после передачи роли — новый", () => {
+    expect(ownerName({ members, game: { ownerId: "u_me" } })).toBe("Айгерим");
+    expect(ownerName({ members, game: { ownerId: "u_nurai" } })).toBe("Нурай");
+    expect(ownerName({ members, game: { ownerId: "u_gone" } })).toBeUndefined();
   });
 });

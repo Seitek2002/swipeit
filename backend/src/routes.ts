@@ -4,6 +4,7 @@ import { ApiError, unauthorized } from "@swipeit/core/errors";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
 import { resolveSession } from "./auth/sessions";
+import { markInternalRequest } from "./errors";
 import {
   BY_IP_RULES,
   type LimitConfig,
@@ -13,6 +14,7 @@ import {
 import type { ServerCatalog } from "./catalog/load";
 import type { Clock, ServerHandler } from "./context";
 import type { Db } from "./db/client";
+import { isRehearsal } from "./ops-auth";
 import {
   getCatalogMeta,
   getCatalogStores,
@@ -201,6 +203,8 @@ export type RouteDeps = {
   hub: EventHub;
   limiter: Limiter;
   limits: LimitConfig;
+  // Служебный токен: заголовок репетиции (M01). Нет — заголовок не действует.
+  opsToken?: string;
   publicShareUrl: string;
   random: Random;
 };
@@ -228,6 +232,8 @@ export const registerRoutes = (app: FastifyInstance, deps: RouteDeps) => {
         const session = token
           ? await resolveSession(deps.db.db, token, deps.clock)
           : null;
+        // Свой профиль — его ошибки в отчёте отдельно (M01).
+        if (session?.internal) markInternalRequest(request);
         // Токена нет там, где он нужен, или он неверный — 401 (§3.2). На
         // открытых маршрутах неверный токен просто не даёт пользователя.
         if (route.access === "user" && !session) throw unauthorized();
@@ -266,6 +272,7 @@ export const registerRoutes = (app: FastifyInstance, deps: RouteDeps) => {
               sessionId: session?.sessionId ?? null,
               userAgent: request.headers["user-agent"] ?? null,
               isRefetch: request.headers["x-swipeit-refetch"] === "1",
+              rehearsal: isRehearsal(request, deps.opsToken),
               clock: deps.clock,
               random: deps.random,
               catalog: deps.catalog,

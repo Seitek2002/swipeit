@@ -104,8 +104,8 @@ const previewOf = async (db: Db, code: string, now: number): Promise<Preview> =>
           title: `${from.name ?? "Друг"} хочет подарить тебе подарок`,
           description:
             max && !request.hidePrices
-              ? `Выбери сам — подарки до ${formatPrice(max)}`
-              : "Выбери сам, что тебе нравится",
+              ? `Подарок на твой выбор — до ${formatPrice(max)}`
+              : "Подарок на твой выбор — выбери, что нравится",
           path: `/pick/?s=${code}`,
         };
       }

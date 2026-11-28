@@ -612,6 +612,22 @@ export const funnelDaily = pgTable(
   (table) => [primaryKey({ columns: [table.day, table.step] })],
 );
 
+// Ответы с ошибкой по дням (auto-tasks-metrics-1 M05) — как funnel_daily:
+// только код и число, без маршрутов и id. Переживают перезапуск процесса.
+// internal — сколько из них у своих профилей и репетиции (M01).
+// HEALTH_503 — сколько раз /v1/health ответил 503 (база недоступна).
+export const errorsDaily = pgTable(
+  "errors_daily",
+  {
+    // День по календарю Бишкека (§2.5).
+    day: date("day").notNull(),
+    code: text("code").notNull(),
+    count: integer("count").notNull().default(0),
+    internal: integer("internal").notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.day, table.code] })],
+);
+
 // Очередь уведомлений ботом (auto-tasks-pm-4 S10). Ставит обработчик или
 // планировщик в той же транзакции, что и событие; отправляет планировщик.
 // dedupe_key — одна запись на событие и человека: повтор не отправится.

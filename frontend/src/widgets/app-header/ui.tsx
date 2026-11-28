@@ -13,11 +13,16 @@ import { ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
 import { Avatar } from "@/shared/ui";
 
+import { resolveBack } from "./model";
+
 type Props = {
   actions?: ReactNode;
   // Куда ведёт «назад». Без адреса — шаг назад по истории.
   backHref?: string;
   className?: string;
+  // Куда ведёт «назад», если экран открыт по прямой ссылке и истории нет
+  // (auto-tasks-ux-6 Z06). Без адреса — главная.
+  fallbackHref?: string;
   // Свой «назад» — шаг назад внутри потока (создание плана), а не по истории.
   onBack?: () => void;
   showAvatar?: boolean;
@@ -32,6 +37,7 @@ export const AppHeader = ({
   title,
   showBack = false,
   backHref,
+  fallbackHref,
   actions,
   showAvatar = true,
   className,
@@ -41,8 +47,15 @@ export const AppHeader = ({
   const { data: me } = useMe();
 
   const handleBack = () => {
-    if (onBack) onBack();
-    else if (backHref) router.push(backHref);
+    const target = resolveBack({
+      backHref,
+      fallbackHref,
+      hasOnBack: Boolean(onBack),
+      historyLength: window.history.length,
+    });
+    if (target.kind === "custom") onBack?.();
+    else if (target.kind === "push") router.push(target.href);
+    else if (target.kind === "replace") router.replace(target.href);
     else router.back();
   };
 

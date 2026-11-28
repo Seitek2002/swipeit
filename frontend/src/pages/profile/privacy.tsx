@@ -3,6 +3,7 @@
 import { AppHeader } from "@/widgets/app-header";
 
 import { isTelegramLoginEnabled } from "@/shared/api";
+import { ROUTES } from "@/shared/config";
 import { useAppMode } from "@/shared/lib/app-status";
 import { Screen, ScreenBody, Skeleton } from "@/shared/ui";
 
@@ -21,7 +22,14 @@ export const PrivacyPage = () => {
 
   return (
     <Screen>
-      <AppHeader title="Что SwipeIt хранит" showBack showAvatar={false} />
+      {/* Из профиля и из шторки имени — шаг назад; по прямой ссылке в
+          новой вкладке истории нет — в профиль (auto-tasks-ux-6 Z06). */}
+      <AppHeader
+        title="Что SwipeIt хранит"
+        showBack
+        fallbackHref={ROUTES.PROFILE}
+        showAvatar={false}
+      />
       <ScreenBody className="px-5 pt-2 pb-6">
         {!text ? (
           <div className="flex flex-col gap-3">

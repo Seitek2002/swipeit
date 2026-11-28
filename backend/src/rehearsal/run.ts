@@ -123,9 +123,19 @@ export const runRehearsal = async (
   options: RehearsalOptions,
 ): Promise<RehearsalResult> => {
   const { base, log } = options;
-  const api: Client = createClient(base);
+  // С токеном профили репетиции сразу «свои» (M01): счётчики пилота не
+  // меняются. Без него — предупреждение первой строкой.
+  const api: Client = createClient(base, {
+    ...(options.opsToken ? { rehearsalToken: options.opsToken } : {}),
+  });
   const checks: Check[] = [];
   const warnings: string[] = [];
+  if (!options.opsToken) {
+    const warning =
+      "Без OPS_TOKEN счётчики воронки изменятся — запусти с --ops-token";
+    warnings.push(warning);
+    log(`ВНИМАНИЕ: ${warning}`);
+  }
   const people: Person[] = [];
   const sockets = new Map<string, Socket>();
   let step = "0. сервер";
@@ -746,15 +756,31 @@ export const runRehearsal = async (
     // ── 10. Отчёт владельцу ────────────────────────────────────────
     begin("10. Отчёт GET /v1/ops/report");
     if (options.opsToken) {
-      const report = await api.raw("/v1/ops/report?days=1", options.opsToken);
+      // Служебные игры видны только с internal=1 (M01).
+      const report = await api.raw(
+        "/v1/ops/report?days=1&internal=1",
+        options.opsToken,
+      );
       const members = n - 1;
       const line = `открыли письмо ${members - 1} из ${members}, купили ${buyers.length} из ${members}`;
       check("отчёт отвечает", report.status === 200, `статус ${report.status}`);
-      check(`в отчёте «${line}»`, report.text.includes(line));
+      check(`в отчёте со служебными «${line}»`, report.text.includes(line));
+      const plain = await api.raw("/v1/ops/report?days=1", options.opsToken);
+      check(
+        "в обычном отчёте игры репетиции нет — «служебных игр скрыто» ≥ 1",
+        !plain.text.includes(line) &&
+          /служебных игр скрыто: [1-9]/.test(plain.text),
+      );
+      // CONFLICT шагов 4 и 6 — в «из них свои/репетиция».
+      check(
+        "CONFLICT репетиции — в «из них свои/репетиция»",
+        /CONFLICT: \d+, из них свои\/репетиция: [1-9]/.test(plain.text),
+      );
       check(
         "в отчёте нет id игры, людей и названия",
-        ![gameId, TITLE, ...people.map((person) => person.id)].some((secret) =>
-          report.text.includes(secret),
+        ![gameId, TITLE, ...people.map((person) => person.id)].some(
+          (secret) =>
+            report.text.includes(secret) || plain.text.includes(secret),
         ),
       );
     } else {
@@ -832,7 +858,12 @@ export const runRehearsal = async (
         `  [${item.step}] ${item.title}${item.detail ? ` — ${item.detail}` : ""}`,
     ),
   );
-  if (tomorrow) {
+  if (options.opsToken) {
+    lines.push(
+      "",
+      "Профили репетиции помечены своими: счётчики воронки и «Сейчас» не изменились.",
+    );
+  } else if (tomorrow) {
     lines.push(
       "",
       `Счётчики воронки репетиции остаются: живой отчёт смотреть с --since ${tomorrow} (или ?since=${tomorrow}).`,

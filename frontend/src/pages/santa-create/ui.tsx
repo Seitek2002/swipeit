@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useMutation } from "@tanstack/react-query";
 import { Check } from "lucide-react";
@@ -30,7 +30,16 @@ import { createSantaGame, isApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { clock } from "@/shared/lib/clock";
 import { cn } from "@/shared/lib/utils";
-import { Avatar, Button, Screen, ScreenBody, toast } from "@/shared/ui";
+import {
+  Avatar,
+  Button,
+  ContentSkeleton,
+  Screen,
+  ScreenBody,
+  toast,
+} from "@/shared/ui";
+
+import { DEMO_GAME_TITLE, demoFriendIds } from "./model";
 
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value)
@@ -38,17 +47,36 @@ function toggle<T>(list: T[], value: T): T[] {
     : [...list, value];
 }
 
+const Header = () => (
+  <AppHeader
+    title="Новая игра"
+    showBack
+    backHref={ROUTES.SANTA}
+    showAvatar={false}
+  />
+);
+
 // Новая игра Тайного Санты (DESIGN.md §8.8): поля игры (SantaForm — те же,
-// что в «Изменить игру»), участники, исключения пар.
-export const SantaCreatePage = () => {
+// что в «Изменить игру»), участники, исключения пар. ?demo=1 (Z05) — с
+// названием и тремя отмеченными демо-друзьями.
+const SantaCreate = () => {
   const router = useRouter();
+  const demo = useSearchParams()?.get("demo") === "1";
   const { data: me } = useMe();
   const friends = useFriends();
   // На сервере друзья появляются, только когда открыли твою ссылку или
   // вступили в твою игру (BACKEND.md §4.3), — у нового профиля список пуст.
   const noFriends = friends.isSuccess && friends.data.length === 0;
-  const [form, setForm] = useState(() => newSantaForm(clock.now()));
-  const [invited, setInvited] = useState<string[]>([]);
+  const [form, setForm] = useState(() => {
+    const values = newSantaForm(clock.now());
+    return demo ? { ...values, title: DEMO_GAME_TITLE } : values;
+  });
+  // null — в демо ещё не трогали: отмечены демо-друзья, когда список
+  // загрузится. Первое нажатие делает выбор своим.
+  const [picked, setPicked] = useState<null | string[]>(demo ? null : []);
+  const invited = picked ?? demoFriendIds(friends.data ?? []);
+  const setInvited = (update: (list: string[]) => string[]) =>
+    setPicked((list) => update(list ?? invited));
   const [exclusions, setExclusions] = useState<SantaPair[]>([]);
   const [pairOpen, setPairOpen] = useState(false);
 
@@ -105,12 +133,7 @@ export const SantaCreatePage = () => {
 
   return (
     <Screen>
-      <AppHeader
-        title="Новая игра"
-        showBack
-        backHref={ROUTES.SANTA}
-        showAvatar={false}
-      />
+      <Header />
       <ScreenBody className="px-5 pt-2 pb-6">
         <div className="flex flex-col gap-6">
           <SantaForm values={form} onChange={setForm} />
@@ -205,3 +228,19 @@ export const SantaCreatePage = () => {
     </Screen>
   );
 };
+
+// useSearchParams в статической сборке — только под Suspense.
+export const SantaCreatePage = () => (
+  <Suspense
+    fallback={
+      <Screen>
+        <Header />
+        <ScreenBody className="px-5 pt-2">
+          <ContentSkeleton />
+        </ScreenBody>
+      </Screen>
+    }
+  >
+    <SantaCreate />
+  </Suspense>
+);

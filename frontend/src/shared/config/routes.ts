@@ -15,6 +15,9 @@ export const ROUTES = {
   PLAN_JOIN: (id: string) => `/plans/join/?id=${encodeURIComponent(id)}`,
   SANTA: "/santa/",
   SANTA_CREATE: "/santa/new/",
+  // «Создать игру с демо-друзьями» (Z05): форма с названием и тремя
+  // отмеченными демо-друзьями.
+  SANTA_CREATE_DEMO: "/santa/new/?demo=1",
   SANTA_GAME: (id: string) => `/santa/game/?id=${encodeURIComponent(id)}`,
   SANTA_JOIN: (id: string) => `/santa/join/?id=${encodeURIComponent(id)}`,
   FRIENDS: "/friends/",

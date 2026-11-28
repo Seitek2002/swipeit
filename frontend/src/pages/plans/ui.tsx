@@ -41,8 +41,11 @@ const PlanCard = ({ summary }: { summary: PlanSummary }) => {
   usePlanSeenVersion();
   // Ждут меня (Q09): «Ждём тебя» и «Твой голос» вместо обычного статуса;
   // непросмотренные итоги — тот же статус, но выделен.
-  const need = planNeedsMe(plan, meId, readPlanSeen(plan.id));
-  const base = planStatus(plan, decision?.title);
+  const seenStatus = readPlanSeen(plan.id);
+  const need = planNeedsMe(plan, meId, seenStatus);
+  const base = planStatus(plan, decision?.title, {
+    resultsSeen: seenStatus === "results",
+  });
   const status =
     need === "swipe" || need === "vote"
       ? { live: false, text: PLAN_NEED_LABELS[need] }

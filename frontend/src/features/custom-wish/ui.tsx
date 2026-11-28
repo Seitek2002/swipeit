@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { createCustomWish, isApiError, wishlistKeys } from "@/shared/api";
+import { useAppMode } from "@/shared/lib/app-status";
 import {
   BottomSheet,
   Button,
@@ -38,6 +39,9 @@ export const CustomWishSheet = ({ open, onClose }: Props) => {
   const [priceMax, setPriceMax] = useState("");
   const [url, setUrl] = useState("");
   const [imageKey, setImageKey] = useState<string>();
+  // Ссылка в демо — снимок без фото (UX-аудит, «На заметку» G): гость видит
+  // заглушку-подарок. Говорим об этом заранее. В remote фото приходит.
+  const photoInLink = useAppMode() === "remote";
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
 
@@ -156,6 +160,11 @@ export const CustomWishSheet = ({ open, onClose }: Props) => {
         />
         <ImagePickField
           alt="Фото желания"
+          hint={
+            photoInLink
+              ? undefined
+              : "По ссылке друзья увидят название и цену, фото — нет"
+          }
           value={imageKey}
           onChange={setImageKey}
           onBusyChange={setIsProcessing}

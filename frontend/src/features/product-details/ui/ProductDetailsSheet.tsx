@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import { GiftPhoto, type Product, type VariantGroup } from "@/entities/product";
 
@@ -19,6 +19,8 @@ type Props = {
   choice?: Record<string, string>;
   // Подпись выбора: «В вишлисте», «Выбрано».
   choiceCaption?: string;
+  // Закреплённый низ шторки: «Забронирую я» у гостя (UX-аудит G09).
+  footer?: ReactNode;
   hidePrices?: boolean;
   onClose: () => void;
   product: null | Product;
@@ -34,6 +36,7 @@ export const ProductDetailsSheet = ({
   onClose,
   choice = EMPTY_CHOICE,
   choiceCaption = "В вишлисте",
+  footer,
   hidePrices = false,
 }: Props) => {
   // Последний открытый товар держим, пока шторка уезжает вниз, — иначе она
@@ -65,6 +68,7 @@ export const ProductDetailsSheet = ({
       onClose={onClose}
       ariaLabel={shown?.title ?? "Подробнее"}
       height="full"
+      footer={footer}
     >
       {shown && active && (
         <Details

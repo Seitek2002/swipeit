@@ -261,7 +261,7 @@ export const WardWishlist = ({
       <h2 className="text-label">Вишлист: {name}</h2>
       {inBudget.length === 0 && (
         <p className="text-caption text-rose">
-          В бюджете ничего нет — посмотри, что дороже, или выбери сам.
+          В бюджете ничего нет — посмотри, что дороже, или выбери свой подарок.
         </p>
       )}
       <ul className="flex flex-col gap-3">

@@ -178,7 +178,7 @@ export const ActivityDeck = ({ view, meId }: Props) => {
       ? [{ id: person.id, name: person.name, left, started: count > 0 }]
       : [];
   });
-  const status = deckStatus(others.length, swiping);
+  const status = deckStatus(others.length, swiping, queue.length === 0);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

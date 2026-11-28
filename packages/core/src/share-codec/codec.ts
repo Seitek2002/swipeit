@@ -13,6 +13,7 @@ import {
   OCCASION_KINDS,
   type OccasionKind,
 } from "../config/index";
+import { PICK_LIMIT_MAX } from "../api/pick/limit";
 
 // lz-string — CommonJS без разметки экспортов: Node в ESM (tsx, `npm run dev`
 // сервера) видит только default, бандлеры и vitest — и имена. Берём то, что
@@ -265,6 +266,8 @@ const PickRequestShort = z.object({
     a: GenderShort.optional(),
   }),
   h: z.literal(1).optional(),
+  // «Сколько можно выбрать». Нет — сколько угодно (и старые ссылки).
+  x: z.number().int().min(1).max(PICK_LIMIT_MAX).optional(),
   oc: OccasionShort.optional(),
   ms: z.string().max(200).optional(),
 });
@@ -286,6 +289,8 @@ export type SharedPickRequest = {
   };
   hidePrices: boolean;
   id: string;
+  // Нет — сколько угодно.
+  maxPicks?: number;
   message?: string;
   occasion?: SharedOccasion;
   toName?: string;
@@ -313,6 +318,7 @@ export const encodePickRequest = (request: SharedPickRequest): string =>
       ),
     },
     h: request.hidePrices ? 1 : undefined,
+    x: request.maxPicks,
     oc: encodeOccasion(request.occasion),
     ms: request.message || undefined,
   });
@@ -339,6 +345,7 @@ export const decodePickRequest = (
       audience: toGender(short.fl.a),
     },
     hidePrices: short.h === 1,
+    maxPicks: short.x,
     occasion: decodeOccasion(short.oc),
     message: short.ms,
   };

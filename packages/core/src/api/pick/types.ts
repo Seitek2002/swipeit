@@ -4,6 +4,7 @@ import { AVATAR_COLORS } from "../../config/index";
 
 import { ProductFiltersSchema } from "../catalog/types";
 import { OccasionSchema } from "../wishlist/types";
+import { PICK_LIMIT_MAX } from "./limit";
 
 const PersonSchema = z.object({
   name: z.string(),
@@ -24,6 +25,9 @@ export const PickRequestSchema = z.object({
   toName: z.string().optional(),
   filters: ProductFiltersSchema,
   hidePrices: z.boolean(),
+  // «Сколько можно выбрать»: друг лайкнет не больше стольких подарков. Нет
+  // поля — сколько угодно (старые ссылки — тоже).
+  maxPicks: z.number().int().min(1).max(PICK_LIMIT_MAX).optional(),
   occasion: OccasionSchema.optional(),
   message: z.string().optional(),
   createdAt: z.string(),

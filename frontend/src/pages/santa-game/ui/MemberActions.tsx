@@ -23,6 +23,7 @@ import {
   handOverCandidates,
   handOverCopy,
   removeMemberCopy,
+  removedToast,
 } from "../model/member-actions";
 
 const onError = (error: Error) =>
@@ -43,10 +44,11 @@ export const RemoveMemberButton = ({
 }) => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const drawn = view.game.status === "drawn";
   const copy = removeMemberCopy({
     name: member.name,
     gameTitle: view.game.title,
-    drawn: view.game.status === "drawn",
+    drawn,
   });
   const remove = useMutation({
     mutationFn: () => removeSantaMember(view.game.id, member.id),
@@ -54,6 +56,8 @@ export const RemoveMemberButton = ({
       setOpen(false);
       queryClient.setQueryData(santaKeys.detail(view.game.id), next);
       void queryClient.invalidateQueries({ queryKey: santaKeys.list() });
+      // Строка просто исчезла бы молча (Z08).
+      toast(removedToast({ name: member.name, drawn }));
     },
     onError: (error: Error) => {
       setOpen(false);

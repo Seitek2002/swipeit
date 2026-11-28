@@ -30,7 +30,7 @@ import {
   useRestoreItem,
   useUpdateItem,
 } from "@/features/wishlist-edit";
-import { WishlistShareSheet } from "@/features/wishlist-share";
+import { WishlistShareSheet, useSentReminder } from "@/features/wishlist-share";
 
 import type { Product } from "@/entities/product";
 import { useFriends } from "@/entities/user";
@@ -107,6 +107,10 @@ export const WishlistPage = () => {
   // с ним (DESIGN.md §7 ReminderBanner).
   const [shareOccasion, setShareOccasion] = useState<Occasion | undefined>();
   const reminder = useActiveReminder();
+  // Вишлист не менялся с последней отправки — напоминание прячем; менялся, а
+  // ссылка в демо — снимок, — просим отправить новую (UX-аудит G06).
+  const sent = useSentReminder(data?.items);
+  const reminderShown = Boolean(reminder) && sent !== "hidden";
   // Имя увидят друзья (DESIGN.md §8.4 шаг 1): нет его — NameSheet первым
   // шагом шторки отправки; NAME_REQUIRED от сервера — поверх и повтор.
   const requireName = useRequireName(NAME_CAPTIONS.wishlist);
@@ -214,7 +218,7 @@ export const WishlistPage = () => {
   // Пока виден баннер напоминания, его «Отправить вишлист» — главная кнопка,
   // липкую прячем (DESIGN.md §7 ReminderBanner): мандарин на экране один.
   const showFooter =
-    !(reminder && unlocked) && tab === "want" && active.length > 0;
+    !(reminderShown && unlocked) && tab === "want" && active.length > 0;
 
   const renderGroup = (ids: string[], key: "normal" | "top") => (
     <Reorder.Group
@@ -314,11 +318,13 @@ export const WishlistPage = () => {
         {data &&
           tab === "want" &&
           reminder &&
+          reminderShown &&
           unlocked &&
           active.length > 0 && (
             <div className="px-5 pt-3">
               <ReminderBanner
                 reminder={reminder}
+                stale={sent === "stale"}
                 onSend={(active) => {
                   setShareOccasion(
                     active.kind === "birthday"

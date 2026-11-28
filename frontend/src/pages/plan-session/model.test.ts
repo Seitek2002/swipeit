@@ -58,13 +58,20 @@ describe("кто проголосовал в «Выбрать самим» (X04)
     { id: "u_meerim", name: "Мээрим" },
   ];
   const CANDIDATES = ["katok", "kino"];
+  const ME = "u_aigerim";
 
   it("ждём троих — имена в порядке участников, «Утвердить» с подтверждением", () => {
-    const progress = voteProgress(PEOPLE, { u_aigerim: "katok" }, CANDIDATES);
+    const progress = voteProgress(
+      PEOPLE,
+      { u_aigerim: "katok" },
+      CANDIDATES,
+      ME,
+    );
     expect(progress).toEqual({
       total: 4,
       voted: 1,
       waiting: ["Азамат", "Тимур", "Мээрим"],
+      waitingMe: false,
     });
     expect(voteStatus(progress)).toBe(
       "Проголосовали 1 из 4 · ждём: Азамат, Тимур, Мээрим",
@@ -76,6 +83,7 @@ describe("кто проголосовал в «Выбрать самим» (X04)
       PEOPLE,
       { u_aigerim: "katok", u_azamat: "kino" },
       CANDIDATES,
+      ME,
     );
     expect(voteStatus(progress)).toBe(
       "Проголосовали 2 из 4 · ждём: Тимур, Мээрим",
@@ -96,6 +104,7 @@ describe("кто проголосовал в «Выбрать самим» (X04)
         u_left: "katok",
       },
       CANDIDATES,
+      ME,
     );
     expect(voteStatus(progress)).toBe("Проголосовали 3 из 4 · ждём: Тимур");
     expect(approveWarning(progress)).toBe(
@@ -105,9 +114,31 @@ describe("кто проголосовал в «Выбрать самим» (X04)
 
   it("никого не ждём — «Все проголосовали», без подтверждения", () => {
     const votes = Object.fromEntries(PEOPLE.map(({ id }) => [id, "kino"]));
-    const progress = voteProgress(PEOPLE, votes, CANDIDATES);
+    const progress = voteProgress(PEOPLE, votes, CANDIDATES, ME);
     expect(voteStatus(progress)).toBe("Все проголосовали");
     expect(approveWarning(progress)).toBeNull();
+  });
+
+  it("сам ещё не голосовал — «ждём тебя и ещё N», себя не по имени", () => {
+    const progress = voteProgress(PEOPLE, {}, CANDIDATES, ME);
+    expect(progress.waiting).toEqual(["Азамат", "Тимур", "Мээрим"]);
+    expect(progress.waitingMe).toBe(true);
+    expect(voteStatus(progress)).toBe(
+      "Проголосовали 0 из 4 · ждём тебя и ещё 3: Азамат, Тимур, Мээрим",
+    );
+    expect(approveWarning(progress)).toBe(
+      "Не все проголосовали (ждём тебя и ещё 3: Азамат, Тимур, Мээрим). Утвердить сейчас?",
+    );
+    expect(voteStatus(progress)).not.toContain("Айгерим");
+  });
+
+  it("ждём только тебя", () => {
+    const votes = { u_azamat: "kino", u_timur: "kino", u_meerim: "katok" };
+    const progress = voteProgress(PEOPLE, votes, CANDIDATES, ME);
+    expect(voteStatus(progress)).toBe("Проголосовали 3 из 4 · ждём тебя");
+    expect(approveWarning(progress)).toBe(
+      "Не все проголосовали (ждём тебя). Утвердить сейчас?",
+    );
   });
 
   it("больше пяти ждём — пять имён и «и ещё N»", () => {
@@ -115,7 +146,9 @@ describe("кто проголосовал в «Выбрать самим» (X04)
       id: `u_${index}`,
       name: `Друг ${index + 1}`,
     }));
-    expect(voteStatus(voteProgress(many, { u_0: "kino" }, CANDIDATES))).toBe(
+    expect(
+      voteStatus(voteProgress(many, { u_0: "kino" }, CANDIDATES, "u_0")),
+    ).toBe(
       "Проголосовали 1 из 8 · ждём: Друг 2, Друг 3, Друг 4, Друг 5, Друг 6 и ещё 2",
     );
   });
@@ -138,6 +171,9 @@ describe("«Время вышло» (Y02)", () => {
   it("остальным — что продлить может организатор", () => {
     expect(timedOutTitle(false, "u_azamat", [AIGERIM])).toBe(
       "Время вышло — организатор может продлить план",
+    );
+    expect(timedOutTitle(false, "u_azamat", [AIGERIM], "Айгерим")).toBe(
+      "Время вышло — организатор (Айгерим) может продлить план",
     );
   });
 

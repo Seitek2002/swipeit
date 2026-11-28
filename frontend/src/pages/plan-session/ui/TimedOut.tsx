@@ -83,7 +83,12 @@ export const TimedOut = ({ view, meId }: Props) => {
       <h2 className="text-title-1">{plan.title}</h2>
       <EmptyState
         object="ticket"
-        title={timedOutTitle(isOwner, meId, finished)}
+        title={timedOutTitle(
+          isOwner,
+          meId,
+          finished,
+          participants.find((person) => person.id === plan.ownerId)?.name,
+        )}
         action={
           isOwner ? (
             <div className="flex flex-col gap-2">

@@ -1,5 +1,20 @@
 import { z } from "zod";
 
+// Часовой пояс календаря продукта (BACKEND.md §2.5). Неизвестный пояс Node
+// молча заменил бы на UTC — лучше сразу сказать.
+const TimeZoneSchema = z
+  .string()
+  .min(1)
+  .refine((zone) => {
+    try {
+      new Intl.DateTimeFormat("en-US", { timeZone: zone });
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Неизвестный часовой пояс — нужен вида Asia/Bishkek")
+  .default("Asia/Bishkek");
+
 // Переменные окружения сервера (BACKEND.md §10: секреты — только в окружении,
 // в репозитории — .env.example). Неверные — сервер не стартует и пишет, что
 // именно не так, а не падает потом на первом запросе.
@@ -30,7 +45,7 @@ const ConfigSchema = z.object({
     .optional(),
   // Дни считаются по календарю Бишкека (BACKEND.md §2.5): процесс живёт в
   // этом поясе, даже если сервер в UTC.
-  TZ: z.string().min(1).default("Asia/Bishkek"),
+  TZ: TimeZoneSchema,
   // Адрес фронта продукта (с базовым путём, без «/» в конце): превью /s/:code
   // переводит туда и берёт оттуда og.png (B16).
   PUBLIC_APP_URL: z
@@ -143,4 +158,26 @@ export const loadConfig = (env: NodeJS.ProcessEnv = process.env): Config => {
     DATABASE_URL: DATABASE_URL ?? DEV_DATABASE_URL,
     PUBLIC_SHARE_URL: PUBLIC_SHARE_URL ?? `http://localhost:${rest.PORT}`,
   };
+};
+
+// Пояс процесса — пояс календаря продукта (§2.5; auto-tasks-metrics-1 M11).
+// Сервер и команды владельца (funnel, funnel:team, funnel:pilot, rehearsal)
+// зовут это до первой работы с датами: день в funnel_daily и граница --since
+// — по полуночи Бишкека, даже если ноутбук владельца в другом поясе. Node
+// перечитывает process.env.TZ при присваивании.
+export const applyTimeZone = (zone: string): void => {
+  process.env.TZ = zone;
+};
+
+// Пояс без остального конфига: репетиции база не нужна, а loadConfig в
+// production требует DATABASE_URL. Пустая строка — как будто переменной нет.
+export const timeZoneOf = (env: NodeJS.ProcessEnv = process.env): string => {
+  const parsed = TimeZoneSchema.safeParse(env.TZ === "" ? undefined : env.TZ);
+  if (!parsed.success) {
+    throw new ConfigError(
+      `Неверные переменные окружения:
+  TZ: ${parsed.error.issues[0]?.message ?? "?"}`,
+    );
+  }
+  return parsed.data;
 };

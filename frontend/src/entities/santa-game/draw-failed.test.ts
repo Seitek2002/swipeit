@@ -33,6 +33,10 @@ describe("жеребьёвка по дате не прошла (R08)", () => {
   it("участнику и позванному — ждём организатора", () => {
     expect(drawFailedNote(view("participant"))).toBe(DRAW_FAILED_WAIT);
     expect(drawFailedNote(view("invited"))).toBe(DRAW_FAILED_WAIT);
+    // С именем — в скобках, без падежа (Z02).
+    expect(drawFailedNote(view("participant"), "Данияр")).toBe(
+      "Ждём организатора (Данияр)",
+    );
   });
 
   it("отметки нет или жеребьёвка уже прошла — ничего", () => {

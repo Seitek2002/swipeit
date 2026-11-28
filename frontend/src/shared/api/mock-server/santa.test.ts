@@ -186,6 +186,12 @@ describe("создание игры", () => {
       ["Тимур", false, false],
       ["Бекзат", false, false],
     ]);
+    // Желания в бюджете (Z03): без вишлиста — 0, у остальных — число.
+    for (const member of view.members) {
+      expect(member.wishesInBudget).toEqual(
+        member.hasWishlist ? expect.any(Number) : 0,
+      );
+    }
     // Пока вступил один организатор — провести нельзя: ждём позванных
     // (auto-tasks U04), а не «позови ещё друзей».
     expect(view.drawIssue).toBe(
@@ -864,6 +870,11 @@ describe("жеребьёвка по дате (POST /santa/tick)", () => {
       DEMO_USER_ID,
     );
     expect(removed.drawFailed).toBeNull();
+    // Что убрали, знает только сам убранный (Z01).
+    expect(removed.removed).toBeUndefined();
+    const own = await call<SantaView>("GET", gamePath(game.id), "u_daniyar");
+    expect(own.removed).toBe(true);
+    expect(own.role).toBe("guest");
   });
 });
 

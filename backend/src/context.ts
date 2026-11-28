@@ -30,6 +30,10 @@ export type ServerContext = {
   // Начало коротких ссылок: url = publicShareUrl/s/<код> (§6.2).
   publicShareUrl: string;
   random: Random;
+  // Запрос репетиции или дымового теста с верным OPS_TOKEN в заголовке
+  // x-swipeit-rehearsal (auto-tasks-metrics-1 M01): новый профиль сразу
+  // «свой», воронка его не считает.
+  rehearsal?: boolean;
   // Сессия запроса: выход закрывает только её (§3.4).
   sessionId: null | string;
   tx: Tx;

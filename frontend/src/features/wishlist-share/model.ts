@@ -149,3 +149,37 @@ export const displayOccasion = (
   }
   return occasion;
 };
+
+// Отпечаток вишлиста для «изменился после отправки» (UX-аудит G06): какие
+// желания в «Хочу». Добавили, удалили или перенесли в «Подарили» — отпечаток
+// другой; порядок и заметки ссылку не портят — их не считаем.
+export const wishlistSignature = (
+  items: ReadonlyArray<{ id: string; status: "active" | "given" }>,
+): string =>
+  items
+    .filter((item) => item.status === "active")
+    .map((item) => item.id)
+    .sort()
+    .join(",");
+
+// Карточка напоминания о своей дате после отправки (G06):
+//   hidden — вишлист не менялся с последней отправки: просить ещё раз не о чем;
+//   stale — менялся, а ссылка — снимок (local, lan): друзья по старой ссылке
+//     видят прежний вишлист, нужна новая;
+//   default — с этого устройства не отправляли или ссылка живая (remote).
+export type SentReminder = "default" | "hidden" | "stale";
+
+export const sentReminder = ({
+  current,
+  sent,
+  snapshotLinks,
+}: {
+  current: string;
+  // Отпечаток последней отправки; undefined — не отправляли.
+  sent: string | undefined;
+  snapshotLinks: boolean;
+}): SentReminder => {
+  if (sent === undefined) return "default";
+  if (sent === current) return "hidden";
+  return snapshotLinks ? "stale" : "default";
+};

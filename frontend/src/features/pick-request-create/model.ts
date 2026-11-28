@@ -10,3 +10,8 @@ export const effectiveHidePrices = (
   filters: ProductFilters,
   hidePrices: boolean,
 ) => hidePrices && canHidePrices(filters);
+
+// «Сколько можно выбрать» (просьба владельца): сколько угодно (null, по
+// умолчанию), один, три или пять подарков. Больше пяти — почти как без
+// лимита, а ряд чипов помещается в одну строку на 360 px.
+export const PICK_LIMIT_OPTIONS: ReadonlyArray<null | number> = [null, 1, 3, 5];

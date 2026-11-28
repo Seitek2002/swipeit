@@ -60,9 +60,13 @@ describe("порядок под блокировкой (§2.6)", () => {
 
     const { items } = await wishlist(me);
     expect(items).toHaveLength(15);
-    // Номера — без повторов и дыр: 0…14.
-    expect(items.map((item) => item.order)).toEqual(
-      Array.from({ length: 15 }, (_, index) => index),
+    // Номера — без повторов и дыр. Ручной порядок раздаёт 0…n−1, новые
+    // желания встают наверх (на единицу меньше верхнего) — подряд с любого
+    // числа, если последним был свайп.
+    const orders = items.map((item) => item.order);
+    const from = orders[0] ?? 0;
+    expect(orders).toEqual(
+      Array.from({ length: 15 }, (_, index) => from + index),
     );
     expect(new Set(items.map((item) => item.id)).size).toBe(15);
   }, 60_000);

@@ -127,9 +127,12 @@ export const itemsOf = async (tx: Tx, ownerId: string) =>
       .orderBy(asc(wishlistItems.sortOrder), asc(wishlistItems.addedAt))
   ).map(rowToItem);
 
-// Номер «в конец списка» — подзапросом, внутри той же записи.
+// Номер нового желания — «в начало списка» (просьба владельца: новые
+// желания первыми): на единицу меньше самого верхнего, в пустом — 0. Номер
+// может уйти в минус — порядок важен, а не сами числа. Подзапросом, внутри
+// той же записи. Его же берут свайпы и «Вернуть» из «Подарили».
 export const nextOrderFor = (ownerId: string) =>
-  sql<number>`(select coalesce(max(sort_order), -1) + 1 from wishlist_items where owner_id = ${ownerId} and deleted_at is null)`;
+  sql<number>`(select coalesce(min(sort_order), 1) - 1 from wishlist_items where owner_id = ${ownerId} and deleted_at is null)`;
 
 // itemKey брони: productId или "custom:<id>" (как itemKeyOf мока).
 export const itemKeyOf = (item: WishlistItem) =>

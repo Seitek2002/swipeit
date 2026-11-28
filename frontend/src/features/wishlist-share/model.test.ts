@@ -5,8 +5,10 @@ import type { ImportantDateView } from "@/shared/api";
 import {
   daysUntil,
   knownOccasionFor,
+  sentReminder,
   stepAfterCalendar,
   whenOptions,
+  wishlistSignature,
 } from "./model";
 
 // 20 декабря 2026, полдень по местному времени.
@@ -87,5 +89,61 @@ describe("повод из напоминания до ответа сервер�
       preset: "anniversary",
       date: "2027-06-02",
     });
+  });
+});
+
+describe("напоминание после отправки (G06)", () => {
+  const sentWith = [
+    { id: "w_1", status: "active" as const },
+    { id: "w_2", status: "active" as const },
+    { id: "w_3", status: "given" as const },
+  ];
+  const sent = wishlistSignature(sentWith);
+
+  it("с этого устройства не отправляли — карточка как раньше", () => {
+    expect(
+      sentReminder({ current: sent, sent: undefined, snapshotLinks: true }),
+    ).toBe("default");
+  });
+
+  it("отправил и ничего не менял — карточки нет", () => {
+    // Порядок желаний ссылку не портит.
+    const reordered = wishlistSignature([...sentWith].reverse());
+    expect(
+      sentReminder({ current: reordered, sent, snapshotLinks: true }),
+    ).toBe("hidden");
+  });
+
+  it("добавил желание — в демо карточка про устаревшую ссылку", () => {
+    const current = wishlistSignature([
+      ...sentWith,
+      { id: "w_4", status: "active" },
+    ]);
+    expect(sentReminder({ current, sent, snapshotLinks: true })).toBe("stale");
+  });
+
+  it("удалил или перенёс в «Подарили» — тоже", () => {
+    const removed = wishlistSignature(sentWith.slice(1));
+    const given = wishlistSignature([
+      { id: "w_1", status: "given" },
+      { id: "w_2", status: "active" },
+      { id: "w_3", status: "given" },
+    ]);
+    expect(sentReminder({ current: removed, sent, snapshotLinks: true })).toBe(
+      "stale",
+    );
+    expect(sentReminder({ current: given, sent, snapshotLinks: true })).toBe(
+      "stale",
+    );
+  });
+
+  it("живая ссылка (remote) — изменения видны по ней, карточка как раньше", () => {
+    const current = wishlistSignature([
+      ...sentWith,
+      { id: "w_4", status: "active" },
+    ]);
+    expect(sentReminder({ current, sent, snapshotLinks: false })).toBe(
+      "default",
+    );
   });
 });

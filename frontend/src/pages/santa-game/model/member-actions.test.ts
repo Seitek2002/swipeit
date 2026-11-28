@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  askOwnerToRemove,
   canRemoveMember,
   handOverCandidates,
   handOverCopy,
   leaveAction,
   removeMemberCopy,
+  removedToast,
 } from "./member-actions";
 
 const game = (status: "drawn" | "gathering") =>
@@ -40,6 +42,17 @@ describe("убрать участника (Q05, R05)", () => {
   });
 });
 
+describe("тост после «Убрать» (Z08)", () => {
+  it("до жеребьёвки — кто вышел, после — что будет с парой, без имён Сант", () => {
+    expect(removedToast({ name: "Алина", drawn: false })).toBe(
+      "Алина больше не в игре",
+    );
+    expect(removedToast({ name: "Бекзат", drawn: true })).toBe(
+      "Бекзат больше не в игре. Подопечного возьмёт другой Санта — ему придёт новое письмо",
+    );
+  });
+});
+
 describe("выйти из игры (Q05, R05)", () => {
   it("до жеребьёвки — «Выйти» у участника и позванного", () => {
     expect(
@@ -58,6 +71,15 @@ describe("выйти из игры (Q05, R05)", () => {
     expect(
       leaveAction({ game: game("drawn"), me: null, role: "invited" }),
     ).toBeNull();
+  });
+
+  it("подпись называет организатора в скобках (Z02)", () => {
+    expect(askOwnerToRemove("Данияр")).toBe(
+      "Не сможешь участвовать — напиши организатору (Данияр): тебя уберут из игры, и твой подопечный не останется без подарка",
+    );
+    expect(askOwnerToRemove()).toBe(
+      "Не сможешь участвовать — напиши организатору: тебя уберут из игры, и твой подопечный не останется без подарка",
+    );
   });
 
   it("организатору и гостю — ничего", () => {

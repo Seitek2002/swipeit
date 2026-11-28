@@ -21,6 +21,8 @@ await build({
     migrate: "src/db/migrate-cli.ts",
     funnel: "src/db/funnel-cli.ts",
     "funnel-team": "src/db/funnel-team-cli.ts",
+    // Отчёт пилота одной командой (M03): node dist/funnel-pilot.js --since …
+    "funnel-pilot": "src/db/funnel-pilot-cli.ts",
     // Репетиция офиса и дымовой тест staging (S06): только HTTP и WebSocket.
     rehearsal: "src/db/rehearsal-cli.ts",
   },

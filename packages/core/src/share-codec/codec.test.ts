@@ -160,6 +160,32 @@ describe("кодек ссылки-фильтра и ответа", () => {
     });
   });
 
+  it("«Сколько можно выбрать» едет в ссылке; без него — сколько угодно", async () => {
+    const { decodePickRequest, encodePickRequest } = await import("./codec");
+    const request = {
+      id: "pk_3",
+      from: { name: "Азамат", avatarColor: "mint" as const },
+      filters: {
+        budget: { min: 0, max: null },
+        categories: [],
+        marketplaces: [],
+      },
+      hidePrices: false,
+      maxPicks: 3,
+    };
+    expect(decodePickRequest(encodePickRequest(request))?.maxPicks).toBe(3);
+    const unlimited = encodePickRequest({ ...request, maxPicks: undefined });
+    expect(decodePickRequest(unlimited)?.maxPicks).toBeUndefined();
+    // Лимит вне 1…20 — ссылка битая, а не «без лимита».
+    const broken = encodeEnvelope("pk", {
+      i: "pk_x",
+      f: { n: "Азамат", c: "mint" },
+      fl: { b: [0, null], c: [], m: [] },
+      x: 0,
+    });
+    expect(decodePickRequest(broken)).toBeNull();
+  });
+
   it("ответ: туда и обратно, чужой тип — null", async () => {
     const { decodePickAnswer, encodePickAnswer, encodePickRequest } =
       await import("./codec");

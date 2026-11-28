@@ -11,7 +11,12 @@ import {
   encodePickRequest,
 } from "@/shared/lib/share-codec";
 
-import type { PickAnswer, PickRequest } from "../../pick/types";
+import {
+  type PickAnswer,
+  type PickRequest,
+  fitsPickLimit,
+  upToGifts,
+} from "../../pick/types";
 import { type Handler, nowIso } from "../context";
 import type { Db } from "../db";
 import { validation } from "../errors";
@@ -59,6 +64,7 @@ export const createPickRequest: Handler = async (ctx, { body }) => {
       toName: input.toName || undefined,
       filters: input.filters,
       hidePrices: input.hidePrices,
+      maxPicks: input.maxPicks,
       // Повод — праздник получателя: свои даты и день рождения отправителя
       // не подставляем (auto-tasks U01).
       occasion: input.occasion
@@ -93,6 +99,15 @@ export const answerPickRequest: Handler = async (ctx, { params }) => {
   const picks = picksOf(db, user.id, requestId);
   if (picks.length === 0)
     throw validation("Сначала выбери хотя бы один подарок");
+  // «Сколько можно выбрать» — если запрос создан на этом устройстве (или в
+  // общей базе lan): ссылка с другого телефона лимит несёт сама, его держит
+  // экран друга.
+  const maxPicks = db.pickRequests[requestId]?.maxPicks;
+  if (!fitsPickLimit(picks.length, maxPicks)) {
+    throw validation(
+      `Можно выбрать ${upToGifts(maxPicks ?? 0)} — верни лишнее и отправь снова`,
+    );
+  }
   const answer: PickAnswer = {
     requestId,
     by: {

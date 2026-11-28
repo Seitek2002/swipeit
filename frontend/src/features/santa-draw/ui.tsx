@@ -14,7 +14,7 @@ import {
 import { drawSantaGame, isApiError, santaKeys } from "@/shared/api";
 import { Button, ConfirmDialog, toast } from "@/shared/ui";
 
-import { drawConfirmText, namesakeNote } from "./model";
+import { drawConfirmText, namesakeNote, wishlistGaps } from "./model";
 
 // «Провести жеребьёвку» (DESIGN.md §8.8): только через ConfirmDialog —
 // поменять пары потом нельзя. Пары выбирает сервер (drawAssignments).
@@ -35,7 +35,7 @@ export const SantaDrawButton = ({
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const joined = view.members.filter((member) => member.joined);
-  const withoutWishlist = joined.filter((member) => !member.hasWishlist).length;
+  const wishlists = wishlistGaps(joined, meId);
   const namesakes = namesakeNote(joined.map((member) => member.name));
   const people = santaPeople(joined, meId);
   const nameOf = (id: string) =>
@@ -83,7 +83,7 @@ export const SantaDrawButton = ({
         isLoading={draw.isPending}
         title="Провести жеребьёвку?"
         description={drawConfirmText({
-          withoutWishlist,
+          wishlists,
           namesakes,
           exclusions,
         })}

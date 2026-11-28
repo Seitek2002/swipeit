@@ -1,6 +1,7 @@
 export { useDemoSettingsStore } from "./demo-settings";
 export { useGiftFiltersStore } from "./filters";
 export { useGuestStore } from "./guest";
+export { useWishlistSentStore, WISHLIST_SENT_KEY } from "./wishlist-sent";
 export { getActiveUserId, setLastUserKey, useSessionStore } from "./session";
 export {
   clearRemoteSession,

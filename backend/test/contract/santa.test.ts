@@ -883,6 +883,10 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
       expect(removed.game.participantIds).toEqual([owner.id, azamat.id]);
       expect(JSON.stringify(removed.game)).not.toContain("removedIds");
       await fails(act(nurai, id, "/join"), "CONFLICT");
+      // Что убрали, знает только сам убранный (Z01).
+      expect((await getGame(nurai, id)).removed).toBe(true);
+      expect(removed.removed).toBeUndefined();
+      expect((await getGame(azamat, id)).removed).toBeUndefined();
     });
 
     it("после жеребьёвки — CONFLICT и для выхода, и для «Убрать»", async () => {
@@ -1390,6 +1394,8 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
         true,
         true,
       ]);
+      // В бюджете — по нижней цене, без цены — не в бюджете (Z03).
+      expect(drawn.members.map((m) => m.wishesInBudget)).toEqual([2, 2, 0]);
       const everyone = [owner, azamat, nurai];
       const wards = await wardsOf(id, everyone);
       expectPairs(
@@ -1402,7 +1408,8 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
         const wardId = wards[caller.id] ?? "";
         expect(ward.id).toBe(wardId);
         expect(ward.name).toBe(names[wardId]);
-        expect(shapeOf(ward)).toEqual(expected[wardId]);
+        // Ожидания записаны в порядке добавления, а новые желания — первыми.
+        expect(shapeOf(ward)).toEqual([...(expected[wardId] ?? [])].reverse());
         expect(ward.overBudgetCount).toBe(
           expected[wardId]?.filter((item) => item.overBudget).length,
         );

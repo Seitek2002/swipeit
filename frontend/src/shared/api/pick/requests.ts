@@ -8,6 +8,8 @@ type Pick = PickAnswer["picks"][number];
 export const createPickRequest = (input: {
   filters: ProductFilters;
   hidePrices: boolean;
+  // «Сколько можно выбрать»; нет — сколько угодно.
+  maxPicks?: number;
   message?: string;
   occasion?: Occasion;
   toName?: string;

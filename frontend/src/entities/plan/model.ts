@@ -42,9 +42,14 @@ export type PlanStatusView = { live: boolean; text: string };
 
 // Статус в списке планов (DESIGN.md §8.7): «Идёт сейчас» — мятой точкой,
 // «До 28 ноября, 20:00», «Решено: Кино».
+// resultsSeen — итоги уже открывали на этом устройстве (needs-me.ts):
+// «Итоги готовы» — только новые, а увиденные — что идёт дальше
+// (auto-tasks-ux-5, ux-6). Отметка — localStorage устройства; поля на
+// сервере для этого пока нет.
 export const planStatus = (
   plan: PlanSession,
   decisionTitle?: string,
+  { resultsSeen = false }: { resultsSeen?: boolean } = {},
 ): PlanStatusView => {
   if (plan.status === "decided") {
     return { live: false, text: `Решено: ${decisionTitle ?? "…"}` };
@@ -53,7 +58,15 @@ export const planStatus = (
   if (isTimedOutWithoutResults(plan)) {
     return { live: false, text: "Время вышло" };
   }
-  if (plan.status === "results") return { live: false, text: "Итоги готовы" };
+  if (plan.status === "results") {
+    if (!resultsSeen) return { live: false, text: "Итоги готовы" };
+    // «Выбрать самим» идёт, как только кто-то проголосовал.
+    const voting = Object.keys(plan.votes).length > 0;
+    return {
+      live: false,
+      text: voting ? "Идёт голосование" : "Решаем, что делаем",
+    };
+  }
   if (plan.mode === "deadline" && plan.deadline) {
     return { live: false, text: formatDeadline(plan.deadline) };
   }

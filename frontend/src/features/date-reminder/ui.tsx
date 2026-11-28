@@ -17,11 +17,19 @@ type Props = {
   // открывает экран вишлиста (DESIGN.md §7 ReminderBanner).
   onSend: (reminder: Reminder) => void;
   reminder: Reminder;
+  // После отправки вишлист изменился, а ссылка — снимок (демо, UX-аудит G06):
+  // друзья по старой ссылке видят прежний — просим отправить новую.
+  stale?: boolean;
 };
 
 // ReminderBanner (DESIGN.md §7, quick-start.html кадр 6): бумажная плашка
 // над «Хочу» за месяц до своей даты. Внешних отступов нет — их задаёт экран.
-export const ReminderBanner = ({ reminder, onSend, className }: Props) => {
+export const ReminderBanner = ({
+  reminder,
+  onSend,
+  className,
+  stale = false,
+}: Props) => {
   const dismiss = useDismissReminder();
   const textId = useId();
 
@@ -50,14 +58,16 @@ export const ReminderBanner = ({ reminder, onSend, className }: Props) => {
             {reminderText(reminder)}
           </p>
           <p className="text-caption text-ink-soft mt-0.5">
-            Обнови вишлист и отправь друзьям, чтобы они успели выбрать
+            {stale
+              ? "После отправки вишлист изменился — по старой ссылке друзья видят прежний. Отправь новую"
+              : "Обнови вишлист и отправь друзьям, чтобы они успели выбрать"}
           </p>
         </div>
       </div>
       {/* relative z-[1]: кнопки над зерном бумаги (::after у .paper). */}
       <div className="relative z-[1] mt-3 ml-9 flex items-center gap-1">
         <Button size="sm" onClick={() => onSend(reminder)}>
-          Отправить вишлист
+          {stale ? "Отправить заново" : "Отправить вишлист"}
         </Button>
         {/* Не ghost «Пыльной розой»: на бумаге он не проходит по контрасту. */}
         <Button

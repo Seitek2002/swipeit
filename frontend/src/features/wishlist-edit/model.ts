@@ -184,19 +184,20 @@ export const useMarkGiven = () => {
   });
 };
 
-// «Вернуть в вишлист» из вкладки «Подарили» — в конец списка (TECH_SPEC §6).
+// «Вернуть в вишлист» из вкладки «Подарили» — в начало списка, как новое
+// желание (новые — первыми; номер как у сервера: на единицу меньше верхнего).
 export const useRestoreItem = () => {
   const { apply, rollback, settle } = useOptimistic();
   return useMutation({
     mutationFn: (id: string) => restoreWishlistItem(id),
     onMutate: (id) =>
       apply((data) => {
-        const last = Math.max(-1, ...data.items.map((item) => item.order)) + 1;
+        const first = Math.min(1, ...data.items.map((item) => item.order)) - 1;
         return mapItem(data, id, (item) => ({
           ...item,
           status: "active",
           given: undefined,
-          order: last,
+          order: first,
         }));
       }),
     onSuccess: () => toast("Вернулось в вишлист"),

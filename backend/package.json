@@ -21,6 +21,7 @@
     "db:seed:dev": "tsx --env-file-if-exists=.env src/db/seed-dev.ts",
     "funnel": "tsx --env-file-if-exists=.env src/db/funnel-cli.ts",
     "funnel:team": "tsx --env-file-if-exists=.env src/db/funnel-team-cli.ts",
+    "funnel:pilot": "tsx --env-file-if-exists=.env src/db/funnel-pilot-cli.ts",
     "rehearsal": "tsx --env-file-if-exists=.env src/db/rehearsal-cli.ts",
     "telegram:dev": "tsx src/db/telegram-dev-cli.ts"
   },

@@ -1,5 +1,7 @@
 import WebSocket from "ws";
 
+import { REHEARSAL_HEADER } from "../ops-auth";
+
 // HTTP- и WebSocket-клиент репетиции (S06): только публичный API сервера,
 // к базе не ходит. Считает время ответа по шаблонам маршрутов и все ответы
 // не 2xx, которых сценарий не ждал.
@@ -45,7 +47,16 @@ const percentile = (sorted: readonly number[], p: number) =>
     : (sorted[Math.min(sorted.length - 1, Math.ceil(p * sorted.length) - 1)] ??
       0);
 
-export const createClient = (base: string) => {
+// rehearsalToken — OPS_TOKEN сервера: каждый запрос идёт с заголовком
+// x-swipeit-rehearsal, и профили репетиции сразу «свои» — воронка и
+// «Сейчас» их не считают (auto-tasks-metrics-1 M01).
+export const createClient = (
+  base: string,
+  { rehearsalToken }: { rehearsalToken?: string } = {},
+) => {
+  const mark: Record<string, string> = rehearsalToken
+    ? { [REHEARSAL_HEADER]: rehearsalToken }
+    : {};
   const timings = new Map<string, number[]>();
   const unexpected: Unexpected[] = [];
   // Всё, что человек получил ответами, — для проверки приватности.
@@ -69,7 +80,10 @@ export const createClient = (base: string) => {
     const query = options.query
       ? `?${new URLSearchParams(options.query).toString()}`
       : "";
-    const headers: Record<string, string> = { "user-agent": USER_AGENT };
+    const headers: Record<string, string> = {
+      "user-agent": USER_AGENT,
+      ...mark,
+    };
     if (who) headers.authorization = `Bearer ${who.token}`;
     if (options.body !== undefined)
       headers["content-type"] = "application/json";
@@ -137,6 +151,7 @@ export const createClient = (base: string) => {
       const response = await fetch(`${base}${path}`, {
         headers: {
           "user-agent": USER_AGENT,
+          ...mark,
           ...(token ? { authorization: `Bearer ${token}` } : {}),
         },
         signal: AbortSignal.timeout(TIMEOUT_MS),

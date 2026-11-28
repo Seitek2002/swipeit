@@ -50,14 +50,18 @@ export const drumLabels = (source: DrumSource): DrumLabels =>
 export type VoteProgress = {
   total: number;
   voted: number;
-  // Имена тех, кто ещё не проголосовал, в порядке участников.
+  // Имена остальных, кто ещё не проголосовал, в порядке участников. Себя
+  // здесь нет: себя пишем «тебя», а не по имени (auto-tasks-ux-5, ux-6).
   waiting: string[];
+  // Сам ещё не проголосовал.
+  waitingMe: boolean;
 };
 
 export const voteProgress = (
   participants: ReadonlyArray<{ id: string; name: string }>,
   votes: Readonly<Record<string, string>>,
   candidates: readonly string[],
+  meId: string,
 ): VoteProgress => {
   const allowed = new Set(candidates);
   const waiting = participants.filter((person) => {
@@ -67,7 +71,10 @@ export const voteProgress = (
   return {
     total: participants.length,
     voted: participants.length - waiting.length,
-    waiting: waiting.map((person) => person.name),
+    waiting: waiting
+      .filter((person) => person.id !== meId)
+      .map((person) => person.name),
+    waitingMe: waiting.some((person) => person.id === meId),
   };
 };
 
@@ -79,19 +86,30 @@ const namesOf = (names: readonly string[]) =>
     ? `${names.slice(0, MAX_NAMED).join(", ")} и ещё ${names.length - MAX_NAMED}`
     : names.join(", ");
 
+// Кого ждём: «Азамат, Тимур», «тебя», «тебя и ещё 2: Азамат, Тимур» —
+// без склонения имён.
+const waitingOf = ({ waiting, waitingMe }: VoteProgress) => {
+  if (!waitingMe) return `: ${namesOf(waiting)}`;
+  if (waiting.length === 0) return " тебя";
+  return ` тебя и ещё ${waiting.length}: ${namesOf(waiting)}`;
+};
+
+const nobodyWaiting = (progress: VoteProgress) =>
+  !progress.waitingMe && progress.waiting.length === 0;
+
 // Строка над списком голосования: «Проголосовали 1 из 4 · ждём: Азамат,
 // Тимур, Мээрим» — организатор видит, кого ждать, а не утверждает вслепую.
-export const voteStatus = ({ voted, total, waiting }: VoteProgress): string =>
-  waiting.length === 0
+export const voteStatus = (progress: VoteProgress): string =>
+  nobodyWaiting(progress)
     ? "Все проголосовали"
-    : `Проголосовали ${voted} из ${total} · ждём: ${namesOf(waiting)}`;
+    : `Проголосовали ${progress.voted} из ${progress.total} · ждём${waitingOf(progress)}`;
 
 // Подтверждение «Утвердить», пока проголосовали не все; все — null, кнопка
 // утверждает сразу.
-export const approveWarning = ({ waiting }: VoteProgress): null | string =>
-  waiting.length === 0
+export const approveWarning = (progress: VoteProgress): null | string =>
+  nobodyWaiting(progress)
     ? null
-    : `Не все проголосовали (ждём: ${namesOf(waiting)}). Утвердить сейчас?`;
+    : `Не все проголосовали (ждём${waitingOf(progress)}). Утвердить сейчас?`;
 
 // ── «Время вышло» (auto-tasks-ux-5 Y02) ─────────────────────────────
 
@@ -103,8 +121,15 @@ export const timedOutTitle = (
   isOwner: boolean,
   meId: string,
   finished: ReadonlyArray<{ id: string; name: string }>,
+  // Имя организатора — в скобках, без склонения, как в Санте (UX-6 Z02).
+  ownerName?: string,
 ): string => {
-  if (!isOwner) return "Время вышло — организатор может продлить план";
+  if (!isOwner) {
+    const who = ownerName?.trim()
+      ? `организатор (${ownerName.trim()})`
+      : "организатор";
+    return `Время вышло — ${who} может продлить план`;
+  }
   const [only] = finished;
   if (!only) return "Время вышло, а до конца колоды не дошёл никто";
   return only.id === meId

@@ -257,6 +257,78 @@ describe("ссылка-ответ", () => {
   });
 });
 
+describe("«Сколько можно выбрать»", () => {
+  it("лимит едет в ссылке ?d=; 4 «Хочу» при лимите 3 — VALIDATION, 3 — ответ", async () => {
+    await call("POST", "/auth/demo", null);
+    const { url, request } = await call<{ request: PickRequest; url: string }>(
+      "POST",
+      "/pick-requests",
+      DEMO_USER_ID,
+      { filters: FILTERS, hidePrices: false, maxPicks: 3 },
+    );
+    expect(request.maxPicks).toBe(3);
+    expect(decodePickRequest(url.slice("/pick/?d=".length))?.maxPicks).toBe(3);
+
+    const friend = await newFriend();
+    for (const product of products.slice(0, 4)) {
+      await swipe(friend.id, request.id, product.id, "like");
+    }
+    const answer = () =>
+      call<{ answer: PickAnswer }>(
+        "POST",
+        `/pick-requests/${request.id}/answer`,
+        friend.id,
+      );
+    await expect(answer()).rejects.toMatchObject({ code: "VALIDATION" });
+    await call("POST", "/swipes/undo", friend.id, {
+      context: { kind: "pick", requestId: request.id },
+    });
+    expect((await answer()).answer.picks).toHaveLength(3);
+  });
+
+  it("лимит вне 1…20 — VALIDATION; без лимита — сколько угодно", async () => {
+    await call("POST", "/auth/demo", null);
+    for (const maxPicks of [0, 21]) {
+      await expect(
+        call("POST", "/pick-requests", DEMO_USER_ID, {
+          filters: FILTERS,
+          hidePrices: false,
+          maxPicks,
+        }),
+      ).rejects.toMatchObject({ code: "VALIDATION" });
+    }
+    const { request } = await createRequest(DEMO_USER_ID);
+    expect(request.maxPicks).toBeUndefined();
+  });
+});
+
+describe("ссылка-ответ на новом устройстве (auto-tasks-ux-6 G01)", () => {
+  it("без профиля и без сохранённой сессии: ответ разбирается, подарки отдаются", async () => {
+    // Свежая вкладка: базы ещё нет, userId пуст — как во встроенном
+    // браузере Telegram, где SwipeIt не открывали.
+    const encoded = encodePickAnswer({
+      requestId: "pk_from_friend",
+      by: { name: "Нурай", avatarColor: "mint" },
+      picks: [
+        { productId: "p_0008", priority: "normal" },
+        { productId: "p_0023", priority: "top" },
+      ],
+    });
+    const imported = await call<{ answer: PickAnswer }>(
+      "POST",
+      "/pick-answers",
+      null,
+      { encoded },
+    );
+    expect(imported.answer.picks).toHaveLength(2);
+    for (const pick of imported.answer.picks) {
+      await expect(
+        call("GET", `/catalog/products/${pick.productId}`, null),
+      ).resolves.toMatchObject({ id: pick.productId });
+    }
+  });
+});
+
 describe("ревью этапа 2", () => {
   it("два друга с одинаковым именем — два ответа, а не один", async () => {
     await call("POST", "/auth/demo", null);

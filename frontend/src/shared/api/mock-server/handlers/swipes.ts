@@ -19,6 +19,7 @@ import {
   tasteOf,
 } from "../taste";
 import { parseInput, requireUser } from "./common";
+import { nextOrder } from "./wishlist";
 
 // Порог шеринга: после 5 «Хочу» вишлист можно отправить (решение владельца
 // от 26.11.2026). Считаются лайки, а не свайпы вообще.
@@ -118,7 +119,7 @@ export const createSwipe: Handler = async (ctx, { body }) => {
           ownerId: user.id,
           source: { kind: "product", productId: input.productId },
           priority,
-          order: Math.max(-1, ...items.map((item) => item.order)) + 1,
+          order: nextOrder(items),
           variantChoice: input.variantChoice,
           status: "active",
           addedAt: at,

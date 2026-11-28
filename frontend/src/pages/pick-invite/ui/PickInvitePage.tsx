@@ -15,9 +15,15 @@ import { ActiveFilterChips, describeFilters } from "@/features/product-filters";
 
 import { useCreateUser, useMe } from "@/entities/user";
 
-import { getMyPicks, getShare, isApiError, pickKeys } from "@/shared/api";
+import {
+  getMyPicks,
+  getShare,
+  isApiError,
+  pickKeys,
+  upToGifts,
+} from "@/shared/api";
 import { ROUTES, shareScreenPath } from "@/shared/config";
-import { occasionLabel, plural } from "@/shared/lib/format";
+import { occasionLabel } from "@/shared/lib/format";
 import {
   type SharedPickRequest,
   decodePickRequest,
@@ -35,10 +41,14 @@ import {
   ScreenBody,
 } from "@/shared/ui";
 
+import {
+  type PickOverrides,
+  countPicks,
+  pickGoalText,
+  pickProgress,
+  progressText,
+} from "../model";
 import { SendPicksSheet } from "./SendPicksSheet";
-
-// Столько «Хочу» нужно, чтобы отправить выбор (DESIGN.md §8.6: «после 3+»).
-export const MIN_PICKS = 3;
 
 const TopBar = ({ onBack }: { onBack?: () => void }) => (
   <div className="flex h-[52px] flex-none items-center gap-1 px-5">
@@ -73,9 +83,6 @@ const Invite = ({
   starting: boolean;
 }) => {
   const occasion = occasionLabel(request.occasion);
-  // Имя — в именительном (P11): кыргызские имена по-русски склоняются
-  // неверно, и это видит каждый.
-  const to = request.from.name;
   return (
     <>
       <ScreenBody className="px-5 pt-2.5">
@@ -95,6 +102,11 @@ const Invite = ({
             hidePrices: request.hidePrices,
           })}
         </p>
+        {request.maxPicks !== undefined && (
+          <p className="text-title-3 text-champagne mt-2">
+            Можно выбрать {upToGifts(request.maxPicks)}
+          </p>
+        )}
         {request.message && (
           <p className="text-body bg-velvet-2 text-paper mt-4 rounded-[14px_14px_14px_4px] px-3.5 py-3">
             {request.message}
@@ -102,8 +114,12 @@ const Invite = ({
         )}
         <ol className="text-body text-rose mt-5 flex list-inside list-decimal flex-col gap-1.5 pb-6">
           <li>Свайпай вправо то, что нравится, влево — мимо.</li>
-          <li>Выбери хотя бы три подарка.</li>
-          <li>Отправь выбор: {to}.</li>
+          <li>{pickGoalText(request.maxPicks)}.</li>
+          {/* Имя — подлежащим, в именительном (P11, G07): кыргызские имена
+              по-русски склоняются неверно, и это видит каждый. */}
+          <li>
+            Отправь выбор — {request.from.name} увидит, что тебе нравится.
+          </li>
         </ol>
       </ScreenBody>
       <div className="flex-none px-5 pt-2 pb-[calc(env(safe-area-inset-bottom)+16px)]">
@@ -152,8 +168,20 @@ const PickSwipe = ({
     queryKey: pickKeys.picks(request.id),
     queryFn: () => getMyPicks(request.id),
   });
-  const count = picks.data?.picks.length ?? 0;
-  const left = Math.max(0, MIN_PICKS - count);
+  // Свежие «Хочу» и отмены, пока сервер их не подтвердил: лимит держим
+  // сразу, а не после ответа на свайп.
+  const [overrides, setOverrides] = useState<PickOverrides>(() => new Map());
+  const mark = (productId: string, liked: boolean) =>
+    setOverrides((current) => new Map(current).set(productId, liked));
+  const progress = pickProgress(
+    countPicks(
+      (picks.data?.picks ?? []).map((pick) => pick.productId),
+      overrides,
+    ),
+    request.maxPicks,
+  );
+  const { count, maxPicks } = progress;
+  const openSend = () => requireName.run(() => setSendOpen(true));
 
   return (
     <>
@@ -171,21 +199,38 @@ const PickSwipe = ({
         context={{ kind: "pick", requestId: request.id }}
         hidePrices={request.hidePrices}
         hideRibbon
+        onLike={(product) => mark(product.id, true)}
+        onUnlike={(product) => mark(product.id, false)}
+        // Лимит выбран — колода кончается шагом отправки: больше «Хочу» не
+        // поставить, заменить подарок — через «Вернуть».
+        stopped={
+          progress.full ? (
+            <EmptyState
+              title={`Выбрано ${count} из ${maxPicks}`}
+              description="Больше выбрать нельзя. Отправь выбор — или верни карточку, чтобы заменить подарок."
+              action={
+                <Button size="lg" onClick={openSend}>
+                  Отправить выбор
+                </Button>
+              }
+            />
+          ) : undefined
+        }
       />
       <div className="flex min-h-[72px] flex-none flex-col justify-center px-5 pb-[calc(env(safe-area-inset-bottom)+12px)]">
-        {left > 0 ? (
+        {!progress.canSend ? (
           <p className="text-caption text-rose text-center" aria-live="polite">
-            {count === 0
-              ? "Выбери хотя бы три подарка"
-              : `Ещё ${left} ${plural(left, ["подарок", "подарка", "подарков"])} — и можно отправить`}
+            {progressText(progress)}
+          </p>
+        ) : progress.full ? (
+          <p className="text-caption text-rose text-center" aria-live="polite">
+            Выбрано {count} из {maxPicks} — это максимум
           </p>
         ) : (
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={() => requireName.run(() => setSendOpen(true))}
-          >
-            Отправить выбор: {request.from.name}
+          <Button size="lg" className="w-full" onClick={openSend}>
+            {maxPicks === undefined
+              ? "Отправить выбор"
+              : `Отправить выбор · ${count} из ${maxPicks}`}
           </Button>
         )}
       </div>
@@ -194,6 +239,7 @@ const PickSwipe = ({
         onClose={() => setSendOpen(false)}
         request={request}
         count={count}
+        full={progress.full}
         caption={caption}
       />
       {requireName.sheet}

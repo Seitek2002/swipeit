@@ -36,7 +36,15 @@ export {
 export { GUEST_REFETCH_MS } from "./refetch";
 export { REMOTE_COPY } from "./remote-copy";
 export { shareScreenPath } from "./share-screens";
-export { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "./site";
+export {
+  PICK_LINK_DESCRIPTION,
+  PICK_LINK_TITLE,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+  SITE_URL,
+  WISHLIST_LINK_DESCRIPTION,
+  WISHLIST_LINK_TITLE,
+} from "./site";
 export { telegramClientId } from "./telegram";
 export { COLORS } from "./tokens";
 export {

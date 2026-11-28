@@ -6,11 +6,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarPlus, Check, Gift } from "lucide-react";
+import { CalendarPlus, Check, Crown, Gift } from "lucide-react";
 
 import { AppHeader } from "@/widgets/app-header";
 import { SantaEnvelope } from "@/widgets/santa-envelope";
-import { useSantaNudge } from "@/widgets/santa-nudge";
 
 import { buildIcs, dayOf, downloadIcs } from "@/features/calendar-export";
 import { SantaDrawButton } from "@/features/santa-draw";
@@ -22,6 +21,7 @@ import {
   drawLabel,
   gatheringIssue,
   needsMoreMembers,
+  ownerName,
   santaInviteText,
   santaTerms,
   useSantaGame,
@@ -55,11 +55,15 @@ import {
 
 import { remindWishlistNames } from "../model/letters";
 import {
-  ASK_OWNER_TO_REMOVE,
+  askOwnerToRemove,
   canRemoveMember,
   leaveAction,
 } from "../model/member-actions";
-import { type MemberStatus, memberStatus } from "../model/member-status";
+import {
+  type MemberStatus,
+  memberStatus,
+  needsWishes,
+} from "../model/member-status";
 import {
   STALE_LETTERS_HINT,
   sealedLetterText,
@@ -114,12 +118,19 @@ const MemberStatusCell = ({
       );
     case "no-wishlist":
       return <span className="text-caption text-rose">без вишлиста</span>;
+    case "wishlist-few":
+      return (
+        <span className="text-caption text-rose max-w-[8.5rem] text-right">
+          мало желаний в бюджете
+        </span>
+      );
   }
 };
 
 // Участники со статусами (DESIGN.md §8.8): до жеребьёвки — вишлист, после —
 // письмо (X08); у себя — «Собрать вишлист». Организатору после жеребьёвки —
-// сколько дней письмо не открыто (S04): потерянный профиль так видно.
+// сколько дней письмо не открыто (S04): потерянный профиль так видно. У
+// организатора — корона, как в лобби плана (Z02): тексты отправляют к нему.
 const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
   const joined = view.members.filter((member) => member.joined);
   const stale =
@@ -129,9 +140,6 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
   stale.delete(meId);
   const invited = view.members.filter((member) => !member.joined);
   const drawn = view.game.status === "drawn";
-  // Мне мало желаний в бюджете этой игры (R06) — подсказка в моей строке.
-  const nudge = useSantaNudge();
-  const needWishes = nudge?.gameId === view.game.id;
   return (
     <section>
       <h2 className="text-label mb-1">
@@ -159,8 +167,22 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
               decorative
             />
             <span className="text-body text-paper min-w-0 flex-1 font-semibold">
-              {member.id === meId ? "Ты" : member.name}
-              {member.id === meId && member.joined && needWishes && (
+              <span className="inline-flex max-w-full items-center gap-1.5">
+                <span className="truncate">
+                  {member.id === meId ? "Ты" : member.name}
+                </span>
+                {member.id === view.game.ownerId && (
+                  <Crown
+                    role="img"
+                    aria-label="организатор"
+                    size={16}
+                    strokeWidth={1.75}
+                    className="text-champagne flex-none"
+                  />
+                )}
+              </span>
+              {/* Мне мало желаний в бюджете этой игры (R06, Z03). */}
+              {member.id === meId && needsWishes(member) && (
                 <span className="text-caption text-rose block font-normal">
                   Собери вишлист, чтобы твоему Санте было проще
                 </span>
@@ -170,7 +192,6 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
               status={memberStatus(member, {
                 drawn,
                 isMe: member.id === meId,
-                needWishes,
               })}
               staleDays={stale.get(member.id)}
             />
@@ -271,7 +292,8 @@ const GameContent = () => {
   const envelope = view.me?.envelope ?? "sealed";
   // Жеребьёвка по дате не прошла (R08): организатору — почему и что
   // делать, остальным — что ждём его.
-  const failedNote = drawFailedNote(view);
+  const owner = ownerName(view);
+  const failedNote = drawFailedNote(view, owner);
   // Почему тянуть пары ещё нельзя: у организатора — с сервера, у остальных
   // — по составу (S05: причины с исключениями видит только организатор).
   const issue = gatheringIssue(view);
@@ -420,7 +442,7 @@ const GameContent = () => {
             name={ward.name}
             budget={view.game.budget}
           />
-          {/* «Что купил?» (X02, Y05): выбранное желание бронируется —
+          {/* «Какой подарок?» (X02, Y05): выбранное желание бронируется —
               друзья подопечного не купят второе такое же. */}
           <BoughtSection view={view} items={ward.wishlist} />
         </>
@@ -450,7 +472,7 @@ const GameContent = () => {
           <ShareActions
             getPayload={async () => ({
               title: view.game.title,
-              text: santaInviteText(view.game),
+              text: santaInviteText(view.game, clock.now()),
               url: await inviteUrl("santa", view.game.id),
             })}
             qrLabel="QR-код приглашения в игру"
@@ -466,7 +488,7 @@ const GameContent = () => {
 
       {leave === "ask-owner" && (
         <p className="text-caption text-rose text-center">
-          {ASK_OWNER_TO_REMOVE}
+          {askOwnerToRemove(owner)}
         </p>
       )}
 

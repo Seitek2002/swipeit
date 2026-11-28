@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { EMPTY_FILTERS } from "@/entities/product";
 
-import { canHidePrices, effectiveHidePrices } from "./model";
+import {
+  PICK_LIMIT_OPTIONS,
+  canHidePrices,
+  effectiveHidePrices,
+} from "./model";
 
 describe("«Скрыть цены от друга» (W02)", () => {
   it("без верхней границы бюджета цены не скрываются, даже если переключатель включали", () => {
@@ -15,5 +19,11 @@ describe("«Скрыть цены от друга» (W02)", () => {
     expect(canHidePrices(filters)).toBe(true);
     expect(effectiveHidePrices(filters, true)).toBe(true);
     expect(effectiveHidePrices(filters, false)).toBe(false);
+  });
+});
+
+describe("«Сколько можно выбрать»", () => {
+  it("по умолчанию — сколько угодно, дальше 1 / 3 / 5", () => {
+    expect(PICK_LIMIT_OPTIONS).toEqual([null, 1, 3, 5]);
   });
 });

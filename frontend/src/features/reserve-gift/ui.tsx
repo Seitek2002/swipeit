@@ -73,6 +73,10 @@ type Props = {
   // у гостя по ссылке: в демо его бронь не уходит с телефона, и друзьям надо
   // сказать самому. У демо-друзей из списка сказать некому — не передают.
   chat?: { ownerName: string; title: string };
+  // В шторке «Подробнее» (UX-аудит G09): только сама бронь — «Забронирую я»
+  // или «Этот подарок выбран тобой / Отменить». Ряд «Купить / В календарь /
+  // Сказать в чат» остаётся на карточке. Шторка бархатная — цвета под неё.
+  compact?: boolean;
   itemKey: string;
   // Профиль без имени — NameSheet, имя сохраняется в профиль (DESIGN.md
   // §8.5); бронь продолжается сама. NAME_REQUIRED от сервера — та же шторка.
@@ -97,6 +101,7 @@ export const ReserveControl = ({
   onReserved,
   afterBuy,
   chat,
+  compact = false,
 }: Props) => {
   const reserver = useReserver();
   // В «Локальной сети» брони общие — подпись и кнопка не нужны.
@@ -142,9 +147,16 @@ export const ReserveControl = ({
     reserveAs(trimmed);
   };
 
+  // «Уже подарено» и «Кто-то уже выбрал»: пунктир цвета текста — на бумаге
+  // карточки серый, на бархате шторки розовый.
+  const dashed = cn(
+    "rounded-field flex min-h-12 items-center justify-center gap-2 border-[1.5px] border-dashed text-[15px] leading-5 font-semibold",
+    compact ? "border-rose/45 text-rose" : "border-ink-soft/45 text-ink-soft",
+  );
+
   if (state === "closed") {
     return (
-      <div className="border-ink-soft/45 text-ink-soft rounded-field flex min-h-12 items-center justify-center gap-2 border-[1.5px] border-dashed text-[15px] leading-5 font-semibold">
+      <div className={dashed}>
         <Gift aria-hidden size={18} strokeWidth={1.75} />
         Уже подарено
       </div>
@@ -152,17 +164,13 @@ export const ReserveControl = ({
   }
 
   if (state === "taken") {
-    return (
-      <div className="border-ink-soft/45 text-ink-soft rounded-field flex min-h-12 items-center justify-center gap-2 border-[1.5px] border-dashed text-[15px] leading-5 font-semibold">
-        Кто-то уже выбрал
-      </div>
-    );
+    return <div className={dashed}>Кто-то уже выбрал</div>;
   }
 
   if (state === "mine") {
     return (
       <div className="flex flex-col items-center gap-1.5">
-        <div className="bg-paper-2 rounded-field flex min-h-12 w-full items-center justify-between gap-2 pr-1.5 pl-3.5 text-[15px] leading-5 font-semibold">
+        <div className="bg-paper-2 rounded-field text-ink flex min-h-12 w-full items-center justify-between gap-2 pr-1.5 pl-3.5 text-[15px] leading-5 font-semibold">
           <span className="flex items-center gap-2">
             <Check aria-hidden size={18} strokeWidth={2} />
             Этот подарок выбран тобой
@@ -177,46 +185,48 @@ export const ReserveControl = ({
             Отменить
           </Button>
         </div>
-        <div className="flex w-full gap-1">
-          {buy && (
-            // «Мандарин-чернила», а не мандарин: на бумаге светлый мандарин
-            // нечитаем, а главная кнопка этой карточки уже не нужна. Магазин —
-            // в имени ссылки: в ряду из трёх на 360 px «Купить на kivano.kg»
-            // не помещается.
-            <a
-              href={buy.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={buy.store ? `Купить на ${buy.store}` : "Где купить"}
-              className={cn(reserveActionClassName, "text-mandarin-ink")}
-            >
-              <ExternalLink aria-hidden size={20} strokeWidth={2} />
-              {buy.store ? "Купить" : "Где купить"}
-            </a>
-          )}
-          {afterBuy}
-          {chat && demoOnly && (
-            // Сказать друзьям — после «Купить» (M3): следующий шаг после
-            // брони всё ещё купить.
-            <ReserveActionButton
-              className="text-ink"
-              onClick={() =>
-                void copyText(reservationChatText(chat)).then((ok) =>
-                  toast(
-                    ok
-                      ? "Текст скопирован — отправь его в чат"
-                      : "Не получилось скопировать",
-                    { tone: ok ? "success" : "error" },
-                  ),
-                )
-              }
-            >
-              <MessageCircle aria-hidden size={20} strokeWidth={2} />
-              {inApp ? "Написать в чат, что беру" : "Сказать в чат"}
-            </ReserveActionButton>
-          )}
-        </div>
-        {chat && demoOnly && (
+        {!compact && (
+          <div className="flex w-full gap-1">
+            {buy && (
+              // «Мандарин-чернила», а не мандарин: на бумаге светлый мандарин
+              // нечитаем, а главная кнопка этой карточки уже не нужна. Магазин —
+              // в имени ссылки: в ряду из трёх на 360 px «Купить на kivano.kg»
+              // не помещается.
+              <a
+                href={buy.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={buy.store ? `Купить на ${buy.store}` : "Где купить"}
+                className={cn(reserveActionClassName, "text-mandarin-ink")}
+              >
+                <ExternalLink aria-hidden size={20} strokeWidth={2} />
+                {buy.store ? "Купить" : "Где купить"}
+              </a>
+            )}
+            {afterBuy}
+            {chat && demoOnly && (
+              // Сказать друзьям — после «Купить» (M3): следующий шаг после
+              // брони всё ещё купить.
+              <ReserveActionButton
+                className="text-ink"
+                onClick={() =>
+                  void copyText(reservationChatText(chat)).then((ok) =>
+                    toast(
+                      ok
+                        ? "Текст скопирован — отправь его в чат"
+                        : "Не получилось скопировать",
+                      { tone: ok ? "success" : "error" },
+                    ),
+                  )
+                }
+              >
+                <MessageCircle aria-hidden size={20} strokeWidth={2} />
+                {inApp ? "Написать в чат, что беру" : "Сказать в чат"}
+              </ReserveActionButton>
+            )}
+          </div>
+        )}
+        {!compact && chat && demoOnly && (
           <DemoLinkNote className="text-ink-soft px-2 text-center">
             В демо бронь видна только здесь
           </DemoLinkNote>

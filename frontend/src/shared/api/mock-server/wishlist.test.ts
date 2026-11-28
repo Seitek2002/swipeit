@@ -71,8 +71,8 @@ const sortedIds = async (userId: string) =>
 const findIn = async (userId: string, itemId: string) =>
   (await wishlist(userId)).items.find((item) => item.id === itemId);
 
-const maxOrder = (items: WishlistItem[]) =>
-  Math.max(...items.map((item) => item.order));
+const minOrder = (items: WishlistItem[]) =>
+  Math.min(...items.map((item) => item.order));
 
 const addCustom = (userId: string, body: Record<string, unknown>) =>
   call<WishlistItem>("POST", "/wishlist/items", userId, body);
@@ -124,7 +124,7 @@ beforeEach(() => {
 });
 
 describe("своё желание", () => {
-  it("встаёт в конец: order = max+1, активное, обычный приоритет", async () => {
+  it("встаёт в начало: order = min−1, активное, обычный приоритет", async () => {
     const userId = await demo();
     const before = await wishlist(userId);
     expect(before.items.length).toBeGreaterThanOrEqual(8);
@@ -139,13 +139,25 @@ describe("своё желание", () => {
         kind: "custom",
         custom: { title: "Плед с оленями", priceMin: 1500, priceMax: 3000 },
       },
-      order: maxOrder(before.items) + 1,
+      order: minOrder(before.items) - 1,
       status: "active",
       priority: "normal",
       addedAt: NOW_ISO,
     });
     expect(created.id).toMatch(/^wi_/);
-    expect((await sortedIds(userId)).at(-1)).toBe(created.id);
+    expect((await sortedIds(userId))[0]).toBe(created.id);
+  });
+
+  it("новые — первыми: добавили A, потом B → B выше A; ручной порядок их держит", async () => {
+    const user = await newUser();
+    const a = await addCustom(user.id, { title: "A" });
+    const b = await addCustom(user.id, { title: "B" });
+    expect(await sortedIds(user.id)).toEqual([b.id, a.id]);
+    await call("POST", "/wishlist/reorder", user.id, { ids: [a.id, b.id] });
+    expect(await sortedIds(user.id)).toEqual([a.id, b.id]);
+    // Новое после ручного порядка — снова наверх, остальные на своих местах.
+    const c = await addCustom(user.id, { title: "C" });
+    expect(await sortedIds(user.id)).toEqual([c.id, a.id, b.id]);
   });
 
   it("в пустом вишлисте — order 0", async () => {
@@ -375,10 +387,10 @@ describe("«Мне это подарили»", () => {
 });
 
 describe("вернуть из «Подарили»", () => {
-  it("без undo — активное, в конец, бронь остаётся закрытой", async () => {
+  it("без undo — активное, в начало, бронь остаётся закрытой", async () => {
     const userId = await demo();
     const before = await wishlist(userId);
-    const target = before.items[0];
+    const target = before.items[3];
     if (target?.source.kind !== "product") throw new Error("нужен товар");
     await reserve(userId, target.source.productId);
     await markGiven(userId, target.id, { fromName: "Бакыт", at: GIVEN_AT });
@@ -386,8 +398,8 @@ describe("вернуть из «Подарили»", () => {
     const restored = await restore(userId, target.id);
     expect(restored.status).toBe("active");
     expect(restored.given).toBeUndefined();
-    expect(restored.order).toBe(maxOrder(before.items) + 1);
-    expect((await sortedIds(userId)).at(-1)).toBe(target.id);
+    expect(restored.order).toBe(minOrder(before.items) - 1);
+    expect((await sortedIds(userId))[0]).toBe(target.id);
     expect((await reservation())?.closedAt).toBe(NOW_ISO);
   });
 
