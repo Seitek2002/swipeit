@@ -15,6 +15,13 @@
       "when": 1795806843207,
       "tag": "0001_swipe_seq",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795826807627,
+      "tag": "0002_funnel",
+      "breakpoints": true
     }
   ]
 }

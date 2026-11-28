@@ -1,7 +1,4 @@
-import {
-  compressToEncodedURIComponent,
-  decompressFromEncodedURIComponent,
-} from "lz-string";
+import * as lzModule from "lz-string";
 import { z } from "zod";
 
 import {
@@ -16,6 +13,14 @@ import {
   OCCASION_KINDS,
   type OccasionKind,
 } from "../config/index";
+
+// lz-string — CommonJS без разметки экспортов: Node в ESM (tsx, `npm run dev`
+// сервера) видит только default, бандлеры и vitest — и имена. Берём то, что
+// есть.
+const lz =
+  (lzModule as typeof lzModule & { default?: typeof lzModule }).default ??
+  lzModule;
+const { compressToEncodedURIComponent, decompressFromEncodedURIComponent } = lz;
 
 // Кодек ссылок (TECH_SPEC §8): данные едут прямо в URL, поэтому ссылка
 // работает на другом устройстве без сервера. JSON → короткие ключи →

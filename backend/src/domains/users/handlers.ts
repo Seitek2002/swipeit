@@ -10,6 +10,7 @@ import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import { createSession, revokeSession } from "../../auth/sessions";
+import { reachStep } from "../funnel/steps";
 import type { ServerContext, ServerHandler } from "../../context";
 import { users, wishlistMeta } from "../../db/schema";
 import { lockMe, rowToUser, toMe, type UserRow } from "./queries";
@@ -51,6 +52,7 @@ export const createUser: ServerHandler = async (ctx) => {
     .returning();
   await ctx.tx.insert(wishlistMeta).values({ ownerId: id });
   const { token } = await createSession(ctx.tx, id, ctx.clock, ctx.userAgent);
+  await reachStep(ctx.tx, id, "profile_created", ctx.clock.now());
   usersChanged(ctx, id);
   if (!row) throw new Error("Профиль не записался");
   return { me: toMe(rowToUser(row)), token };

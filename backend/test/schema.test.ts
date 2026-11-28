@@ -39,8 +39,9 @@ describe("миграции", () => {
     const before = (await tables()).rows[0];
     await runMigrations(db);
     expect((await tables()).rows[0]).toEqual(before);
-    // 21 таблица §4.2 (служебная таблица drizzle — в своей схеме).
-    expect(before.n).toBe(21);
+    // 21 таблица §4.2 + funnel_daily (P09); служебная таблица drizzle — в
+    // своей схеме.
+    expect(before.n).toBe(22);
   });
 });
 

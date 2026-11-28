@@ -6,6 +6,76 @@
 
 **Демо:** https://seitek2002.github.io/swipeit/ · репозиторий: https://github.com/Seitek2002/swipeit
 
+## P09 — Счётчики воронки на сервере, без личных данных — ✅ сделано (шаги планов и Санты — в B10/B11)
+
+Задача из [progress/auto-tasks-pm.md](progress/auto-tasks-pm.md).
+
+**Готово когда:**
+- сценарий B08 → каждый шаг посчитан один раз, повторы счётчик не растят (тест);
+- в таблице нет id, имён и кодов ссылок (тест);
+- миграция проходит на пустой и на текущей базе;
+- пример вывода — ниже.
+
+**Что сделано:**
+- **Таблица `funnel_daily(day, step, count)`** — без `user_id`, ключ `(day, step)`. Миграция `0002_funnel`.
+- **Повтор не считается.** У профиля — список пройденных шагов `users.funnel_steps`. `reachStep` (`domains/funnel/steps.ts`) одним `UPDATE … WHERE NOT step = ANY(funnel_steps)` отмечает шаг и, только если отметил, делает `+1` к счётчику дня. Всё в транзакции действия. При удалении профиля (B05) список уходит вместе со строкой `users`, а дневные счётчики остаются обезличенными.
+- **Точки вызова:**
+  - `profile_created` — `POST /users`;
+  - `first_swipe` — первый свайп;
+  - `share_unlocked` — 5-е «Хочу» (`checkShareUnlock`);
+  - `wishlist_shared` — `POST /wishlist/share`;
+  - `guest_opened` — `GET /share/:code` чужого вишлиста профилем с сессией;
+  - `reservation_created` — новая бронь;
+  - `guest_first_swipe` — первый свайп профиля, у которого уже был `guest_opened`.
+- **`npm run funnel -w backend -- --days 14`** (`src/db/funnel-cli.ts`, отчёт в `domains/funnel/report.ts`) — таблица «шаг × день» и конверсии за период.
+- **Ещё не подключено:** `plan_created`, `plan_decided`, `santa_drawn`, `ward_empty` — их обработчиков на сервере ещё нет. Подключу в B10 и B11, шаги уже в списке и в отчёте.
+- **Попутно починил `npm run dev` сервера.** Он падал при старте с `lz-string does not provide an export named compressToEncodedURIComponent`. lz-string — CommonJS, и Node в режиме ESM видит у него только `default`. Тесты (vitest) и сборка (esbuild) это скрывали. Ошибка была с B08. В `core/share-codec/codec.ts` теперь берём `default ?? namespace`, это работает и в Node, и в бандлерах.
+
+**Пример вывода** (dev-сервер, живой прогон: 4 профиля, двое свайпают, один отправил вишлист, гость открыл, забронировал и начал свайпать):
+```
+шаг                  11-28  всего
+profile_created          4      4
+first_swipe              3      3
+share_unlocked           1      1
+wishlist_shared          1      1
+guest_opened             1      1
+reservation_created      1      1
+guest_first_swipe        1      1
+plan_created             0      0
+plan_decided             0      0
+santa_drawn              0      0
+ward_empty               0      0
+
+Конверсии за период:
+  profile_created → first_swipe: 75% (3 из 4)
+  first_swipe → share_unlocked: 33% (1 из 3)
+  share_unlocked → wishlist_shared: 100% (1 из 1)
+  guest_opened → reservation_created: 100% (1 из 1)
+  guest_opened → guest_first_swipe: 100% (1 из 1)
+  plan_created → plan_decided: — (0 из 0)
+  santa_drawn → ward_empty: — (0 из 0)
+```
+
+**Проверено:**
+- миграция: на новой пустой базе (создал и удалил `swipeit_p09_empty` в контейнере) и на базе разработки;
+- `npm run funnel`: на пустой базе — нули и «—»; после живого прогона — вывод выше;
+- фронт собирается (`next build`) с новым импортом lz-string.
+
+**Тесты:**
+- сервер 140 → 143: `test/funnel.test.ts`:
+  - сценарий B08, где всё повторено дважды → по 1 на шаг;
+  - профиль, который свайпает без ссылки, — не `guest_first_swipe`;
+  - в `funnel_daily` нет id трёх профилей, кода ссылки и имён (поиск по `row_to_json`), колонки — ровно `count`, `day`, `step`;
+  - отчёт;
+- `schema.test`: 22 таблицы.
+
+**Решения без PM:**
+- **День — по часам сервера** (`toDateKey`, местное время; сервер работает в `Asia/Bishkek`).
+- **Гость без профиля** (открыл ссылку без сессии) не попадает в `guest_opened`. Считать некого: id нет, а куки-счётчик сделал бы таблицу не обезличенной. Поэтому `guest_opened → reservation_created` может быть больше 100%: человек открыл ссылку без профиля, а профиль появился уже при брони.
+- **Скрипт лежит в `src/db/funnel-cli.ts`**, рядом с `migrate-cli`, а не в `backend/scripts/`. Так он проходит typecheck и lint вместе с сервером.
+
+**Коммит:** см. git log («P09: …»).
+
 ## P05 — Санта: если у подопечного пусто — идеи в бюджете — ✅ сделано
 
 Задача из [progress/auto-tasks-pm.md](progress/auto-tasks-pm.md).

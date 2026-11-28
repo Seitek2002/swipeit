@@ -10,6 +10,7 @@ import { and, asc, count, eq, isNull, sql } from "drizzle-orm";
 
 import type { Tx } from "../../context";
 import { reservations, wishlistItems, wishlistMeta } from "../../db/schema";
+import { reachStep } from "../funnel/steps";
 
 // Вишлист на сервере: чтение, порог отправки, счётчик броней — для свайпов
 // (B06), своего вишлиста (B07) и гостевого (B08).
@@ -55,6 +56,7 @@ export const checkShareUnlock = async (
       target: wishlistMeta.ownerId,
       set: { shareUnlockedAt: at },
     });
+  await reachStep(tx, ownerId, "share_unlocked", at.getTime());
   return { shareJustUnlocked: true, shareUnlocked: true };
 };
 

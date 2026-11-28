@@ -26,6 +26,7 @@ import {
   nextOrderFor,
 } from "../wishlist/queries";
 import { swipesOf } from "./queries";
+import { hasStep, reachStep } from "../funnel/steps";
 
 // Свайпы своей ленты и ленты по ссылке-фильтру (BACKEND.md B06) — логика
 // мока (handlers/swipes.ts). Все записи — под блокировкой своего профиля
@@ -124,6 +125,14 @@ export const createSwipe: ServerHandler = async (ctx, { body }) => {
   const at = new Date(ctx.clock.now());
   const self = input.context.kind === "self";
   const variantChoice = input.variantChoice ?? null;
+
+  // Первый свайп человека; пришёл по ссылке на чужой вишлист — ещё и
+  // «гость начал свайпать» (P09).
+  if (await reachStep(ctx.tx, user.id, "first_swipe", at.getTime())) {
+    if (await hasStep(ctx.tx, user.id, "guest_opened")) {
+      await reachStep(ctx.tx, user.id, "guest_first_swipe", at.getTime());
+    }
+  }
 
   // Повторный свайп той же карточки в том же контексте заменяет прошлый и
   // становится последним (новый seq).

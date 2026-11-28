@@ -69,6 +69,13 @@ export const users = pgTable(
     // Удалённый профиль (§3.4): строка остаётся без имени, чтобы чужие планы
     // и игры показывали «Удалённый профиль».
     deletedAt: at("deleted_at"),
+    // Шаги воронки, которые человек уже прошёл (auto-tasks P09): счётчик в
+    // funnel_daily растёт только при первом шаге. Живёт в профиле и
+    // удаляется вместе с ним.
+    funnelSteps: text("funnel_steps")
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
   },
   () => [
     check("users_birthday_format", monthDay("birthday")),
@@ -529,4 +536,17 @@ export const uploads = pgTable(
     createdAt: createdAt(),
   },
   (table) => [index("uploads_owner_id").on(table.ownerId)],
+);
+
+// Воронка по дням (auto-tasks P09): только день, шаг и число — ни id, ни
+// имён, ни кодов ссылок. Цель демо — увидеть, где люди отваливаются.
+export const funnelDaily = pgTable(
+  "funnel_daily",
+  {
+    // День по календарю Бишкека (§2.5).
+    day: date("day").notNull(),
+    step: text("step").notNull(),
+    count: integer("count").notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.day, table.step] })],
 );
