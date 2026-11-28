@@ -153,53 +153,61 @@ const GuestWishCard = ({
   return (
     <li className="drop-shadow-[0_16px_18px_rgb(10_0_8/0.4)]">
       <article className="paper rounded-paper px-3 pt-[30px] pb-3.5 [mask:radial-gradient(circle_6px_at_50%_15px,#0000_96%,#000_100%)] before:border-paper-2 before:absolute before:top-[15px] before:left-1/2 before:-mt-2.5 before:-ml-2.5 before:size-5 before:rounded-full before:border-[2.5px] before:content-['']">
-        <button
-          type="button"
-          disabled={!product}
-          onClick={() => product && onOpen(product, item.variantChoice)}
-          aria-label={product ? `Подробнее: ${title}` : title}
-          className="bg-paper-2 relative grid aspect-[16/10] w-full place-items-center overflow-hidden rounded-[14px]"
-        >
-          {image ? (
-            <img
-              src={withBasePath(image.src)}
-              alt={image.alt}
-              className="absolute inset-0 size-full object-cover"
-            />
-          ) : (
-            // Фото своих желаний в ссылку не попадают — бумажная заглушка.
-            <Gift
-              aria-hidden
-              size={40}
-              strokeWidth={1.5}
-              className="text-ink-soft"
-            />
-          )}
-        </button>
-        <div className="px-1 pt-3">
-          <h3 className="text-title-2">{title}</h3>
-          {/* «Очень хочу» владельца видно и гостю (auto-tasks U05): такие
-              желания и так стоят первыми — теперь понятно почему.
-              «Мандарин-чернила», а не шампань: на бумаге шампань бледная. */}
-          {item.priority === "top" && (
-            <p className="text-caption text-mandarin-ink mt-1 flex items-center gap-1 font-semibold">
-              <Star
-                aria-hidden
-                size={14}
-                strokeWidth={1.75}
-                className="fill-current"
+        {/* Фото слева, текст справа (UX-аудит W07): с фото на всю ширину
+            бирка была 450 px — на 360×640 первая «Забронирую я» уходила под
+            сгиб, а 10 желаний — это 10 экранов. На низком экране фото
+            96 px, иначе 120 px. */}
+        <div className="flex items-start gap-3">
+          <button
+            type="button"
+            disabled={!product}
+            onClick={() => product && onOpen(product, item.variantChoice)}
+            aria-label={product ? `Подробнее: ${title}` : title}
+            className="bg-paper-2 relative grid size-[120px] flex-none place-items-center overflow-hidden rounded-[14px] [@media(max-height:700px)]:size-24"
+          >
+            {image ? (
+              <img
+                src={withBasePath(image.src)}
+                alt={image.alt}
+                className="absolute inset-0 size-full object-cover"
               />
-              Очень хочет
-            </p>
-          )}
-          {price && <p className="text-price mt-1.5">{price}</p>}
-          {variant && (
-            <p className="text-caption text-ink-soft mt-1.5">
-              В вишлисте: {variant}
-            </p>
-          )}
+            ) : (
+              // Фото своих желаний в ссылку не попадают — бумажная заглушка.
+              <Gift
+                aria-hidden
+                size={32}
+                strokeWidth={1.5}
+                className="text-ink-soft"
+              />
+            )}
+          </button>
+          <div className="min-w-0 flex-1 pt-0.5">
+            <h3 className="text-title-3 line-clamp-3">{title}</h3>
+            {/* «Очень хочу» владельца видно и гостю (auto-tasks U05): такие
+                желания и так стоят первыми — теперь понятно почему.
+                «Мандарин-чернила», а не шампань: на бумаге шампань бледная. */}
+            {item.priority === "top" && (
+              <p className="text-caption text-mandarin-ink mt-1 flex items-center gap-1 font-semibold">
+                <Star
+                  aria-hidden
+                  size={14}
+                  strokeWidth={1.75}
+                  className="fill-current"
+                />
+                Очень хочет
+              </p>
+            )}
+            {price && <p className="text-price mt-1">{price}</p>}
+            {variant && (
+              <p className="text-caption text-ink-soft mt-1">
+                В вишлисте: {variant}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="px-1">
           {item.note && (
-            <p className="text-title-3 border-paper-2 text-ink mt-2.5 border-l-2 pl-3">
+            <p className="text-body border-paper-2 text-ink mt-3 border-l-2 pl-3">
               {item.note}
             </p>
           )}
