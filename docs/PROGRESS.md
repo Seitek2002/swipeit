@@ -6,6 +6,54 @@
 
 **Демо:** https://seitek2002.github.io/swipeit/ · репозиторий: https://github.com/Seitek2002/swipeit
 
+## Q02 — воронка по сценариям и компаниям — ✅ сделано
+
+Задача из [progress/auto-tasks-pm-2.md](progress/auto-tasks-pm-2.md).
+
+**Что сделано** (`backend/src/domains/funnel/`):
+- **Новые функции:**
+  - `countEvent(tx, step, now)` — +1 к счётчику дня без человека, для перехода, который бывает один раз под блокировкой строки (жеребьёвка);
+  - `reachPlanStep(tx, planId, step, now)` — один раз на план, отметка в `plans.funnel_steps` (миграция `0007_plan_funnel`); id плана в счётчике нет.
+- **«Выбери подарок сам»:**
+  - `pick_created` — создал;
+  - `pick_opened` — друг открыл ссылку-фильтр, а не автор;
+  - `pick_answered` — ответил.
+- **Планы:**
+  - `plan_joined` — по человеку;
+  - `plan_started_group` — лобби → колода или «До даты» при создании;
+  - `plan_decided_group` — «Решено» в плане на 3+, один раз на план: «Отменить решение» и снова «Решено» не считаются заново;
+  - `plan_decided` по организатору остался.
+- **Санта:**
+  - `santa_created`, `santa_joined`, `envelope_opened`, `santa_bought` — по человеку;
+  - `santa_drawn_group` — по игре, кнопкой и планировщиком; заменил `santa_drawn` по человеку;
+  - `ward_empty` — теперь «меньше трёх желаний в бюджете», тот же порог, что у идей P05.
+- **Исход вишлиста:** `gift_given_reserved` — «Мне это подарили» у желания, на которое была бронь.
+- **Отчёт:**
+  - конверсии `pick_created → pick_opened → pick_answered`, `plan_created → plan_started_group → plan_decided_group`, `santa_created → santa_drawn_group`, `envelope_opened → ward_empty / santa_bought`, `reservation_received → gift_given_reserved`;
+  - строка «Компаний (план на 3+ решён или Санта разыграна) за период: N» — ответ на PRD §4, п. 3.
+
+**Пример вывода** (база разработки после миграции, новых действий не было):
+```
+pick_created              0      0
+plan_started_group        0      0
+santa_drawn_group         0      0
+gift_given_reserved       0      0
+Компаний (план на 3+ решён или Санта разыграна) за период: 0
+  pick_created → pick_opened: — (0 из 0)
+  plan_started_group → plan_decided_group: — (0 из 0)
+```
+
+**Тесты:** сервер 295 → 298 (`funnel.test.ts`):
+- ссылка-фильтр: автор открыл свою, друг открыл и ответил дважды → по 1;
+- план на троих: «Решено» → отмена → снова «Решено» → `plan_decided_group` 1; план на двоих — 0; `plan_started_group` 2, `plan_joined` 3;
+- Санта на 4: `santa_drawn_group` 1, `envelope_opened` 4 при двойном вскрытии, строка «Компаний … 1».
+
+Колонки `funnel_daily` — по-прежнему только `count`, `day`, `step` (тест).
+
+**Проверено:** миграция на базе разработки, `npm run funnel`.
+
+**Коммит:** см. git log («Q02: …»).
+
 ## Q09 — точка на табе «Планы», когда ждут тебя — ✅ сделано
 
 Задача из [progress/auto-tasks-pm-2.md](progress/auto-tasks-pm-2.md).

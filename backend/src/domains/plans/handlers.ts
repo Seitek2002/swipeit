@@ -34,7 +34,7 @@ import {
   uploads,
 } from "../../db/schema";
 import { areFriends, makeFriends } from "../friends/handlers";
-import { reachStep } from "../funnel/steps";
+import { reachPlanStep, reachStep } from "../funnel/steps";
 import { readMe, readUser, type UserRow } from "../users/queries";
 import {
   activitiesFor,
@@ -262,6 +262,10 @@ export const createPlan: ServerHandler = async (ctx, { body }) => {
   }
   if (!live) plan.deck = ctx.random.shuffle(pool.map((a) => a.id));
   await insertPlan(ctx.tx, plan, now);
+  // «До даты» стартует сразу (Q02: старт — по плану).
+  if (!live) {
+    await reachPlanStep(ctx.tx, plan.id, "plan_started_group", now);
+  }
   await reachStep(ctx.tx, owner.id, "plan_created", now);
   changed(ctx, plan.id);
   return viewOf(
@@ -291,6 +295,7 @@ export const joinPlan: ServerHandler = async (ctx, { params }) => {
   });
   if (joined) {
     await makeFriends(ctx.tx, plan.ownerId, me.id, "plan", ctx.clock);
+    await reachStep(ctx.tx, me.id, "plan_joined", ctx.clock.now());
     changed(ctx, plan.id);
   }
   return viewOf(ctx.tx, plan, source);
@@ -341,6 +346,7 @@ export const startPlan: ServerHandler = async (ctx, { params }) => {
       plan.status = "swiping";
     },
   );
+  await reachPlanStep(ctx.tx, plan.id, "plan_started_group", ctx.clock.now());
   changed(ctx, plan.id);
   return viewOf(ctx.tx, plan, source);
 };
@@ -569,6 +575,11 @@ export const decidePlan: ServerHandler = async (ctx, { params, body }) => {
     },
   );
   await reachStep(ctx.tx, me.id, "plan_decided", ctx.clock.now());
+  // Компания дошла до «Решено» (Q02): план на троих и больше, один раз на
+  // план — «Отменить решение» и снова «Решено» не считаются заново.
+  if (plan.participantIds.length >= 3) {
+    await reachPlanStep(ctx.tx, plan.id, "plan_decided_group", ctx.clock.now());
+  }
   changed(ctx, plan.id);
   return viewOf(ctx.tx, plan, source);
 };

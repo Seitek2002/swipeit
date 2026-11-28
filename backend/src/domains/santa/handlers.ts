@@ -40,7 +40,7 @@ import {
 import { santaGames, santaMembers, users } from "../../db/schema";
 import { datesOf } from "../dates/handlers";
 import { areFriends, makeFriends } from "../friends/handlers";
-import { reachStep } from "../funnel/steps";
+import { countEvent, reachStep } from "../funnel/steps";
 import { guestItemsOf } from "../guest/handlers";
 import { readMe, readUser, type UserRow } from "../users/queries";
 import {
@@ -177,6 +177,17 @@ const priceOf = (ctx: ServerContext, item: WishlistItem) => {
     max: priceMax ?? priceMin ?? null,
   };
 };
+
+// Сколько желаний подопечного в бюджете игры (по нижней цене).
+const wishesInBudget = async (
+  ctx: ServerContext,
+  wardId: string,
+  budget: number,
+) =>
+  (await guestItemsOf(ctx.tx, wardId)).filter((item) => {
+    const { min } = priceOf(ctx, item);
+    return min !== null && min <= budget;
+  }).length;
 
 // Подопечный с вишлистом — активные желания, как у гостя (T11).
 const wardOf = async (
@@ -454,6 +465,7 @@ export const createSantaGame: ServerHandler = async (ctx, { body }) => {
   game.exclusions = normalizeExclusions(game, input.exclusions);
   await checkExclusionsPossible(ctx.tx, game);
   await insertGame(ctx.tx, game, ctx.clock.now());
+  await reachStep(ctx.tx, owner.id, "santa_created", ctx.clock.now());
   changed(ctx, game.id);
   return viewOf(ctx, game, owner.id);
 };
@@ -520,6 +532,7 @@ export const joinSantaGame: ServerHandler = async (ctx, { params }) => {
   if (joined) {
     // Вступивший — друг организатору, не всем участникам (§4.3, п. 1).
     await makeFriends(ctx.tx, game.ownerId, me.id, "santa", ctx.clock);
+    await reachStep(ctx.tx, me.id, "santa_joined", ctx.clock.now());
     changed(ctx, game.id);
   }
   return viewOf(ctx, game, me.id);
@@ -607,7 +620,8 @@ export const drawSantaGame: ServerHandler = async (ctx, { params }) => {
     },
   );
   await saveAssignments(ctx.tx, game.id, assignments);
-  await reachStep(ctx.tx, me.id, "santa_drawn", ctx.clock.now());
+  // Компания разыграла Санту (Q02): по игре, жеребьёвка бывает одна.
+  await countEvent(ctx.tx, "santa_drawn_group", ctx.clock.now());
   changed(ctx, game.id);
   return viewOf(ctx, game, me.id);
 };
@@ -628,7 +642,9 @@ export const openSantaEnvelope: ServerHandler = async (ctx, { params }) => {
   );
   if (opened) {
     const wardId = await wardIdOf(ctx.tx, game.id, me.id);
-    if (wardId && (await countActiveWishes(ctx.tx, wardId)) === 0) {
+    await reachStep(ctx.tx, me.id, "envelope_opened", ctx.clock.now());
+    // Меньше трёх желаний в бюджете — тот же порог, что у идей P05 (Q02).
+    if (wardId && (await wishesInBudget(ctx, wardId, game.budget)) < 3) {
       await reachStep(ctx.tx, me.id, "ward_empty", ctx.clock.now());
     }
     changed(ctx, game.id);
@@ -655,6 +671,9 @@ export const setSantaBought: ServerHandler = async (ctx, { params, body }) => {
     },
   );
   if (changedNow) changed(ctx, game.id);
+  if (changedNow && bought) {
+    await reachStep(ctx.tx, me.id, "santa_bought", ctx.clock.now());
+  }
   return viewOf(ctx, game, me.id);
 };
 
@@ -689,6 +708,7 @@ export const drawDueSantaGames = async (
         const assignments = await performDraw(scoped, game);
         await saveGame(savepoint, before, game, now);
         await saveAssignments(savepoint, id, assignments);
+        await countEvent(savepoint, "santa_drawn_group", now);
         drawn.push(id);
       });
     } catch (error) {

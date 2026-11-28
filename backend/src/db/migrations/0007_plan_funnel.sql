@@ -1,0 +1,1 @@
+ALTER TABLE "plans" ADD COLUMN "funnel_steps" text[] DEFAULT '{}' NOT NULL;

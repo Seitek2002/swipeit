@@ -154,6 +154,127 @@ describe("воронка P09", () => {
     expect(await counts()).not.toHaveProperty("share_reached");
   });
 
+  it("Q02: «Выбери подарок сам» — создал, друг открыл, ответил дважды → по 1", async () => {
+    const { products } = await testCatalog();
+    const author = await server.newUser({ name: "Айгерим" });
+    const made = (
+      await server.request(author, "POST", "/pick-requests", {
+        toName: "Нурай",
+        filters: {
+          budget: { min: 0, max: 100000 },
+          categories: [],
+          marketplaces: [],
+        },
+        hidePrices: false,
+      })
+    ).json() as { code: string; request: { id: string } };
+    await server.request(author, "GET", `/share/${made.code}`);
+    const friend = await server.newUser({ name: "Нурай" });
+    await server.request(friend, "GET", `/share/${made.code}`);
+    await server.request(friend, "POST", "/swipes", {
+      productId: products[0]?.id ?? "",
+      decision: "like",
+      context: { kind: "pick", requestId: made.request.id },
+    });
+    for (let index = 0; index < 2; index += 1) {
+      const answer = await server.request(
+        friend,
+        "POST",
+        `/pick-requests/${made.request.id}/answer`,
+      );
+      expect(answer.statusCode).toBe(200);
+    }
+    expect(await counts()).toMatchObject({
+      pick_created: 1,
+      pick_opened: 1,
+      pick_answered: 1,
+    });
+  });
+
+  it("Q02: план на троих — одна компания и после «Отменить решение»; на двоих — не компания", async () => {
+    const owner = await server.newUser({ name: "Айгерим" });
+    const make = async (others: TestUser[]) => {
+      const created = (
+        await server.request(owner, "POST", "/plans", {
+          title: "Пятница",
+          mode: "live",
+          participantIds: [],
+          filters: { categories: [], budgetPerPerson: { min: 0, max: null } },
+        })
+      ).json() as { plan: { id: string } };
+      const id = created.plan.id;
+      for (const other of others) {
+        await server.request(other, "POST", `/plans/${id}/join`);
+        await server.request(other, "POST", `/plans/${id}/ready`, {
+          ready: true,
+        });
+      }
+      const started = (
+        await server.request(owner, "POST", `/plans/${id}/start`)
+      ).json() as { plan: { deck: string[] } };
+      for (const member of [owner, ...others]) {
+        await server.request(member, "POST", `/plans/${id}/finish`);
+      }
+      const decide = () =>
+        server.request(owner, "POST", `/plans/${id}/decide`, {
+          method: "owner",
+          activityId: started.plan.deck[0],
+        });
+      expect((await decide()).statusCode).toBe(200);
+      return { id, decide };
+    };
+    const three = await make([
+      await server.newUser({ name: "Азамат" }),
+      await server.newUser({ name: "Нурай" }),
+    ]);
+    await server.request(owner, "POST", `/plans/${three.id}/decide/cancel`);
+    expect((await three.decide()).statusCode).toBe(200);
+    await make([await server.newUser({ name: "Бакыт" })]);
+    expect(await counts()).toMatchObject({
+      plan_created: 1,
+      plan_joined: 3,
+      plan_started_group: 2,
+      plan_decided_group: 1,
+    });
+  });
+
+  it("Q02: Санта на 4 — одна разыгранная компания, четыре вскрытых письма", async () => {
+    const owner = await server.newUser({ name: "Айгерим" });
+    const created = (
+      await server.request(owner, "POST", "/santa", {
+        title: "Офис",
+        budget: 2000,
+        exchangeDate: "2026-12-25",
+        participantIds: [],
+      })
+    ).json() as { game: { id: string } };
+    const id = created.game.id;
+    const others: TestUser[] = [];
+    for (const name of ["Азамат", "Нурай", "Бакыт"]) {
+      const other = await server.newUser({ name });
+      await server.request(other, "POST", `/santa/${id}/join`);
+      others.push(other);
+    }
+    await server.request(owner, "POST", `/santa/${id}/draw`);
+    for (const member of [owner, ...others]) {
+      await server.request(member, "POST", `/santa/${id}/open`);
+      await server.request(member, "POST", `/santa/${id}/open`);
+    }
+    const counted = await counts();
+    expect(counted).toMatchObject({
+      santa_created: 1,
+      santa_joined: 3,
+      santa_drawn_group: 1,
+      envelope_opened: 4,
+      // Вишлисты пустые — у всех Сант мало желаний в бюджете.
+      ward_empty: 4,
+    });
+    const report = formatFunnel(await readFunnel(database.db, 14, NOW), 14);
+    expect(report).toContain(
+      "Компаний (план на 3+ решён или Санта разыграна) за период: 1",
+    );
+  });
+
   it("в funnel_daily нет id людей, имён и кодов ссылок", async () => {
     const { owner, guest, loner, code } = await scenario();
     const { rows } = await database.pool.query<{ row: string }>(

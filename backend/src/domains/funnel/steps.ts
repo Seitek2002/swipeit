@@ -2,7 +2,7 @@ import { toDateKey } from "@swipeit/core/format";
 import { and, eq, sql } from "drizzle-orm";
 
 import type { Tx } from "../../context";
-import { funnelDaily, users } from "../../db/schema";
+import { funnelDaily, plans, users } from "../../db/schema";
 
 // Воронка (auto-tasks P09, PRD §4 «найти, что в идее не работает»): где
 // люди отваливаются. Шаги планов и Санты подключают B10 и B11.
@@ -21,8 +21,23 @@ export const FUNNEL_STEPS = [
   "reservation_received",
   "plan_created",
   "plan_decided",
-  "santa_drawn",
   "ward_empty",
+  // Q02: «Выбери подарок сам» по человеку.
+  "pick_created",
+  "pick_opened",
+  "pick_answered",
+  // Q02: планы — вступил по человеку, старт и решение — по плану.
+  "plan_joined",
+  "plan_started_group",
+  "plan_decided_group",
+  // Q02: Санта по человеку; жеребьёвка — по игре.
+  "santa_created",
+  "santa_joined",
+  "envelope_opened",
+  "santa_bought",
+  "santa_drawn_group",
+  // Q02: исход вишлиста — подарили то, что бронировали.
+  "gift_given_reserved",
 ] as const;
 
 export type FunnelStep = (typeof FUNNEL_STEPS)[number];
@@ -63,6 +78,40 @@ export const reachStep = async (
       target: [funnelDaily.day, funnelDaily.step],
       set: { count: sql`${funnelDaily.count} + 1` },
     });
+  return true;
+};
+
+const countDay = (tx: Tx, step: FunnelStep, now: number) =>
+  tx
+    .insert(funnelDaily)
+    .values({ day: toDateKey(now), step, count: 1 })
+    .onConflictDoUpdate({
+      target: [funnelDaily.day, funnelDaily.step],
+      set: { count: sql`${funnelDaily.count} + 1` },
+    });
+
+// Событие группы без человека (Q02): +1 к счётчику дня. Только для перехода,
+// который случается один раз под FOR UPDATE строки (игра → drawn).
+export const countEvent = (tx: Tx, step: FunnelStep, now: number) =>
+  countDay(tx, step, now);
+
+// Шаг плана — один раз на план (Q02), отметка в plans.funnel_steps; в
+// счётчике дня id плана нет.
+export const reachPlanStep = async (
+  tx: Tx,
+  planId: string,
+  step: FunnelStep,
+  now: number,
+): Promise<boolean> => {
+  const [first] = await tx
+    .update(plans)
+    .set({ funnelSteps: sql`array_append(${plans.funnelSteps}, ${step})` })
+    .where(
+      and(eq(plans.id, planId), sql`not (${step} = any(${plans.funnelSteps}))`),
+    )
+    .returning({ id: plans.id });
+  if (!first) return false;
+  await countDay(tx, step, now);
   return true;
 };
 

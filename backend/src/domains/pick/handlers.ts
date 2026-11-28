@@ -16,6 +16,7 @@ import type { ServerContext, ServerHandler, Tx } from "../../context";
 import { pickAnswers, pickRequests, productSwipes } from "../../db/schema";
 import { ensureShareLink, type ShareLinkRow } from "../share/links";
 import { readMe, readUser, type UserRow } from "../users/queries";
+import { reachStep } from "../funnel/steps";
 
 // «Выбери подарок сам» (BACKEND.md B09): ссылка-фильтр и ответ — короткими
 // ссылками, ответ хранится (один на друга, повтор заменяет). Свайпы друга по
@@ -87,6 +88,7 @@ export const createPickRequest: ServerHandler = async (ctx, { body }) => {
     .returning();
   if (!row) throw new Error("Запрос не записался");
   const link = await ensureShareLink(ctx, "pick_request", row.id, me.id);
+  await reachStep(ctx.tx, me.id, "pick_created", ctx.clock.now());
   return { ...link, request: toRequest(row, me) };
 };
 
@@ -171,6 +173,7 @@ export const answerPickRequest: ServerHandler = async (ctx, { params }) => {
     answerTarget(requestId, me.id),
     me.id,
   );
+  await reachStep(ctx.tx, me.id, "pick_answered", ctx.clock.now());
   return { ...link, answer };
 };
 
@@ -196,6 +199,10 @@ export const importPickAnswer: ServerHandler = async (ctx, { body }) => {
 export const pickShare = async (ctx: ServerContext, link: ShareLinkRow) => {
   if (link.kind === "pick_request") {
     const request = await readRequest(ctx.tx, link.targetId);
+    // Друг открыл ссылку-фильтр (Q02) — не сам автор.
+    if (request && ctx.userId && ctx.userId !== request.from.userId) {
+      await reachStep(ctx.tx, ctx.userId, "pick_opened", ctx.clock.now());
+    }
     return request ? { kind: "pick_request", request } : null;
   }
   const [requestId = "", byUserId = ""] = link.targetId.split(":");

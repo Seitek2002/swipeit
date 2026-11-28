@@ -39,6 +39,7 @@ import {
   rowToItem,
   rowToMeta,
 } from "./queries";
+import { reachStep } from "../funnel/steps";
 
 // Свой вишлист (BACKEND.md B07) — логика мока (handlers/wishlist.ts и
 // повод из handlers/guest.ts). Каждая запись — под блокировкой строки users
@@ -264,7 +265,7 @@ export const markGiven: ServerHandler = async (ctx, { params, body }) => {
     .set({ status: "given", given })
     .where(eq(wishlistItems.id, target.id))
     .returning();
-  await ctx.tx
+  const closed = await ctx.tx
     .update(reservations)
     .set({ closedAt })
     .where(
@@ -273,7 +274,12 @@ export const markGiven: ServerHandler = async (ctx, { params, body }) => {
         eq(reservations.itemKey, itemKeyOf(rowToItem(target))),
         isNull(reservations.closedAt),
       ),
-    );
+    )
+    .returning({ id: reservations.id });
+  // Исход вишлиста (Q02): подарили то, что бронировали.
+  if (closed.length > 0) {
+    await reachStep(ctx.tx, me.id, "gift_given_reserved", ctx.clock.now());
+  }
   changed(ctx, ["wishlist", "reservations"]);
   return rowToItem(row ?? target);
 };

@@ -19,7 +19,15 @@ export const FUNNEL_CONVERSIONS: [from: FunnelStep, to: FunnelStep][] = [
   ["guest_opened", "guest_first_swipe"],
   ["guest_first_swipe", "guest_shared"],
   ["plan_created", "plan_decided"],
-  ["santa_drawn", "ward_empty"],
+  // Q02: сценарии и компании.
+  ["pick_created", "pick_opened"],
+  ["pick_opened", "pick_answered"],
+  ["plan_created", "plan_started_group"],
+  ["plan_started_group", "plan_decided_group"],
+  ["santa_created", "santa_drawn_group"],
+  ["envelope_opened", "ward_empty"],
+  ["envelope_opened", "santa_bought"],
+  ["reservation_received", "gift_given_reserved"],
 ];
 
 // Откуда пришли профили за период (Q01): users.created_via. Только
@@ -101,6 +109,9 @@ export const formatFunnel = (
           ...byVia.map(({ via, count: n }) => `  ${via}: ${n}`),
         ]
       : []),
+    "",
+    // Прямой ответ на PRD §4, п. 3 (Q02).
+    `Компаний (план на 3+ решён или Санта разыграна) за период: ${total("plan_decided_group") + total("santa_drawn_group")}`,
     "",
     "Конверсии за период:",
     ...FUNNEL_CONVERSIONS.map(

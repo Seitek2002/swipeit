@@ -388,6 +388,12 @@ export const plans = pgTable(
     decision: jsonb("decision"),
     // Организатор показал итоги, не дождавшись всех (auto-tasks P04).
     closedEarly: boolean("closed_early").notNull().default(false),
+    // Шаги воронки, уже засчитанные этому плану (Q02): «Отменить решение»
+    // и снова «Решено» — всё ещё одна компания.
+    funnelSteps: text("funnel_steps")
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
     createdAt: createdAt(),
     // Порядок создания: «новые сверху» при равном времени (B10).
     seq: bigserial("seq", { mode: "number" }).notNull(),
