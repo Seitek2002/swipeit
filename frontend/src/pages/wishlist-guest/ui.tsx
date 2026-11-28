@@ -1,9 +1,9 @@
 "use client";
 
-import { type ReactNode, Suspense, useId } from "react";
+import { type ReactNode, Suspense, useEffect, useId } from "react";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy } from "lucide-react";
@@ -13,18 +13,28 @@ import {
   GuestWishlistView,
 } from "@/widgets/guest-wishlist";
 
+import { type ReserveAccess } from "@/features/reserve-gift";
+
 import { useMe } from "@/entities/user";
 import { useWishlistSummary } from "@/entities/wishlist";
 
-import { importExternalWishlist, wishlistKeys } from "@/shared/api";
-import { ROUTES } from "@/shared/config";
+import {
+  type GuestWishlist,
+  getShare,
+  importExternalWishlist,
+  isApiError,
+  wishlistKeys,
+} from "@/shared/api";
+import { GUEST_REFETCH_MS, ROUTES, shareScreenPath } from "@/shared/config";
+import { useAppMode } from "@/shared/lib/app-status";
 import { IN_APP_BROWSER_NAMES } from "@/shared/lib/in-app-browser";
 import { decodeWishlist } from "@/shared/lib/share-codec";
-import { useGuestStore } from "@/shared/store";
+import { rememberLinkVia, useGuestStore } from "@/shared/store";
 import {
   Brand,
   BrokenLink,
   Button,
+  EmptyState,
   InAppBrowserText,
   Screen,
   ScreenBody,
@@ -137,14 +147,143 @@ const NextStepPlaque = ({
   );
 };
 
-const GuestContent = () => {
-  const encoded = useSearchParams()?.get("d") ?? "";
+// Вишлист глазами гостя и следующий шаг внизу — общий для короткой ссылки
+// (remote) и длинной (?d=).
+const GuestScreen = ({
+  access,
+  ownerId,
+  ownerUserId,
+  wishlist,
+}: {
+  access?: ReserveAccess;
+  ownerId: string;
+  ownerUserId?: string;
+  wishlist: GuestWishlist;
+}) => {
   const { data: me } = useMe();
   const summary = useWishlistSummary();
   const step = guestNextStep({
     hasProfile: Boolean(me),
     shareUnlocked: summary.shareUnlocked,
   });
+  const isMine = Boolean(me && ownerUserId && me.id === ownerUserId);
+
+  return (
+    <GuestWishlistView
+      wishlist={wishlist}
+      ownerId={ownerId}
+      access={access}
+      readOnly={isMine}
+      reservationChat
+      renderAfterReserve={(dismiss) => (
+        <NextStepPlaque step={step} onDismiss={dismiss} />
+      )}
+      footer={
+        <div className="px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+12px)] text-center">
+          {isMine ? (
+            <p className="text-caption text-rose">
+              Это твой вишлист — так его видят друзья.
+            </p>
+          ) : me && step === "send" ? (
+            <Link
+              href={ROUTES.WISHLIST}
+              className={buttonClassName({ variant: "secondary", size: "lg" })}
+            >
+              Открыть свой вишлист
+            </Link>
+          ) : (
+            <>
+              {/* Виральная петля (DESIGN.md §8.5): гость собирает свой. */}
+              <Link
+                href={ROUTES.GIFTS}
+                className={buttonClassName({
+                  variant: "secondary",
+                  size: "lg",
+                })}
+              >
+                Собрать свой вишлист
+              </Link>
+              <p className="text-caption text-rose mt-2.5">
+                Свайпай подарки, которые хочешь сам, — друзья угадают с
+                подарком.
+              </p>
+            </>
+          )}
+        </div>
+      }
+    />
+  );
+};
+
+// Короткая ссылка сервера (remote, /w/?s=<код>, BACKEND.md §6.2): вишлист
+// живой — перечитываем его раз в 30 секунд, пока вкладка на экране. Первое
+// чтение — «открыл ссылку» (дружба с владельцем, §4.3), остальные — с
+// x-swipeit-refetch: по ним сервер дружбу не ставит (Q07).
+const ShortLinkGuest = ({ code }: { code: string }) => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const key = wishlistKeys.share(code);
+  const share = useQuery({
+    queryKey: key,
+    queryFn: async () => {
+      const refetch = queryClient.getQueryData(key) !== undefined;
+      const view = await getShare(code, { refetch });
+      // Открыл по ссылке — «Открывал по ссылке» на «Друзьях» (X03).
+      if (!refetch) {
+        void queryClient.invalidateQueries({
+          queryKey: wishlistKeys.opened(),
+        });
+      }
+      return view;
+    },
+    refetchInterval: GUEST_REFETCH_MS,
+    refetchIntervalInBackground: false,
+    // Ссылки нет — повторять нечего.
+    retry: (count, error) =>
+      !(isApiError(error) && error.code === "NOT_FOUND") && count < 2,
+  });
+  const view = share.data;
+
+  // Код ссылки-фильтра или приглашения открыли на экране вишлиста — на свой
+  // экран, как это сделало бы превью /s/<код>.
+  useEffect(() => {
+    if (view && view.kind !== "wishlist") {
+      router.replace(shareScreenPath(view, code));
+    }
+  }, [view, code, router]);
+
+  if (isApiError(share.error) && share.error.code === "NOT_FOUND") {
+    return <BrokenLink closed />;
+  }
+  if (share.isError && !view) {
+    return (
+      <EmptyState
+        className="h-full"
+        title="Не получилось открыть вишлист. Проверь связь и попробуй ещё раз."
+        action={
+          <Button variant="secondary" onClick={() => void share.refetch()}>
+            Попробовать ещё раз
+          </Button>
+        }
+      />
+    );
+  }
+  if (view?.kind !== "wishlist") return <GuestSkeleton />;
+
+  return (
+    <GuestScreen
+      wishlist={view.wishlist}
+      ownerId={view.ownerId}
+      ownerUserId={view.ownerId}
+      access={{ share: code, live: true }}
+    />
+  );
+};
+
+// Старая длинная ссылка (/w/?d=…): снимок из адреса. В remote брони по
+// снимку общие для гостей той же ссылки — перечитываем их по таймеру.
+const LongLinkGuest = ({ encoded }: { encoded: string }) => {
+  const remote = useAppMode() === "remote";
   // Сначала разбираем сами: битую ссылку видно сразу, без запроса, а шапку
   // (имя, повод, сообщение) — сразу из ссылки (UX-аудит H2).
   const decoded = decodeWishlist(encoded);
@@ -188,53 +327,30 @@ const GuestContent = () => {
   }
 
   const wishlist = external.data;
-  const ownerId = wishlist.owner.userId ?? wishlist.id;
-  const isMine = Boolean(me && me.id === wishlist.owner.userId);
-
   return (
-    <GuestWishlistView
+    <GuestScreen
       wishlist={wishlist}
-      ownerId={ownerId}
-      readOnly={isMine}
-      reservationChat
-      renderAfterReserve={(dismiss) => (
-        <NextStepPlaque step={step} onDismiss={dismiss} />
-      )}
-      footer={
-        <div className="px-5 pt-1 pb-[calc(env(safe-area-inset-bottom)+12px)] text-center">
-          {isMine ? (
-            <p className="text-caption text-rose">
-              Это твой вишлист — так его видят друзья.
-            </p>
-          ) : me && step === "send" ? (
-            <Link
-              href={ROUTES.WISHLIST}
-              className={buttonClassName({ variant: "secondary", size: "lg" })}
-            >
-              Открыть свой вишлист
-            </Link>
-          ) : (
-            <>
-              {/* Виральная петля (DESIGN.md §8.5): гость собирает свой. */}
-              <Link
-                href={ROUTES.GIFTS}
-                className={buttonClassName({
-                  variant: "secondary",
-                  size: "lg",
-                })}
-              >
-                Собрать свой вишлист
-              </Link>
-              <p className="text-caption text-rose mt-2.5">
-                Свайпай подарки, которые хочешь сам, — друзья угадают с
-                подарком.
-              </p>
-            </>
-          )}
-        </div>
-      }
+      // В remote длинные ссылки — только из демо, и userId в них — профиль
+      // демо, которого на сервере нет: брони — по id снимка (BACKEND.md
+      // §6.4, owner_ref «ext:…»), их видят гости той же ссылки.
+      ownerId={remote ? wishlist.id : (wishlist.owner.userId ?? wishlist.id)}
+      ownerUserId={wishlist.owner.userId}
+      access={remote ? { live: true } : undefined}
     />
   );
+};
+
+const GuestContent = () => {
+  const params = useSearchParams();
+  const code = params?.get("s") ?? "";
+  const encoded = params?.get("d") ?? "";
+  // Пришёл по ссылке — профиль, если он появится в этой вкладке, посчитается
+  // «из ссылки» (Q01). Вне remote это значение никуда не уходит.
+  useEffect(() => {
+    rememberLinkVia("wishlist_link");
+  }, []);
+  if (code) return <ShortLinkGuest code={code} />;
+  return <LongLinkGuest encoded={encoded} />;
 };
 
 const Frame = ({ children }: { children: ReactNode }) => (

@@ -16,6 +16,7 @@ import {
 } from "@/shared/ui";
 
 import {
+  type ReserveAccess,
   useCancelReservation,
   useReservations,
   useReserve,
@@ -38,6 +39,9 @@ export type BuyLink = {
 };
 
 type Props = {
+  // Как гость открыл вишлист: код короткой ссылки и перечитывание броней по
+  // таймеру (remote, B15). У друга из списка не нужно.
+  access?: ReserveAccess;
   // Под «Купить на …» у своей брони — например, «Напомнить в календаре»
   // (auto-tasks P07). Даёт виджет: фичи друг друга не импортируют.
   afterBuy?: ReactNode;
@@ -64,6 +68,7 @@ type Props = {
 // забронировавшего — «Уже подарено». Тексты без рода: гость может быть кем
 // угодно (UX-аудит, L4).
 export const ReserveControl = ({
+  access,
   ownerId,
   itemKey,
   nameGuard,
@@ -75,8 +80,8 @@ export const ReserveControl = ({
   const reserver = useReserver();
   // В «Локальной сети» брони общие — подпись и кнопка не нужны.
   const demoOnly = useAppMode() === "local";
-  const reservations = useReservations(ownerId);
-  const reserve = useReserve(ownerId);
+  const reservations = useReservations(ownerId, access);
+  const reserve = useReserve(ownerId, access);
   const cancel = useCancelReservation(ownerId);
   const setGuestName = useGuestStore((state) => state.setName);
   const [askName, setAskName] = useState(false);

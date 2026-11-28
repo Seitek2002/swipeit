@@ -7,14 +7,26 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { NAME_CAPTIONS, useRequireName } from "@/features/ask-name";
+import {
+  NAME_CAPTIONS,
+  NamesakeNote,
+  findNamesake,
+  useRequireName,
+} from "@/features/ask-name";
 
 import { usePlan } from "@/entities/plan";
-import { useCreateUser } from "@/entities/user";
+import { type User, useCreateUser, useMe } from "@/entities/user";
 
-import { getPlan, isApiError, joinPlan, planKeys } from "@/shared/api";
-import { ROUTES } from "@/shared/config";
+import {
+  getPlan,
+  isApiError,
+  joinPlan,
+  planKeys,
+  userKeys,
+} from "@/shared/api";
+import { REMOTE_COPY, ROUTES } from "@/shared/config";
 import { useAppMode } from "@/shared/lib/app-status";
+import { useInviteCode } from "@/shared/lib/dom";
 import { pluralize } from "@/shared/lib/format";
 import { useSessionStore } from "@/shared/store";
 import {
@@ -29,31 +41,56 @@ import {
   toast,
 } from "@/shared/ui";
 
-// В local план живёт в браузере, где его создали (TECH_SPEC §8): на другом
-// устройстве id не найдётся — объясняем и предлагаем свой план.
-const NotHere = () => (
+// План по ссылке не найден. В local он живёт в браузере, где его создали
+// (TECH_SPEC §8): на другом устройстве id не найдётся — объясняем и
+// предлагаем демо. В lan и remote план общий, и NOT_FOUND значит другое:
+// его удалили или ссылка неполная (auto-tasks-pm-3 R07) — без демо-друзей.
+const NotHere = ({ demo }: { demo: boolean }) => (
   <EmptyState
     className="h-full"
     object="ticket"
-    title="План открыт на другом телефоне. В демо его видно только на телефоне, где его создали, или в режиме «Локальная сеть»."
+    title={
+      demo
+        ? "План открыт на другом телефоне. В демо его видно только на телефоне, где его создали, или в режиме «Локальная сеть»."
+        : REMOTE_COPY.planNotFound
+    }
     action={
       // Главное, что пригодится другу на любом телефоне, — свой вишлист
       // (в Санте его увидит его Санта); потом — посмотреть, как играют
       // демо-друзья (UX-аудит W01).
       <div className="flex flex-col gap-2">
         <Link href={ROUTES.GIFTS} className={buttonClassName({})}>
-          Собрать свой вишлист
+          {REMOTE_COPY.buildOwnWishlist}
         </Link>
-        <Link
-          href={ROUTES.PLAN_CREATE}
-          className={buttonClassName({ variant: "secondary" })}
-        >
-          Собрать план с демо-друзьями
-        </Link>
+        {demo && (
+          <Link
+            href={ROUTES.PLAN_CREATE}
+            className={buttonClassName({ variant: "secondary" })}
+          >
+            Собрать план с демо-друзьями
+          </Link>
+        )}
       </div>
     }
   />
 );
+
+// Сбой связи при открытии приглашения — повтор той же кнопкой.
+const LoadFailed = ({ onRetry }: { onRetry: () => void }) => (
+  <EmptyState
+    className="h-full"
+    title="Не получилось открыть приглашение. Проверь связь и попробуй ещё раз."
+    action={
+      <Button variant="secondary" onClick={onRetry}>
+        Попробовать ещё раз
+      </Button>
+    }
+  />
+);
+
+// Экраны приглашений событий не получают (BACKEND.md §5): кто ещё вступил,
+// видно по перечитыванию раз в 30 секунд.
+const INVITE_REFETCH_MS = 30_000;
 
 // Гость без профиля: что за приглашение, и «Вступить» — профиль создастся
 // сам. Ошибка — под кнопкой, повтор — той же кнопкой.
@@ -90,11 +127,23 @@ const GuestInvite = ({
 const JoinContent = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const id = useSearchParams()?.get("id") ?? "";
+  const params = useSearchParams();
+  const id = params?.get("id") ?? "";
+  // Короткая ссылка remote: ?s=<код> вместо id — сначала узнаём у сервера,
+  // какой это план (BACKEND.md §6.2).
+  const code = id ? "" : (params?.get("s") ?? "");
+  const invite = useInviteCode(code);
   const meId = useSessionStore((state) => state.activeUserId);
   const mode = useAppMode();
-  const plan = usePlan(meId ? id : undefined);
+  // Без профиля в lan и remote план отдают превью (X07): гость видит, куда
+  // его зовут, ещё до «Вступить». В local его здесь нет вовсе (ниже).
+  const guestPreview = mode === "lan" || mode === "remote";
+  const plan = usePlan(meId || guestPreview ? id : undefined, {
+    guest: guestPreview,
+    refetchInterval: mode === "remote" ? INVITE_REFETCH_MS : undefined,
+  });
   const view = plan.data;
+  const me = useMe();
   const isMember = Boolean(
     view && meId && view.plan.participantIds.includes(meId),
   );
@@ -103,9 +152,22 @@ const JoinContent = () => {
     if (isMember) router.replace(ROUTES.PLAN_SESSION(id));
   }, [isMember, id, router]);
 
+  // Тёзка среди участников (R04) — подпись под «Вступить».
+  const namesakeOf = (name: string | undefined) =>
+    view && name ? findNamesake(view.participants, name, meId) : undefined;
+  const namesake = namesakeOf(me.data?.name);
+
   // Нет имени — NameSheet «Так тебя увидят в плане» по «Вступить» (DESIGN.md
   // §8.7), потом вступление само; NAME_REQUIRED от сервера — та же шторка.
   const requireName = useRequireName(NAME_CAPTIONS.plan);
+  // Имя только что вписали в NameSheet, и оно совпало с участником, —
+  // вступление не продолжаем: сначала человек увидит подпись про тёзку и
+  // решит сам (R04). Подпись уже была на экране — вступаем сразу.
+  const joinUnlessNewNamesake = (captionShown: boolean) => () => {
+    const name = queryClient.getQueryData<User>(userKeys.me())?.name;
+    if (!captionShown && namesakeOf(name)) return;
+    join.mutate();
+  };
   const join = useMutation({
     mutationFn: () => joinPlan(id),
     onSuccess: (next) => {
@@ -144,17 +206,27 @@ const JoinContent = () => {
         ) {
           return;
         }
-        requireName.run(() => join.mutate());
+        requireName.run(joinUnlessNewNamesake(false));
       },
     });
 
+  const demo = mode === "local";
+  if (code) {
+    if (invite.missing) return <NotHere demo={demo} />;
+    if (invite.failed) return <LoadFailed onRetry={invite.retry} />;
+    return <ContentSkeleton />;
+  }
   // Без профиля в local плана на этом телефоне нет: его создатель здесь с
   // профилем, и сессия вкладки его подхватывает (shared/store/session.ts).
   // Значит, ссылку открыли на другом телефоне — говорим сразу, а не после
-  // «Вступить» (UX-аудит X07). В lan план на ноутбуке, и до профиля API его
-  // не отдаёт — остаётся «Вступить».
-  if (!meId && mode === "local") return <NotHere />;
-  if (!meId) {
+  // «Вступить» (UX-аудит X07).
+  if (!meId && demo) return <NotHere demo />;
+  if (!id || (isApiError(plan.error) && plan.error.code === "NOT_FOUND")) {
+    return <NotHere demo={demo} />;
+  }
+  // Превью гостю не отдали (сервер без X07 ответил 401) или сбой связи —
+  // приглашение без подробностей, профиль создастся по «Вступить».
+  if (!meId && plan.isError) {
     return (
       <GuestInvite
         title="Тебя зовут в план: вместе выбрать, чем заняться."
@@ -164,21 +236,8 @@ const JoinContent = () => {
       />
     );
   }
-  if (!id || (isApiError(plan.error) && plan.error.code === "NOT_FOUND")) {
-    return <NotHere />;
-  }
   if (plan.isError) {
-    return (
-      <EmptyState
-        className="h-full"
-        title="Не получилось открыть приглашение. Проверь связь и попробуй ещё раз."
-        action={
-          <Button variant="secondary" onClick={() => void plan.refetch()}>
-            Попробовать ещё раз
-          </Button>
-        }
-      />
-    );
+    return <LoadFailed onRetry={() => void plan.refetch()} />;
   }
   if (!view || isMember) {
     return <ContentSkeleton />;
@@ -233,14 +292,26 @@ const JoinContent = () => {
             Этот план уже выбрал занятие — вступить нельзя.
           </p>
         ) : (
-          <Button
-            size="lg"
-            className="w-full"
-            loading={join.isPending}
-            onClick={() => requireName.run(() => join.mutate())}
-          >
-            Вступить
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              size="lg"
+              className="w-full"
+              loading={join.isPending || createUser.isPending}
+              onClick={() =>
+                meId
+                  ? requireName.run(joinUnlessNewNamesake(Boolean(namesake)))
+                  : joinAsNew()
+              }
+            >
+              Вступить
+            </Button>
+            {createUser.isError && (
+              <p role="alert" className="text-caption text-rose text-center">
+                Не получилось. Проверь связь и попробуй ещё раз
+              </p>
+            )}
+            {namesake && <NamesakeNote name={namesake.name} place="plan" />}
+          </div>
         )}
       </div>
     </div>

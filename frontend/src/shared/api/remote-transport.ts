@@ -1,19 +1,16 @@
 import { getRemoteToken, markRemoteSessionExpired } from "@/shared/store";
 
+import { CLIENT_BUILD } from "./client-build";
 import { toQuery } from "./http-transport";
 import { ApiError } from "./mock-server/errors";
 import { getRemoteApiBase, remoteApiUrl } from "./remote-base";
 import { remoteErrorFromResponse } from "./remote-errors";
-import type { HttpMethod, Transport } from "./transport";
+import type { HttpMethod, RequestOptions, Transport } from "./transport";
 
 // Тайм-аут запроса и один повтор GET при обрыве (BACKEND.md §9.2): в
 // мобильной сети запрос иногда висит без ответа, а GET повторять безопасно.
 const TIMEOUT_MS = 15_000;
 const GET_ATTEMPTS = 2;
-
-// Сборка фронта — в заголовке x-client-build, он попадает в логи сервера
-// (§4.5). Номер сборки задаёт CI; без него — dev.
-const CLIENT_BUILD = process.env.NEXT_PUBLIC_CLIENT_BUILD ?? "dev";
 
 const OFFLINE_MESSAGE = "Нет связи с сервером. Проверь интернет";
 
@@ -35,13 +32,18 @@ export const remoteTransport: Transport = {
     path: string,
     body?: unknown,
     query?: Record<string, unknown>,
+    options?: RequestOptions,
   ) {
     const base = getRemoteApiBase();
     if (!base) throw new Error("remote-transport без NEXT_PUBLIC_API_URL");
+    // Сборка фронта — в x-client-build, он попадает в логи сервера (§4.5).
     const headers: Record<string, string> = { "x-client-build": CLIENT_BUILD };
     const token = getRemoteToken();
     if (token) headers.authorization = `Bearer ${token}`;
     if (body !== undefined) headers["content-type"] = "application/json";
+    // Фоновое перечитывание — x-swipeit-refetch (Q07): дружбу по ссылке
+    // ставит только настоящее открытие экрана.
+    if (options?.refetch) headers["x-swipeit-refetch"] = "1";
     const url = remoteApiUrl(base, path) + toQuery(query);
     const init: RequestInit = {
       method,
@@ -70,8 +72,11 @@ export const remoteTransport: Transport = {
         data === NOT_JSON ? null : data,
       );
       // Токен неверный или сессия закрыта — экран «Сессия закончилась»
-      // (app/session-gate). Новый профиль молча не создаём (§3.2).
-      if (error.code === "UNAUTHORIZED") markRemoteSessionExpired();
+      // (app/session-gate). Новый профиль молча не создаём (§3.2). Без
+      // токена 401 — не конец сессии, а маршрут только для профиля: гость
+      // приглашения спросил план до «Вступить». Иначе после вступления его
+      // встретил бы экран «Сессия закончилась».
+      if (error.code === "UNAUTHORIZED" && token) markRemoteSessionExpired();
       throw error;
     }
     // Вместо API ответило что-то другое (прокси, статика с HTML) — сбой

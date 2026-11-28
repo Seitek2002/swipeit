@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { dative, genitive } from "./names";
+import { dative, genitive, hasNamesakes, sameName } from "./names";
 
 describe("genitive — «от кого»", () => {
   it("мужские имена на согласную", () => {
@@ -34,5 +34,19 @@ describe("dative — «кому»", () => {
   it("женские на согласную и неизвестный пол — без изменений", () => {
     expect(dative("Айгерим", "female")).toBe("Айгерим");
     expect(dative("Данияр")).toBe("Данияр");
+  });
+});
+
+describe("тёзки (R04)", () => {
+  it("одно имя без регистра, пробелов и с «ё» = «е»", () => {
+    expect(sameName("Азамат", "азамат ")).toBe(true);
+    expect(sameName("Алёна", "Алена")).toBe(true);
+    expect(sameName("Азамат", "Азамат К.")).toBe(false);
+    expect(sameName("", "")).toBe(false);
+  });
+
+  it("hasNamesakes — есть ли два одинаковых имени", () => {
+    expect(hasNamesakes(["Нурай", "Азамат", "азамат"])).toBe(true);
+    expect(hasNamesakes(["Нурай", "Азамат К.", "Азамат"])).toBe(false);
   });
 });

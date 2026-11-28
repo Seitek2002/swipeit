@@ -48,6 +48,8 @@ export const FUNNEL_STEPS = [
   "santa_draw_failed",
   // R05: организатор убрал участника после жеребьёвки.
   "santa_removed_after_draw",
+  // R04: жеребьёвка в игре, где есть тёзки (двойник с другого телефона?).
+  "santa_drawn_with_namesakes",
 ] as const;
 
 export type FunnelStep = (typeof FUNNEL_STEPS)[number];

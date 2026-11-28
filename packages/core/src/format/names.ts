@@ -32,3 +32,17 @@ export const dative = (name: string, gender?: "female" | "male"): string => {
   if (/[бвгджзклмнпрстфхцчшщ]$/i.test(last)) return `${trimmed}у`;
   return trimmed;
 };
+
+// Тёзки (auto-tasks-pm-3 R04): одно имя без регистра и пробелов по краям,
+// «ё» = «е». «Азамат» и «Азамат К.» — разные: так человек и различается.
+export const sameName = (a: string, b: string): boolean => {
+  const norm = (name: string) =>
+    name.trim().toLocaleLowerCase("ru").replaceAll("ё", "е");
+  return norm(a) !== "" && norm(a) === norm(b);
+};
+
+// Есть ли среди имён тёзки.
+export const hasNamesakes = (names: readonly string[]): boolean =>
+  names.some((name, index) =>
+    names.slice(index + 1).some((other) => sameName(name, other)),
+  );

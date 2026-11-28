@@ -7,7 +7,7 @@ import { MessageCircle } from "lucide-react";
 import { type SantaView, santaTerms } from "@/entities/santa-game";
 
 import { ROUTES } from "@/shared/config";
-import { absoluteUrl } from "@/shared/lib/dom";
+import { inviteUrl, usePrefetchInvite } from "@/shared/lib/dom";
 import { formatDayMonth } from "@/shared/lib/format";
 import { Button, DemoLinkNote, ShareActions } from "@/shared/ui";
 
@@ -26,6 +26,7 @@ export const LettersReady = ({
   view: SantaView;
 }) => {
   const [expanded, setExpanded] = useState(isOwner);
+  usePrefetchInvite("santa", view.game.id, expanded);
   const text = lettersMessage({
     title: view.game.title,
     terms: santaTerms(view.game),
@@ -53,7 +54,11 @@ export const LettersReady = ({
         getPayload={async () => ({
           title: view.game.title,
           text,
-          url: absoluteUrl(ROUTES.SANTA_GAME(view.game.id)),
+          url: await inviteUrl(
+            "santa",
+            view.game.id,
+            ROUTES.SANTA_GAME(view.game.id),
+          ),
         })}
         qrLabel="QR-код игры"
         secondary

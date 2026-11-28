@@ -20,4 +20,4 @@ export {
   NNBSP,
 } from "./format-price";
 export { plural, pluralize } from "./plural";
-export { dative, genitive } from "./names";
+export { dative, genitive, hasNamesakes, sameName } from "./names";

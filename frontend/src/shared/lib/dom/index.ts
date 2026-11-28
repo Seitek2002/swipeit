@@ -21,3 +21,15 @@ export {
   telegramUrl,
   whatsappUrl,
 } from "./share-targets";
+// Ссылки-приглашения в план и игру (auto-tasks-pm-3 R07): адрес экрана в
+// local и lan, короткая ссылка сервера в remote.
+export {
+  createInviteUrl,
+  type InviteCodeState,
+  type InviteKind,
+  inviteUrl,
+  joinPath,
+  shareTargetPath,
+  useInviteCode,
+  usePrefetchInvite,
+} from "./invite-url";

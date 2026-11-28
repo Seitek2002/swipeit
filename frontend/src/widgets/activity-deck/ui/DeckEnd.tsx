@@ -8,8 +8,7 @@ import { Bell } from "lucide-react";
 import { type PlanView, formatDeadline } from "@/entities/plan";
 
 import { closePlan, isApiError, planKeys } from "@/shared/api";
-import { ROUTES } from "@/shared/config";
-import { absoluteUrl, copyText } from "@/shared/lib/dom";
+import { copyText, inviteUrl, usePrefetchInvite } from "@/shared/lib/dom";
 import {
   Button,
   ConfirmDialog,
@@ -64,11 +63,15 @@ export const DeckEnd = ({ view, meId, swiping }: Props) => {
   // Текст и ссылка — одной строкой, как «Скопировать» в ShareActions: в
   // чат вставляется сразу готовое сообщение. Ссылка — та же, что в
   // приглашении: участника /plans/join сразу переводит в колоду плана.
+  usePrefetchInvite("plan", plan.id, swiping.length > 0);
   const remind = async () => {
     const text = remindText(swiping, plan.title);
-    const ok = await copyText(
-      `${text} ${absoluteUrl(ROUTES.PLAN_JOIN(plan.id))}`,
-    );
+    const url = await inviteUrl("plan", plan.id).catch(() => null);
+    if (!url) {
+      toast("Не получилось собрать ссылку", { tone: "error" });
+      return;
+    }
+    const ok = await copyText(`${text} ${url}`);
     toast(ok ? "Текст со ссылкой скопирован" : "Не получилось скопировать", {
       tone: ok ? "success" : "error",
     });
@@ -110,7 +113,7 @@ export const DeckEnd = ({ view, meId, swiping }: Props) => {
               getPayload={async () => ({
                 title: plan.title,
                 text: `${names} — долистайте план «${plan.title}», без вас итоги не откроются`,
-                url: absoluteUrl(ROUTES.PLAN_JOIN(plan.id)),
+                url: await inviteUrl("plan", plan.id),
               })}
             />
           )}

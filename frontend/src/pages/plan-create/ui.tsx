@@ -143,6 +143,9 @@ const StepPeople = ({
   selected: string[];
 }) => {
   const friends = useFriends();
+  // На сервере друзья появляются, только когда открыли твою ссылку или
+  // вступили в твою игру (BACKEND.md §4.3), — у нового профиля список пуст.
+  const noFriends = friends.isSuccess && friends.data.length === 0;
   return (
     <div className="flex flex-col gap-6">
       <h2 className="text-title-1">Кто идёт?</h2>
@@ -185,7 +188,9 @@ const StepPeople = ({
       </ul>
       <div className="-mt-3 flex flex-col gap-1">
         <p className="text-caption text-rose">
-          Остальных позовёшь ссылкой-приглашением из лобби.
+          {noFriends
+            ? "Друзей здесь пока нет — позовёшь их ссылкой-приглашением из лобби."
+            : "Остальных позовёшь ссылкой-приглашением из лобби."}
         </p>
         <DemoLinkNote />
       </div>

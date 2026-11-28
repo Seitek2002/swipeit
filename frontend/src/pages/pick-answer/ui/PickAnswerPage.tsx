@@ -1,11 +1,11 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Star } from "lucide-react";
 
 import { ProductDetailsSheet } from "@/features/product-details";
@@ -21,11 +21,13 @@ import {
 
 import {
   type PickAnswer,
+  type PickRequest,
+  getShare,
   importPickAnswer,
   isApiError,
   pickKeys,
 } from "@/shared/api";
-import { ROUTES } from "@/shared/config";
+import { GUEST_REFETCH_MS, ROUTES, shareScreenPath } from "@/shared/config";
 import { withBasePath } from "@/shared/lib/base-path";
 import { formatPrice, occasionLabel, pluralize } from "@/shared/lib/format";
 import { decodePickAnswer } from "@/shared/lib/share-codec";
@@ -144,12 +146,28 @@ const PickCard = ({
   );
 };
 
-const AnswerContent = () => {
-  const encoded = useSearchParams()?.get("d") ?? "";
-  const [details, setDetails] = useState<{
-    choice?: Record<string, string>;
-    product: Product;
-  } | null>(null);
+const AnswerSkeleton = () => (
+  <div className="flex flex-col gap-4 px-5 pt-6">
+    <Skeleton className="size-14 rounded-full" />
+    <Skeleton className="h-9 w-3/4" />
+    <Skeleton tone="paper" className="h-72 rounded-[22px]" />
+  </div>
+);
+
+const LoadFailed = ({ onRetry }: { onRetry: () => void }) => (
+  <EmptyState
+    className="h-full"
+    title="Не получилось открыть выбор. Проверь связь и попробуй ещё раз."
+    action={
+      <Button variant="secondary" onClick={onRetry}>
+        Попробовать ещё раз
+      </Button>
+    }
+  />
+);
+
+// Старая длинная ссылка-ответ (?d=): выбор — в самом адресе.
+const LongAnswer = ({ encoded }: { encoded: string }) => {
   const isValid = decodePickAnswer(encoded) !== null;
   const imported = useQuery({
     queryKey: pickKeys.answer(encoded),
@@ -165,29 +183,71 @@ const AnswerContent = () => {
     return <BrokenLink />;
   }
   if (imported.isError) {
-    return (
-      <EmptyState
-        className="h-full"
-        title="Не получилось открыть выбор. Проверь связь и попробуй ещё раз."
-        action={
-          <Button variant="secondary" onClick={() => void imported.refetch()}>
-            Попробовать ещё раз
-          </Button>
-        }
-      />
-    );
+    return <LoadFailed onRetry={() => void imported.refetch()} />;
   }
-  if (!imported.data) {
-    return (
-      <div className="flex flex-col gap-4 px-5 pt-6">
-        <Skeleton className="size-14 rounded-full" />
-        <Skeleton className="h-9 w-3/4" />
-        <Skeleton tone="paper" className="h-72 rounded-[22px]" />
-      </div>
-    );
-  }
+  if (!imported.data) return <AnswerSkeleton />;
+  return (
+    <AnswerView answer={imported.data.answer} request={imported.data.request} />
+  );
+};
 
-  const { answer, request } = imported.data;
+// Короткая ссылка-ответ сервера (remote, ?s=<код>, BACKEND.md §6.2). Друг
+// может свайпать дальше и отправить выбор ещё раз — ссылка та же, поэтому
+// перечитываем её раз в 30 секунд, пока вкладка на экране.
+const ShortAnswer = ({ code }: { code: string }) => {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const key = pickKeys.share(code);
+  const share = useQuery({
+    queryKey: key,
+    // Перечитывание — с x-swipeit-refetch, как у вишлиста (Q07).
+    queryFn: () =>
+      getShare(code, {
+        refetch: queryClient.getQueryData(key) !== undefined,
+      }),
+    refetchInterval: GUEST_REFETCH_MS,
+    refetchIntervalInBackground: false,
+    retry: (count, error) =>
+      !(isApiError(error) && error.code === "NOT_FOUND") && count < 2,
+  });
+  const view = share.data;
+
+  // Код вишлиста или ссылки-фильтра открыли здесь — на свой экран.
+  useEffect(() => {
+    if (view && view.kind !== "pick_answer") {
+      router.replace(shareScreenPath(view, code));
+    }
+  }, [view, code, router]);
+
+  if (isApiError(share.error) && share.error.code === "NOT_FOUND") {
+    return <BrokenLink closed />;
+  }
+  if (share.isError && !view) {
+    return <LoadFailed onRetry={() => void share.refetch()} />;
+  }
+  if (view?.kind !== "pick_answer") return <AnswerSkeleton />;
+  return <AnswerView answer={view.answer} request={view.request} />;
+};
+
+const AnswerContent = () => {
+  const params = useSearchParams();
+  const code = params?.get("s") ?? "";
+  if (code) return <ShortAnswer code={code} />;
+  return <LongAnswer encoded={params?.get("d") ?? ""} />;
+};
+
+// Выбор друга: запрос (повод и условия) есть только у его автора.
+const AnswerView = ({
+  answer,
+  request,
+}: {
+  answer: PickAnswer;
+  request: null | PickRequest;
+}) => {
+  const [details, setDetails] = useState<{
+    choice?: Record<string, string>;
+    product: Product;
+  } | null>(null);
   // Свой запрос на этом устройстве — напоминаем, о какой подборке речь.
   const occasion = request ? occasionLabel(request.occasion) : "";
 

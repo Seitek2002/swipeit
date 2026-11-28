@@ -44,6 +44,9 @@ export const SantaCreatePage = () => {
   const router = useRouter();
   const { data: me } = useMe();
   const friends = useFriends();
+  // На сервере друзья появляются, только когда открыли твою ссылку или
+  // вступили в твою игру (BACKEND.md §4.3), — у нового профиля список пуст.
+  const noFriends = friends.isSuccess && friends.data.length === 0;
   const [form, setForm] = useState(() => newSantaForm(clock.now()));
   const [invited, setInvited] = useState<string[]>([]);
   const [exclusions, setExclusions] = useState<SantaPair[]>([]);
@@ -160,7 +163,9 @@ export const SantaCreatePage = () => {
               })}
             </ul>
             <p className="text-caption text-rose mt-2">
-              Остальных позовёшь ссылкой с экрана игры. Нужно хотя бы трое.
+              {noFriends
+                ? "Друзей здесь пока нет — позовёшь их ссылкой с экрана игры. Нужно хотя бы трое."
+                : "Остальных позовёшь ссылкой с экрана игры. Нужно хотя бы трое."}
             </p>
           </section>
 

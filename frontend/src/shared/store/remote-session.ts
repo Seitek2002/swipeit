@@ -42,11 +42,42 @@ type RemoteSessionState = {
   // сессия закрыта. Новый профиль поверх старого молча не создаём (§3.2) —
   // экран «Сессия закончилась» спрашивает человека.
   expired: boolean;
+  // Сборка фронта старее minClientBuild из /v1/health (B17) — экран «Вышла
+  // новая версия» вместо приложения.
+  outdated: boolean;
 };
 
 export const useRemoteSessionStore = create<RemoteSessionState>()(() => ({
   expired: false,
+  outdated: false,
 }));
+
+export const markClientOutdated = () =>
+  useRemoteSessionStore.setState({ outdated: true });
+
+// Откуда пришёл человек — для воронки сервера (Q01, POST /users { via }).
+// Открыл вишлист или ссылку-фильтр — запоминаем до конца сессии вкладки:
+// профиль появится позже, в ленте после «Собрать свой вишлист».
+const VIA_KEY = "swipeit:remote:via";
+
+export type LinkVia = "pick_link" | "wishlist_link";
+
+export const rememberLinkVia = (via: LinkVia) => {
+  try {
+    sessionStorage.setItem(VIA_KEY, via);
+  } catch {
+    // Хранилище запрещено — профиль посчитается как «из ленты».
+  }
+};
+
+export const readLinkVia = (): LinkVia | null => {
+  try {
+    const via = sessionStorage.getItem(VIA_KEY);
+    return via === "pick_link" || via === "wishlist_link" ? via : null;
+  } catch {
+    return null;
+  }
+};
 
 export const markRemoteSessionExpired = () =>
   useRemoteSessionStore.setState({ expired: true });

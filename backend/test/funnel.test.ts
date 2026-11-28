@@ -385,6 +385,29 @@ describe("воронка P09", () => {
     expect((await counts()).santa_member_wishlist).toBe(1);
   });
 
+  it("R04: жеребьёвка с тёзками — santa_drawn_with_namesakes 1, без тёзок — 0", async () => {
+    const game = async (names: string[]) => {
+      const owner = await server.newUser({ name: "Айгерим" });
+      const created = (
+        await server.request(owner, "POST", "/santa", {
+          title: "Офис",
+          budget: 2000,
+          exchangeDate: "2026-12-25",
+          participantIds: [],
+        })
+      ).json() as { game: { id: string } };
+      for (const name of names) {
+        const member = await server.newUser({ name });
+        await server.request(member, "POST", `/santa/${created.game.id}/join`);
+      }
+      await server.request(owner, "POST", `/santa/${created.game.id}/draw`);
+    };
+    await game(["Азамат", "Нурай"]);
+    expect((await counts()).santa_drawn_with_namesakes).toBeUndefined();
+    await game(["Азамат", "азамат "]);
+    expect((await counts()).santa_drawn_with_namesakes).toBe(1);
+  });
+
   it("в funnel_daily нет id людей, имён и кодов ссылок", async () => {
     const { owner, guest, loner, code } = await scenario();
     const { rows } = await database.pool.query<{ row: string }>(

@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { SantaView } from "@/entities/santa-game";
 
 import { ROUTES } from "@/shared/config";
-import { absoluteUrl } from "@/shared/lib/dom";
+import { inviteUrl, usePrefetchInvite } from "@/shared/lib/dom";
 import { BottomSheet, Button, ShareActions } from "@/shared/ui";
 
 import { namesLine } from "../model/letters";
@@ -24,6 +24,7 @@ export const RemindWithoutWishlist = ({ view, names }: Props) => {
   // Двадцать имён подряд не прочтёт никто (R03): «Нурай, Бакыт, Алина,
   // Мээрим и ещё 16» — как в «Сообщить в чат».
   const who = namesLine(names);
+  usePrefetchInvite("santa", view.game.id, open);
   return (
     <>
       <Button variant="secondary" onClick={() => setOpen(true)}>
@@ -41,7 +42,11 @@ export const RemindWithoutWishlist = ({ view, names }: Props) => {
           getPayload={async () => ({
             title: view.game.title,
             text: `${who} — соберите вишлист для Тайного Санты «${view.game.title}», так Санте будет проще выбрать подарок`,
-            url: absoluteUrl(ROUTES.SANTA_GAME(view.game.id)),
+            url: await inviteUrl(
+              "santa",
+              view.game.id,
+              ROUTES.SANTA_GAME(view.game.id),
+            ),
           })}
           qrLabel="QR-код ссылки на игру"
         />

@@ -6,12 +6,18 @@ import type { HttpMethod } from "./mock-server/routes";
 
 export type { HttpMethod };
 
+// refetch — фоновое перечитывание экрана, а не открытие: сервер remote по
+// заголовку x-swipeit-refetch: 1 не ставит дружбу по ссылке (Q07). Мок и
+// LAN его не читают.
+export type RequestOptions = { refetch?: boolean };
+
 export type Transport = {
   request<T>(
     method: HttpMethod,
     path: string,
     body?: unknown,
     query?: Record<string, unknown>,
+    options?: RequestOptions,
   ): Promise<T>;
 };
 

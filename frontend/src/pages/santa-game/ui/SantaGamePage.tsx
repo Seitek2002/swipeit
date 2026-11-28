@@ -32,7 +32,7 @@ import {
 } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { clock } from "@/shared/lib/clock";
-import { absoluteUrl } from "@/shared/lib/dom";
+import { inviteUrl, usePrefetchInvite } from "@/shared/lib/dom";
 import { pluralize } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 import { useSessionStore } from "@/shared/store";
@@ -165,6 +165,12 @@ const GameContent = () => {
   useEffect(() => {
     if (id && view?.role === "guest") router.replace(ROUTES.SANTA_JOIN(id));
   }, [id, view?.role, router]);
+  // «Позвать по ссылке» — до жеребьёвки, у тех, кто в игре или позван.
+  usePrefetchInvite(
+    "santa",
+    id ?? "",
+    Boolean(id) && view?.game.status === "gathering" && view.role !== "guest",
+  );
 
   const save = (next: SantaView) => {
     queryClient.setQueryData(santaKeys.detail(id ?? ""), next);
@@ -412,7 +418,7 @@ const GameContent = () => {
             getPayload={async () => ({
               title: view.game.title,
               text: `Тайный Санта «${view.game.title}»: ${santaTerms(view.game)} Вступай!`,
-              url: absoluteUrl(ROUTES.SANTA_JOIN(view.game.id)),
+              url: await inviteUrl("santa", view.game.id),
             })}
             qrLabel="QR-код приглашения в игру"
             // Выше уже главная кнопка — «Провести жеребьёвку» у организатора

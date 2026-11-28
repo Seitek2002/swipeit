@@ -18,9 +18,9 @@ import {
 } from "@/entities/plan";
 import { santaTabDot, useSantaGames } from "@/entities/santa-game";
 
-import { rendersBeforeReady } from "@/shared/config";
+import { REMOTE_COPY, rendersBeforeReady } from "@/shared/config";
 import { useAppMode, useAppReady, useAppStatus } from "@/shared/lib/app-status";
-import { useSessionStore } from "@/shared/store";
+import { useRemoteSessionStore, useSessionStore } from "@/shared/store";
 import { Button, EmptyState } from "@/shared/ui";
 
 import { RouteSkeleton } from "./route-skeleton";
@@ -66,6 +66,22 @@ const AppTabBar = () => {
 const EnvironmentGate = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const { status } = useAppStatus();
+  // Сервер не принимает эту сборку (minClientBuild, B17): дальше экраны
+  // работали бы с устаревшим контрактом — просим обновить страницу.
+  const outdated = useRemoteSessionStore((state) => state.outdated);
+  if (outdated) {
+    return (
+      <EmptyState
+        className="h-full"
+        title={`${REMOTE_COPY.updateTitle}. ${REMOTE_COPY.updateText}.`}
+        action={
+          <Button onClick={() => window.location.reload()}>
+            {REMOTE_COPY.updateAction}
+          </Button>
+        }
+      />
+    );
+  }
   if (status === "failed") {
     return (
       <EmptyState

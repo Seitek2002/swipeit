@@ -79,13 +79,20 @@ const RealtimeBridge = () => {
 // Сменился пользователь вкладки (онбординг, демо-вход, «Смотреть как») —
 // кэш React Query целиком заново: ключи не содержат id пользователя, и без
 // сброса до 30 секунд показывались бы данные прошлого.
+//
+// Профиль появился там, где его не было (гость забронировал и получил тихий
+// профиль, вступил по приглашению), — чужих данных в кэше нет, только то,
+// что видел гость. Тогда не сбрасываем, а перечитываем: иначе экран ссылки
+// на миг пропадал в скелетон и терял своё состояние (плашку после брони).
 const SessionCacheReset = () => {
   const queryClient = useQueryClient();
 
   useEffect(
     () =>
       useSessionStore.subscribe((state, previous) => {
-        if (state.activeUserId !== previous.activeUserId) queryClient.clear();
+        if (state.activeUserId === previous.activeUserId) return;
+        if (previous.activeUserId) queryClient.clear();
+        else void queryClient.invalidateQueries();
       }),
     [queryClient],
   );

@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
@@ -15,20 +15,21 @@ import { ActiveFilterChips, describeFilters } from "@/features/product-filters";
 
 import { useCreateUser, useMe } from "@/entities/user";
 
-import { getMyPicks, pickKeys } from "@/shared/api";
-import { ROUTES } from "@/shared/config";
+import { getMyPicks, getShare, isApiError, pickKeys } from "@/shared/api";
+import { ROUTES, shareScreenPath } from "@/shared/config";
 import { occasionLabel, plural } from "@/shared/lib/format";
 import {
   type SharedPickRequest,
   decodePickRequest,
 } from "@/shared/lib/share-codec";
-import { useSessionStore } from "@/shared/store";
+import { rememberLinkVia, useSessionStore } from "@/shared/store";
 import {
   Avatar,
   Brand,
   BrokenLink,
   Button,
   ContentSkeleton,
+  EmptyState,
   IconButton,
   Screen,
   ScreenBody,
@@ -200,9 +201,8 @@ const PickSwipe = ({
   );
 };
 
-const PickContent = () => {
-  const encoded = useSearchParams()?.get("d") ?? "";
-  const request = decodePickRequest(encoded);
+// Ссылка-фильтр — из адреса (?d=) или с сервера по короткой ссылке (?s=).
+const PickFlow = ({ request }: { request: null | SharedPickRequest }) => {
   const activeUserId = useSessionStore((state) => state.activeUserId);
   const me = useMe();
   const [view, setView] = useState<"invite" | "swipe" | null>(null);
@@ -253,6 +253,71 @@ const PickContent = () => {
       />
     </>
   );
+};
+
+// Короткая ссылка сервера (remote, /pick/?s=<код>, BACKEND.md §6.2).
+// Условия ссылки не меняются — перечитывать нечего.
+const ShortPickInvite = ({ code }: { code: string }) => {
+  const router = useRouter();
+  const share = useQuery({
+    queryKey: pickKeys.share(code),
+    queryFn: () => getShare(code),
+    staleTime: Infinity,
+    retry: (count, error) =>
+      !(isApiError(error) && error.code === "NOT_FOUND") && count < 2,
+  });
+  const view = share.data;
+
+  // Код вишлиста или ответа открыли здесь — на свой экран.
+  useEffect(() => {
+    if (view && view.kind !== "pick_request") {
+      router.replace(shareScreenPath(view, code));
+    }
+  }, [view, code, router]);
+
+  if (isApiError(share.error) && share.error.code === "NOT_FOUND") {
+    return (
+      <>
+        <TopBar />
+        <ScreenBody>
+          <BrokenLink closed />
+        </ScreenBody>
+      </>
+    );
+  }
+  if (share.isError) {
+    return (
+      <>
+        <TopBar />
+        <ScreenBody>
+          <EmptyState
+            className="h-full"
+            title="Не получилось открыть ссылку. Проверь связь и попробуй ещё раз."
+            action={
+              <Button variant="secondary" onClick={() => void share.refetch()}>
+                Попробовать ещё раз
+              </Button>
+            }
+          />
+        </ScreenBody>
+      </>
+    );
+  }
+  if (view?.kind !== "pick_request") return <PickSkeletonBody />;
+  return <PickFlow request={view.request} />;
+};
+
+const PickContent = () => {
+  const params = useSearchParams();
+  const code = params?.get("s") ?? "";
+  const encoded = params?.get("d") ?? "";
+  // Профиль друга появится по «Выбрать подарки» — посчитаем его «из
+  // ссылки-фильтра» (Q01). Вне remote значение никуда не уходит.
+  useEffect(() => {
+    rememberLinkVia("pick_link");
+  }, []);
+  if (code) return <ShortPickInvite code={code} />;
+  return <PickFlow request={decodePickRequest(encoded)} />;
 };
 
 // «Выбери подарок сам» — сторона друга (DESIGN.md §8.6): без таб-бара и без

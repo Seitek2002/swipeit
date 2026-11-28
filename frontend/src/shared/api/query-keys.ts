@@ -42,6 +42,9 @@ export const wishlistKeys = {
     [...wishlistKeys.all, "external", encoded] as const,
   // «Открывал по ссылке» (X03).
   opened: () => [...wishlistKeys.all, "opened"] as const,
+  // Живой вишлист по короткой ссылке (remote, GET /share/:code): под
+  // wishlist, чтобы событие об изменении вишлиста перечитало и его.
+  share: (code: string) => [...wishlistKeys.all, "share", code] as const,
 };
 
 export const reservationKeys = {
@@ -54,6 +57,8 @@ export const pickKeys = {
   all: ["pick"] as const,
   picks: (requestId: string) => [...pickKeys.all, "picks", requestId] as const,
   answer: (encoded: string) => [...pickKeys.all, "answer", encoded] as const,
+  // Ссылка-фильтр или ответ по короткой ссылке (remote, GET /share/:code).
+  share: (code: string) => [...pickKeys.all, "share", code] as const,
 };
 
 export const planKeys = {
@@ -66,6 +71,13 @@ export const santaKeys = {
   all: ["santa"] as const,
   list: () => [...santaKeys.all, "list"] as const,
   detail: (id: string) => [...santaKeys.all, "detail", id] as const,
+};
+
+// Код короткой ссылки-приглашения → план или игра (GET /share/:code). Цель
+// ссылки не меняется, поэтому в SCOPE_KEYS её нет.
+export const inviteKeys = {
+  all: ["invites"] as const,
+  code: (code: string) => [...inviteKeys.all, "code", code] as const,
 };
 
 // Занятия каталога (GET /activities). Каталог только для чтения, поэтому

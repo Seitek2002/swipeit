@@ -5,13 +5,17 @@ import type {
   ReservationsView,
 } from "../wishlist/types";
 
+// share — код короткой ссылки (remote): по нему гость видит брони без
+// дружбы с владельцем (BACKEND.md §4.4).
 export const getReservations = (
   ownerId: string,
   guestId?: string,
+  share?: string,
 ): Promise<ReservationsView> =>
   getTransport().request<ReservationsView>("GET", "/reservations", undefined, {
     ownerId,
     guestId,
+    share,
   });
 
 // name нужен только гостю без профиля. От профиля сервер берёт его имя, а
@@ -21,6 +25,7 @@ export const createReservation = (input: {
   itemKey: string;
   name?: string;
   ownerId: string;
+  share?: string;
 }): Promise<Reservation> =>
   getTransport().request<Reservation>("POST", "/reservations", input);
 

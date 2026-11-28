@@ -14,6 +14,7 @@ import { ProductDetailsSheet } from "@/features/product-details";
 import {
   type BuyLink,
   type NameGuard,
+  type ReserveAccess,
   ReserveControl,
 } from "@/features/reserve-gift";
 
@@ -31,6 +32,7 @@ import {
 import type { GuestWishlist } from "@/shared/api";
 import { withBasePath } from "@/shared/lib/base-path";
 import { clock } from "@/shared/lib/clock";
+import { useCustomImageUrl } from "@/shared/lib/dom";
 import { formatPrice } from "@/shared/lib/format";
 import { Chip, StoreTag } from "@/shared/ui";
 
@@ -56,6 +58,9 @@ const buyLinkOf = (item: Item, product?: Product): BuyLink | undefined => {
 };
 
 type Props = {
+  // Гость по короткой ссылке (remote): код для броней без дружбы и
+  // перечитывание броней раз в 30 секунд (B15).
+  access?: ReserveAccess;
   // Внизу страницы: «Собрать свой вишлист» у гостя по ссылке (T09).
   footer?: ReactNode;
   // Под шапкой вишлиста (имя, повод, сообщение): «Предложить выбрать
@@ -119,6 +124,7 @@ const CalendarReminder = ({
 // Бирка-карточка гостя (DESIGN.md §8.5, reference .g-card): крупнее, чем у
 // владельца, — фото 16:10, вариант, заметка, магазины и бронь.
 const GuestWishCard = ({
+  access,
   item,
   ownerId,
   readOnly,
@@ -130,6 +136,7 @@ const GuestWishCard = ({
   ownerName,
   reservationChat,
 }: {
+  access?: ReserveAccess;
   afterReserve?: ReactNode;
   item: Item;
   nameGuard: NameGuard;
@@ -147,6 +154,9 @@ const GuestWishCard = ({
   const image = product
     ? imageForChoice(product, item.variantChoice)
     : undefined;
+  // Фото своего желания приходит только в живом вишлисте с сервера
+  // (imageKey, remote): в длинной ссылке его нет.
+  const customImage = useCustomImageUrl(item.custom?.imageKey);
   const title = product?.title ?? item.custom?.title ?? "…";
   const price = product
     ? formatPrice(product.priceMin, product.priceMax)
@@ -176,8 +186,15 @@ const GuestWishCard = ({
                 alt={image.alt}
                 className="absolute inset-0 size-full object-cover"
               />
+            ) : customImage ? (
+              <img
+                src={customImage}
+                alt=""
+                className="absolute inset-0 size-full object-cover"
+              />
             ) : (
-              // Фото своих желаний в ссылку не попадают — бумажная заглушка.
+              // Своё желание без фото или из длинной ссылки — бумажная
+              // заглушка.
               <Gift
                 aria-hidden
                 size={32}
@@ -230,6 +247,7 @@ const GuestWishCard = ({
           {!readOnly && (
             <div className="mt-3.5">
               <ReserveControl
+                access={access}
                 ownerId={ownerId}
                 itemKey={item.key}
                 nameGuard={nameGuard}
@@ -265,6 +283,7 @@ const GuestWishCard = ({
 // Чужой вишлист глазами гостя (DESIGN.md §8.5): владелец, повод, сообщение и
 // бирки с бронированием. Подаренных желаний здесь нет — их нет и в данных.
 export const GuestWishlistView = ({
+  access,
   wishlist,
   ownerId,
   ownerGender,
@@ -344,6 +363,7 @@ export const GuestWishlistView = ({
           {items.map((item) => (
             <GuestWishCard
               key={item.key}
+              access={access}
               item={item}
               ownerId={ownerId}
               readOnly={readOnly}

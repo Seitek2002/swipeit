@@ -54,6 +54,13 @@ export {
   isNameRequired,
 } from "./mock-server/errors";
 export { httpTransport } from "./http-transport";
+// Приглашения в план и игру короткой ссылкой (remote, BACKEND.md §6.2).
+export { createInviteLink, getShareTarget } from "./invites/requests";
+export {
+  type InviteKind,
+  type InviteLink,
+  type ShareTarget,
+} from "./invites/types";
 export {
   getRemoteApiBase,
   isRemoteBuild,
@@ -61,6 +68,13 @@ export {
   remoteWsUrl,
 } from "./remote-base";
 export { remoteTransport } from "./remote-transport";
+// Номер сборки и «Обнови приложение» (B17, B15).
+export { CLIENT_BUILD, isClientOutdated } from "./client-build";
+// Фото своих желаний через сервер (remote, B15).
+export { remoteImageUrl, uploadRemoteImage } from "./remote-uploads";
+// Экраны по короткой ссылке ?s= (remote, B15): вишлист и «Выбери подарок сам».
+export { getShare } from "./share/requests";
+export { type ShareView } from "./share/types";
 export { warmLocalApi } from "./warmup";
 export {
   type ApiMode,
@@ -129,6 +143,7 @@ export {
   catalogKeys,
   demoKeys,
   friendKeys,
+  inviteKeys,
   pickKeys,
   planKeys,
   SCOPE_KEYS,

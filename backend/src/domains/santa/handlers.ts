@@ -20,7 +20,7 @@ import {
   notFound,
   validation,
 } from "@swipeit/core/errors";
-import { dative, toDateKey } from "@swipeit/core/format";
+import { dative, hasNamesakes, toDateKey } from "@swipeit/core/format";
 import {
   drawAssignments,
   drawIssueOf,
@@ -700,6 +700,21 @@ export const removeSantaMember: ServerHandler = async (ctx, { params }) => {
   return viewOf(ctx, game, me.id);
 };
 
+// Тёзки среди вступивших (R04): как часто жеребьёвка идёт с возможным
+// двойником — одним человеком с двух телефонов.
+const countNamesakes = async (
+  ctx: ServerContext,
+  game: StoredGame,
+  now: number,
+  initiatorId: string,
+) => {
+  const people = await readPeople(ctx.tx, game.participantIds);
+  const names = game.participantIds.map((id) => people.get(id)?.name ?? "");
+  if (hasNamesakes(names)) {
+    await countEvent(ctx.tx, "santa_drawn_with_namesakes", now, initiatorId);
+  }
+};
+
 // Жеребьёвка — общая для кнопки и планировщика. Пары — среди вступивших;
 // кто так и не вступил, выбывает.
 const performDraw = async (ctx: ServerContext, game: StoredGame) => {
@@ -733,6 +748,7 @@ export const drawSantaGame: ServerHandler = async (ctx, { params }) => {
   await saveAssignments(ctx.tx, game.id, assignments);
   // Компания разыграла Санту (Q02): по игре, жеребьёвка бывает одна.
   await countEvent(ctx.tx, "santa_drawn_group", ctx.clock.now(), me.id);
+  await countNamesakes(ctx, game, ctx.clock.now(), me.id);
   changed(ctx, game);
   return viewOf(ctx, game, me.id);
 };
@@ -913,6 +929,7 @@ export const drawDueSantaGames = async (
         await saveGame(savepoint, before, game, now);
         await saveAssignments(savepoint, id, assignments);
         await countEvent(savepoint, "santa_drawn_group", now, game.ownerId);
+        await countNamesakes(scoped, game, now, game.ownerId);
         drawn.push(id);
         drawnGames.push(game);
       });

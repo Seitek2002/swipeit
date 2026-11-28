@@ -10,9 +10,11 @@ import { AppHeader } from "@/widgets/app-header";
 import { FriendPickSheet } from "@/widgets/friend-pick-sheet";
 
 import { type FriendSummary, useFriends, usePresence } from "@/entities/user";
+import { useWishlistSummary } from "@/entities/wishlist";
 
 import { getMode } from "@/shared/api";
-import { ROUTES } from "@/shared/config";
+import { REMOTE_COPY, ROUTES } from "@/shared/config";
+import { useAppMode } from "@/shared/lib/app-status";
 import { formatBirthday, pluralize } from "@/shared/lib/format";
 import {
   Avatar,
@@ -21,6 +23,7 @@ import {
   Screen,
   ScreenBody,
   Skeleton,
+  buttonClassName,
 } from "@/shared/ui";
 
 import { MyReservations } from "./my-reservations";
@@ -154,6 +157,31 @@ const FriendRow = ({
   </li>
 );
 
+// Пустые «Друзья» (R07). В remote демо-друзей нет: друзья появляются из
+// ссылок, поэтому зовём отправить вишлист — или сначала собрать его.
+const NoFriends = () => {
+  const remote = useAppMode() === "remote";
+  const { shareUnlocked } = useWishlistSummary();
+  if (!remote)
+    return <EmptyState className="h-full" title="Друзей пока нет." />;
+  return (
+    <EmptyState
+      className="h-full"
+      title={REMOTE_COPY.friendsEmpty}
+      action={
+        <Link
+          href={shareUnlocked ? `${ROUTES.WISHLIST}?share=1` : ROUTES.GIFTS}
+          className={buttonClassName({ variant: "secondary" })}
+        >
+          {shareUnlocked
+            ? REMOTE_COPY.friendsSendWishlist
+            : REMOTE_COPY.friendsBuildWishlist}
+        </Link>
+      }
+    />
+  );
+};
+
 // Друзья (DESIGN.md §8.9): ближайшие дни рождения сверху, профиль друга —
 // его вишлист в гостевом виде.
 export const FriendsPage = () => {
@@ -201,7 +229,7 @@ export const FriendsPage = () => {
             {/* Брони и вишлисты по ссылкам бывают и без друзей в списке. */}
             <MyReservations />
             <OpenedWishlists />
-            <EmptyState className="h-full" title="Друзей пока нет." />
+            <NoFriends />
           </>
         ) : (
           <>

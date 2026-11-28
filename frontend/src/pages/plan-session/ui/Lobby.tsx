@@ -8,8 +8,7 @@ import { LeavePlanButton } from "@/features/leave-plan";
 import type { PlanView } from "@/entities/plan";
 
 import { isApiError, planKeys, setPlanReady, startPlan } from "@/shared/api";
-import { ROUTES } from "@/shared/config";
-import { absoluteUrl } from "@/shared/lib/dom";
+import { inviteUrl, usePrefetchInvite } from "@/shared/lib/dom";
 import { pluralize } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 import { Avatar, Button, DemoLinkNote, ShareActions, toast } from "@/shared/ui";
@@ -51,10 +50,11 @@ export const Lobby = ({ view, meId }: { meId: string; view: PlanView }) => {
     onError,
   });
 
+  usePrefetchInvite("plan", plan.id);
   const getPayload = async () => ({
     title: plan.title,
     text: `Че делать будем? Зову в план «${plan.title}» — свайпнем занятия и посмотрим, что совпадёт`,
-    url: absoluteUrl(ROUTES.PLAN_JOIN(plan.id)),
+    url: await inviteUrl("plan", plan.id),
   });
 
   return (

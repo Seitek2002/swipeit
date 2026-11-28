@@ -21,7 +21,7 @@ import { type PlanView, decisionCandidates } from "@/entities/plan";
 import { cancelPlanDecision, isApiError, planKeys } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { clock } from "@/shared/lib/clock";
-import { absoluteUrl } from "@/shared/lib/dom";
+import { inviteUrl, usePrefetchInvite } from "@/shared/lib/dom";
 import {
   AvatarStack,
   BottomSheet,
@@ -86,6 +86,7 @@ export const Decided = ({ view, meId }: Props) => {
   const [showDrum, setShowDrum] = useState(
     () => decision?.method === "random" && !wasSeen(drumKey),
   );
+  usePrefetchInvite("plan", plan.id);
 
   const cancel = useMutation({
     mutationFn: () => cancelPlanDecision(plan.id),
@@ -197,7 +198,8 @@ export const Decided = ({ view, meId }: Props) => {
             timing.kind === "unscheduled"
               ? `Решили: ${activity.title}. Когда — договоримся здесь`
               : `Решили: ${activity.title}, ${live ? "сегодня" : whenText}`,
-          url: absoluteUrl(ROUTES.PLAN_SESSION(plan.id)),
+          // Участник по ссылке приглашения сразу попадает в план.
+          url: await inviteUrl("plan", plan.id, ROUTES.PLAN_SESSION(plan.id)),
         })}
         qrLabel="QR-код плана"
       />

@@ -1,5 +1,6 @@
-import { setRemoteToken } from "@/shared/store";
+import { readLinkVia, setRemoteToken } from "@/shared/store";
 
+import { getMode } from "../mode";
 import { getTransport } from "../transport";
 import type {
   CreateDateInput,
@@ -13,6 +14,7 @@ import type {
   UpdateMeInput,
   User,
 } from "./types";
+import { viaForNewUser } from "./via";
 
 export const loginDemoFn = (): Promise<MeResponse> =>
   getTransport().request<MeResponse>("POST", "/auth/demo");
@@ -22,10 +24,16 @@ export const loginDemoFn = (): Promise<MeResponse> =>
 //
 // Сервер (remote) отвечает { me, token } (BACKEND.md §3.1): токен сессии
 // сохраняем сразу, до первого запроса с ним. Мок и LAN отдают профиль как есть.
+//
+// via (Q01) — откуда профиль, только в remote: явное от экрана (бронь,
+// приглашение) или запомненная ссылка (/w/, /pick/), иначе «из ленты».
 export const createUser = async (input?: NewUserInput): Promise<MeResponse> => {
+  const { via: requested, ...rest } = input ?? {};
+  const via = viaForNewUser(getMode(), requested, readLinkVia());
+  const body = via ? { ...rest, via } : input === undefined ? input : rest;
   const result = await getTransport().request<
     { me: MeResponse; token: string } | MeResponse
-  >("POST", "/users", input);
+  >("POST", "/users", body);
   if (!("token" in result)) return result;
   setRemoteToken(result.token);
   return result.me;

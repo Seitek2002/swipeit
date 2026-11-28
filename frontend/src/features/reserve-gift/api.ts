@@ -7,15 +7,23 @@ import { useMe } from "@/entities/user";
 import {
   type ReservationsView,
   createReservation,
+  createUser,
   deleteReservation,
+  getMode,
   getReservations,
   isApiError,
   isNameRequired,
   reservationKeys,
 } from "@/shared/api";
+import { GUEST_REFETCH_MS } from "@/shared/config";
+import { useAppMode } from "@/shared/lib/app-status";
 import { useMounted } from "@/shared/lib/dom";
-import { useGuestStore } from "@/shared/store";
+import { useGuestStore, useSessionStore } from "@/shared/store";
 import { toast } from "@/shared/ui";
+
+// Как гость открыл вишлист: share — код короткой ссылки (remote, доступ к
+// броням без дружбы), live — перечитывать брони раз в GUEST_REFETCH_MS.
+export type ReserveAccess = { live?: boolean; share?: string };
 
 // Кто бронирует: человек с профилем — от своего имени, гость по ссылке без
 // профиля — по id из localStorage и имени, которое он назвал (DESIGN.md §8.5).
@@ -37,13 +45,24 @@ export const useReserver = () => {
 
 export type ReservationState = "closed" | "free" | "mine" | "taken";
 
-export const useReservations = (ownerId: string) => {
+export const useReservations = (
+  ownerId: string,
+  { live = false, share }: ReserveAccess = {},
+) => {
   const mounted = useMounted();
   const { guestId } = useReserver();
+  // В remote брони читает только профиль (GET /reservations — с токеном).
+  // Гость без профиля видит все желания свободными; занятое скажет CONFLICT,
+  // а после первой брони профиль уже есть.
+  const remote = useAppMode() === "remote";
+  const hasProfile = useSessionStore((state) => Boolean(state.activeUserId));
   const query = useQuery({
     queryKey: reservationKeys.forOwner(ownerId),
-    queryFn: () => getReservations(ownerId, guestId),
-    enabled: mounted && Boolean(ownerId),
+    queryFn: () =>
+      getReservations(ownerId, remote ? undefined : guestId, share),
+    enabled: mounted && Boolean(ownerId) && (!remote || hasProfile),
+    refetchInterval: live ? GUEST_REFETCH_MS : false,
+    refetchIntervalInBackground: false,
   });
 
   const view: ReservationsView | undefined = query.data;
@@ -65,12 +84,38 @@ export const useReservations = (ownerId: string) => {
   return { ...query, stateOf };
 };
 
-export const useReserve = (ownerId: string) => {
+// Бронь гостя без профиля в remote (BACKEND.md §3.1, §14.8): сначала тихий
+// профиль (POST /users, via «reservation» для воронки Q01), потом бронь с
+// именем из формы — сервер сохранит его и в профиль. Профиль становится
+// профилем вкладки в любом случае, даже если бронь не прошла (CONFLICT):
+// он уже создан, и токен лежит в хранилище.
+const reserveAsNewProfile = async (input: {
+  itemKey: string;
+  name?: string;
+  ownerId: string;
+  share?: string;
+}) => {
+  const me = await createUser({ via: "reservation" });
+  try {
+    return await createReservation(input);
+  } finally {
+    useSessionStore.getState().setActiveUser(me.id);
+  }
+};
+
+export const useReserve = (ownerId: string, { share }: ReserveAccess = {}) => {
   const queryClient = useQueryClient();
   const { guestId } = useReserver();
   return useMutation({
-    mutationFn: ({ itemKey, name }: { itemKey: string; name?: string }) =>
-      createReservation({ ownerId, itemKey, name, guestId }),
+    mutationFn: ({ itemKey, name }: { itemKey: string; name?: string }) => {
+      if (getMode() !== "remote") {
+        return createReservation({ ownerId, itemKey, name, guestId, share });
+      }
+      if (!useSessionStore.getState().activeUserId) {
+        return reserveAsNewProfile({ ownerId, itemKey, name, share });
+      }
+      return createReservation({ ownerId, itemKey, name, share });
+    },
     onSuccess: () => toast("Подарок забронирован"),
     // NAME_REQUIRED разбирает ReserveControl: спрашивает имя и повторяет.
     onError: (error) => {
@@ -93,7 +138,8 @@ export const useCancelReservation = (ownerId: string) => {
   const queryClient = useQueryClient();
   const { guestId } = useReserver();
   return useMutation({
-    mutationFn: (id: string) => deleteReservation(id, guestId),
+    mutationFn: (id: string) =>
+      deleteReservation(id, getMode() === "remote" ? undefined : guestId),
     onSuccess: () => toast("Бронь снята"),
     onError: () => toast("Не получилось снять бронь", { tone: "error" }),
     onSettled: () =>

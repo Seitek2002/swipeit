@@ -58,6 +58,20 @@ describe("remoteTransport", () => {
     expect(getRemoteToken()).toBeNull();
   });
 
+  it("фоновое перечитывание — x-swipeit-refetch: 1 (Q07)", async () => {
+    fetchMock
+      .mockResolvedValueOnce(json(200, { kind: "wishlist" }))
+      .mockResolvedValueOnce(json(200, { kind: "wishlist" }));
+    await remoteTransport.request("GET", "/share/abc", undefined, undefined, {
+      refetch: true,
+    });
+    await remoteTransport.request("GET", "/share/abc");
+    const headersOf = (index: number) =>
+      fetchMock.mock.calls[index]?.[1]?.headers as Record<string, string>;
+    expect(headersOf(0)["x-swipeit-refetch"]).toBe("1");
+    expect(headersOf(1)["x-swipeit-refetch"]).toBeUndefined();
+  });
+
   it("обрыв на GET — один повтор", async () => {
     fetchMock
       .mockRejectedValueOnce(new TypeError("Failed to fetch"))
@@ -100,6 +114,16 @@ describe("remoteTransport", () => {
       code: "UNAUTHORIZED",
     });
     expect(useRemoteSessionStore.getState().expired).toBe(true);
+  });
+
+  it("401 без токена — ошибка, но не «Сессия закончилась» (гость приглашения)", async () => {
+    fetchMock.mockResolvedValueOnce(
+      json(401, { code: "UNAUTHORIZED", message: "Нужен профиль" }),
+    );
+    await expect(
+      remoteTransport.request("GET", "/plans/pl_1"),
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    expect(useRemoteSessionStore.getState().expired).toBe(false);
   });
 
   it("200 не JSON (прокси, HTML) — сбой связи", async () => {

@@ -1,17 +1,21 @@
 import {
   ApiError,
   type ApiMode,
+  CLIENT_BUILD,
   type RemoteInfo,
   apiUrl,
   detectEnvironment,
   getDemoSettings,
   getMe,
   httpTransport,
+  isClientOutdated,
   isRemoteBuild,
   remoteApiUrl,
+  remoteImageUrl,
   remoteTransport,
   remoteWsUrl,
   setTransport,
+  uploadRemoteImage,
   warmLocalApi,
 } from "@/shared/api";
 import { setLanClock } from "@/shared/lib/clock";
@@ -29,6 +33,7 @@ import {
   REMOTE_USER_KEY,
   getActiveUserId,
   getRemoteToken,
+  markClientOutdated,
   markRemoteSessionExpired,
   readRemoteUserId,
   setLastUserKey,
@@ -99,14 +104,25 @@ const uploadImage = async (blob: Blob) => {
 };
 
 // Часы remote — по now из /v1/health (BACKEND.md §9.3), как в lan, но без
-// перемотки: она только в демо.
+// перемотки: она только в демо. Заодно minClientBuild (B17): сборка старее —
+// экран «Вышла новая версия» (app/app-frame). Проверяется при запуске и
+// после каждого возвращения связи — сервер мог обновиться, пока вкладка жила.
 const syncRemoteClock = async (base: string) => {
   const response = await fetch(remoteApiUrl(base, "/health"), {
     cache: "no-store",
   });
-  const health = (await response.json()) as { now?: unknown };
+  const health = (await response.json()) as {
+    minClientBuild?: unknown;
+    now?: unknown;
+  };
   if (typeof health.now === "number") {
     setLanClock({ diffMs: health.now - Date.now(), offsetMs: 0 });
+  }
+  if (
+    typeof health.minClientBuild === "string" &&
+    isClientOutdated(CLIENT_BUILD, health.minClientBuild)
+  ) {
+    markClientOutdated();
   }
 };
 
@@ -119,6 +135,9 @@ const CLOCK_WAIT_MS = 1500;
 const startRemote = async ({ base }: RemoteInfo) => {
   setLastUserKey(REMOTE_USER_KEY);
   setTransport(remoteTransport);
+  // Фото своих желаний — на сервере (POST /v1/uploads), их видят гости
+  // ссылки (§9.3). В желании — только ключ.
+  setRemoteImageStore({ upload: uploadRemoteImage, urlOf: remoteImageUrl });
   await useSessionStore.persist.rehydrate();
   // Все вкладки браузера — один человек (§3.2): пользователь — тот, чей
   // токен лежит в localStorage, а не id из sessionStorage вкладки (там мог
