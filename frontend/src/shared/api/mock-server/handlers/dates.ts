@@ -20,6 +20,7 @@ import {
 } from "../dates";
 import type { Db } from "../db";
 import { ApiError, notFound, validation } from "../errors";
+import { countActiveWishes } from "../share-threshold";
 import { parseInput, requireUser } from "./common";
 
 // «Мои даты» и напоминания (TECH_SPEC §6 «Даты и напоминания», DESIGN §8.4,
@@ -169,8 +170,19 @@ export const deleteDate: Handler = async (ctx, { params }) => {
   return { ok: true, date: viewOf(date, now), occasionReset };
 };
 
+// Новый год (P06): нужны число желаний и нынешний повод вишлиста.
+const newYearContextOf = (db: Db, userId: string) => ({
+  wishCount: countActiveWishes(db, userId),
+  occasion: db.wishlistMeta[userId]?.occasion,
+});
+
 const remindersOf = (db: Db, user: User, now: number): Reminder[] => {
-  const reminder = activeReminder(user, db.importantDates[user.id] ?? [], now);
+  const reminder = activeReminder(
+    user,
+    db.importantDates[user.id] ?? [],
+    now,
+    newYearContextOf(db, user.id),
+  );
   return reminder ? [reminder] : [];
 };
 

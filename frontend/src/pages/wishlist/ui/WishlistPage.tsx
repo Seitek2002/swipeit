@@ -298,7 +298,9 @@ export const WishlistPage = () => {
                   setShareOccasion(
                     active.kind === "birthday"
                       ? { kind: "birthday" }
-                      : { kind: "important", dateId: active.dateId },
+                      : active.kind === "new_year"
+                        ? { kind: "new_year" }
+                        : { kind: "important", dateId: active.dateId },
                   );
                   setShareOpen(true);
                 }}

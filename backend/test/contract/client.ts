@@ -57,9 +57,9 @@ let catalogPromise: null | Promise<ServerCatalog> = null;
 export const testCatalog = () =>
   (catalogPromise ??= loadCatalog(CATALOG_DIR, { warn: () => undefined }));
 
-export const createMockClient = async (): Promise<ApiClient> => {
+export const createMockClient = async (now = NOW): Promise<ApiClient> => {
   const { products, activities, meta } = await testCatalog();
-  const clock = createFixedClock(NOW);
+  const clock = createFixedClock(now);
   const db = createMemoryDb(async () =>
     createSeedDb({ products: [...products], now: clock.now() }),
   );
@@ -119,14 +119,14 @@ export const createMockClient = async (): Promise<ApiClient> => {
   };
 };
 
-export const createServerClient = async (): Promise<ApiClient> => {
+export const createServerClient = async (now = NOW): Promise<ApiClient> => {
   const database = createTestDb();
   await resetDb(database);
   const app = buildApp({
     config: loadConfig({ LOG_LEVEL: "silent" }),
     db: database,
     catalog: await testCatalog(),
-    clock: { now: () => NOW },
+    clock: { now: () => now },
     random: createSeededRandom("contract"),
   });
   const call: ApiClient["call"] = async (caller, method, url, body, query) => {

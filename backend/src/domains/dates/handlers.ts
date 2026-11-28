@@ -22,6 +22,7 @@ import { nanoid } from "nanoid";
 import type { ServerContext, ServerHandler, Tx } from "../../context";
 import { importantDates, users, wishlistMeta } from "../../db/schema";
 import { lockMe, rowToUser } from "../users/queries";
+import { countActiveWishes, readMeta, rowToMeta } from "../wishlist/queries";
 
 // «Мои даты» и напоминания — как в моке (handlers/dates.ts), на функциях
 // dates из core. Всё здесь — личное (BACKEND.md §4.6, п. 3): id владельца
@@ -215,19 +216,25 @@ export const deleteDate: ServerHandler = async (ctx, { params }) => {
   return { ok: true, date: viewOf(target, now), occasionReset };
 };
 
-const remindersOf = (
-  user: Parameters<typeof activeReminder>[0],
+const remindersOf = async (
+  tx: Tx,
+  user: Parameters<typeof activeReminder>[0] & { id: string },
   dates: readonly ImportantDate[],
   now: number,
-): Reminder[] => {
-  const reminder = activeReminder(user, dates, now);
+): Promise<Reminder[]> => {
+  // Новый год (P06): число желаний и нынешний повод вишлиста.
+  const meta = rowToMeta(user.id, await readMeta(tx, user.id));
+  const reminder = activeReminder(user, dates, now, {
+    wishCount: await countActiveWishes(tx, user.id),
+    occasion: meta.occasion,
+  });
   return reminder ? [reminder] : [];
 };
 
 // GET /me/reminders — активное напоминание: 0 или 1.
 export const listReminders: ServerHandler = async (ctx) => {
   const me = rowToUser(await lockMe(ctx));
-  return remindersOf(me, await datesOf(ctx.tx, me.id), ctx.clock.now());
+  return remindersOf(ctx.tx, me, await datesOf(ctx.tx, me.id), ctx.clock.now());
 };
 
 // id «Скрыть» — общая схема core: своя дата или день рождения друга.
@@ -247,5 +254,5 @@ export const dismissReminder: ServerHandler = async (ctx, { params }) => {
     .where(eq(users.id, row.id));
   const me = rowToUser({ ...row, dismissedReminders });
   changed(ctx, ["users"]);
-  return remindersOf(me, await datesOf(ctx.tx, me.id), now);
+  return remindersOf(ctx.tx, me, await datesOf(ctx.tx, me.id), now);
 };

@@ -76,14 +76,15 @@ export const ImportantDateSchema = z.object({
 export const ReminderIdSchema = z
   .string()
   .regex(
-    /^(birthday|d_[A-Za-z0-9_-]{1,40}|friend:[A-Za-z0-9_-]{1,40}):\d{4}$/,
+    /^(birthday|new_year|d_[A-Za-z0-9_-]{1,40}|friend:[A-Za-z0-9_-]{1,40}):\d{4}$/,
     "Неверное напоминание",
   );
 
 export const ReminderSchema = z.object({
   // "birthday:2027" или "<dateId>:2027": ключ даты + год наступления.
   id: z.string(),
-  kind: z.enum(["birthday", "important"]),
+  // new_year — сезонное «До Нового года» (auto-tasks P06).
+  kind: z.enum(["birthday", "important", "new_year"]),
   dateId: z.string().optional(),
   // «твой день рождения» или название даты.
   label: z.string(),

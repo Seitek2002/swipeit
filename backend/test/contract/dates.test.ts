@@ -4,7 +4,13 @@ import type {
 } from "@swipeit/core/api/users/types";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { type ApiClient, type Caller, CLIENTS } from "./client";
+import {
+  type ApiClient,
+  type Caller,
+  CLIENTS,
+  createMockClient,
+  createServerClient,
+} from "./client";
 
 // Контрактный тест «Моих дат» и напоминаний (BACKEND.md B05) — по
 // important-dates.test.ts мока. Часы стоят: 28.11.2026, полдень.
@@ -197,5 +203,42 @@ describe.each(CLIENTS)("даты и напоминания — %s", (_name, crea
     const { caller: other } = await api.newUser();
     expect(await dates(other)).toEqual([]);
     expect(await reminders(other)).toEqual([]);
+  });
+});
+
+// «До Нового года» (auto-tasks P06): 1 декабря, полдень по Бишкеку.
+const DECEMBER_1 = Date.UTC(2026, 11, 1, 6);
+
+describe.each([
+  ["мок", () => createMockClient(DECEMBER_1)],
+  ["сервер", () => createServerClient(DECEMBER_1)],
+] as const)("напоминание о Новом годе — %s", (_name, create) => {
+  let api: ApiClient;
+  beforeEach(async () => {
+    api = await create();
+  });
+  afterEach(() => api.close());
+
+  it("1 декабря с желаниями — «Новый год, 30 дней»; без желаний — нет; «Скрыть» — до следующего сезона", async () => {
+    const { caller } = await api.newUser();
+    const reminders = () =>
+      api.call<Reminder[]>(caller, "GET", "/me/reminders");
+    expect(await reminders()).toEqual([]);
+    await api.call(caller, "POST", "/wishlist/items", { title: "Шарф" });
+    expect(await reminders()).toEqual([
+      {
+        id: "new_year:2026",
+        kind: "new_year",
+        label: "Новый год",
+        date: "2026-12-31",
+        daysLeft: 30,
+      },
+    ]);
+    await api.call(
+      caller,
+      "POST",
+      `/me/reminders/${encodeURIComponent("new_year:2026")}/dismiss`,
+    );
+    expect(await reminders()).toEqual([]);
   });
 });

@@ -54,3 +54,20 @@ describe("reminderText", () => {
     );
   });
 });
+
+describe("текст напоминания о Новом годе (P06)", () => {
+  it("«До Нового года 30 дней», в сам день — «Сегодня Новый год»", () => {
+    const base = {
+      kind: "new_year" as const,
+      label: "Новый год",
+      date: "2026-12-31",
+    };
+    expect(reminderText({ ...base, daysLeft: 30 })).toBe(
+      "До Нового года 30 дней",
+    );
+    expect(reminderText({ ...base, daysLeft: 1 })).toBe(
+      "До Нового года 1 день",
+    );
+    expect(reminderText({ ...base, daysLeft: 0 })).toBe("Сегодня Новый год");
+  });
+});

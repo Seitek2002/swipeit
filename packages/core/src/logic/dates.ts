@@ -84,6 +84,41 @@ export const BIRTHDAY_KEY = "birthday";
 export const reminderId = (key: string, dateKey: string) =>
   `${key}:${dateKey.slice(0, 4)}`;
 
+// Новый год — сезонный повод (auto-tasks P06, PRD §3 «декабрь — сезон»):
+// напоминаем с 1 по 31 декабря, если в «Хочу» есть желания, а вишлист к
+// этому Новому году ещё не отправляли. Своих дат у новичка обычно нет —
+// без этого напоминания декабрь проходил бы молча.
+export const NEW_YEAR_KEY = "new_year";
+const NEW_YEAR_MONTH_DAY = "12-31";
+export const NEW_YEAR_REMINDER_LABEL = "Новый год";
+
+export type NewYearContext = {
+  // Желаний в «Хочу» (свои и из ленты).
+  wishCount: number;
+  // Повод вишлиста сейчас: отправлен «к Новому году, 31 декабря» этого
+  // сезона — напоминать не о чем.
+  occasion?: { date?: string; kind: string };
+};
+
+const newYearCandidate = (
+  context: NewYearContext | undefined,
+  now: number,
+): Candidate[] => {
+  if (!context || context.wishCount === 0) return [];
+  const date = nextOccurrence(NEW_YEAR_MONTH_DAY, now);
+  if (context.occasion?.kind === "new_year" && context.occasion.date === date) {
+    return [];
+  }
+  return [
+    {
+      key: NEW_YEAR_KEY,
+      kind: "new_year",
+      label: NEW_YEAR_REMINDER_LABEL,
+      monthDay: NEW_YEAR_MONTH_DAY,
+    },
+  ];
+};
+
 type Candidate = {
   dateId?: string;
   key: string;
@@ -123,10 +158,14 @@ export const activeReminder = (
   user: Pick<User, "birthday" | "dismissedReminders">,
   dates: readonly ImportantDate[],
   now: number,
+  newYear?: NewYearContext,
 ): null | Reminder => {
   const dismissed = new Set(user.dismissedReminders ?? []);
   let best: null | Reminder = null;
-  for (const candidate of candidatesOf(user, dates)) {
+  for (const candidate of [
+    ...candidatesOf(user, dates),
+    ...newYearCandidate(newYear, now),
+  ]) {
     const date = nextOccurrence(candidate.monthDay, now);
     const daysLeft = daysUntil(date, now);
     const id = reminderId(candidate.key, date);

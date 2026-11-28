@@ -18,6 +18,13 @@ export const reminderWhen = (daysLeft: number): string => {
 export const reminderText = (
   reminder: Pick<Reminder, "date" | "daysLeft" | "kind" | "label">,
 ): string => {
+  // Новый год (P06): «До Нового года 30 дней», а в сам день — «Сегодня Новый
+  // год».
+  if (reminder.kind === "new_year") {
+    return reminder.daysLeft <= 0
+      ? "Сегодня Новый год"
+      : `До Нового года ${pluralize(reminder.daysLeft, DAYS)}`;
+  }
   const when = reminderWhen(reminder.daysLeft);
   if (reminder.kind === "birthday") return `${when} ${reminder.label}`;
   const date = formatDayMonth(reminder.date);
