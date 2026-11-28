@@ -383,7 +383,11 @@ export const plans = pgTable(
       .notNull()
       .default(sql`'{}'`),
     decision: jsonb("decision"),
+    // Организатор показал итоги, не дождавшись всех (auto-tasks P04).
+    closedEarly: boolean("closed_early").notNull().default(false),
     createdAt: createdAt(),
+    // Порядок создания: «новые сверху» при равном времени (B10).
+    seq: bigserial("seq", { mode: "number" }).notNull(),
   },
   (table) => [
     // Для планировщика: «До даты» с наступившим дедлайном (B13).
@@ -413,6 +417,8 @@ export const planParticipants = pgTable(
     ready: boolean("ready").notNull().default(false),
     finished: boolean("finished").notNull().default(false),
     joinedAt: at("joined_at").notNull(),
+    // Порядок участников: организатор, позванные, вступившие (B10).
+    seq: bigserial("seq", { mode: "number" }).notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.planId, table.userId] }),
@@ -472,6 +478,8 @@ export const santaGames = pgTable(
       .default(sql`'[]'::jsonb`),
     drawnAt: at("drawn_at"),
     createdAt: createdAt(),
+    // Порядок создания: «новые сверху» при равном времени (B11).
+    seq: bigserial("seq", { mode: "number" }).notNull(),
   },
   (table) => [
     index("santa_games_status_draw_at").on(table.status, table.drawAt),
@@ -494,6 +502,8 @@ export const santaMembers = pgTable(
     openedAt: at("opened_at"),
     boughtAt: at("bought_at"),
     joinedAt: at("joined_at"),
+    // Порядок участников: организатор, позванные, вступившие (B11).
+    seq: bigserial("seq", { mode: "number" }).notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.gameId, table.userId] }),

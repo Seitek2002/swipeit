@@ -68,7 +68,7 @@ const changed = (ctx: ServerContext, scope: RealtimeScope[], id: string) =>
 
 // Желания, которые видят друзья: только активные, «Очень хочу» сверху, без
 // повторов по ключу брони (как guestItems мока).
-const guestItemsOf = async (tx: Tx, ownerId: string) => {
+export const guestItemsOf = async (tx: Tx, ownerId: string) => {
   const seen = new Set<string>();
   return (await itemsOf(tx, ownerId))
     .filter((item) => item.status === "active")

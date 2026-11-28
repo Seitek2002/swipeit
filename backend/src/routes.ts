@@ -47,6 +47,24 @@ import {
   restartSwipes,
   undoSwipe,
 } from "./domains/swipes/handlers";
+import {
+  addPlanActivities,
+  cancelPlanDecision,
+  closePlan,
+  createCustomActivity,
+  createPlan,
+  decidePlan,
+  finishPlan,
+  getPlan,
+  joinPlan,
+  listPlans,
+  setPlanRule,
+  setReady,
+  startPlan,
+  swipePlan,
+  undoPlanSwipe,
+  votePlan,
+} from "./domains/plans/handlers";
 import { deleteMe } from "./domains/users/delete";
 import {
   createCustomWish,
@@ -118,6 +136,22 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "GET /pick-requests/:id/picks": getMyPicks,
   "POST /pick-requests/:id/answer": answerPickRequest,
   "POST /pick-answers": importPickAnswer,
+  "GET /plans": listPlans,
+  "POST /plans": createPlan,
+  "GET /plans/:id": getPlan,
+  "POST /plans/:id/join": joinPlan,
+  "POST /plans/:id/ready": setReady,
+  "POST /plans/:id/start": startPlan,
+  "POST /plans/:id/swipes": swipePlan,
+  "POST /plans/:id/swipes/undo": undoPlanSwipe,
+  "POST /plans/:id/finish": finishPlan,
+  "POST /plans/:id/votes": votePlan,
+  "POST /plans/:id/close": closePlan,
+  "POST /plans/:id/decide": decidePlan,
+  "POST /plans/:id/decide/cancel": cancelPlanDecision,
+  "POST /plans/:id/rule": setPlanRule,
+  "POST /plans/:id/activities": addPlanActivities,
+  "POST /activities": createCustomActivity,
 };
 
 export type RouteDeps = {

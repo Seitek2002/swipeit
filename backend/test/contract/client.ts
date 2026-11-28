@@ -2,6 +2,7 @@
 // сценариев call(user, method, path, body) запускается дважды — на моке в
 // памяти и на сервере (app.inject + PostgreSQL).
 import type { MeResponse } from "@swipeit/core/api/users/types";
+import type { RealtimeEvent } from "@swipeit/core/realtime/types";
 import { ApiError, type ApiErrorCode } from "@swipeit/core/errors";
 import type { HttpMethod } from "@swipeit/core/contract";
 import { createSeededRandom } from "@swipeit/core/logic/random";
@@ -24,6 +25,7 @@ import { loadCatalog, type ServerCatalog } from "../../src/catalog/load";
 import { loadConfig } from "../../src/config";
 import { users, wishlistMeta } from "../../src/db/schema";
 import { makeFriends } from "../../src/domains/friends/handlers";
+import { createRecordingHub } from "../../src/realtime/hub";
 import { createTestDb, resetDb } from "../db";
 
 // 28 ноября 2026, полдень по Бишкеку.
@@ -32,6 +34,8 @@ export const NOW = Date.UTC(2026, 10, 28, 6);
 export type Caller = { id: string; token?: string };
 
 export type ApiClient = {
+  // Перемотать часы (дедлайны планов).
+  advance: (ms: number) => void;
   // Подружить двоих (на сервере дружба появляется сама — §4.3; в тестах
   // ставим её напрямую).
   befriend: (a: Caller, b: Caller) => Promise<void>;
@@ -43,6 +47,8 @@ export type ApiClient = {
     query?: Record<string, unknown>,
   ) => Promise<T>;
   close: () => Promise<void>;
+  // События, опубликованные с начала теста (на сервере — после commit).
+  events: () => readonly RealtimeEvent[];
   kind: "mock" | "server";
   newUser: () => Promise<{ caller: Caller; me: MeResponse }>;
   // Профиль с заданным id: у мока и сервера тогда один сид ленты (разброс
@@ -63,6 +69,7 @@ export const createMockClient = async (now = NOW): Promise<ApiClient> => {
   const db = createMemoryDb(async () =>
     createSeedDb({ products: [...products], now: clock.now() }),
   );
+  const realtime = createRecordingRealtime();
   const server = createMockServer({
     catalog: createMemoryCatalog(
       [...products],
@@ -71,7 +78,7 @@ export const createMockClient = async (now = NOW): Promise<ApiClient> => {
     ),
     clock,
     db,
-    realtime: createRecordingRealtime(),
+    realtime,
     random: createSeededRandom("contract"),
     settings: createMemorySettings(),
   });
@@ -85,6 +92,8 @@ export const createMockClient = async (now = NOW): Promise<ApiClient> => {
     }) as never;
   return {
     kind: "mock",
+    advance: (ms) => clock.advance(ms),
+    events: () => realtime.events,
     call,
     newUser: async () => {
       const me = await call<MeResponse>(null, "POST", "/users", {});
@@ -122,12 +131,15 @@ export const createMockClient = async (now = NOW): Promise<ApiClient> => {
 export const createServerClient = async (now = NOW): Promise<ApiClient> => {
   const database = createTestDb();
   await resetDb(database);
+  let current = now;
+  const hub = createRecordingHub();
   const app = buildApp({
     config: loadConfig({ LOG_LEVEL: "silent" }),
     db: database,
     catalog: await testCatalog(),
-    clock: { now: () => now },
+    clock: { now: () => current },
     random: createSeededRandom("contract"),
+    hub,
   });
   const call: ApiClient["call"] = async (caller, method, url, body, query) => {
     const response = await app.inject({
@@ -154,6 +166,10 @@ export const createServerClient = async (now = NOW): Promise<ApiClient> => {
   };
   return {
     kind: "server",
+    advance: (ms) => {
+      current += ms;
+    },
+    events: () => hub.delivered,
     call,
     newUser: async () => {
       const { me, token } = await call<{ me: MeResponse; token: string }>(
