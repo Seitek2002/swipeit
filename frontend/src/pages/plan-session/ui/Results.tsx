@@ -13,6 +13,7 @@ import {
   computeMatches,
   countedParticipants,
   decisionCandidates,
+  isTimedOutWithoutResults,
   tallyVotes,
   voteCandidates,
 } from "@/entities/plan";
@@ -35,7 +36,9 @@ import {
   resultNote,
   voteProgress,
   voteStatus,
+  withoutMeNote,
 } from "../model";
+import { TimedOut } from "./TimedOut";
 
 type Props = { meId: string; view: PlanView };
 
@@ -86,7 +89,10 @@ export const Results = ({ view, meId }: Props) => {
   // Чьи свайпы в итогах: после «Показать итоги сейчас» — только долиставших.
   const counted = new Set(countedParticipants(plan));
   const total = counted.size;
+  // closedEarly — и после «Показать итоги сейчас», и после даты «До даты»
+  // с отстающими (Y02); timedOut отличает второе.
   const closedEarly = Boolean(plan.closedEarly);
+  const timedOut = Boolean(plan.timedOut);
   const countedNames = participants
     .filter((person) => counted.has(person.id))
     .map((person) => person.name);
@@ -159,18 +165,22 @@ export const Results = ({ view, meId }: Props) => {
           Итоги по тем, кто долистал: {countedNames.join(", ")}
         </p>
       )}
-      {/* Не долистал, а итоги уже показали (X06) — говорим прямо, иначе
-          человек ищет в списке свои лайки и не понимает, куда они делись. */}
+      {/* Не долистал, а итоги уже показали (X06, Y02) — говорим прямо,
+          иначе человек ищет в списке свои лайки и не понимает, куда они
+          делись. */}
       {closedEarly && !counted.has(meId) && (
-        <p className="text-body text-paper mt-1.5">
-          Итоги показали без тебя: организатор не стал ждать
-        </p>
+        <p className="text-body text-paper mt-1.5">{withoutMeNote(timedOut)}</p>
       )}
       {labels.hint && !voting && (
         <p className="text-body text-rose mt-1.5">{labels.hint}</p>
       )}
     </div>
   );
+
+  // Дата пришла, а долистал меньше двоих — итоги считать не по кому (Y02).
+  if (isTimedOutWithoutResults(plan)) {
+    return <TimedOut view={view} meId={meId} />;
+  }
 
   if (candidates.source === "none" && !voting) {
     return (

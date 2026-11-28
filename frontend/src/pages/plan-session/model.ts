@@ -92,3 +92,44 @@ export const approveWarning = ({ waiting }: VoteProgress): null | string =>
   waiting.length === 0
     ? null
     : `Не все проголосовали (ждём: ${namesOf(waiting)}). Утвердить сейчас?`;
+
+// ── «Время вышло» (auto-tasks-ux-5 Y02) ─────────────────────────────
+
+// Итоги «До даты» открыла дата, а долистал меньше двоих: не «Совпадений
+// нет» (компании ничего не понравилось), а честно — не успели. Организатору
+// — кто долистал; остальным — что дальше решает организатор. Без форм
+// глагола по роду: «никто не долистал», «до конца — только Азамат».
+export const timedOutTitle = (
+  isOwner: boolean,
+  meId: string,
+  finished: ReadonlyArray<{ id: string; name: string }>,
+): string => {
+  if (!isOwner) return "Время вышло — организатор может продлить план";
+  const [only] = finished;
+  if (!only) return "Время вышло, а до конца колоды не дошёл никто";
+  return only.id === meId
+    ? "Время вышло: кроме тебя, никто не долистал"
+    : `Время вышло: до конца колоды — только ${only.name}`;
+};
+
+// Строка не долиставшему над итогами: почему его лайков нет (X06, Y02).
+export const withoutMeNote = (timedOut: boolean): string =>
+  timedOut
+    ? "Итоги показали без тебя: время вышло"
+    : "Итоги показали без тебя: организатор не стал ждать";
+
+// Кто не долистал и сколько осталось — для «Напомнить» на «Время вышло»,
+// как в колоде: started — открывал ли колоду вообще.
+export const laggingOf = (
+  participants: ReadonlyArray<{ id: string; name: string }>,
+  swipes: Readonly<Record<string, Readonly<Record<string, unknown>>>>,
+  deckIds: readonly string[],
+  meId: string,
+) =>
+  participants.flatMap((person) => {
+    if (person.id === meId) return [];
+    const mine = swipes[person.id] ?? {};
+    const done = deckIds.filter((id) => mine[id] !== undefined).length;
+    const left = deckIds.length - done;
+    return left > 0 ? [{ name: person.name, left, started: done > 0 }] : [];
+  });

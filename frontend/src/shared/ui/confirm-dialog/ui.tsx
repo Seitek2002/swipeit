@@ -16,6 +16,9 @@ type Props = {
   cancelLabel?: string;
   confirmLabel: string;
   description?: string;
+  // Третья, тихая кнопка под основными (Y04: «Добавить исключение» перед
+  // жеребьёвкой) — не закрывает диалог сама: onClick решает, что дальше.
+  extraAction?: { label: string; onClick: () => void };
   // Пока ждём ответ на onConfirm — вуаль со спиннером, закрыть нельзя
   // (как в imbir: не словить повторный сабмит или закрытие посреди запроса).
   isLoading?: boolean;
@@ -43,6 +46,7 @@ const DialogCard = ({
   cancelLabel = "Отмена",
   variant = "default",
   isLoading = false,
+  extraAction,
   onClose,
   onConfirm,
 }: Props) => {
@@ -114,6 +118,16 @@ const DialogCard = ({
             {confirmLabel}
           </Button>
         </div>
+        {extraAction && (
+          <Button
+            variant="ghost"
+            className="text-mandarin-ink mt-1 w-full"
+            onClick={extraAction.onClick}
+            disabled={isLoading}
+          >
+            {extraAction.label}
+          </Button>
+        )}
         {isLoading && (
           <div className="rounded-paper bg-paper/70 absolute inset-0 z-10 grid place-items-center">
             <Spinner className="text-ink size-8" />

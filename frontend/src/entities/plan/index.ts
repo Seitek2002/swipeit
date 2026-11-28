@@ -12,6 +12,7 @@ export {
   countedParticipants,
   decisionCandidates,
   formatDeadline,
+  isTimedOutWithoutResults,
   type PlanMatches,
   type PlanParticipant,
   type PlanSession,

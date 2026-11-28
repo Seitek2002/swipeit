@@ -121,6 +121,11 @@ export const addPlanActivities = (
     deadline,
   });
 
+// «Продлить на сутки»: план «До даты» закрыла дата, а долистал меньше
+// двоих — новая дата через сутки, план снова в колоде (Y02).
+export const extendPlan = (id: string): Promise<PlanView> =>
+  getTransport().request<PlanView>("POST", `${planPath(id)}/extend`);
+
 // Планировщик дедлайнов: закрыть планы «До даты», у которых наступила дата.
 export const expirePlans = (): Promise<{ expired: string[] }> =>
   getTransport().request<{ expired: string[] }>("POST", "/plans/expire");

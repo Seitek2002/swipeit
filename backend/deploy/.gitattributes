@@ -1,0 +1,6 @@
+# Скрипты и конфиги для Linux-сервера и контейнеров — всегда с LF, даже
+# если репозиторий открыли на Windows.
+*.sh text eol=lf
+Caddyfile text eol=lf
+.env.example text eol=lf
+*.yml text eol=lf

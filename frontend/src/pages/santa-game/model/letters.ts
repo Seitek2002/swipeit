@@ -8,7 +8,9 @@ export const namesLine = (names: readonly string[]): string => {
   return `${names.slice(0, MAX_NAMES - 1).join(", ")} и ещё ${names.length - (MAX_NAMES - 1)}`;
 };
 
-type LetterMember = { id: string; name: string; opened: boolean };
+// opened и hasWishlist не приходят только гостю (S05) — у него этого экрана
+// нет.
+type LetterMember = { id: string; name: string; opened?: boolean };
 
 export const lettersMessage = ({
   title,
@@ -39,3 +41,26 @@ export const lettersMessage = ({
   }
   return `Все открыли письма в «${title}». Обмен ${exchange} — не забудьте подарки!`;
 };
+
+// «Напомнить тем, кто без вишлиста» (P08, Y07): вступившие без вишлиста,
+// кроме того, кто нажимает, — себя в чат не зовут (как X08 в «Сообщить в
+// чат»): для себя есть «Собрать вишлист» в строке «Ты». Пусто — кнопки нет.
+export const remindWishlistNames = (
+  members: readonly {
+    hasWishlist?: boolean;
+    id: string;
+    joined: boolean;
+    name: string;
+  }[],
+  senderId: string,
+): string[] =>
+  members
+    .filter(
+      (member) =>
+        member.joined && !member.hasWishlist && member.id !== senderId,
+    )
+    .map((member) => member.name);
+
+// Текст в чат: ссылку на игру добавляет кнопка отправки.
+export const remindWishlistText = (names: readonly string[], title: string) =>
+  `${namesLine(names)} — соберите вишлист для Тайного Санты «${title}», так Санте будет проще выбрать подарок`;

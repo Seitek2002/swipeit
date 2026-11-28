@@ -1,0 +1,21 @@
+# Исключения для сборки образа web (backend/deploy/web/Dockerfile). Docker
+# берёт этот файл вместо .dockerignore в корне: тому фронт не нужен, а здесь
+# нужен именно фронт.
+.git
+.github
+.claude
+docs
+**/node_modules
+**/.next
+**/out
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+**/*.tsbuildinfo
+frontend/.lan-data
+frontend/public/catalog
+backend
+!backend/package.json
+!backend/deploy/web/Caddyfile
+*.png

@@ -20,13 +20,32 @@ import {
 } from "@swipeit/core/logic/feed";
 import { tasteOf } from "@swipeit/core/logic/taste";
 import { parseInput } from "@swipeit/core/parse-input";
+import { and, eq, isNull } from "drizzle-orm";
 
 import type { ServerContext, ServerHandler } from "../../context";
+import { reservations } from "../../db/schema";
 import { readMe, rowToUser } from "../users/queries";
 import { swipesOf } from "../swipes/queries";
 
 // Каталог и лента (BACKEND.md B06): каталог — в памяти (§8), лента — тот же
 // rankProducts из core, что у мока, с той же историей свайпов из базы.
+
+// Своя открытая бронь обучающего товара у друга: тогда он не первый в своей
+// ленте — свайп вправо добавил бы себе то, что покупаешь другому.
+const reservedGuide = async (ctx: ServerContext, userId: string) => {
+  const [row] = await ctx.tx
+    .select({ id: reservations.id })
+    .from(reservations)
+    .where(
+      and(
+        eq(reservations.reserverId, userId),
+        eq(reservations.itemKey, GUIDE_PRODUCT_ID),
+        isNull(reservations.closedAt),
+      ),
+    )
+    .limit(1);
+  return Boolean(row);
+};
 
 const rankForUser = async (ctx: ServerContext, query: FeedQuery) => {
   const user = rowToUser(await readMe(ctx));
@@ -51,9 +70,12 @@ const rankForUser = async (ctx: ServerContext, query: FeedQuery) => {
     explore:
       context.kind === "self" &&
       !own.some((swipe) => swipe.context.kind === "self"),
-    // Обучающая карточка — в своей ленте, пока подсказка не отмечена.
+    // Обучающая карточка — в своей ленте, пока подсказка не отмечена и пока
+    // человек сам не выбрал этот подарок другу (как в моке).
     guideId:
-      context.kind === "self" && !(user.seenHints ?? []).includes("deck_guide")
+      context.kind === "self" &&
+      !(user.seenHints ?? []).includes("deck_guide") &&
+      !(await reservedGuide(ctx, user.id))
         ? GUIDE_PRODUCT_ID
         : undefined,
     userId: user.id,

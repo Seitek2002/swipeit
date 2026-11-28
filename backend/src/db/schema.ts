@@ -391,6 +391,8 @@ export const plans = pgTable(
     decision: jsonb("decision"),
     // Организатор показал итоги, не дождавшись всех (auto-tasks P04).
     closedEarly: boolean("closed_early").notNull().default(false),
+    // Итоги открыла дата «До даты», а долистали не все (Y02).
+    timedOut: boolean("timed_out").notNull().default(false),
     // Шаги воронки, уже засчитанные этому плану (Q02): «Отменить решение»
     // и снова «Решено» — всё ещё одна компания.
     funnelSteps: text("funnel_steps")

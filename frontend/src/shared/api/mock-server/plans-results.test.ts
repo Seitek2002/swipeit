@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { RealtimeEvent } from "@/shared/lib/realtime/types";
 
 import type { Activity } from "../catalog/types";
+import { isTimedOutWithoutResults } from "../plans/close";
 import {
   computeMatches,
   decisionCandidates,
@@ -807,5 +808,99 @@ describe("«Показать итоги сейчас» (auto-tasks P04)", () => 
       "u_daniyar",
     );
     expect(forDaniyar.plan.status).toBe("results");
+  });
+});
+
+describe("дата «До даты» и отстающие (auto-tasks-ux-5 Y02)", () => {
+  const TRIO = ["u_azamat", "u_nurai"];
+  const extend = (id: string, userId: string) =>
+    call<PlanView>("POST", planPath(id, "/extend"), userId);
+  const codeOf = (promise: Promise<unknown>) =>
+    promise.then(
+      () => "ok",
+      (error: { code?: string }) => error.code,
+    );
+  // «До даты» на троих: finished долистали (лайк первой карточки), у
+  // остальных — пас первой.
+  const deadlinePlan = async (finished: string[]) => {
+    const view = await createDeadline(TRIO);
+    const id = view.plan.id;
+    const first = view.plan.deck[0] ?? "";
+    await playDeck(
+      view,
+      Object.fromEntries(finished.map((userId) => [userId, "L"])),
+      finished,
+    );
+    for (const userId of view.plan.participantIds) {
+      if (!finished.includes(userId)) await swipe(id, userId, first, "pass");
+    }
+    return { id, first, deck: view.plan.deck };
+  };
+  const pastDeadline = () => {
+    world.clock.advance(2 * DAY + 60_000);
+    return expire();
+  };
+  const read = (id: string, userId = DEMO_USER_ID) =>
+    call<PlanView>("GET", planPath(id), userId);
+
+  it("1 из 3: closedEarly и timedOut, итогов нет", async () => {
+    const { id } = await deadlinePlan([DEMO_USER_ID]);
+    expect(await pastDeadline()).toEqual({ expired: [id] });
+    const { plan } = await read(id);
+    expect(plan).toMatchObject({
+      status: "results",
+      closedEarly: true,
+      timedOut: true,
+    });
+    expect(isTimedOutWithoutResults(plan)).toBe(true);
+  });
+
+  it("2 из 3: итоги по долиставшим", async () => {
+    const { id, first } = await deadlinePlan([DEMO_USER_ID, "u_azamat"]);
+    expect(await pastDeadline()).toEqual({ expired: [id] });
+    const { plan } = await read(id, "u_nurai");
+    expect(plan).toMatchObject({ closedEarly: true, timedOut: true });
+    expect(isTimedOutWithoutResults(plan)).toBe(false);
+    expect(computeMatches(plan).matches.map((m) => m.activityId)).toEqual([
+      first,
+    ]);
+  });
+
+  it("3 из 3: итоги без отметок, дата их не трогает", async () => {
+    const { id } = await deadlinePlan([DEMO_USER_ID, ...TRIO]);
+    expect(await pastDeadline()).toEqual({ expired: [] });
+    const { plan } = await read(id);
+    expect(plan.status).toBe("results");
+    expect(plan.closedEarly).toBeUndefined();
+    expect(plan.timedOut).toBeUndefined();
+  });
+
+  it("«Продлить на сутки»: снова колода, боты зовутся, повтор ничего не меняет", async () => {
+    const { id } = await deadlinePlan([DEMO_USER_ID]);
+    await pastDeadline();
+    const now = NOW + 2 * DAY + 60_000;
+    expect(await codeOf(extend(id, "u_azamat"))).toBe("FORBIDDEN");
+    world.bus.events.length = 0;
+    const extended = await extend(id, DEMO_USER_ID);
+    expect(extended.plan).toMatchObject({
+      status: "swiping",
+      deadline: new Date(now + DAY).toISOString(),
+      finishedIds: [DEMO_USER_ID],
+    });
+    expect(extended.plan.closedEarly).toBeUndefined();
+    expect(extended.plan.timedOut).toBeUndefined();
+    expect(eventsOf("trigger")).toEqual([
+      expect.objectContaining({ name: "plan:started", id }),
+    ]);
+    const again = await extend(id, DEMO_USER_ID);
+    expect(again.plan).toEqual(extended.plan);
+    expect(await expire()).toEqual({ expired: [] });
+  });
+
+  it("«Продлить» нельзя, если итоги без отстающих или план «Прямо сейчас»", async () => {
+    const { id } = await deadlinePlan([DEMO_USER_ID, ...TRIO]);
+    expect(await codeOf(extend(id, DEMO_USER_ID))).toBe("CONFLICT");
+    const live = await startLive("all");
+    expect(await codeOf(extend(live.plan.id, DEMO_USER_ID))).toBe("CONFLICT");
   });
 });

@@ -1,11 +1,12 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ComponentProps, type ReactNode, useState } from "react";
 
-import { Check, Copy, ExternalLink, Gift } from "lucide-react";
+import { Check, ExternalLink, Gift, MessageCircle } from "lucide-react";
 
 import { useAppMode } from "@/shared/lib/app-status";
 import { copyText } from "@/shared/lib/dom";
+import { cn } from "@/shared/lib/utils";
 import { useGuestStore } from "@/shared/store";
 import {
   BottomSheet,
@@ -13,6 +14,7 @@ import {
   DemoLinkNote,
   TextField,
   toast,
+  useInAppBrowser,
 } from "@/shared/ui";
 
 import {
@@ -31,6 +33,25 @@ export type NameGuard = {
   run: (action: () => unknown) => void;
 };
 
+// Кнопка ряда после брони (UX-аудит Y10): иконка над подписью, три в ряд —
+// «Купить», «В календарь», «Сказать в чат». Раньше они шли столбиком, и
+// карточка с плашкой гостя выходила выше экрана. Виджет ставит сюда же своё
+// «В календарь» (afterBuy).
+const reserveActionClassName =
+  "rounded-field flex min-h-14 min-w-0 flex-1 basis-0 flex-col items-center justify-center gap-1 px-1 py-1.5 text-center text-[13px] leading-4 font-semibold transition-transform duration-[120ms] active:scale-[0.96]";
+
+export const ReserveActionButton = ({
+  className,
+  type = "button",
+  ...props
+}: ComponentProps<"button">) => (
+  <button
+    type={type}
+    className={cn(reserveActionClassName, className)}
+    {...props}
+  />
+);
+
 // Куда идти покупать: самый дешёвый оффер или ссылка своего желания. store —
 // для подписи «Купить на AliExpress»; без него — «Где купить».
 export type BuyLink = {
@@ -42,8 +63,8 @@ type Props = {
   // Как гость открыл вишлист: код короткой ссылки и перечитывание броней по
   // таймеру (remote, B15). У друга из списка не нужно.
   access?: ReserveAccess;
-  // Под «Купить на …» у своей брони — например, «Напомнить в календаре»
-  // (auto-tasks P07). Даёт виджет: фичи друг друга не импортируют.
+  // В ряду после «Купить» у своей брони — например, «В календарь» (auto-tasks
+  // P07, ReserveActionButton). Даёт виджет: фичи друг друга не импортируют.
   afterBuy?: ReactNode;
   // После брони следующий шаг гостя — купить: ссылка в магазин сразу под
   // «Этот подарок выбран тобой» (DESIGN.md §8.5, UX-аудит 27.11.2026, M3).
@@ -80,6 +101,9 @@ export const ReserveControl = ({
   const reserver = useReserver();
   // В «Локальной сети» брони общие — подпись и кнопка не нужны.
   const demoOnly = useAppMode() === "local";
+  // Во встроенном браузере рядом ещё «Скопировать ссылку для Chrome» —
+  // кнопка для чата называет, что именно она скопирует (Y10).
+  const inApp = useInAppBrowser() !== null;
   const reservations = useReservations(ownerId, access);
   const reserve = useReserve(ownerId, access);
   const cancel = useCancelReservation(ownerId);
@@ -153,33 +177,29 @@ export const ReserveControl = ({
             Отменить
           </Button>
         </div>
-        {buy && (
-          // «Мандарин-чернила», а не мандарин: на бумаге светлый мандарин
-          // нечитаем, а главная кнопка этой карточки уже не нужна.
-          <a
-            href={buy.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-mandarin-ink flex min-h-11 items-center gap-1.5 px-2 text-[15px] leading-5 font-semibold"
-          >
-            {buy.store ? `Купить на ${buy.store}` : "Где купить"}
-            <ExternalLink aria-hidden size={16} strokeWidth={2} />
-          </a>
-        )}
-        {afterBuy}
-        {chat && demoOnly && (
-          // Ниже «Купить на …»: следующий шаг после брони — всё ещё купить
-          // (M3), а сказать друзьям можно и потом.
-          <div className="flex flex-col items-center gap-0.5 text-center">
-            <DemoLinkNote className="text-ink-soft px-2">
-              В демо бронь видна только на этом телефоне — скажи остальным, что
-              берёшь это
-            </DemoLinkNote>
-            <Button
-              size="sm"
-              variant="ghost"
+        <div className="flex w-full gap-1">
+          {buy && (
+            // «Мандарин-чернила», а не мандарин: на бумаге светлый мандарин
+            // нечитаем, а главная кнопка этой карточки уже не нужна. Магазин —
+            // в имени ссылки: в ряду из трёх на 360 px «Купить на kivano.kg»
+            // не помещается.
+            <a
+              href={buy.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={buy.store ? `Купить на ${buy.store}` : "Где купить"}
+              className={cn(reserveActionClassName, "text-mandarin-ink")}
+            >
+              <ExternalLink aria-hidden size={20} strokeWidth={2} />
+              {buy.store ? "Купить" : "Где купить"}
+            </a>
+          )}
+          {afterBuy}
+          {chat && demoOnly && (
+            // Сказать друзьям — после «Купить» (M3): следующий шаг после
+            // брони всё ещё купить.
+            <ReserveActionButton
               className="text-ink"
-              icon={<Copy aria-hidden size={16} strokeWidth={2} />}
               onClick={() =>
                 void copyText(reservationChatText(chat)).then((ok) =>
                   toast(
@@ -191,9 +211,15 @@ export const ReserveControl = ({
                 )
               }
             >
-              Скопировать для чата
-            </Button>
-          </div>
+              <MessageCircle aria-hidden size={20} strokeWidth={2} />
+              {inApp ? "Написать в чат, что беру" : "Сказать в чат"}
+            </ReserveActionButton>
+          )}
+        </div>
+        {chat && demoOnly && (
+          <DemoLinkNote className="text-ink-soft px-2 text-center">
+            В демо бронь видна только здесь
+          </DemoLinkNote>
         )}
       </div>
     );

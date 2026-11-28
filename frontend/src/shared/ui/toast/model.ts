@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
 
+import { splitErrorCode } from "@/shared/api/error-code";
+
 export type ToastTone = "error" | "info" | "loading" | "success";
 
 export type ToastAction = { label: string; onClick: () => void };
@@ -26,6 +28,8 @@ type ToastOptions = {
 // успеть нажать.
 const DEFAULT_DURATION = 2500;
 const ACTION_DURATION = 5000;
+// Ошибка с кодом (S08) — чтобы успеть нажать на код и скопировать его.
+const ERROR_CODE_DURATION = 6000;
 
 // Один тост за раз: новый заменяет текущий (как в reference.html). Стор —
 // модульный, чтобы toast() звался откуда угодно, в том числе из колбэков
@@ -59,7 +63,9 @@ export const toast = Object.assign(
       options.duration === undefined
         ? options.action
           ? ACTION_DURATION
-          : DEFAULT_DURATION
+          : splitErrorCode(text).code
+            ? ERROR_CODE_DURATION
+            : DEFAULT_DURATION
         : options.duration;
     if (duration !== null) timer = setTimeout(() => dismiss(id), duration);
     emit();

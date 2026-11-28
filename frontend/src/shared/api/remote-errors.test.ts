@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { isApiError } from "./mock-server/errors";
-import { remoteErrorFromResponse } from "./remote-errors";
+import { errorCodeOf, remoteErrorFromResponse } from "./remote-errors";
 
 describe("remoteErrorFromResponse", () => {
   it("JSON сервера { code, message } — как есть", () => {
@@ -50,5 +50,42 @@ describe("remoteErrorFromResponse", () => {
     });
     expect(error.code).toBe("FORBIDDEN");
     expect(error.message).toBe("Нельзя");
+  });
+});
+
+describe("код ошибки для человека (S08)", () => {
+  const REQUEST_ID = "A1B2C3D4-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
+
+  it("INTERNAL с requestId — код из 8 символов в тексте и requestId в ошибке", () => {
+    const error = remoteErrorFromResponse(500, {
+      code: "INTERNAL",
+      message: "Что-то пошло не так. Попробуй ещё раз",
+      requestId: REQUEST_ID,
+    });
+    expect(error.code).toBe("INTERNAL");
+    expect(error.requestId).toBe(REQUEST_ID);
+    expect(error.message).toBe(
+      "Что-то пошло не так. Попробуй ещё раз · код a1b2c3d4",
+    );
+    expect(errorCodeOf(error)).toBe("a1b2c3d4");
+  });
+
+  it("остальные коды — текст как есть, но requestId сохранён", () => {
+    const error = remoteErrorFromResponse(409, {
+      code: "CONFLICT",
+      message: "Жеребьёвка уже прошла",
+      requestId: REQUEST_ID,
+    });
+    expect(error.message).toBe("Жеребьёвка уже прошла");
+    expect(errorCodeOf(error)).toBe("a1b2c3d4");
+  });
+
+  it("тело не наше — requestId из заголовка; нет нигде — без кода", () => {
+    const fromHeader = remoteErrorFromResponse(500, null, REQUEST_ID);
+    expect(fromHeader.message).toMatch(/ · код a1b2c3d4$/);
+    const bare = remoteErrorFromResponse(500, null);
+    expect(bare.message).not.toContain("код");
+    expect(errorCodeOf(bare)).toBeNull();
+    expect(errorCodeOf(new Error("x"))).toBeNull();
   });
 });

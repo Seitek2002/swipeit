@@ -341,7 +341,10 @@ export const SwipeDeck = <T,>({
         )}
       </div>
 
-      {!isPhoto && (
+      {/* Колода кончилась — бледные выключенные «Мимо / Хочу» не нужны
+          (auto-tasks-ux-5, «на заметку»): остаётся только «Вернуть», если
+          есть что вернуть, а нечего — ряда нет совсем. */}
+      {!isPhoto && (top || (onUndo && canUndo)) && (
         <div
           className={cn(
             "flex h-[84px] flex-none items-center justify-center gap-[18px] pb-1",
@@ -355,7 +358,7 @@ export const SwipeDeck = <T,>({
               onClick={undo}
             />
           )}
-          {buttonOrder.map((direction) => (
+          {(top ? buttonOrder : []).map((direction) => (
             <SwipeActionButton
               key={direction}
               ref={(element) => {

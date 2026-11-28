@@ -167,3 +167,61 @@ describe("отчёт владельцу (R02)", () => {
     expect(text).toMatch(/profile_created\s+0/);
   });
 });
+
+describe("последние сбои в отчёте (S08)", () => {
+  it("маршрут бросил исключение → строка с шаблоном маршрута и кодом; без id из пути и текста ошибки", async () => {
+    const SECRET_ID = "u_SecretPathId42";
+    const SECRET_TEXT = "Айгерим потеряла ключ 0555123456";
+    app.get("/v1/test-boom/:id", async () => {
+      throw new TypeError(SECRET_TEXT);
+    });
+    // Ошибка базы: код Postgres — в строке, текст с значениями — нет.
+    app.post("/v1/test-db/:id", async () => {
+      throw Object.assign(new Error(`duplicate key (name)=(${SECRET_TEXT})`), {
+        name: "DrizzleQueryError",
+        cause: Object.assign(new Error(SECRET_TEXT), { code: "23505" }),
+      });
+    });
+
+    const boom = await app.inject({
+      method: "GET",
+      url: `/v1/test-boom/${SECRET_ID}`,
+    });
+    expect(boom.statusCode).toBe(500);
+    const body = boom.json() as { code: string; requestId: string };
+    expect(body.code).toBe("INTERNAL");
+    expect(boom.body).not.toContain(SECRET_TEXT);
+    const code = body.requestId.slice(0, 8);
+
+    const db = await app.inject({
+      method: "POST",
+      url: `/v1/test-db/${SECRET_ID}`,
+    });
+    expect(db.statusCode).toBe(500);
+    const dbCode = (db.json() as { requestId: string }).requestId.slice(0, 8);
+
+    const text = (await report(TOKEN)).body;
+    const section = text.slice(text.indexOf("Последние сбои"));
+    expect(section).toContain("Последние сбои");
+    const lines = section.split("\n");
+    const boomLine = lines.find((line) => line.includes(`код ${code}`));
+    expect(boomLine).toContain("GET /v1/test-boom/:id");
+    expect(boomLine).toContain("TypeError");
+    const dbLine = lines.find((line) => line.includes(`код ${dbCode}`));
+    expect(dbLine).toContain("POST /v1/test-db/:id");
+    expect(dbLine).toContain("DrizzleQueryError pg 23505");
+    // Свежие сверху: сбой базы был позже.
+    expect(lines.indexOf(dbLine ?? "")).toBeLessThan(
+      lines.indexOf(boomLine ?? ""),
+    );
+    expect(text).not.toContain(SECRET_ID);
+    expect(text).not.toContain(SECRET_TEXT);
+    expect(text).not.toContain(body.requestId);
+  });
+
+  it("/v1/health — время запуска процесса", async () => {
+    const health = await app.inject({ method: "GET", url: "/v1/health" });
+    const { startedAt } = health.json() as { startedAt: string };
+    expect(Number.isNaN(Date.parse(startedAt))).toBe(false);
+  });
+});

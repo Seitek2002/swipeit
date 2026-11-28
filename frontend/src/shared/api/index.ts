@@ -53,6 +53,8 @@ export {
   isApiError,
   isNameRequired,
 } from "./mock-server/errors";
+// Код ошибки для экрана (S08): первые 8 символов requestId сервера.
+export { errorCodeOf } from "./remote-errors";
 export { httpTransport } from "./http-transport";
 // Клиентские шаги воронки (remote, auto-tasks-pm-3 R09).
 export { type ClientFunnelStep, flushFunnelSteps, trackStep } from "./funnel";
@@ -106,6 +108,7 @@ export {
   type VoteTally,
 } from "./plans/matches";
 export { plannedDeckSize, QUICK_DECK_SIZE } from "./plans/deck";
+export { isTimedOutWithoutResults, MIN_FINISHED_TO_CLOSE } from "./plans/close";
 export {
   closePlan,
   leavePlan,
@@ -115,6 +118,7 @@ export {
   createPlan,
   decidePlan,
   expirePlans,
+  extendPlan,
   finishPlan,
   getActivities,
   getPlan,
@@ -157,6 +161,7 @@ export {
 export {
   drawAssignments,
   drawIssueOf,
+  drawIssueWithInvites,
   MIN_SANTA_PARTICIPANTS,
 } from "./santa/draw";
 export {

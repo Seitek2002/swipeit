@@ -18,13 +18,22 @@ export type ApiErrorCode =
 
 export class ApiError extends Error {
   readonly code: ApiErrorCode;
+  // requestId из ответа сервера (remote, auto-tasks-pm-4 S08): по нему
+  // владелец находит сбой в логах. У мока и LAN его нет.
+  readonly requestId?: string;
   readonly status: number;
 
-  constructor(status: number, code: ApiErrorCode, message: string) {
+  constructor(
+    status: number,
+    code: ApiErrorCode,
+    message: string,
+    requestId?: string,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
+    if (requestId) this.requestId = requestId;
   }
 }
 

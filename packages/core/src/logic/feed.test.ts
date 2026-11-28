@@ -488,7 +488,7 @@ describe("обучающая карточка (п. 2)", () => {
     expect(withGuide.map((p) => p.id)).toEqual(without.map((p) => p.id));
   });
 
-  it("не проходит фильтры (аудитория, бюджет) — первой идёт обычная карточка", () => {
+  it("фильтры (аудитория, бюджет, категории) её не убирают — первой всё равно она (Y03)", () => {
     const female = products.find(
       (p) => p.category === "home" && p.audience === "female",
     )!;
@@ -498,23 +498,47 @@ describe("обучающая карточка (п. 2)", () => {
       filters: { ...EMPTY_FILTERS, audience: "male" },
       guideId: female.id,
     });
-    expect(male.some((p) => p.id === female.id)).toBe(false);
+    expect(male[0]?.id).toBe(female.id);
+    expect(male.filter((p) => p.id === female.id)).toHaveLength(1);
 
+    const withGuide = [
+      ...products,
+      product({
+        id: "guide",
+        category: "home",
+        priceMin: 2950,
+        priceMax: 2950,
+      }),
+    ];
+    const budget = { ...EMPTY_FILTERS, budget: { min: 0, max: 2000 } };
     const cheap = rankProducts({
       ...base,
-      products: [
-        ...products,
-        product({
-          id: "guide",
-          category: "home",
-          priceMin: 2950,
-          priceMax: 2950,
-        }),
-      ],
-      filters: { ...EMPTY_FILTERS, budget: { min: 0, max: 2000 } },
+      products: withGuide,
+      filters: budget,
       guideId: "guide",
     });
-    expect(cheap[0]?.id).not.toBe("guide");
+    expect(cheap[0]?.id).toBe("guide");
+    // Остальная лента — те же товары, что без неё: только в бюджете.
+    expect(
+      cheap
+        .slice(1)
+        .map((p) => p.id)
+        .sort(),
+    ).toEqual(
+      rankProducts({ ...base, products: withGuide, filters: budget })
+        .map((p) => p.id)
+        .sort(),
+    );
+
+    const explore = rankProducts({
+      ...base,
+      products: withGuide,
+      explore: true,
+      filters: { ...EMPTY_FILTERS, categories: ["tech"] },
+      guideId: "guide",
+    });
+    expect(explore[0]?.id).toBe("guide");
+    expect(explore.slice(1).every((p) => p.category === "tech")).toBe(true);
   });
 
   it("нет в каталоге — лента как без него", () => {

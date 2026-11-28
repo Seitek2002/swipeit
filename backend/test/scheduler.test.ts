@@ -131,13 +131,19 @@ describe("планировщик (B13)", () => {
       .from(funnelDaily)
       .where(eq(funnelDaily.step, "santa_draw_failed"));
     expect(failedRow?.count).toBe(1);
-    const view = (
-      await server.request(azamat as TestUser, "GET", `/santa/${id}`)
-    ).json() as {
-      drawFailed: null | { reason: string };
+    type FailedView = {
+      drawFailed: null | { at: string; reason?: string };
       game: { status: string };
     };
-    expect(view.drawFailed?.reason).toBeTruthy();
+    // Причину видит организатор, участник — только отметку (S05).
+    const forOwner = (
+      await server.request(owner, "GET", `/santa/${id}`)
+    ).json() as FailedView;
+    expect(forOwner.drawFailed?.reason).toBeTruthy();
+    const view = (
+      await server.request(azamat as TestUser, "GET", `/santa/${id}`)
+    ).json() as FailedView;
+    expect(view.drawFailed).toEqual({ at: forOwner.drawFailed?.at });
     expect(JSON.stringify(view)).not.toMatch(/assignments|wardId/);
 
     // Вступил третий — отметка снята, следующий проход провёл жеребьёвку.

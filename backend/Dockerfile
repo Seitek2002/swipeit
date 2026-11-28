@@ -1,6 +1,8 @@
 # Образ сервера (BACKEND.md §11.3). Собирается из корня репозитория:
 #   docker build -f backend/Dockerfile -t swipeit-api .
-# Пакет для администратора (compose, бэкапы, ADMIN.md) — задача B18.
+# Пакет для администратора (compose, бэкапы, ADMIN.md) — backend/deploy/ (B18).
+# Коммит сборки виден в /v1/health:
+#   docker build -f backend/Dockerfile --build-arg COMMIT=$(git rev-parse --short HEAD) .
 
 FROM node:24-alpine AS build
 WORKDIR /app
@@ -23,11 +25,17 @@ ENV NODE_ENV=production \
 WORKDIR /app
 COPY --from=build /app/node_modules node_modules
 COPY --from=build /app/backend/package.json backend/package.json
+# В dist — сервер, миграции (dist/migrate.js и dist/migrations) и отчёты.
 COPY --from=build /app/backend/dist backend/dist
-COPY --from=build /app/backend/src/db/migrations backend/src/db/migrations
 # Каталог того же коммита, что и фронт (§8).
 COPY catalog/products.json catalog/activities.json catalog/meta.json catalog/
+# Папка фото (B13) — том Docker; создаём заранее, чтобы новый том получил
+# владельца node, а не root.
+RUN mkdir -p /data/uploads && chown node:node /data/uploads
 WORKDIR /app/backend
+# Коммит — в самом конце: смена коммита не пересобирает слои выше.
+ARG COMMIT=dev
+ENV COMMIT=$COMMIT
 USER node
 EXPOSE 4100
 CMD ["node", "--enable-source-maps", "dist/server.js"]

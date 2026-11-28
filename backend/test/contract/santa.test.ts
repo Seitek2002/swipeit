@@ -723,8 +723,10 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
       });
       const id = created.game.id;
       const joined = await act(azamat, id, "/join");
-      // Нурай позвана, но не вступила — ждём её.
-      expect(joined.drawIssue).toEqual(expect.any(String));
+      // Нурай позвана, но не вступила — ждём её. Причину видит только
+      // организатор (S05).
+      expect(joined.drawIssue).toBeNull();
+      expect((await getGame(owner, id)).drawIssue).toEqual(expect.any(String));
       await fails(act(azamat, id, "/draw"), "FORBIDDEN");
       await fails(act(nurai, id, "/draw"), "FORBIDDEN");
       await fails(act(owner, id, "/draw"), "CONFLICT");
@@ -747,7 +749,8 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
       });
       const id = created.game.id;
       await act(azamat, id, "/join");
-      const view = await act(nurai, id, "/join");
+      expect((await act(nurai, id, "/join")).drawIssue).toBeNull();
+      const view = await getGame(owner, id);
       expect(view.drawIssue).toEqual(expect.any(String));
       expect(view.drawIssue).not.toBe("");
       await expect(act(owner, id, "/draw")).rejects.toMatchObject({
@@ -757,7 +760,8 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
       });
       expect((await getGame(owner, id)).game.status).toBe("gathering");
       // Бекзат вступил — пары сходятся, исключение соблюдено.
-      expect((await act(bekzat, id, "/join")).drawIssue).toBeNull();
+      await act(bekzat, id, "/join");
+      expect((await getGame(owner, id)).drawIssue).toBeNull();
       const drawn = await act(owner, id, "/draw");
       expect(drawn.game.status).toBe("drawn");
       const wards = await wardsOf(id, [owner, azamat, nurai, bekzat]);
@@ -1095,6 +1099,74 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
         "CONFLICT",
       );
     });
+
+    it("Y05: сменил покупку — бронь переехала; снял отметку — брони нет", async () => {
+      const { owner, azamat, nurai, id } = await drawnGame();
+      const everyone = [owner, azamat, nurai];
+      for (const person of everyone) {
+        for (const productId of ["p_0010", "p_0001", "p_0002"]) {
+          await swipe(person, productId);
+        }
+      }
+      const opened = await act(owner, id, "/open");
+      const wardId = opened.me?.ward?.id ?? "";
+      const ward = everyone.find((p) => p.id === wardId) as Caller;
+      const friend = await person("Друг");
+      await api.befriend(friend, ward);
+      const taken = async () =>
+        (
+          await api.call<{ items: Array<{ itemKey: string }> }>(
+            friend,
+            "GET",
+            "/reservations",
+            undefined,
+            { ownerId: wardId },
+          )
+        ).items
+          .map((item) => item.itemKey)
+          .sort();
+      const mine = (view: SantaView) =>
+        (view.me?.ward?.wishlist ?? [])
+          .filter((item) => item.reservedByMe)
+          .map((item) => item.key);
+
+      // Купил A → сменил на B: бронь на B, A свободно.
+      await act(owner, id, "/bought", { bought: true, itemKey: "p_0001" });
+      expect(await taken()).toEqual(["p_0001"]);
+      const switched = await act(owner, id, "/bought", {
+        bought: true,
+        itemKey: "p_0010",
+      });
+      expect(switched.me?.bought).toBe(true);
+      expect(switched.boughtCount).toBe(1);
+      expect(mine(switched)).toEqual(["p_0010"]);
+      expect(await taken()).toEqual(["p_0010"]);
+
+      // Занятое другом не взять — и прежняя бронь Санты остаётся.
+      await api.call(friend, "POST", "/reservations", {
+        ownerId: wardId,
+        itemKey: "p_0001",
+      });
+      await fails(
+        act(owner, id, "/bought", { bought: true, itemKey: "p_0001" }),
+        "CONFLICT",
+      );
+      expect(await taken()).toEqual(["p_0001", "p_0010"]);
+
+      // «Другое» — бронь Санты снята, отметка осталась.
+      const other = await act(owner, id, "/bought", { bought: true });
+      expect(other.me?.bought).toBe(true);
+      expect(mine(other)).toEqual([]);
+      expect(await taken()).toEqual(["p_0001"]);
+
+      // Снова B, потом «Ещё не купил» — ни отметки, ни брони.
+      await act(owner, id, "/bought", { bought: true, itemKey: "p_0010" });
+      const undone = await act(owner, id, "/bought", { bought: false });
+      expect(undone.me?.bought).toBe(false);
+      expect(undone.boughtCount).toBe(0);
+      expect(mine(undone)).toEqual([]);
+      expect(await taken()).toEqual(["p_0001"]);
+    });
     const wish = (caller: Caller, body: Record<string, unknown>) =>
       api.call(caller, "POST", "/wishlist/items", body);
     const priceOf = (productId: string) => {
@@ -1290,5 +1362,117 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
       expect(events).not.toContain("assignments");
       expect(events).not.toContain("ward");
     }, 120_000);
+  });
+
+  // S05: исключения и причины с именами — только организатору. Игра на 6
+  // с двумя исключениями: Азамат не дарит организатору и Нурай. Пока в
+  // игре все шестеро, пары сходятся; Данияр и Тимур вышли — Азамату некому
+  // дарить, и жеребьёвка по дате не прошла.
+  describe("исключения и причины — только организатору (S05)", () => {
+    // Проход планировщика: у мока — POST /santa/tick (его зовёт вкладка), у
+    // сервера — планировщик (B13).
+    const runTick = async () => {
+      if (api.kind === "mock") {
+        await api.call(null, "POST", "/santa/tick");
+      } else {
+        await api.expire();
+      }
+    };
+
+    it("участник, позванный, чужой и гость без профиля — без исключений, drawIssue и причины", async () => {
+      const { owner, azamat, nurai } = await trio();
+      const daniyar = await friendOf(owner, "Данияр");
+      const timur = await friendOf(owner, "Тимур");
+      const bekzat = await friendOf(owner, "Бекзат");
+      const pairs: Array<[string, string]> = [
+        [azamat.id, owner.id],
+        [azamat.id, nurai.id],
+      ];
+      const created = await createGame(owner, {
+        participantIds: [azamat.id, nurai.id, daniyar.id, timur.id, bekzat.id],
+        exclusions: pairs,
+        drawMode: "date",
+        drawAt: new Date(NOW + HOUR).toISOString(),
+      });
+      const id = created.game.id;
+      expect(created.game.exclusions).toHaveLength(2);
+      for (const caller of [azamat, nurai, daniyar, timur]) {
+        await act(caller, id, "/join");
+      }
+      expect((await getGame(owner, id)).drawIssue).toBeNull();
+      await act(daniyar, id, "/leave");
+      await act(timur, id, "/leave");
+      api.advance(2 * HOUR);
+      await runTick();
+
+      // Организатору — всё на месте.
+      const forOwner = await getGame(owner, id);
+      expect(
+        sorted(forOwner.game.exclusions.map((pair) => pair.join("+"))),
+      ).toEqual(sorted(pairs.map((pair) => pair.join("+"))));
+      const reason = forOwner.drawIssue ?? "";
+      expect(reason).toMatch(/^Слишком много исключений: .+ некому дарить$/);
+      expect(forOwner.drawFailed).toEqual({
+        at: new Date(NOW + 2 * HOUR).toISOString(),
+        reason,
+      });
+      const [ownerSummary] = await listGames(owner);
+      expect(ownerSummary?.drawFailed?.reason).toBe(reason);
+      expect(ownerSummary?.game.exclusions).toHaveLength(2);
+      expect(
+        forOwner.members.every((m) => "hasWishlist" in m && "opened" in m),
+      ).toBe(true);
+
+      // Кому некому дарить — в дательном («Азамату»): в чужих ответах этого
+      // слова быть не должно, а id обеих сторон рядом — признак пары.
+      const stuck = /: (.+) некому дарить$/.exec(reason)?.[1] ?? "";
+      expect(stuck).not.toBe("");
+      const pairTexts = pairs.flatMap(([a, b]) => [
+        JSON.stringify([a, b]),
+        JSON.stringify([b, a]),
+      ]);
+      const expectHidden = (view: AnyView) => {
+        expect(view.role).not.toBe("owner");
+        expect(view.game.exclusions).toEqual([]);
+        expect(view.drawIssue).toBeNull();
+        if (view.drawFailed) {
+          expect(view.drawFailed).toEqual({ at: forOwner.drawFailed?.at });
+        }
+        const json = JSON.stringify(view);
+        for (const text of pairTexts) expect(json).not.toContain(text);
+        expect(json).not.toContain(reason);
+        expect(json).not.toContain("некому дарить");
+        // Имя застрявшего само по себе есть в участниках — ищем фразу причины.
+        expect(json).not.toContain(`${stuck} некому`);
+      };
+
+      // Участники (и сам Азамат) и позванный — во всех ответах.
+      for (const caller of [nurai, azamat, bekzat]) {
+        const views: AnyView[] = [
+          await getGame(caller, id),
+          ...(await listGames(caller)),
+        ];
+        expect(views).toHaveLength(2);
+        for (const view of views) {
+          expectHidden(view);
+          expect(view.drawFailed).toEqual({ at: forOwner.drawFailed?.at });
+        }
+      }
+      expectHidden(await act(nurai, id, "/join"));
+
+      // Чужой с профилем и гость по ссылке без профиля (X07): у людей —
+      // только профиль и joined.
+      const stranger = await person("Бермет");
+      for (const caller of [stranger, null]) {
+        const view = await api.call<SantaView>(caller, "GET", gamePath(id));
+        expect(view.role).toBe("guest");
+        expectHidden(view);
+        for (const member of view.members) {
+          expect(member).not.toHaveProperty("hasWishlist");
+          expect(member).not.toHaveProperty("opened");
+          expect(member).toHaveProperty("joined");
+        }
+      }
+    });
   });
 });

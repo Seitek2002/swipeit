@@ -56,3 +56,14 @@ export const canAddPair = (
   const all = (people.length * (people.length - 1)) / 2;
   return people.length >= 2 && pairsAmong(list, people).length < all;
 };
+
+// Люди игры для исключений (R03): себя — «Ты», как в списке участников.
+export const santaPeople = (
+  members: readonly SantaPerson[],
+  meId: null | string | undefined,
+): SantaPerson[] =>
+  members.map((member) => ({
+    id: member.id,
+    name: member.id === meId ? "Ты" : member.name,
+    avatarColor: member.avatarColor,
+  }));

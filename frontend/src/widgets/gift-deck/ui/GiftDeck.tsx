@@ -59,6 +59,8 @@ type Props = {
   onEditFilters?: () => void;
   // Свайп засчитан — например, для счётчика «Хочу» в ссылке-фильтре.
   onLike?: (product: Product, direction: SwipeDirection) => void;
+  // Любой свайп: например, свернуть плашку Санты над колодой (Y03).
+  onSwipe?: () => void;
 };
 
 const DECISIONS: Record<SwipeDirection, SwipeDecision> = {
@@ -97,6 +99,7 @@ export const GiftDeck = ({
   hideRibbon = false,
   onEditFilters,
   onLike,
+  onSwipe,
 }: Props) => {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -302,6 +305,7 @@ export const GiftDeck = ({
   const handleDecision = (product: Product, direction: SwipeDirection) => {
     // Обучающая карточка улетела в любую сторону — слоя больше нет нигде.
     if (product.id === guideId) guide.done();
+    onSwipe?.();
     setQueue((current) => current.filter((item) => item.id !== product.id));
     setHistory((current) => [...current, { product, direction }]);
     swipedRef.current = [...swipedRef.current, product];

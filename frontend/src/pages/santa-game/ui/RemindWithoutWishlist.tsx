@@ -8,7 +8,7 @@ import { ROUTES } from "@/shared/config";
 import { inviteUrl, usePrefetchInvite } from "@/shared/lib/dom";
 import { BottomSheet, Button, ShareActions } from "@/shared/ui";
 
-import { namesLine } from "../model/letters";
+import { namesLine, remindWishlistText } from "../model/letters";
 
 type Props = {
   names: readonly string[];
@@ -41,7 +41,7 @@ export const RemindWithoutWishlist = ({ view, names }: Props) => {
         <ShareActions
           getPayload={async () => ({
             title: view.game.title,
-            text: `${who} — соберите вишлист для Тайного Санты «${view.game.title}», так Санте будет проще выбрать подарок`,
+            text: remindWishlistText(names, view.game.title),
             url: await inviteUrl(
               "santa",
               view.game.id,

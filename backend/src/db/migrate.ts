@@ -4,9 +4,10 @@ import { fileURLToPath } from "node:url";
 
 import type { Database } from "./client";
 
-// Папка с SQL-миграциями рядом с исходниками; в образе — копируется туда же
-// (B18). drizzle сам ведёт таблицу применённых миграций: повторный запуск
-// ничего не меняет.
+// Папка с SQL-миграциями рядом с этим файлом: в исходниках — src/db/migrations,
+// в сборке (dist/migrate.js, B18) — dist/migrations, её кладёт туда build.mjs.
+// drizzle сам ведёт таблицу применённых миграций: повторный запуск ничего не
+// меняет.
 export const MIGRATIONS_DIR = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
   "migrations",

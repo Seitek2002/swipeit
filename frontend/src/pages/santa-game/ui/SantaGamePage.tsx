@@ -16,9 +16,13 @@ import { buildIcs, dayOf, downloadIcs } from "@/features/calendar-export";
 import { SantaDrawButton } from "@/features/santa-draw";
 
 import {
+  InviteFriendsButton,
   type SantaView,
   drawFailedNote,
   drawLabel,
+  gatheringIssue,
+  needsMoreMembers,
+  santaInviteText,
   santaTerms,
   useSantaGame,
 } from "@/entities/santa-game";
@@ -28,7 +32,6 @@ import {
   joinSantaGame,
   openSantaEnvelope,
   santaKeys,
-  setSantaBought,
 } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
 import { clock } from "@/shared/lib/clock";
@@ -50,14 +53,15 @@ import {
   toast,
 } from "@/shared/ui";
 
+import { remindWishlistNames } from "../model/letters";
 import {
   ASK_OWNER_TO_REMOVE,
   canRemoveMember,
   leaveAction,
 } from "../model/member-actions";
 import { type MemberStatus, memberStatus } from "../model/member-status";
-import { BoughtSheet } from "./BoughtSheet";
-import { EditGameAction } from "./EditGame";
+import { BoughtSection } from "./BoughtSheet";
+import { EditGameAction, EditGameLink } from "./EditGame";
 import { Exclusions } from "./Exclusions";
 import { LettersReady } from "./LettersReady";
 import { LeaveGameButton, RemoveMemberButton } from "./MemberActions";
@@ -184,22 +188,9 @@ const GameContent = () => {
     onSuccess: save,
     onError: () => toast("Не получилось открыть письмо", { tone: "error" }),
   });
-  // «Что купил?» (X02): выбранное желание бронируется — друзья подопечного
-  // не купят второе такое же.
-  const [boughtOpen, setBoughtOpen] = useState(false);
-  const bought = useMutation({
-    mutationFn: (itemKey: null | string) =>
-      setSantaBought(id ?? "", true, itemKey ?? undefined),
-    onSuccess: (next) => {
-      setBoughtOpen(false);
-      save(next);
-      toast("Отмечено: подарок куплен");
-    },
-    onError: (error: Error) =>
-      toast(isApiError(error) ? error.message : "Не получилось сохранить", {
-        tone: "error",
-      }),
-  });
+  // Шторка «Эти двое не дарят друг другу»: её открывает и секция
+  // «Исключения», и подтверждение жеребьёвки (Y04).
+  const [pairOpen, setPairOpen] = useState(false);
   const join = useMutation({
     mutationFn: () => joinSantaGame(id ?? ""),
     onSuccess: (next) =>
@@ -243,13 +234,17 @@ const GameContent = () => {
   }
 
   const isOwner = view.role === "owner";
-  const withoutWishlist = view.members.filter(
-    (member) => member.joined && !member.hasWishlist,
-  );
+  // Кому напомнить про вишлист — без того, кто нажимает (Y07).
+  const remindNames = remindWishlistNames(view.members, meId);
+  // Вступивших меньше трёх (Y06) — главное действие «Позвать друзей».
+  const moreMembers = needsMoreMembers(view);
   const envelope = view.me?.envelope ?? "sealed";
   // Жеребьёвка по дате не прошла (R08): организатору — почему и что
   // делать, остальным — что ждём его.
   const failedNote = drawFailedNote(view);
+  // Почему тянуть пары ещё нельзя: у организатора — с сервера, у остальных
+  // — по составу (S05: причины с исключениями видит только организатор).
+  const issue = gatheringIssue(view);
   // «Выйти из игры» до жеребьёвки или подпись «напиши организатору» после
   // (R05): выйти самому после неё нельзя — подопечный остался бы без подарка.
   const leave = leaveAction(view);
@@ -320,9 +315,29 @@ const GameContent = () => {
           <>
             <p className="text-title-3">{drawLabel(view)}</p>
             {failedNote && (
-              <p className="text-caption text-rose">{failedNote}</p>
+              // Две строки над таб-баром на 360×640 (Y09): почему и что
+              // делать, «Изменить игру» — та же шторка, что в шапке.
+              <p className="text-caption text-rose">
+                {failedNote}
+                {isOwner && (
+                  <>
+                    {" — "}
+                    <EditGameLink view={view} />
+                  </>
+                )}
+              </p>
             )}
-            {isOwner && <SantaDrawButton view={view} />}
+            {moreMembers ? (
+              <InviteFriendsButton game={view.game} />
+            ) : (
+              isOwner && (
+                <SantaDrawButton
+                  view={view}
+                  meId={meId}
+                  onAddExclusion={() => setPairOpen(true)}
+                />
+              )
+            )}
             {view.role === "invited" ? (
               <Button
                 size="lg"
@@ -334,11 +349,9 @@ const GameContent = () => {
             ) : (
               // Без даты причина уже в строке выше — не повторяем (W09).
               // Жеребьёвка по дате не прошла — причина уже в подписи R08.
-              view.drawIssue &&
+              issue &&
               view.game.drawAt &&
-              !failedNote && (
-                <p className="text-caption text-rose">{view.drawIssue}</p>
-              )
+              !failedNote && <p className="text-caption text-rose">{issue}</p>
             )}
           </>
         )}
@@ -377,34 +390,21 @@ const GameContent = () => {
             name={ward.name}
             budget={view.game.budget}
           />
-          {view.me?.bought ? (
-            <p className="text-caption text-mint inline-flex items-center justify-center gap-1.5">
-              <Check aria-hidden size={16} strokeWidth={2.25} />
-              Подарок куплен
-            </p>
-          ) : (
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={() => setBoughtOpen(true)}
-            >
-              Отметить покупку подарка
-            </Button>
-          )}
-          <BoughtSheet
-            open={boughtOpen}
-            items={ward.wishlist}
-            pending={bought.isPending}
-            onClose={() => setBoughtOpen(false)}
-            onPick={(itemKey) => bought.mutate(itemKey)}
-          />
+          {/* «Что купил?» (X02, Y05): выбранное желание бронируется —
+              друзья подопечного не купят второе такое же. */}
+          <BoughtSection view={view} items={ward.wishlist} />
         </>
       )}
 
       <Members view={view} meId={meId} />
 
       {isOwner && view.game.status === "gathering" && (
-        <Exclusions view={view} />
+        <Exclusions
+          view={view}
+          meId={meId}
+          pairOpen={pairOpen}
+          onPairOpenChange={setPairOpen}
+        />
       )}
 
       {view.game.status === "drawn" && view.me && (
@@ -413,23 +413,21 @@ const GameContent = () => {
 
       {view.game.status === "gathering" && (
         <section className="flex flex-col gap-3">
-          {isOwner && withoutWishlist.length > 0 && (
-            <RemindWithoutWishlist
-              view={view}
-              names={withoutWishlist.map((member) => member.name)}
-            />
+          {isOwner && remindNames.length > 0 && (
+            <RemindWithoutWishlist view={view} names={remindNames} />
           )}
           <p className="text-label">Позвать по ссылке</p>
           <ShareActions
             getPayload={async () => ({
               title: view.game.title,
-              text: `Тайный Санта «${view.game.title}»: ${santaTerms(view.game)} Вступай!`,
+              text: santaInviteText(view.game),
               url: await inviteUrl("santa", view.game.id),
             })}
             qrLabel="QR-код приглашения в игру"
-            // Выше уже главная кнопка — «Провести жеребьёвку» у организатора
-            // или «Вступить в игру» у приглашённого: мандарин один (DESIGN.md §1).
-            secondary={isOwner || view.role === "invited"}
+            // Выше уже главная кнопка — «Провести жеребьёвку» или «Позвать
+            // друзей» (Y06) у организатора, «Позвать друзей» у участника,
+            // «Вступить в игру» у приглашённого: мандарин один (DESIGN.md §1).
+            secondary={isOwner || moreMembers || view.role === "invited"}
           />
           <DemoLinkNote />
           {leave === "leave" && <LeaveGameButton view={view} />}

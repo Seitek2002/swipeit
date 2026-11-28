@@ -3,9 +3,10 @@
 import { useRef, useState } from "react";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { UserPlus, X } from "lucide-react";
 
 import { LeavePlanButton } from "@/features/leave-plan";
 import {
@@ -28,10 +29,17 @@ import { clock } from "@/shared/lib/clock";
 import { usePreloadImages } from "@/shared/lib/image-cache";
 import { useConnectionStatus } from "@/shared/lib/realtime";
 import { cn } from "@/shared/lib/utils";
-import { BottomSheet, Countdown, buttonClassName, toast } from "@/shared/ui";
+import {
+  BottomSheet,
+  Countdown,
+  IconButton,
+  buttonClassName,
+  toast,
+} from "@/shared/ui";
 
-import { joinNames } from "../model";
+import { type Lagging, PLAN_INVITE_PARAM, deckStatus } from "../model";
 import { DeckEnd } from "./DeckEnd";
+import { InviteSheet } from "./InviteSheet";
 import { ProgressRings } from "./ProgressRings";
 
 type Props = { meId: string; view: PlanView };
@@ -53,7 +61,19 @@ const ticketLabel = (activity: Activity) => {
 export const ActivityDeck = ({ view, meId }: Props) => {
   const queryClient = useQueryClient();
   const { plan, participants, activities } = view;
+  const router = useRouter();
   const [exitOpen, setExitOpen] = useState(false);
+  const isDeadline = plan.mode === "deadline";
+  const inviteOnOpen = useSearchParams()?.get(PLAN_INVITE_PARAM) === "1";
+  const [inviteOpen, setInviteOpen] = useState(
+    () => isDeadline && inviteOnOpen,
+  );
+  // Закрыл шторку — убираем ?invite=1, чтобы она не открылась снова после
+  // перезагрузки или «назад».
+  const closeInvite = () => {
+    setInviteOpen(false);
+    if (inviteOnOpen) router.replace(ROUTES.PLAN_SESSION(plan.id));
+  };
   const deckRef = useRef<SwipeDeckHandle>(null);
   const offline = useConnectionStatus() === "offline";
 
@@ -149,17 +169,16 @@ export const ActivityDeck = ({ view, meId }: Props) => {
   // колода кончилась — «20 из 20».
   const position = Math.min(total - queue.length + 1, total);
   const others = participants.filter((person) => person.id !== meId);
-  // Кто ещё листает и сколько ему осталось — для «Напомнить» (X06).
-  const swiping = others.flatMap((person) => {
-    const left = total - (done[person.id] ?? 0);
-    return left > 0 ? [{ id: person.id, name: person.name, left }] : [];
+  // Кто ещё листает и сколько ему осталось — для «Напомнить» (X06); у кого
+  // 0 карточек — план ещё не открывали (Y08).
+  const swiping = others.flatMap((person): Array<Lagging & { id: string }> => {
+    const count = done[person.id] ?? 0;
+    const left = total - count;
+    return left > 0
+      ? [{ id: person.id, name: person.name, left, started: count > 0 }]
+      : [];
   });
-  const status =
-    others.length === 0
-      ? "Ты листаешь один"
-      : swiping.length === 0
-        ? "Остальные уже всё пролистали"
-        : `${joinNames(swiping.map((person) => person.name))} ${swiping.length === 1 ? "листает" : "листают"} вместе с тобой`;
+  const status = deckStatus(others.length, swiping);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -187,28 +206,34 @@ export const ActivityDeck = ({ view, meId }: Props) => {
         )}
         <div className="min-w-0 flex-1">
           <p className="text-title-3 truncate">{plan.title}</p>
-          <p className="text-caption text-rose flex items-center gap-1.5 whitespace-nowrap">
-            {plan.mode === "deadline" && plan.deadline ? (
+          {/* Отсчёт и счётчик не обрезаются (Y08): в «До даты» — короткая
+              форма «2 дн 6 ч · 10 из 12», счётчик не сжимается. Если места
+              всё равно мало, сокращается подпись режима, а не числа. */}
+          <p className="text-caption text-rose flex items-center gap-1 overflow-hidden whitespace-nowrap">
+            {isDeadline && plan.deadline ? (
               // «До даты» (DESIGN.md §8.7): свайпают, когда удобно; итоги —
               // по дедлайну или когда закончат все.
               <Countdown
                 to={plan.deadline}
                 now={clock.now}
-                className="text-caption text-rose truncate"
+                short
+                className="text-caption text-rose flex-none"
               />
             ) : (
               <>
                 <i
                   aria-hidden
-                  className="bg-mint size-2 flex-none rounded-full shadow-[0_0_0_4px_rgb(143_227_198/0.18)]"
+                  className="bg-mint mr-0.5 size-2 flex-none rounded-full shadow-[0_0_0_4px_rgb(143_227_198/0.18)]"
                 />
-                Прямо сейчас
+                <span className="min-w-0 truncate">Прямо сейчас</span>
               </>
             )}
             {total > 0 && (
               <>
-                <span aria-hidden>·</span>
-                <span className="tabular-nums">
+                <span aria-hidden className="flex-none">
+                  ·
+                </span>
+                <span className="flex-none tabular-nums">
                   {position} из {total}
                 </span>
               </>
@@ -226,7 +251,19 @@ export const ActivityDeck = ({ view, meId }: Props) => {
       </header>
       <div className="flex flex-none items-center gap-3 px-5 pt-1 pb-2.5">
         <ProgressRings participants={participants} done={done} total={total} />
-        <p className="text-caption text-rose min-w-0">{status}</p>
+        <p className="text-caption text-rose min-w-0 flex-1">{status}</p>
+        {isDeadline && (
+          // «Позвать» (Y01): в «До даты» друзей больше негде позвать — ни
+          // лобби, ни уведомлений. Рядом с кольцами участников: в первой
+          // строке шапки на 360 px места нет.
+          <IconButton
+            label="Позвать друзей"
+            onClick={() => setInviteOpen(true)}
+            className="bg-velvet-2 border-line -mr-1 border"
+          >
+            <UserPlus aria-hidden size={20} strokeWidth={1.75} />
+          </IconButton>
+        )}
       </div>
       <SwipeDeck
         handleRef={deckRef}
@@ -266,6 +303,9 @@ export const ActivityDeck = ({ view, meId }: Props) => {
           <LeavePlanButton planId={plan.id} title={plan.title} size="md" />
         </div>
       </BottomSheet>
+      {isDeadline && (
+        <InviteSheet open={inviteOpen} onClose={closeInvite} view={view} />
+      )}
     </div>
   );
 };

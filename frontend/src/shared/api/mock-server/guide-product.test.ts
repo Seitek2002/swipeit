@@ -33,7 +33,7 @@ const NOW = new Date(2026, 10, 27, 12).getTime();
 let server: MockServer;
 
 const call = <T>(
-  method: "GET" | "POST",
+  method: "GET" | "PATCH" | "POST",
   path: string,
   userId: null | string,
   body?: unknown,
@@ -83,15 +83,41 @@ describe("обучающая карточка в каталоге", () => {
     expect((await feed(user.id)).items[0]?.id).toBe(GUIDE_PRODUCT_ID);
   });
 
-  it("с фильтром «до 2 000 сом» — обычная первая карточка", async () => {
+  it("с фильтром «до 2 000 сом» — всё равно первая (Y03), дальше — в бюджете", async () => {
     const user = await call<User>("POST", "/users", null, {});
     const page = await feed(user.id, {
       budget: { min: 0, max: 2000 },
       categories: [],
       marketplaces: [],
     });
-    expect(page.items[0]?.id).not.toBe(GUIDE_PRODUCT_ID);
-    expect(page.items.length).toBeGreaterThan(0);
+    expect(page.items[0]?.id).toBe(GUIDE_PRODUCT_ID);
+    expect(page.items.length).toBeGreaterThan(1);
+    expect(page.items.slice(1).every((p) => p.priceMin <= 2000)).toBe(true);
+  });
+
+  it("гость выбрал этот подарок другу — в своей ленте он не первый, бронь снял — снова первый", async () => {
+    const owner = await call<User>("POST", "/users", null, {});
+    await call("PATCH", "/me", owner.id, { name: "Бакыт" });
+    await call("POST", "/swipes", owner.id, {
+      productId: GUIDE_PRODUCT_ID,
+      decision: "like",
+      context: { kind: "self" },
+    });
+    const guest = await call<User>("POST", "/users", null, {});
+    await call("PATCH", "/me", guest.id, { name: "Асель" });
+    const reservation = await call<{ id: string }>(
+      "POST",
+      "/reservations",
+      guest.id,
+      { ownerId: owner.id, itemKey: GUIDE_PRODUCT_ID },
+    );
+    expect((await feed(guest.id)).items[0]?.id).not.toBe(GUIDE_PRODUCT_ID);
+    await server.handle({
+      method: "DELETE",
+      path: `/reservations/${reservation.id}`,
+      userId: guest.id,
+    });
+    expect((await feed(guest.id)).items[0]?.id).toBe(GUIDE_PRODUCT_ID);
   });
 });
 

@@ -26,6 +26,7 @@ import { testConfig } from "../config";
 import { users, wishlistMeta } from "../../src/db/schema";
 import { makeFriends } from "../../src/domains/friends/handlers";
 import { createRecordingHub } from "../../src/realtime/hub";
+import { runSchedulerOnce } from "../../src/scheduler";
 import { createTestDb, resetDb } from "../db";
 
 // 28 ноября 2026, полдень по Бишкеку.
@@ -49,6 +50,10 @@ export type ApiClient = {
   close: () => Promise<void>;
   // События, опубликованные с начала теста (на сервере — после commit).
   events: () => readonly RealtimeEvent[];
+  // Проход по дедлайнам «До даты»: у мока — POST /plans/expire (его зовёт
+  // планировщик вкладки), у сервера — проход планировщика (B13). Ответ —
+  // id закрытых планов.
+  expire: () => Promise<string[]>;
   kind: "mock" | "server";
   newUser: () => Promise<{ caller: Caller; me: MeResponse }>;
   // Профиль с заданным id: у мока и сервера тогда один сид ленты (разброс
@@ -95,6 +100,9 @@ export const createMockClient = async (now = NOW): Promise<ApiClient> => {
     advance: (ms) => clock.advance(ms),
     events: () => realtime.events,
     call,
+    expire: async () =>
+      (await call<{ expired: string[] }>(null, "POST", "/plans/expire"))
+        .expired,
     newUser: async () => {
       const me = await call<MeResponse>(null, "POST", "/users", {});
       return { me, caller: { id: me.id } };
@@ -171,6 +179,17 @@ export const createServerClient = async (now = NOW): Promise<ApiClient> => {
     },
     events: () => hub.delivered,
     call,
+    expire: async () => {
+      const result = await runSchedulerOnce({
+        db: database,
+        catalog: await testCatalog(),
+        clock: { now: () => current },
+        random: createSeededRandom("contract"),
+        hub,
+        log: app.log,
+      });
+      return result.expired;
+    },
     newUser: async () => {
       const { me, token } = await call<{ me: MeResponse; token: string }>(
         null,

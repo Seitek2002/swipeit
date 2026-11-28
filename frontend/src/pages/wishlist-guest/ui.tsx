@@ -27,7 +27,10 @@ import {
 } from "@/shared/api";
 import { GUEST_REFETCH_MS, ROUTES, shareScreenPath } from "@/shared/config";
 import { useAppMode } from "@/shared/lib/app-status";
-import { IN_APP_BROWSER_NAMES } from "@/shared/lib/in-app-browser";
+import {
+  IN_APP_BROWSER_NAMES,
+  type InAppBrowser,
+} from "@/shared/lib/in-app-browser";
 import { decodeWishlist } from "@/shared/lib/share-codec";
 import { rememberLinkVia, useGuestStore } from "@/shared/store";
 import {
@@ -69,6 +72,11 @@ const GuestSkeleton = () => (
 // ссылку» (открыть в Chrome или Safari), а свой вишлист здесь — вторичная, с
 // подписью «здесь, в Telegram». Иначе человек нажимал оранжевую кнопку, не
 // дочитав, и собирал вишлист там, где он потеряется.
+// Короче текста по умолчанию: что делать, говорит кнопка «Скопировать
+// ссылку для Chrome» под ним.
+const inAppPlaqueText = (browser: InAppBrowser) =>
+  `Ты в браузере ${IN_APP_BROWSER_NAMES[browser]} — бронь и вишлист останутся только здесь`;
+
 const NextStepPlaque = ({
   step,
   onDismiss,
@@ -103,18 +111,24 @@ const NextStepPlaque = ({
       <p className="text-body text-ink">
         {step === "send"
           ? "Подарок выбран. Ответь своим вишлистом — тебе тоже угадают с подарком."
-          : "Подарок выбран. А что хочешь ты? Собери свой вишлист за 2 минуты — друзья угадают с подарком."}
+          : browser
+            ? // Во встроенном браузере плашка и так длиннее: карточка с ней
+              // должна уместиться в экран 360×640 (Y10).
+              "Подарок выбран. А что хочешь ты?"
+            : "Подарок выбран. А что хочешь ты? Собери свой вишлист за 2 минуты — друзья угадают с подарком."}
       </p>
       {browser ? (
         <>
-          <InAppBrowserText browser={browser} />
+          <InAppBrowserText browser={browser} text={inAppPlaqueText} />
+          {/* «…для Chrome»: рядом «Написать в чат, что беру» — две кнопки
+              «Скопировать…» подряд гость путал (Y10). */}
           <Button
             size="sm"
             className="self-start"
             icon={<Copy aria-hidden size={16} strokeWidth={2} />}
             onClick={copyPageLink}
           >
-            Скопировать ссылку
+            Скопировать ссылку для Chrome
           </Button>
           <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
             <span className="flex flex-col items-start gap-1">

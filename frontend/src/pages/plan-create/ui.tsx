@@ -5,8 +5,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
-import { Check, Plus } from "lucide-react";
+import { Check, Link2, Plus } from "lucide-react";
 
+import { PLAN_INVITE_PARAM } from "@/widgets/activity-deck";
 import { AppHeader } from "@/widgets/app-header";
 
 import { NAME_CAPTIONS, useRequireName } from "@/features/ask-name";
@@ -130,14 +131,32 @@ const StepBasics = ({
   </div>
 );
 
+// «Позвать по ссылке» на шаге «Кто идёт?» (DESIGN.md §8.7, шаг 2;
+// auto-tasks-ux-5 Y01). Плана до «Начать» ещё нет, а поменять название,
+// дату и колоду после создания нечем — поэтому ссылка собирается сразу после
+// «Начать»: в «До даты» — шторка «Отправь план в чат», в «Прямо сейчас» —
+// лобби. Раньше здесь было «позовёшь из лобби» и для «До даты», где лобби нет.
+const inviteHint = (mode: Mode, noFriends: boolean) => {
+  if (mode === "deadline") {
+    return noFriends
+      ? "Друзей здесь пока нет — ссылку на план покажем сразу после «Начать», отправь её в общий чат."
+      : "Ссылку на план покажем сразу после «Начать» — отправь её в общий чат, чтобы позвать и тех, кого нет в списке.";
+  }
+  return noFriends
+    ? "Друзей здесь пока нет — ссылка будет в лобби, отправь её в чат, пока все собираются."
+    : "Ссылка будет в лобби — отправь её в чат, чтобы позвать и тех, кого нет в списке.";
+};
+
 // Шаг 2: кто идёт и правило совпадения.
 const StepPeople = ({
+  mode,
   selected,
   onToggle,
   matchRule,
   onMatchRule,
 }: {
   matchRule: MatchRule;
+  mode: Mode;
   onMatchRule: (value: MatchRule) => void;
   onToggle: (id: string) => void;
   selected: string[];
@@ -186,14 +205,14 @@ const StepPeople = ({
           );
         })}
       </ul>
-      <div className="-mt-3 flex flex-col gap-1">
-        <p className="text-caption text-rose">
-          {noFriends
-            ? "Друзей здесь пока нет — позовёшь их ссылкой-приглашением из лобби."
-            : "Остальных позовёшь ссылкой-приглашением из лобби."}
+      <section className="-mt-2 flex flex-col gap-1">
+        <p className="text-label text-paper flex items-center gap-2">
+          <Link2 aria-hidden size={18} strokeWidth={2} />
+          Позвать по ссылке
         </p>
+        <p className="text-caption text-rose">{inviteHint(mode, noFriends)}</p>
         <DemoLinkNote />
-      </div>
+      </section>
       <div className="flex flex-col gap-3">
         <p className="text-caption text-rose">Совпадение — это когда</p>
         <SegmentedControl
@@ -362,7 +381,14 @@ export const PlanCreatePage = () => {
   const requireName = useRequireName(NAME_CAPTIONS.plan);
   const create = useMutation({
     mutationFn: createPlan,
-    onSuccess: (view) => router.replace(ROUTES.PLAN_SESSION(view.plan.id)),
+    // «До даты» — сразу шторка «Отправь план в чат» (Y01): лобби нет, и
+    // друзья узнают о плане только из чата.
+    onSuccess: (view) =>
+      router.replace(
+        view.plan.mode === "deadline"
+          ? `${ROUTES.PLAN_SESSION(view.plan.id)}&${PLAN_INVITE_PARAM}=1`
+          : ROUTES.PLAN_SESSION(view.plan.id),
+      ),
     onError: (error, input) => {
       if (requireName.handleError(error, () => create.mutate(input))) return;
       toast(
@@ -436,6 +462,7 @@ export const PlanCreatePage = () => {
         )}
         {step === 1 && (
           <StepPeople
+            mode={mode}
             selected={participants}
             onToggle={(id) => setParticipants((list) => toggle(list, id))}
             matchRule={matchRule}

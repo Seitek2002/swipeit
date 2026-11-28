@@ -1,0 +1,1 @@
+ALTER TABLE "plans" ADD COLUMN "timed_out" boolean DEFAULT false NOT NULL;

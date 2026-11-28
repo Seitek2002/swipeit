@@ -7,6 +7,7 @@ export {
   formatOccasionDate,
   isPastDate,
   formatRemaining,
+  formatRemainingShort,
   nextBirthdayDate,
   occasionLabel,
   remainingVerb,

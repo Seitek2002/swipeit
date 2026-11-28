@@ -16,6 +16,15 @@ import {
   tallyVotes,
   voteCandidates,
 } from "@swipeit/core/logic/matches";
+import {
+  allFinished,
+  closeAtDeadline,
+  EXTRA_ROUND_MS,
+  extendDeadline,
+  extendRefusal,
+  finishedParticipants,
+  MIN_FINISHED_TO_CLOSE,
+} from "@swipeit/core/logic/plan-close";
 import { resolveDeckSize } from "@swipeit/core/logic/plan-deck";
 import { parseInput } from "@swipeit/core/parse-input";
 import { and, desc, eq, sql } from "drizzle-orm";
@@ -58,10 +67,9 @@ import {
 
 // Сколько готовых нужно, чтобы организатор мог нажать «Поехали».
 const MIN_READY = 2;
-// Сколько должны долистать, чтобы показать итоги, не дожидаясь всех (P04).
-const MIN_FINISHED_TO_CLOSE = 2;
-// «Добавить ещё занятий» после даты «До даты» — новый круг на сутки.
-const EXTRA_ROUND_MS = 24 * 3600_000;
+// Сколько должны долистать, чтобы показать итоги без всех (P04), и сутки
+// нового круга «До даты» — MIN_FINISHED_TO_CLOSE и EXTRA_ROUND_MS из
+// core/logic/plan-close: те же, что у мока.
 
 const ReadyBodySchema = z.object({ ready: z.boolean().default(true) });
 
@@ -401,9 +409,6 @@ const markFinished = (plan: PlanSession, userId: string) => {
   if (!plan.finishedIds.includes(userId)) plan.finishedIds.push(userId);
 };
 
-const allFinished = (plan: PlanSession) =>
-  plan.participantIds.every((id) => plan.finishedIds.includes(id));
-
 // Закончили все — сразу к результатам, в обоих режимах.
 const completeIfAllFinished = (plan: PlanSession) => {
   if (plan.status === "swiping" && allFinished(plan)) plan.status = "results";
@@ -627,16 +632,34 @@ export const closePlan: ServerHandler = async (ctx, { params }) => {
     requireOwner(plan, me, "Показать итоги может только организатор");
     if (plan.status === "results" || plan.status === "decided") return false;
     if (plan.status !== "swiping") throw conflict("План ещё не начался");
-    const finished = plan.participantIds.filter((id) =>
-      plan.finishedIds.includes(id),
-    );
-    if (finished.length < MIN_FINISHED_TO_CLOSE) {
+    if (finishedParticipants(plan).length < MIN_FINISHED_TO_CLOSE) {
       throw conflict("Показать итоги можно, когда долистают хотя бы двое");
     }
     plan.closedEarly = !allFinished(plan);
+    delete plan.timedOut;
     plan.status = "results";
     plan.votes = {};
     return true;
+  });
+  if (didChange) changed(ctx, plan);
+  return viewOf(ctx.tx, plan, source);
+};
+
+// POST /plans/:id/extend — «Продлить на сутки» (Y02): как в моке. Дата
+// закрыла план — новая через сутки, план снова в колоде. Повтор, пока дата
+// впереди, ничего не меняет.
+export const extendPlan: ServerHandler = async (ctx, { params }) => {
+  const me = await readMe(ctx);
+  const now = ctx.clock.now();
+  const {
+    result: didChange,
+    source,
+    plan,
+  } = await withPlan(ctx, params.id ?? "", (plan) => {
+    requireOwner(plan, me, "Продлить план может только организатор");
+    const refusal = extendRefusal(plan);
+    if (refusal) throw conflict(refusal);
+    return extendDeadline(plan, now);
   });
   if (didChange) changed(ctx, plan);
   return viewOf(ctx.tx, plan, source);
@@ -757,6 +780,7 @@ export const addPlanActivities: ServerHandler = async (
     plan.status = "swiping";
     plan.votes = {};
     delete plan.closedEarly;
+    delete plan.timedOut;
     if (
       plan.mode === "deadline" &&
       (input.deadline || isPastDeadline(plan, now))
@@ -850,7 +874,11 @@ export const expireDuePlans = async (
   for (const { id } of rows) {
     const before = await loadPlan(tx, id, { lock: true });
     if (before.status !== "swiping") continue;
-    await savePlan(tx, before, { ...before, status: "results" }, now);
+    // С отстающими — итоги по долиставшим, как «Показать итоги сейчас»
+    // (Y02); тем же правилом закрывает мок.
+    const after = structuredClone(before);
+    closeAtDeadline(after);
+    await savePlan(tx, before, after, now);
     expired.push(id);
   }
   return expired;

@@ -1,3 +1,12 @@
+import {
+  EXTRA_ROUND_MS,
+  MIN_FINISHED_TO_CLOSE,
+  allFinished,
+  closeAtDeadline,
+  extendDeadline,
+  extendRefusal,
+  finishedParticipants,
+} from "@swipeit/core/logic/plan-close";
 import { pickPlanDeck, resolveDeckSize } from "@swipeit/core/logic/plan-deck";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -365,9 +374,6 @@ const markFinished = (plan: PlanSession, userId: string) => {
   if (!plan.finishedIds.includes(userId)) plan.finishedIds.push(userId);
 };
 
-const allFinished = (plan: PlanSession) =>
-  plan.participantIds.every((id) => plan.finishedIds.includes(id));
-
 // Закончили все — сразу к результатам, в обоих режимах: «До даты» не ждёт
 // дедлайна, если ждать уже некого (DESIGN.md §8.7).
 const completeIfAllFinished = (plan: PlanSession) => {
@@ -480,8 +486,8 @@ export const finishPlan: Handler = async (ctx, { params }) => {
 // ── Результаты и решение (T15) ──────────────────────────────────────
 
 // «Добавить ещё занятий» в плане «До даты», когда дата уже прошла: без
-// продления новый круг закрылся бы на первой же проверке планировщика.
-const EXTRA_ROUND_MS = 24 * 3600_000;
+// продления новый круг закрылся бы на первой же проверке планировщика —
+// поэтому +EXTRA_ROUND_MS (core/logic/plan-close).
 
 const IsoDateSchema = z.iso.datetime({
   offset: true,
@@ -639,9 +645,8 @@ export const decidePlan: Handler = async (ctx, { params, body }) => {
 };
 
 // Сколько должны долистать, чтобы организатор мог показать итоги, не
-// дожидаясь остальных (auto-tasks P04): с одним «совпадение» — это просто
-// его лайки.
-const MIN_FINISHED_TO_CLOSE = 2;
+// дожидаясь остальных (auto-tasks P04), — MIN_FINISHED_TO_CLOSE из core:
+// по тому же правилу закрывает и дата (closeAtDeadline).
 
 // POST /plans/:id/close — «Показать итоги сейчас»: кто-то бросил колоду, а
 // ждать вечно нельзя (PRD §6.3). Итоги — по долиставшим (closedEarly);
@@ -657,13 +662,11 @@ export const closePlan: Handler = async (ctx, { params }) => {
       return { changed: false, view: viewOf(db, plan, catalog) };
     }
     if (plan.status !== "swiping") throw conflict("План ещё не начался");
-    const finished = plan.participantIds.filter((id) =>
-      plan.finishedIds.includes(id),
-    );
-    if (finished.length < MIN_FINISHED_TO_CLOSE) {
+    if (finishedParticipants(plan).length < MIN_FINISHED_TO_CLOSE) {
       throw conflict("Показать итоги можно, когда долистают хотя бы двое");
     }
     plan.closedEarly = !allFinished(plan);
+    delete plan.timedOut;
     plan.status = "results";
     plan.votes = {};
     return { changed: true, view: viewOf(db, plan, catalog) };
@@ -798,6 +801,7 @@ export const addPlanActivities: Handler = async (ctx, { params, body }) => {
     plan.votes = {};
     // Новый раунд — снова ждём всех.
     delete plan.closedEarly;
+    delete plan.timedOut;
     // Новые карточки не свайпал никто — «закончил» пересчитываем по колоде.
     const deckIds = deckIdsOf(db, plan, catalog);
     plan.finishedIds = plan.participantIds.filter((id) => {
@@ -838,11 +842,39 @@ export const expireDuePlans = async (
   }
   const expired = await ctx.db.write((db) => {
     const due = Object.values(db.plans).filter((plan) => isDue(plan, now));
-    for (const plan of due) plan.status = "results";
+    // С отстающими — итоги по долиставшим, как «Показать итоги сейчас»
+    // (Y02); долистал меньше двоих — экран предложит продлить.
+    for (const plan of due) closeAtDeadline(plan);
     return due.map((plan) => plan.id);
   });
   for (const id of expired) changed(ctx, id);
   return expired;
+};
+
+// POST /plans/:id/extend — «Продлить на сутки» (auto-tasks-ux-5 Y02): дата
+// закрыла план, а долистал меньше двоих. Новая дата — сутки от «сейчас»,
+// план снова в колоде, долиставшие ждут остальных. Только организатор.
+// Повтор, пока дата впереди, ничего не меняет. Расширение TECH_SPEC §6.
+export const extendPlan: Handler = async (ctx, { params }) => {
+  const now = ctx.clock.now();
+  const catalog = await ctx.catalog.activities();
+  const result = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const plan = findPlan(db, params.id);
+    requireOwner(plan, user, "Продлить план может только организатор");
+    const refusal = extendRefusal(plan);
+    if (refusal) throw conflict(refusal);
+    return {
+      changed: extendDeadline(plan, now),
+      view: viewOf(db, plan, catalog),
+    };
+  });
+  if (result.changed) {
+    changed(ctx, result.view.plan.id);
+    // Боты досвайпывают, как после «Добавить ещё занятий».
+    trigger(ctx, "plan:started", result.view.plan.id);
+  }
+  return result.view;
 };
 
 // POST /plans/expire — тот же проход по запросу. Расширение TECH_SPEC §6:

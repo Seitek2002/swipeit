@@ -33,7 +33,16 @@ import {
   termsChangedText,
 } from "@swipeit/core/logic/santa-update";
 import { parseInput } from "@swipeit/core/parse-input";
-import { and, desc, eq, inArray, isNotNull, isNull, lte } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  ne,
+} from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
@@ -146,7 +155,12 @@ const describeIn = (people: Map<string, Person>) => (id: string) => {
   return person?.name ? dative(person.name, genderOf(person)) : "Кому-то";
 };
 
-const publicOf = (game: StoredGame): SantaView["game"] => ({
+// Исключения — только организатору (S05): участнику, позванному и гостю
+// по ссылке они рассказали бы о людях и сузили бы, кто твой Санта.
+const publicOf = (
+  game: StoredGame,
+  role: SantaView["role"],
+): SantaView["game"] => ({
   id: game.id,
   title: game.title,
   ownerId: game.ownerId,
@@ -156,7 +170,7 @@ const publicOf = (game: StoredGame): SantaView["game"] => ({
   status: game.status,
   participantIds: game.participantIds,
   invitedIds: game.invitedIds,
-  exclusions: game.exclusions,
+  exclusions: role === "owner" ? game.exclusions : [],
   ...(game.drawnAt ? { drawnAt: game.drawnAt } : {}),
   createdAt: game.createdAt,
 });
@@ -265,19 +279,27 @@ const wardOf = async (
   };
 };
 
+// Гостю (превью по ссылке, X07) — только профиль и joined (S05): готов ли
+// чей-то вишлист и кто вскрыл письмо, знать ему незачем.
 const memberList = async (
   tx: Tx,
   game: StoredGame,
   people: Map<string, Person>,
+  role: SantaView["role"],
 ): Promise<SantaMember[]> => {
   const result: SantaMember[] = [];
   for (const id of membersOf(game)) {
     const person = people.get(id);
     if (!person) continue;
+    const joined = game.participantIds.includes(id);
+    if (role === "guest") {
+      result.push({ ...profileOf(person), joined });
+      continue;
+    }
     result.push({
       ...profileOf(person),
       hasWishlist: (await countActiveWishes(tx, id)) > 0,
-      joined: game.participantIds.includes(id),
+      joined,
       opened: game.openedIds.includes(id),
     });
   }
@@ -304,14 +326,18 @@ const viewOf = async (
 ): Promise<SantaView> => {
   const people = await readPeople(ctx.tx, membersOf(game));
   const joined = game.participantIds.includes(userId);
+  const role = roleOf(game, userId);
+  // Причина неудачи и drawIssue называют людей из исключений — только
+  // организатору (S05). Отметку «не прошла» видят все.
+  const owner = role === "owner";
   const wardId =
     joined && game.status === "drawn"
       ? await wardIdOf(ctx.tx, game.id, userId)
       : null;
   return {
-    game: publicOf(game),
-    members: await memberList(ctx.tx, game, people),
-    role: roleOf(game, userId),
+    game: publicOf(game, role),
+    members: await memberList(ctx.tx, game, people, role),
+    role,
     me: joined
       ? {
           envelope: envelopeOf(game, userId),
@@ -324,8 +350,12 @@ const viewOf = async (
       : null,
     boughtCount: game.boughtIds.length,
     openedCount: game.openedIds.length,
-    drawIssue: drawIssue(game, people),
-    drawFailed: game.drawFailed ?? null,
+    drawIssue: owner ? drawIssue(game, people) : null,
+    drawFailed: game.drawFailed
+      ? owner
+        ? game.drawFailed
+        : { at: game.drawFailed.at }
+      : null,
   };
 };
 
@@ -779,7 +809,14 @@ export const openSantaEnvelope: ServerHandler = async (ctx, { params }) => {
   return viewOf(ctx, game, me.id);
 };
 
-// POST /santa/:id/bought { bought? } — «Я купил подарок» и снять отметку.
+// POST /santa/:id/bought { bought?, itemKey? } — «Я купил подарок», смена
+// покупки и снять отметку (Y05).
+//
+// Бронь Санты (X02) — его открытая бронь на вишлисте подопечного. Ровно
+// одна: сменил покупку — бронь переезжает на новое желание, «Другое» или
+// снял отметку — бронь снимается, и друзья подопечного снова могут это
+// подарить. Всё в одной транзакции: занятое желание — CONFLICT, и старая
+// бронь остаётся.
 export const setSantaBought: ServerHandler = async (ctx, { params, body }) => {
   const { bought, itemKey } = parseInput(BoughtBodySchema, body ?? {});
   const me = await readMe(ctx);
@@ -797,11 +834,13 @@ export const setSantaBought: ServerHandler = async (ctx, { params, body }) => {
       return was !== bought;
     },
   );
-  // «Купил: …» (X02) — бронь желания подопечного под своим именем: у гостей
-  // и других Сант оно занято, подопечный, как всегда, не видит кто.
-  if (bought && itemKey) {
-    const wardId = await wardIdOf(ctx.tx, game.id, me.id);
-    if (wardId) await reserveForWard(ctx, wardId, itemKey, me);
+  const wardId = await wardIdOf(ctx.tx, game.id, me.id);
+  if (wardId) {
+    const keep = bought ? itemKey : undefined;
+    // «Купил: …» — бронь желания подопечного под своим именем: у гостей и
+    // других Сант оно занято, подопечный, как всегда, не видит кто.
+    if (keep) await reserveForWard(ctx, wardId, keep, me);
+    await releaseForWard(ctx, wardId, me, keep);
   }
   if (changedNow) changed(ctx, game);
   if (changedNow && bought) {
@@ -849,6 +888,36 @@ const reserveForWard = async (
     .returning({ id: reservations.id });
   // Гонка: кто-то успел в ту же миллисекунду — уникальный индекс открытой брони.
   if (inserted.length === 0) throw conflict("Кто-то уже выбрал этот подарок");
+  publishWardReservations(ctx, wardId, me);
+};
+
+// Снять открытые брони Санты на вишлисте подопечного, кроме keep (Y05):
+// сменил покупку или снял отметку — прежнее желание снова свободно.
+const releaseForWard = async (
+  ctx: ServerContext,
+  wardId: string,
+  me: UserRow,
+  keep: string | undefined,
+) => {
+  const released = await ctx.tx
+    .delete(reservations)
+    .where(
+      and(
+        eq(reservations.ownerRef, wardId),
+        eq(reservations.reserverId, me.id),
+        isNull(reservations.closedAt),
+        keep === undefined ? undefined : ne(reservations.itemKey, keep),
+      ),
+    )
+    .returning({ id: reservations.id });
+  if (released.length > 0) publishWardReservations(ctx, wardId, me);
+};
+
+const publishWardReservations = (
+  ctx: ServerContext,
+  wardId: string,
+  me: UserRow,
+) =>
   ctx.events.publish(
     {
       type: "db:changed",
@@ -857,7 +926,6 @@ const reserveForWard = async (
     },
     [wardId, me.id],
   );
-};
 
 // ── Жеребьёвка по дате (планировщик — B13) ─────────────────────────
 

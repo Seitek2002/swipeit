@@ -6,13 +6,13 @@ import { usePathname } from "next/navigation";
 
 import { startAnonymousAgain, useCreateUser, useMe } from "@/entities/user";
 
-import { isApiError, trackStep } from "@/shared/api";
+import { errorCodeOf, isApiError, trackStep } from "@/shared/api";
 import { requiresProfile } from "@/shared/config";
 import { useAppReady } from "@/shared/lib/app-status";
 import { useMounted } from "@/shared/lib/dom";
 import { usePreloaderHold } from "@/shared/lib/preloader";
 import { useRemoteSessionStore, useSessionStore } from "@/shared/store";
-import { Button, EmptyState } from "@/shared/ui";
+import { Button, EmptyState, ErrorCode } from "@/shared/ui";
 
 import { RouteSkeleton } from "./route-skeleton";
 
@@ -85,6 +85,8 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
 
   if (needsProfile && expired) return <SessionExpired />;
   if (needsProfile && createUser.isError) {
+    // Сервер ответил ошибкой — код для владельца (S08); нет связи — кода нет.
+    const errorCode = errorCodeOf(createUser.error);
     return (
       <EmptyState
         className="h-full"
@@ -101,6 +103,7 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
             Попробовать ещё раз
           </Button>
         }
+        footer={errorCode && <ErrorCode code={errorCode} />}
       />
     );
   }

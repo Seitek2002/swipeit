@@ -8,6 +8,9 @@ import {
   useReducedMotion,
 } from "motion/react";
 
+import { splitErrorCode } from "@/shared/api/error-code";
+
+import { ErrorCode } from "../error-code";
 import { OverlayPortal } from "../portal";
 import { Spinner } from "../spinner";
 import { type ToastTone, toast, useCurrentToast } from "./model";
@@ -27,6 +30,8 @@ const DISMISS_OFFSET = -24;
 export const Toaster = () => {
   const item = useCurrentToast();
   const reduceMotion = useReducedMotion();
+  // «… · код a1b2c3d4» (S08): фраза — как есть, код — мелкой кнопкой.
+  const { text, code } = splitErrorCode(item?.text ?? "");
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (item && (info.offset.y < DISMISS_OFFSET || info.velocity.y < -400)) {
@@ -70,7 +75,15 @@ export const Toaster = () => {
               </span>
               {/* До трёх строк: тост вкуса с двумя интересами и кнопкой
                   «Поправить» не должен обрываться многоточием (UX-аудит M2). */}
-              <span className="line-clamp-3 min-w-0">{item.text}</span>
+              <span className="line-clamp-3 min-w-0">
+                {text}
+                {code && (
+                  <>
+                    {" "}
+                    <ErrorCode code={code} />
+                  </>
+                )}
+              </span>
               {item.action && (
                 <button
                   type="button"

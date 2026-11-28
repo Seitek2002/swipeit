@@ -20,6 +20,8 @@ describe("каркас сервера", () => {
       apiVersion: 1,
       now: 1_800_000_000_000,
       commit: "abc123",
+      // Запуск процесса (S08) — видно перезапуски.
+      startedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       minClientBuild: "0",
     });
     await app.close();

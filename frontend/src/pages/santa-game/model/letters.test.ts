@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { lettersMessage, namesLine } from "./letters";
+import {
+  lettersMessage,
+  namesLine,
+  remindWishlistNames,
+  remindWishlistText,
+} from "./letters";
 
 const base = {
   title: "Офис",
@@ -87,6 +92,49 @@ describe("«Сообщить в чат» после жеребьёвки (Q06)",
       }),
     ).toBe(
       "Жеребьёвка в «Офис» прошла — откройте письмо и узнайте, кому дарите. Бюджет до 2 000 сом. Обмен подарками 25 декабря.",
+    );
+  });
+});
+
+describe("«Напомнить тем, кто без вишлиста» (P08, Y07)", () => {
+  const person = (
+    id: string,
+    name: string,
+    hasWishlist: boolean,
+    joined = true,
+  ) => ({
+    id,
+    name,
+    hasWishlist,
+    joined,
+  });
+
+  it("зовёт вступивших без вишлиста, позванных не трогает", () => {
+    const names = remindWishlistNames(
+      [
+        person("me", "Айгерим", true),
+        person("n", "Нурай", false),
+        person("b", "Бакыт", false),
+        person("t", "Тимур", false, false),
+        person("a", "Азамат", true),
+      ],
+      "me",
+    );
+    expect(names).toEqual(["Нурай", "Бакыт"]);
+    expect(remindWishlistText(names, "Офис")).toBe(
+      "Нурай, Бакыт — соберите вишлист для Тайного Санты «Офис», так Санте будет проще выбрать подарок",
+    );
+  });
+
+  it("организатор без вишлиста себя не зовёт; кроме него никого — пусто", () => {
+    expect(
+      remindWishlistNames(
+        [person("me", "Бакыт", false), person("n", "Нурай", false)],
+        "me",
+      ),
+    ).toEqual(["Нурай"]);
+    expect(remindWishlistNames([person("me", "Бакыт", false)], "me")).toEqual(
+      [],
     );
   });
 });

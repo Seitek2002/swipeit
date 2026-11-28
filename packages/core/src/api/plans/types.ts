@@ -48,6 +48,10 @@ export const PlanSessionSchema = z.object({
   // Организатор показал итоги, не дождавшись всех (auto-tasks P04): итоги
   // считаются по долиставшим.
   closedEarly: z.boolean().optional(),
+  // Итоги открыла дата «До даты», а не все долистали (auto-tasks-ux-5 Y02):
+  // вместе с closedEarly — считаем по долиставшим, а экран пишет «время
+  // вышло», а не «организатор не стал ждать».
+  timedOut: z.boolean().optional(),
   votes: z.record(z.string(), z.string()),
   decision: z
     .object({

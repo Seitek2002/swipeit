@@ -71,6 +71,7 @@ export const remoteTransport: Transport = {
       const error = remoteErrorFromResponse(
         response.status,
         data === NOT_JSON ? null : data,
+        response.headers.get("x-request-id"),
       );
       // Токен неверный или сессия закрыта — экран «Сессия закончилась»
       // (app/session-gate). Новый профиль молча не создаём (§3.2). Без

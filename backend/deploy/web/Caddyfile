@@ -1,0 +1,65 @@
+# Контейнер web (auto-tasks-pm-4 S02): фронт и API с одного адреса.
+# Слушает 8080 по HTTP. HTTPS — у прокси перед ним: свой nginx администратора
+# или контейнер caddy из профиля caddy (backend/deploy/caddy/Caddyfile).
+{
+	admin off
+	auto_https off
+	servers {
+		# Прокси перед web (nginx на сервере, caddy из профиля) приходят с
+		# внутренних адресов: их X-Forwarded-For принимаем и дополняем. Чужой
+		# заголовок от человека из интернета Caddy заменит его адресом.
+		trusted_proxies static private_ranges
+	}
+}
+
+:8080 {
+	# API: REST, WebSocket /v1/ws (Caddy пропускает Upgrade сам, без
+	# тайм-аута чтения) и превью коротких ссылок /s/<код>.
+	@api path /v1 /v1/* /s/*
+	handle @api {
+		# Сжимаем ответы API, но не трогаем WebSocket.
+		@compress not path /v1/ws
+		encode @compress zstd gzip
+		reverse_proxy api:4100
+	}
+
+	# Остальное — статика фронта. Экраны — папки с index.html (/w/,
+	# /santa/join/): file_server отдаёт index.html сам, а /w без «/» на конце
+	# переводит на /w/ — как GitHub Pages.
+	handle {
+		root * /srv
+		encode zstd gzip
+		header {
+			X-Content-Type-Options nosniff
+			Referrer-Policy strict-origin-when-cross-origin
+			-Server
+			# Cross-Origin-Opener-Policy не ставим: с same-origin не работает
+			# окно входа через Telegram (BACKEND.md §3.3).
+		}
+
+		# Хешированные файлы сборки не меняются никогда.
+		@immutable path /_next/static/*
+		header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+		# Фото каталога и иконки: сутки, потом проверка.
+		@media {
+			not path /_next/static/*
+			path *.webp *.jpg *.jpeg *.png *.avif *.svg *.ico *.woff2
+		}
+		header @media Cache-Control "public, max-age=86400"
+
+		# HTML, sw.js, манифест и данные страниц — каждый раз спрашивать
+		# сервер (ответ 304, если не менялось): новая сборка видна сразу.
+		@revalidate not path /_next/static/* *.webp *.jpg *.jpeg *.png *.avif *.svg *.ico *.woff2
+		header @revalidate Cache-Control "no-cache"
+
+		file_server
+	}
+
+	# Нет такой страницы — 404.html из сборки (код ответа остаётся 404).
+	handle_errors 404 {
+		root * /srv
+		rewrite * /404.html
+		file_server
+	}
+}

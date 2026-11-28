@@ -86,7 +86,11 @@ export class ConfigError extends Error {
 }
 
 export const loadConfig = (env: NodeJS.ProcessEnv = process.env): Config => {
-  const parsed = ConfigSchema.safeParse(env);
+  // Пустая строка — как будто переменной нет: в .env администратора строка
+  // «OPS_TOKEN=» значит «не задано», а не «токен из нуля символов» (B18).
+  const parsed = ConfigSchema.safeParse(
+    Object.fromEntries(Object.entries(env).filter(([, value]) => value !== "")),
+  );
   if (!parsed.success) {
     const details = parsed.error.issues
       .map((issue) => `  ${issue.path.join(".") || "?"}: ${issue.message}`)

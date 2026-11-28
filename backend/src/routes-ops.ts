@@ -12,7 +12,7 @@ import {
   readFunnel,
   readProfilesByVia,
 } from "./domains/funnel/report";
-import { errorStats } from "./errors";
+import { errorStats, lastFailures, type RecentFailure } from "./errors";
 
 const QuerySchema = z.object({
   days: z.coerce.number().int().min(1).max(366).default(7),
@@ -23,6 +23,20 @@ const QuerySchema = z.object({
 });
 
 const LIMIT_PER_MINUTE = 10;
+const FAILURES_IN_REPORT = 20;
+
+// «Последние сбои» (S08): строка — время, метод, шаблон маршрута, код с
+// экрана человека, имя ошибки и код Postgres. По коду владелец ищет полный
+// requestId в логах: docker compose logs api --since 24h | grep <код>.
+export const formatFailures = (failures: readonly RecentFailure[]) => [
+  `Последние сбои INTERNAL (до ${FAILURES_IN_REPORT}, свежие сверху):`,
+  ...(failures.length === 0
+    ? ["  —"]
+    : failures.map(
+        (failure) =>
+          `  ${failure.at.toISOString()}  ${failure.method} ${failure.route}  код ${failure.requestCode}  ${failure.errorName}${failure.dbCode ? ` pg ${failure.dbCode}` : ""}`,
+      )),
+];
 
 const sameToken = (given: string, expected: string) => {
   const a = Buffer.from(given);
@@ -97,6 +111,8 @@ export const registerOps = (
       "",
       `Ответы с ошибкой с запуска процесса (${startedAt.toISOString()}):`,
       ...errors,
+      "",
+      ...formatFailures(lastFailures(FAILURES_IN_REPORT)),
     ].join("\n");
     return reply.type("text/plain; charset=utf-8").send(text);
   });

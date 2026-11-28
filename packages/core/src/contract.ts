@@ -116,6 +116,8 @@ export const CONTRACT: readonly ContractRoute[] = [
   route("POST", "/plans/:id/votes"),
   // «Показать итоги сейчас» — организатор, не дожидаясь всех (P04).
   route("POST", "/plans/:id/close"),
+  // «Продлить на сутки» — организатор, план «До даты» закрыла дата (Y02).
+  route("POST", "/plans/:id/extend"),
   // «Выйти из плана» — участник, не организатор, до итогов (Q04).
   route("POST", "/plans/:id/leave"),
   route("POST", "/plans/:id/decide"),

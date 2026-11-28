@@ -10,9 +10,11 @@ import { useSantaNudge } from "@/widgets/santa-nudge";
 import {
   ALL_IN,
   DRAW_FAILED_STATUS,
+  InviteFriendsButton,
   type SantaSummary,
   drawFailedNow,
   gatheringStatus,
+  needsMoreMembers,
   santaTerms,
   useSantaGames,
 } from "@/entities/santa-game";
@@ -66,11 +68,18 @@ const GameCard = ({
   summary: SantaSummary;
 }) => {
   const status = statusOf(summary, needWishes);
+  // Вступивших меньше трёх (Y06) — «Позвать» прямо в карточке: первое, что
+  // нужно новой игре, — ссылка в чат. Кнопка вне ссылки на игру: кнопка в
+  // ссылке — недопустимая разметка.
+  const invite = needsMoreMembers(summary);
   return (
-    <li>
+    <li className="paper rounded-paper shadow-paper">
       <Link
         href={ROUTES.SANTA_GAME(summary.game.id)}
-        className="paper rounded-paper shadow-paper flex flex-col gap-1 p-4"
+        className={cn(
+          "rounded-paper flex flex-col gap-1 p-4",
+          invite && "pb-3",
+        )}
       >
         <p className="text-title-2 truncate">{summary.game.title}</p>
         <p className="text-caption text-ink-soft">{santaTerms(summary.game)}</p>
@@ -97,6 +106,17 @@ const GameCard = ({
           </span>
         </div>
       </Link>
+      {invite && (
+        <div className="px-4 pb-4">
+          <InviteFriendsButton
+            game={summary.game}
+            label="Позвать"
+            ariaLabel={`Позвать друзей в «${summary.game.title}»`}
+            size="sm"
+            variant="secondary"
+          />
+        </div>
+      )}
     </li>
   );
 };

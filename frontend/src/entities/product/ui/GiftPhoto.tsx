@@ -98,7 +98,15 @@ export const GiftPhoto = ({
   const backdrop = ready ? src : shown;
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden">
+    // В колоде — контейнер по высоте карточки: на низкой карточке (360×640
+    // с плашкой Санты и пилюлей фильтра) текстовый блок и обучающий слой
+    // становятся компактнее (UX-аудит Y03). В шторке высота — от фото.
+    <div
+      className={cn(
+        "relative flex h-full flex-col overflow-hidden",
+        overlapInfo && "[container-type:size]",
+      )}
+    >
       {backdrop && (
         <img
           key={backdrop}
@@ -251,7 +259,9 @@ export const GiftInfo = ({
   return (
     <div
       className={cn(
-        "text-paper relative bg-[linear-gradient(to_bottom,rgb(42_16_36/0)_0,rgb(42_16_36/0.88)_44px,rgb(42_16_36/0.96)_100%)] px-4 pt-11 pb-[88px]",
+        // Низкая карточка (контейнер GiftPhoto, Y03): название в одну
+        // строку и отступы меньше — фото остаётся не меньше 45% высоты.
+        "text-paper relative bg-[linear-gradient(to_bottom,rgb(42_16_36/0)_0,rgb(42_16_36/0.88)_44px,rgb(42_16_36/0.96)_100%)] px-4 pt-11 pb-[88px] [@container(max-height:420px)]:pt-7 [@container(max-height:420px)]:pb-[76px]",
         concealed && "*:opacity-0",
       )}
     >
@@ -264,8 +274,10 @@ export const GiftInfo = ({
         className="mt-2 flex w-full items-end justify-between gap-3 text-left"
       >
         <span className="min-w-0">
-          <span className="text-title-2 line-clamp-2">{product.title}</span>
-          <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="text-title-2 line-clamp-2 [@container(max-height:420px)]:line-clamp-1">
+            {product.title}
+          </span>
+          <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 [@container(max-height:420px)]:flex-nowrap">
             {!hidePrices && (
               <span className="text-price">
                 {formatPrice(product.priceMin, product.priceMax)}

@@ -1,4 +1,5 @@
-import { ApiError, type ApiErrorCode } from "./mock-server/errors";
+import { shortErrorCode, withErrorCode } from "./error-code";
+import { ApiError, type ApiErrorCode, isApiError } from "./mock-server/errors";
 
 // Коды ошибок сервера (BACKEND.md §4.5). Новые против LAN — UNAUTHORIZED,
 // RATE_LIMITED и INTERNAL.
@@ -36,15 +37,25 @@ const MESSAGE_BY_CODE: Partial<Record<ApiErrorCode, string>> = {
 
 const DEFAULT_MESSAGE = "Что-то пошло не так. Попробуй ещё раз";
 
+const requestIdOf = (value: unknown): string | undefined =>
+  typeof value === "string" && value.length > 0 && value.length <= 100
+    ? value
+    : undefined;
+
 // Ответ сервера с ошибкой → ApiError, как у мока: экраны различают ошибки
 // по code, а message показывают человеку (он по-русски, §4.5).
+//
+// requestId (S08) — из тела, иначе из заголовка x-request-id (если прокси
+// отдал свою страницу). У INTERNAL код из 8 символов дописан к тексту:
+// человек назовёт его владельцу, а тот найдёт сбой в логах.
 export const remoteErrorFromResponse = (
   status: number,
   body: unknown,
+  headerRequestId?: null | string,
 ): ApiError => {
   const error =
     typeof body === "object" && body !== null
-      ? (body as { code?: unknown; message?: unknown })
+      ? (body as { code?: unknown; message?: unknown; requestId?: unknown })
       : {};
   const code =
     typeof error.code === "string" && KNOWN_CODES.has(error.code)
@@ -54,5 +65,18 @@ export const remoteErrorFromResponse = (
     typeof error.message === "string" && error.message.trim()
       ? error.message
       : (MESSAGE_BY_CODE[code] ?? DEFAULT_MESSAGE);
-  return new ApiError(status, code, message);
+  const requestId =
+    requestIdOf(error.requestId) ?? requestIdOf(headerRequestId ?? undefined);
+  const shortCode = code === "INTERNAL" ? shortErrorCode(requestId) : null;
+  return new ApiError(
+    status,
+    code,
+    shortCode ? withErrorCode(message, shortCode) : message,
+    requestId,
+  );
 };
+
+// Код ошибки для экрана (S08): первые 8 символов requestId, если ответ
+// сервера был. Нет ответа (OFFLINE без связи), мок или LAN — null.
+export const errorCodeOf = (error: unknown): null | string =>
+  isApiError(error) ? shortErrorCode(error.requestId) : null;

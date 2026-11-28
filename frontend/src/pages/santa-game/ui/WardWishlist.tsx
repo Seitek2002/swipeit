@@ -115,7 +115,7 @@ const WardRow = ({
         )}
         {item.reservedByMe && (
           <p className="text-caption text-ink mt-1 font-semibold">
-            Ты купил это
+            Это твоя покупка
           </p>
         )}
         {buy && (

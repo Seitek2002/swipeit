@@ -15,6 +15,7 @@ export { Countdown } from "./countdown";
 export { DemoLinkNote } from "./demo-link-note";
 export { DayMonthPicker } from "./day-month-picker";
 export { EmptyState } from "./empty-state";
+export { ErrorCode } from "./error-code";
 export { IconButton } from "./icon-button";
 export { ImagePickField } from "./image-pick";
 export { OverlayPortal } from "./portal";

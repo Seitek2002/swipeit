@@ -6,6 +6,7 @@ import {
   useRemoteSessionStore,
 } from "@/shared/store";
 
+import { splitErrorCode } from "./error-code";
 import { remoteTransport } from "./remote-transport";
 
 // Адрес читается лениво, при первом запросе.
@@ -147,6 +148,28 @@ describe("remoteTransport", () => {
     fetchMock.mockResolvedValueOnce(new Response("<html>", { status: 200 }));
     await expect(remoteTransport.request("GET", "/me")).rejects.toMatchObject({
       code: "OFFLINE",
+    });
+  });
+});
+
+describe("код ошибки в тосте (S08)", () => {
+  it("ответ 500 { code: INTERNAL, requestId } → в тексте тоста код из 8 символов", async () => {
+    fetchMock.mockResolvedValueOnce(
+      json(500, {
+        code: "INTERNAL",
+        message: "Что-то пошло не так. Попробуй ещё раз",
+        requestId: "9f8e7d6c-1111-4222-8333-444455556666",
+      }),
+    );
+    const error = await remoteTransport
+      .request("POST", "/santa", {})
+      .catch((caught: unknown) => caught);
+    expect(error).toMatchObject({ code: "INTERNAL", status: 500 });
+    // Экран зовёт toast(error.message): тост делит текст на фразу и код.
+    const toastText = (error as Error).message;
+    expect(splitErrorCode(toastText)).toEqual({
+      text: "Что-то пошло не так. Попробуй ещё раз",
+      code: "9f8e7d6c",
     });
   });
 });

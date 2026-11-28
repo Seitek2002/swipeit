@@ -17,7 +17,7 @@ import {
   toast,
 } from "@/shared/ui";
 
-import { type Lagging, joinNames, remindText } from "../model";
+import { type Lagging, deckEndLines, joinNames, remindText } from "../model";
 
 // Сколько должны долистать, чтобы показать итоги раньше (как в моке).
 const MIN_FINISHED_TO_CLOSE = 2;
@@ -94,9 +94,15 @@ export const DeckEnd = ({ view, meId, swiping }: Props) => {
       />
       {swiping.length > 0 && (
         <div className="flex w-full flex-col items-center gap-3">
-          <p className="text-body text-rose text-center">
-            {names} {swiping.length === 1 ? "ещё листает" : "ещё листают"}
-          </p>
+          {/* «ещё листают» — только начавшие; у кого 0 карточек — «ещё не
+              открывали» (Y08). */}
+          <div className="flex flex-col gap-1">
+            {deckEndLines(swiping).map((line) => (
+              <p key={line} className="text-body text-rose text-center">
+                {line}
+              </p>
+            ))}
+          </div>
           {isOwner ? (
             <Button
               size="lg"

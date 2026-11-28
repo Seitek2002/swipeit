@@ -3,9 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   approveWarning,
   drumLabels,
+  laggingOf,
   resultNote,
+  timedOutTitle,
   voteProgress,
   voteStatus,
+  withoutMeNote,
 } from "./model";
 
 describe("подписи барабана (P12)", () => {
@@ -115,5 +118,45 @@ describe("кто проголосовал в «Выбрать самим» (X04)
     expect(voteStatus(voteProgress(many, { u_0: "kino" }, CANDIDATES))).toBe(
       "Проголосовали 1 из 8 · ждём: Друг 2, Друг 3, Друг 4, Друг 5, Друг 6 и ещё 2",
     );
+  });
+});
+
+describe("«Время вышло» (Y02)", () => {
+  const AIGERIM = { id: "me", name: "Айгерим" };
+  const AZAMAT = { id: "u_azamat", name: "Азамат" };
+
+  it("организатор: долистал только сам, кто-то другой, никто", () => {
+    expect(timedOutTitle(true, "me", [AIGERIM])).toBe(
+      "Время вышло: кроме тебя, никто не долистал",
+    );
+    expect(timedOutTitle(true, "me", [AZAMAT])).toBe(
+      "Время вышло: до конца колоды — только Азамат",
+    );
+    expect(timedOutTitle(true, "me", [])).toContain("никто");
+  });
+
+  it("остальным — что продлить может организатор", () => {
+    expect(timedOutTitle(false, "u_azamat", [AIGERIM])).toBe(
+      "Время вышло — организатор может продлить план",
+    );
+  });
+
+  it("не долиставшему — почему без него", () => {
+    expect(withoutMeNote(true)).toBe("Итоги показали без тебя: время вышло");
+    expect(withoutMeNote(false)).toContain("организатор не стал ждать");
+  });
+
+  it("кто отстал: без меня, сколько осталось, открывал ли", () => {
+    expect(
+      laggingOf(
+        [AIGERIM, AZAMAT, { id: "u_nurai", name: "Нурай" }],
+        { me: { a: "like", b: "pass" }, u_azamat: { a: "pass" } },
+        ["a", "b"],
+        "me",
+      ),
+    ).toEqual([
+      { name: "Азамат", left: 1, started: true },
+      { name: "Нурай", left: 2, started: false },
+    ]);
   });
 });

@@ -76,6 +76,7 @@ export const loadPlan = async (
     swipes: swipesBy,
     finishedIds: members.filter((m) => m.finished).map((m) => m.userId),
     ...(row.closedEarly ? { closedEarly: true } : {}),
+    ...(row.timedOut ? { timedOut: true } : {}),
     votes: Object.fromEntries(
       votes.map((vote) => [vote.userId, vote.activityId]),
     ),
@@ -96,6 +97,7 @@ const planColumns = (plan: PlanSession) => ({
   customActivityIds: plan.customActivityIds,
   decision: plan.decision ?? null,
   closedEarly: plan.closedEarly ?? false,
+  timedOut: plan.timedOut ?? false,
 });
 
 const memberRow = (plan: PlanSession, userId: string, joinedAt: Date) => ({

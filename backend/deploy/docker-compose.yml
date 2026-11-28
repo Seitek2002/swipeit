@@ -1,0 +1,161 @@
+# SwipeIt на сервере (BACKEND.md §11.3, B18; auto-tasks-pm-4 S01, S02).
+# Инструкция — ADMIN.md рядом. Коротко:
+#   cp .env.example .env    # заполнить
+#   docker compose up -d    # с HTTPS от Caddy: docker compose --profile caddy up -d
+#
+# Сервисы:
+#   postgres — база, порт наружу не открыт;
+#   migrate  — одноразовый: применяет миграции и выходит, api ждёт его;
+#   api      — сервер, ОДНА копия (WebSocket, планировщик и лимиты живут в
+#              памяти процесса — две копии не работают);
+#   web      — фронт и API с одного адреса: статика + прокси /v1 и /s/ на api;
+#   backup   — бэкап базы и фото раз в сутки;
+#   caddy    — только с --profile caddy: HTTPS, если своего прокси нет.
+name: swipeit
+
+# Логи Docker: файлы по 20 МБ, не больше 14 на контейнер. Docker режет логи
+# по размеру, а не по дням; при обычной нагрузке это около двух недель (§10.1).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "14"
+
+# Общее у api и migrate: один образ и одни настройки.
+x-api: &api
+  image: ghcr.io/seitek2002/swipeit-api:${API_TAG:-staging}
+  env_file: .env
+  environment:
+    NODE_ENV: production
+    # Собирается из POSTGRES_* ниже — пароль только из латиницы и цифр.
+    DATABASE_URL: postgres://${POSTGRES_USER:-swipeit}:${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}@postgres:5432/${POSTGRES_DB:-swipeit}
+    UPLOADS_DIR: /data/uploads
+  logging: *logging
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-swipeit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
+      POSTGRES_DB: ${POSTGRES_DB:-swipeit}
+      TZ: Asia/Bishkek
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-swipeit} -d ${POSTGRES_DB:-swipeit}",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+
+  migrate:
+    <<: *api
+    command: ["node", "--enable-source-maps", "dist/migrate.js"]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *api
+    restart: unless-stopped
+    # Мягкая остановка: начатые запросы доотвечают (BACKEND.md §2.3).
+    stop_grace_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - uploads:/data/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:4100/v1/health",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  web:
+    image: ghcr.io/seitek2002/swipeit-web:${WEB_TAG:-staging}
+    restart: unless-stopped
+    depends_on:
+      - api
+    # Свой прокси на этом же сервере — оставьте 127.0.0.1. Прокси на другой
+    # машине — WEB_BIND=0.0.0.0 и закройте порт от всех, кроме прокси.
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging: *logging
+
+  backup:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["sh", "/scripts/backup-loop.sh"]
+    environment:
+      TZ: Asia/Bishkek
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-swipeit}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
+      PGDATABASE: ${POSTGRES_DB:-swipeit}
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-14}
+      BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-8}
+      BACKUP_ENCRYPT_KEY: ${BACKUP_ENCRYPT_KEY:-}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_PREFIX: ${BACKUP_S3_PREFIX:-swipeit}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-}
+      BACKUP_S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      BACKUP_S3_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+    volumes:
+      - ./scripts:/scripts:ro
+      - backups:/backups
+      - uploads:/uploads:ro
+    logging: *logging
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["caddy"]
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      # Домен продукта, например swipeit.example.kg (без https://).
+      SITE_ADDRESS: ${SITE_ADDRESS:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    logging: *logging
+
+volumes:
+  postgres:
+  uploads:
+  backups:
+  caddy-data:
+  caddy-config:

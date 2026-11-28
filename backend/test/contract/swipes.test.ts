@@ -75,6 +75,39 @@ describe.each(CLIENTS)("лента и свайпы — %s", (_name, create) => {
     expect((await feed()).items[0]?.id).not.toBe(GUIDE_PRODUCT_ID);
   });
 
+  it("обучающая карточка: фильтр бюджета её не убирает (Y03)", async () => {
+    const filters = JSON.stringify({
+      budget: { min: 0, max: 2000 },
+      categories: [],
+      marketplaces: [],
+    });
+    const page = await feed({ filters });
+    expect(page.items[0]?.id).toBe(GUIDE_PRODUCT_ID);
+    expect(page.items.slice(1).every((p) => p.priceMin <= 2000)).toBe(true);
+  });
+
+  it("обучающий товар выбран другу — первым в своей ленте его нет", async () => {
+    const { caller: friend } = await api.newUser();
+    await api.call(friend, "PATCH", "/me", { name: "Бакыт" });
+    await api.call(friend, "POST", "/swipes", {
+      productId: GUIDE_PRODUCT_ID,
+      decision: "like",
+      context: SELF,
+    });
+    await api.befriend(me, friend);
+    await api.call(me, "PATCH", "/me", { name: "Асель" });
+    const reservation = await api.call<{ id: string }>(
+      me,
+      "POST",
+      "/reservations",
+      { ownerId: friend.id, itemKey: GUIDE_PRODUCT_ID },
+    );
+    expect((await feed()).items[0]?.id).not.toBe(GUIDE_PRODUCT_ID);
+    // Бронь сняли — подсказка снова на нём.
+    await api.call(me, "DELETE", `/reservations/${reservation.id}`);
+    expect((await feed()).items[0]?.id).toBe(GUIDE_PRODUCT_ID);
+  });
+
   it("свайпнутые уходят из ленты и из счётчика, exclude — тоже", async () => {
     const [first, second] = (await feed()).items;
     await swipe(first?.id ?? "", "pass");
@@ -198,7 +231,12 @@ describe.each(CLIENTS)("лента и свайпы — %s", (_name, create) => {
       limit: 30,
     });
     expect(page.items.length).toBeGreaterThan(0);
-    expect(page.items.every((p) => p.priceMin <= 2000)).toBe(true);
+    // Обучающая карточка фильтром не убирается (Y03) — она не товар.
+    expect(
+      page.items
+        .filter((p) => p.id !== GUIDE_PRODUCT_ID)
+        .every((p) => p.priceMin <= 2000),
+    ).toBe(true);
     const me1 = await profile();
     expect(me1.taste).toBeUndefined();
     const wishlist = await api.call<{ items: unknown[]; wishCount: number }>(

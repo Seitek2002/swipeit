@@ -5,6 +5,7 @@ import {
   canAddPair,
   pairBlocked,
   pairsAmong,
+  santaPeople,
   withPair,
   withoutPair,
 } from "./exclusions";
@@ -52,5 +53,22 @@ describe("исключения (R03)", () => {
     expect(canAddPair([{ id: "me" }, { id: "a" }], [])).toBe(true);
     expect(canAddPair([{ id: "me" }, { id: "a" }], [["a", "me"]])).toBe(false);
     expect(canAddPair(people, [["a", "b"]])).toBe(true);
+  });
+});
+
+describe("люди для исключений — себя «Ты»", () => {
+  it("организатор в шторке — «Ты», как в списке участников", () => {
+    const members = [
+      { id: "me", name: "Айгерим", avatarColor: "mint" },
+      { id: "a", name: "Азамат", avatarColor: "rose" },
+    ];
+    expect(santaPeople(members, "me").map((person) => person.name)).toEqual([
+      "Ты",
+      "Азамат",
+    ]);
+    expect(santaPeople(members, null).map((person) => person.name)).toEqual([
+      "Айгерим",
+      "Азамат",
+    ]);
   });
 });

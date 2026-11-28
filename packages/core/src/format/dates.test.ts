@@ -5,6 +5,7 @@ import {
   formatDayMonth,
   formatOccasionDate,
   formatRemaining,
+  formatRemainingShort,
   isPastDate,
   occasionLabel,
   remainingVerb,
@@ -39,6 +40,20 @@ describe("formatRemaining", () => {
     expect(remainingVerb(11 * DAY)).toBe("Осталось");
     expect(remainingVerb(2 * DAY)).toBe("Осталось");
     expect(remainingVerb(30 * MIN)).toBe("Осталось");
+  });
+});
+
+describe("formatRemainingShort (Y08)", () => {
+  it("дни и часы, часы и минуты — сокращённо", () => {
+    expect(formatRemainingShort(2 * DAY + 6 * HOUR)).toBe("2 дн 6 ч");
+    expect(formatRemainingShort(DAY)).toBe("1 дн");
+    expect(formatRemainingShort(5 * HOUR + 12 * MIN)).toBe("5 ч 12 мин");
+    expect(formatRemainingShort(3 * HOUR)).toBe("3 ч");
+  });
+
+  it("меньше часа — как полная форма", () => {
+    expect(formatRemainingShort(12 * MIN + 5000)).toBe("12:05");
+    expect(formatRemainingShort(0)).toBe("0:00");
   });
 });
 

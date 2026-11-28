@@ -112,20 +112,35 @@ const profileOf = ({
 const hasWishlist = (db: Db, userId: string) =>
   (db.wishlistItems[userId] ?? []).some((item) => item.status === "active");
 
-const memberList = (db: Db, game: SantaGame): SantaMember[] =>
+// Гостю (превью по ссылке, X07) — только профиль и joined (S05): готов ли
+// чей-то вишлист и кто вскрыл письмо, знать ему незачем.
+const memberList = (
+  db: Db,
+  game: SantaGame,
+  role: SantaView["role"],
+): SantaMember[] =>
   membersOf(game)
     .map((id) => db.users[id])
     .filter((user): user is User => Boolean(user))
-    .map((user) => ({
-      ...profileOf(user),
-      hasWishlist: hasWishlist(db, user.id),
-      joined: game.participantIds.includes(user.id),
-      opened: game.openedIds.includes(user.id),
-    }));
+    .map((user) => {
+      const joined = game.participantIds.includes(user.id);
+      if (role === "guest") return { ...profileOf(user), joined };
+      return {
+        ...profileOf(user),
+        hasWishlist: hasWishlist(db, user.id),
+        joined,
+        opened: game.openedIds.includes(user.id),
+      };
+    });
 
 // Наружу — только перечисленные поля: новое поле игры не утечёт к
-// клиенту, пока его не добавят сюда явно.
-const publicOf = (game: SantaGame): SantaGamePublic => ({
+// клиенту, пока его не добавят сюда явно. Исключения — только
+// организатору (S05): участнику, позванному и гостю по ссылке они
+// рассказали бы о людях и сузили бы, кто твой Санта.
+const publicOf = (
+  game: SantaGame,
+  role: SantaView["role"],
+): SantaGamePublic => ({
   id: game.id,
   title: game.title,
   ownerId: game.ownerId,
@@ -135,7 +150,7 @@ const publicOf = (game: SantaGame): SantaGamePublic => ({
   status: game.status,
   participantIds: game.participantIds,
   invitedIds: game.invitedIds,
-  exclusions: game.exclusions,
+  exclusions: role === "owner" ? game.exclusions : [],
   ...(game.drawnAt ? { drawnAt: game.drawnAt } : {}),
   createdAt: game.createdAt,
 });
@@ -255,10 +270,14 @@ const viewOf = (
 ): SantaView => {
   const joined = game.participantIds.includes(userId);
   const wardId = game.assignments?.[userId];
+  const role = roleOf(game, userId);
+  // Причина неудачи и drawIssue называют людей из исключений — только
+  // организатору (S05). Отметку «не прошла» видят все.
+  const owner = role === "owner";
   return {
-    game: publicOf(game),
-    members: memberList(db, game),
-    role: roleOf(game, userId),
+    game: publicOf(game, role),
+    members: memberList(db, game, role),
+    role,
     me: joined
       ? {
           envelope: envelopeOf(game, userId),
@@ -271,8 +290,12 @@ const viewOf = (
       : null,
     boughtCount: game.boughtIds.length,
     openedCount: game.openedIds.length,
-    drawIssue: drawIssue(db, game),
-    drawFailed: game.drawFailed ?? null,
+    drawIssue: owner ? drawIssue(db, game) : null,
+    drawFailed: game.drawFailed
+      ? owner
+        ? game.drawFailed
+        : { at: game.drawFailed.at }
+      : null,
   };
 };
 
@@ -701,52 +724,78 @@ export const openSantaEnvelope: Handler = async (ctx, { params }) => {
   return view;
 };
 
-// POST /santa/:id/bought { bought?: boolean } — «Я купил подарок» (и снять
-// отметку). Сначала — вскрыть конверт: покупать, не зная кому, нечего.
+// POST /santa/:id/bought { bought?: boolean, itemKey? } — «Я купил подарок»,
+// смена покупки и снять отметку (Y05). Сначала — вскрыть конверт: покупать,
+// не зная кому, нечего.
+//
+// Бронь Санты (X02) — его открытая бронь на вишлисте подопечного. Ровно
+// одна: сменил покупку — бронь переезжает на новое желание, «Другое» или
+// снял отметку — бронь снимается, и друзья подопечного снова могут это
+// подарить.
 export const setSantaBought: Handler = async (ctx, { params, body }) => {
   const { bought, itemKey } = parseInput(BoughtBodySchema, body ?? {});
   const products = await productMap(ctx);
-  const { changedNow, view } = await ctx.db.write((db) => {
+  const { changedNow, reservationsChanged, view } = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const game = findGame(db, params.id);
     requireDrawnParticipant(game, user);
     if (!game.openedIds.includes(user.id)) {
       throw conflict("Сначала открой конверт");
     }
-    // «Купил: …» (X02) — бронь желания подопечного под своим именем.
     const wardId = game.assignments?.[user.id];
-    if (bought && itemKey && wardId) {
-      if (!guestItems(db, wardId).some((item) => itemKeyOf(item) === itemKey)) {
+    const keep = bought ? itemKey : undefined;
+    const isMine = (entry: Db["reservations"][number]) =>
+      entry.ownerId === wardId &&
+      !entry.closedAt &&
+      entry.reserver.userId === user.id;
+    // Сначала проверяем новое желание — до того, как снять старую бронь:
+    // ошибка не должна оставить Санту без покупки.
+    let reserve = false;
+    if (keep && wardId) {
+      if (!guestItems(db, wardId).some((item) => itemKeyOf(item) === keep)) {
         throw notFound("Такого желания нет");
       }
       const taken = db.reservations.find(
         (entry) =>
-          entry.ownerId === wardId &&
-          entry.itemKey === itemKey &&
-          !entry.closedAt,
+          entry.ownerId === wardId && entry.itemKey === keep && !entry.closedAt,
       );
       if (taken && taken.reserver.userId !== user.id) {
         throw conflict("Кто-то уже выбрал этот подарок");
       }
-      if (!taken) {
-        db.reservations.push({
-          id: `rs_${nanoid(10)}`,
-          ownerId: wardId,
-          itemKey,
-          reserver: { userId: user.id, name: user.name ?? "" },
-          at: nowIso(ctx.clock),
-        });
-      }
+      reserve = !taken;
+    }
+    const before = db.reservations.length;
+    db.reservations = db.reservations.filter(
+      (entry) => !isMine(entry) || entry.itemKey === keep,
+    );
+    const released = db.reservations.length !== before;
+    if (reserve && keep && wardId) {
+      db.reservations.push({
+        id: `rs_${nanoid(10)}`,
+        ownerId: wardId,
+        itemKey: keep,
+        reserver: { userId: user.id, name: user.name ?? "" },
+        at: nowIso(ctx.clock),
+      });
     }
     const was = game.boughtIds.includes(user.id);
     const others = game.boughtIds.filter((id) => id !== user.id);
     game.boughtIds = bought ? [...others, user.id] : others;
     return {
-      changedNow: was !== bought,
+      changedNow: was !== bought || released || reserve,
+      reservationsChanged: released || reserve,
       view: viewOf(db, game, user.id, products, ctx.clock.now()),
     };
   });
   if (changedNow) changed(ctx, view.game.id);
+  // Гости вишлиста подопечного видят бронь сразу (как у DELETE /reservations).
+  if (reservationsChanged) {
+    ctx.realtime.publish({
+      type: "db:changed",
+      scope: ["reservations", "wishlist"],
+      by: ctx.userId ?? "",
+    });
+  }
   return view;
 };
 

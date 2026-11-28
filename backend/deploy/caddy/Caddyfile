@@ -1,0 +1,7 @@
+# Профиль caddy (docker compose --profile caddy up -d): HTTPS для тех, у кого
+# на сервере нет своего прокси. Caddy сам получает сертификат Let's Encrypt
+# на SITE_ADDRESS из .env (порты 80 и 443 должны быть открыты из интернета) и
+# передаёт всё, включая WebSocket /v1/ws, в контейнер web.
+{$SITE_ADDRESS} {
+	reverse_proxy web:8080
+}

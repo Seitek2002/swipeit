@@ -22,7 +22,9 @@ export const SantaGameSchema = z.object({
   // кнопке на экране игры или по ссылке. default — чтобы игры, сохранённые
   // без поля, читались.
   invitedIds: z.array(z.string()).default([]),
-  // Пары, которые не дарят друг другу (в обе стороны).
+  // Пары, которые не дарят друг другу (в обе стороны). Наружу — только
+  // организатору (S05): исключение рассказывает о людях («эти двое —
+  // пара»), а в игре на 4–6 ещё и сужает, кто твой Санта. Остальным — [].
   exclusions: z.array(z.tuple([z.string(), z.string()])),
   // santaId → wardId. Наружу не отдаётся никогда — каждый видит только
   // своего подопечного (см. SantaView.me).
@@ -125,13 +127,15 @@ export type UpdateSantaInput = z.input<typeof UpdateSantaInputSchema>;
 
 // Участник игры: профиль и статус вишлиста («вишлист готов» — есть хотя бы
 // одно активное желание). joined: false — позван, но ещё не вступил.
+// Гостю (role: "guest" — превью по ссылке, X07) — только профиль и joined:
+// hasWishlist и opened ему не приходят (S05).
 export type SantaMember = PlanParticipant & {
-  hasWishlist: boolean;
+  hasWishlist?: boolean;
   joined: boolean;
   // Вскрыл письмо (auto-tasks-pm-2 Q06): о паре ничего не говорит, а
   // организатору видно, кому напомнить. Покупка — по-прежнему только
   // счётчиком.
-  opened: boolean;
+  opened?: boolean;
 };
 
 // Конверт (DESIGN.md §7 SantaEnvelope): sealed — до жеребьёвки, ready —
@@ -178,7 +182,10 @@ export type SantaMe = {
 export type SantaView = {
   boughtCount: number;
   // Почему жеребьёвку сейчас провести нельзя (меньше 3 вступивших,
-  // невозможные исключения); null — можно или она уже прошла.
+  // невозможные исключения); null — можно или она уже прошла. Только
+  // организатору (S05): в тексте имена из исключений («Азамату некому
+  // дарить»). Остальным всегда null — их строку экран собирает сам из
+  // состава игры.
   drawIssue: null | string;
   game: SantaGamePublic;
   me: null | SantaMe;
@@ -188,8 +195,9 @@ export type SantaView = {
   role: "guest" | "invited" | "owner" | "participant";
   // Жеребьёвка по дате не прошла (R08): когда и почему. Пока игра не
   // изменилась, по дате её больше не пробуют. Нет поля или null — всё в
-  // порядке.
-  drawFailed?: null | { at: string; reason: string };
+  // порядке. reason — только организатору (S05): остальные видят «ждём
+  // организатора», а причина называет людей из исключений.
+  drawFailed?: null | { at: string; reason?: string };
 };
 
 // Элемент GET /santa — карточка игры в списке. Подопечный — только после

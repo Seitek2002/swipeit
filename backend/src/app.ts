@@ -8,7 +8,7 @@ import type { ServerCatalog } from "./catalog/load";
 import type { Config } from "./config";
 import type { Clock } from "./context";
 import type { Db } from "./db/client";
-import { registerErrors } from "./errors";
+import { errorStats, registerErrors } from "./errors";
 import { resolveSession } from "./auth/sessions";
 import { createDiskStorage } from "./domains/uploads/storage";
 import { registerHttpGuards } from "./http-guards";
@@ -117,6 +117,8 @@ export const buildApp = ({
       apiVersion: 1,
       now: clock.now(),
       commit: config.COMMIT,
+      // Запуск процесса (S08): по нему видно перезапуски.
+      startedAt: errorStats().startedAt.toISOString(),
       // Старее этой сборки фронт показывает «Обнови приложение» (B17).
       minClientBuild: config.MIN_CLIENT_BUILD,
       ...(catalog ? { catalogVersion: catalog.version } : {}),

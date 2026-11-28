@@ -41,6 +41,24 @@ export const formatRemaining = (ms: number): string => {
   return `${Math.floor(totalSeconds / 60)}:${pad(totalSeconds % 60)}`;
 };
 
+// Короткий отсчёт для узкой шапки колоды плана (auto-tasks-ux-5 Y08): «2 дн
+// 6 ч», «5 ч 12 мин», меньше часа — «12:05». Полная форма не помещалась
+// рядом со счётчиком «10 из 12» на 360 px и обрезалась.
+export const formatRemainingShort = (ms: number): string => {
+  if (ms <= 0) return "0:00";
+  if (ms >= DAY) {
+    const days = Math.floor(ms / DAY);
+    const hours = Math.floor((ms % DAY) / HOUR);
+    return hours > 0 ? `${days} дн ${hours} ч` : `${days} дн`;
+  }
+  if (ms >= HOUR) {
+    const hours = Math.floor(ms / HOUR);
+    const minutes = Math.floor((ms % HOUR) / MINUTE);
+    return minutes > 0 ? `${hours} ч ${minutes} мин` : `${hours} ч`;
+  }
+  return formatRemaining(ms);
+};
+
 const startOfDay = (timestamp: number) => {
   const date = new Date(timestamp);
   date.setHours(0, 0, 0, 0);

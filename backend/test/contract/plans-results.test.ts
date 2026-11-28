@@ -1,9 +1,11 @@
 import type { Activity } from "@swipeit/core/api/catalog/types";
 import type { PlanSummary, PlanView } from "@swipeit/core/api/plans/types";
 import {
+  computeMatches,
   decisionCandidates,
   voteCandidates,
 } from "@swipeit/core/logic/matches";
+import { isTimedOutWithoutResults } from "@swipeit/core/logic/plan-close";
 import type { RealtimeEvent } from "@swipeit/core/realtime/types";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -550,6 +552,139 @@ describe.each(CLIENTS)("«Че делать будем?», итоги — %s", (
       await swipe(owner, id, extra, "like");
       const done = await swipe(azamat, id, extra, "like");
       expect(done.plan.status).toBe("results");
+    });
+  });
+
+  // Y02: дата закрывает план с отстающими так же, как «Показать итоги
+  // сейчас», — по долиставшим. Долистал меньше двоих — «Продлить на сутки».
+  describe("дата «До даты» и отстающие (Y02)", () => {
+    // «До даты» на троих. finished — кто долистал (лайк первой карточки,
+    // пас остальным); остальные пасанули только первую.
+    const deadlinePlan = async (
+      finished: Array<"azamat" | "nurai" | "owner">,
+    ) => {
+      const people = await trio();
+      const created = await api.call<PlanView>(people.owner, "POST", "/plans", {
+        title: "Выходные 6–7 декабря",
+        mode: "deadline",
+        deadline: new Date(NOW + 2 * DAY).toISOString(),
+        participantIds: [people.azamat.id, people.nurai.id],
+        filters: FILTERS,
+      });
+      const id = created.plan.id;
+      const [first = ""] = created.plan.deck;
+      for (const key of ["owner", "azamat", "nurai"] as const) {
+        if (finished.includes(key)) {
+          await playDeck(created, [[people[key], "L"]]);
+        } else {
+          await swipe(people[key], id, first, "pass");
+        }
+      }
+      return { ...people, id, first, deck: created.plan.deck };
+    };
+    // Перемотать за дату и пройтись планировщиком.
+    const pastDeadline = async () => {
+      api.advance(2 * DAY + 60_000);
+      return api.expire();
+    };
+
+    it("1 из 3: итогов нет — closedEarly и timedOut, повторный проход ничего не трогает", async () => {
+      const { owner, nurai, id, first } = await deadlinePlan(["owner"]);
+      expect(await pastDeadline()).toEqual([id]);
+      const { plan } = await getPlan(owner, id);
+      expect(plan).toMatchObject({
+        status: "results",
+        closedEarly: true,
+        timedOut: true,
+        votes: {},
+      });
+      expect(plan.finishedIds).toEqual([owner.id]);
+      expect(isTimedOutWithoutResults(plan)).toBe(true);
+      expect(await api.expire()).toEqual([]);
+      await fails(swipe(nurai, id, first, "like"), "CONFLICT");
+    });
+
+    it("2 из 3: итоги по долиставшим — пас отстающей не мешает «Все за»", async () => {
+      const { owner, azamat, nurai, id, first, deck } = await deadlinePlan([
+        "owner",
+        "azamat",
+      ]);
+      expect(await pastDeadline()).toEqual([id]);
+      const view = await getPlan(nurai, id);
+      expect(view.plan).toMatchObject({
+        status: "results",
+        closedEarly: true,
+        timedOut: true,
+      });
+      expect(sorted(view.plan.finishedIds)).toEqual(
+        sorted([owner.id, azamat.id]),
+      );
+      expect(isTimedOutWithoutResults(view.plan)).toBe(false);
+      expect(
+        computeMatches(view.plan, view.activities).matches.map(
+          (m) => m.activityId,
+        ),
+      ).toEqual([first]);
+      await fails(swipe(nurai, id, deck[1] ?? first, "like"), "CONFLICT");
+      // Барабан крутится по тем же итогам.
+      const decided = await decide(owner, id, { method: "random" });
+      expect(decided.plan.decision?.activityId).toBe(first);
+    });
+
+    it("3 из 3: итоги сразу, дата их не трогает и отметок нет", async () => {
+      const { owner, id } = await deadlinePlan(["owner", "azamat", "nurai"]);
+      expect((await getPlan(owner, id)).plan.status).toBe("results");
+      expect(await pastDeadline()).toEqual([]);
+      const { plan } = await getPlan(owner, id);
+      expect(plan.status).toBe("results");
+      expect(plan.closedEarly).toBeUndefined();
+      expect(plan.timedOut).toBeUndefined();
+    });
+
+    it("«Продлить на сутки»: только организатор, снова колода, повтор ничего не меняет", async () => {
+      const { owner, azamat, nurai, id, deck } = await deadlinePlan(["owner"]);
+      await pastDeadline();
+      const now = NOW + 2 * DAY + 60_000;
+      await fails(act(azamat, id, "/extend"), "FORBIDDEN");
+      await fails(act(owner, "pl_nope", "/extend"), "NOT_FOUND");
+      const extended = await act(owner, id, "/extend");
+      expect(extended.plan).toMatchObject({
+        status: "swiping",
+        finishedIds: [owner.id],
+        votes: {},
+      });
+      expect(Date.parse(extended.plan.deadline ?? "")).toBe(now + DAY);
+      expect(extended.plan.closedEarly).toBeUndefined();
+      expect(extended.plan.timedOut).toBeUndefined();
+      api.advance(60_000);
+      const again = await act(owner, id, "/extend");
+      expect(again.plan).toEqual(extended.plan);
+      expect(await api.expire()).toEqual([]);
+      // Отстающие досвайпывают — итоги по всем, без отметок.
+      let last = extended;
+      for (const caller of [azamat, nurai]) {
+        for (const card of deck) last = await swipe(caller, id, card, "pass");
+      }
+      expect(last.plan.status).toBe("results");
+      expect(last.plan.closedEarly).toBeUndefined();
+      // Итоги готовы без отстающих — продлевать нечего.
+      await fails(act(owner, id, "/extend"), "CONFLICT");
+    });
+
+    it("«Продлить» нельзя: «Прямо сейчас», лобби, решённый план", async () => {
+      const live = await toResults();
+      await fails(act(live.owner, live.id, "/extend"), "CONFLICT");
+      const { owner, azamat, id } = await deadlinePlan(["owner", "azamat"]);
+      await pastDeadline();
+      await decide(owner, id, { method: "random" });
+      await fails(act(owner, id, "/extend"), "CONFLICT");
+      const lobby = await api.call<PlanView>(owner, "POST", "/plans", {
+        title: "Пятница",
+        mode: "live",
+        participantIds: [azamat.id],
+        filters: FILTERS,
+      });
+      await fails(act(owner, lobby.plan.id, "/extend"), "CONFLICT");
     });
   });
 });

@@ -15,6 +15,7 @@ import {
   type BuyLink,
   type NameGuard,
   type ReserveAccess,
+  ReserveActionButton,
   ReserveControl,
 } from "@/features/reserve-gift";
 
@@ -84,8 +85,8 @@ type Props = {
   wishlist: GuestWishlist;
 };
 
-// «Напомнить в календаре» после брони (P07): событие на весь день за 3 дня
-// до повода — успеть купить. В описании — ссылка в магазин.
+// «В календарь» после брони (P07): событие на весь день за 3 дня до повода —
+// успеть купить. В описании — ссылка в магазин. В ряду кнопок брони (Y10).
 const CalendarReminder = ({
   date,
   title,
@@ -95,8 +96,8 @@ const CalendarReminder = ({
   title: string;
   url?: string;
 }) => (
-  <button
-    type="button"
+  <ReserveActionButton
+    className="text-ink-soft"
     onClick={() => {
       const now = clock.now();
       downloadIcs(
@@ -114,11 +115,9 @@ const CalendarReminder = ({
         ),
       );
     }}
-    className="text-ink-soft flex min-h-11 items-center gap-1.5 px-2 text-[15px] leading-5 font-semibold"
   >
-    <CalendarPlus aria-hidden size={16} strokeWidth={2} />
-    Напомнить в календаре
-  </button>
+    <CalendarPlus aria-hidden size={20} strokeWidth={2} />В календарь
+  </ReserveActionButton>
 );
 
 // Бирка-карточка гостя (DESIGN.md §8.5, reference .g-card): крупнее, чем у

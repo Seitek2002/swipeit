@@ -44,9 +44,19 @@ const rankForUser = async (ctx: HandlerContext, db: Db, query: FeedQuery) => {
     explore:
       context.kind === "self" &&
       !own.some((swipe) => swipe.context.kind === "self"),
-    // Обучающая карточка — в своей ленте, пока подсказка не отмечена.
+    // Обучающая карточка — в своей ленте, пока подсказка не отмечена. Гость,
+    // который сам выбрал этот подарок другу, не получает его первым в свою
+    // ленту: свайп вправо добавил бы себе то, что покупает другому
+    // (UX-аудит 3–5, «На заметку»). Слой подсказки ляжет на обычную карточку.
     guideId:
-      context.kind === "self" && !(user.seenHints ?? []).includes("deck_guide")
+      context.kind === "self" &&
+      !(user.seenHints ?? []).includes("deck_guide") &&
+      !db.reservations.some(
+        (reservation) =>
+          reservation.reserver.userId === user.id &&
+          reservation.itemKey === GUIDE_PRODUCT_ID &&
+          !reservation.closedAt,
+      )
         ? GUIDE_PRODUCT_ID
         : undefined,
     userId: user.id,

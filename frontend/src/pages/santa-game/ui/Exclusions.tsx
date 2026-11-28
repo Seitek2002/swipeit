@@ -12,6 +12,7 @@ import {
   type SantaView,
   canAddPair,
   pairsAmong,
+  santaPeople,
   withPair,
   withoutPair,
 } from "@/entities/santa-game";
@@ -22,16 +23,23 @@ import { isApiError, santaKeys, updateSantaGame } from "@/shared/api";
 // вступают по ссылке уже после создания: супругов из одного офиса теперь
 // можно развести здесь. Выбирать — из вступивших и позванных, не из друзей.
 // Невозможные исключения сервер не примет: его текст — под секцией, пара
-// не добавляется.
-export const Exclusions = ({ view }: { view: SantaView }) => {
+// не добавляется. Себя организатор видит «Ты», как в списке участников.
+// Шторку пары открывает и подтверждение жеребьёвки (Y04) — поэтому её
+// состояние у экрана.
+export const Exclusions = ({
+  view,
+  meId,
+  pairOpen,
+  onPairOpenChange: setPairOpen,
+}: {
+  meId: string;
+  onPairOpenChange: (open: boolean) => void;
+  pairOpen: boolean;
+  view: SantaView;
+}) => {
   const queryClient = useQueryClient();
-  const [pairOpen, setPairOpen] = useState(false);
   const [error, setError] = useState<null | string>(null);
-  const people: SantaPerson[] = view.members.map((member) => ({
-    id: member.id,
-    name: member.name,
-    avatarColor: member.avatarColor,
-  }));
+  const people: SantaPerson[] = santaPeople(view.members, meId);
   const pairs = pairsAmong(view.game.exclusions, people);
   const nameOf = (id: string) =>
     people.find((person) => person.id === id)?.name ?? "…";

@@ -1,9 +1,10 @@
-import type {
-  PlanMatches,
-  PlanParticipant,
-  PlanSession,
-  PlanSummary,
-  PlanView,
+import {
+  type PlanMatches,
+  type PlanParticipant,
+  type PlanSession,
+  type PlanSummary,
+  type PlanView,
+  isTimedOutWithoutResults,
 } from "@/shared/api";
 import { formatDayMonth } from "@/shared/lib/format";
 
@@ -14,6 +15,7 @@ export {
   computeMatches,
   countedParticipants,
   decisionCandidates,
+  isTimedOutWithoutResults,
   tallyVotes,
   voteCandidates,
 } from "@/shared/api";
@@ -46,6 +48,10 @@ export const planStatus = (
 ): PlanStatusView => {
   if (plan.status === "decided") {
     return { live: false, text: `Решено: ${decisionTitle ?? "…"}` };
+  }
+  // Дата закрыла план, а долистал меньше двоих (Y02): итогов нет.
+  if (isTimedOutWithoutResults(plan)) {
+    return { live: false, text: "Время вышло" };
   }
   if (plan.status === "results") return { live: false, text: "Итоги готовы" };
   if (plan.mode === "deadline" && plan.deadline) {

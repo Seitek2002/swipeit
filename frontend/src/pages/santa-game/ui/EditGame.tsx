@@ -88,35 +88,61 @@ const EditGameSheet = ({
   );
 };
 
-// «Изменить игру» в шапке экрана игры — только организатору (R03). Шапка
-// вне Suspense экрана, поэтому игру читает сама: запрос тот же, React Query
-// его не повторит.
-export const EditGameAction = () => {
-  const id = useSearchParams()?.get("id") ?? undefined;
-  const view = useSantaGame(id).data;
+// Шторка «Изменить игру» и как её открыть. Форма заполняется из игры при
+// каждом открытии: новый key — новая шторка без прошлых несохранённых
+// правок. Закрытая остаётся смонтированной — иначе пропала бы анимация
+// закрытия.
+const useEditGameSheet = (view: SantaView | undefined) => {
   const [open, setOpen] = useState(false);
-  // Форма заполняется из игры при каждом открытии: новый key — новая
-  // шторка без прошлых несохранённых правок. Закрытая остаётся смонтированной
-  // — иначе пропала бы анимация закрытия.
   const [session, setSession] = useState(0);
-  if (view?.role !== "owner") return null;
-  return (
-    <>
-      <IconButton
-        label="Изменить игру"
-        onClick={() => {
-          setSession((value) => value + 1);
-          setOpen(true);
-        }}
-      >
-        <Pencil aria-hidden size={20} strokeWidth={1.75} />
-      </IconButton>
+  return {
+    open: () => {
+      setSession((value) => value + 1);
+      setOpen(true);
+    },
+    sheet: view && (
       <EditGameSheet
         key={session}
         view={view}
         open={open}
         onClose={() => setOpen(false)}
       />
+    ),
+  };
+};
+
+// «Изменить игру» в шапке экрана игры — только организатору (R03). Шапка
+// вне Suspense экрана, поэтому игру читает сама: запрос тот же, React Query
+// его не повторит.
+export const EditGameAction = () => {
+  const id = useSearchParams()?.get("id") ?? undefined;
+  const view = useSantaGame(id).data;
+  const edit = useEditGameSheet(view);
+  if (view?.role !== "owner") return null;
+  return (
+    <>
+      <IconButton label="Изменить игру" onClick={edit.open}>
+        <Pencil aria-hidden size={20} strokeWidth={1.75} />
+      </IconButton>
+      {edit.sheet}
+    </>
+  );
+};
+
+// Ссылка «Изменить игру» в подписи «Жеребьёвка не прошла» (Y09): та же
+// шторка R03, что у карандаша в шапке.
+export const EditGameLink = ({ view }: { view: SantaView }) => {
+  const edit = useEditGameSheet(view);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={edit.open}
+        className="text-paper font-semibold underline underline-offset-2"
+      >
+        Изменить игру
+      </button>
+      {edit.sheet}
     </>
   );
 };

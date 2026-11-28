@@ -240,8 +240,10 @@ export type RankInput = {
   explore: boolean;
   filters: ProductFilters;
   // Обучающая карточка (п. 2): этот товар первым, если он ещё не свайпнут и
-  // проходит фильтры. Обработчик передаёт id, пока deck_guide не отмечена в
-  // своей ленте; в ленте по ссылке-фильтру — нет.
+  // не лежит в колоде. Фильтры его не убирают (UX-аудит Y03): это подсказка,
+  // а не товар, — пришедший из Санты с бюджетом «до 2 000» тоже её увидит.
+  // Обработчик передаёт id, пока deck_guide не отмечена в своей ленте; в
+  // ленте по ссылке-фильтру — нет.
   guideId?: string;
   products: readonly Product[];
   profile: FeedProfile;
@@ -284,10 +286,12 @@ export const rankProducts = ({
     )
     .map(({ product }) => product);
 
-  // В ranked его нет, если уже свайпнут, лежит в колоде или не проходит
-  // фильтры, — тогда лента как раньше.
+  // Свайпнут или лежит в колоде — лента как раньше. Фильтры — не помеха
+  // (Y03): берём из всего каталога.
   const guide = guideId
-    ? ranked.find((product) => product.id === guideId)
+    ? products.find(
+        (product) => product.id === guideId && !excludeIds.has(product.id),
+      )
     : undefined;
   const result: Product[] = explore
     ? explorePage(ranked, jitterSeed, muted, guide)

@@ -12,6 +12,7 @@ export {
   type SantaPair,
   type SantaPerson,
   samePair,
+  santaPeople,
   withPair,
   withoutPair,
 } from "./exclusions";
@@ -34,14 +35,19 @@ export {
 export { drawIsDue, santaTabDot } from "./tab-dot";
 export {
   ALL_IN,
+  ALL_IN_WAIT,
   drawLabel,
+  gatheringIssue,
   gatheringStatus,
+  needsMoreMembers,
   type SantaMember,
   type SantaSummary,
   type SantaView,
   type SantaWardItem,
+  santaInviteText,
   santaTerms,
 } from "./model";
 export { ExclusionList } from "./ui/ExclusionList";
+export { InviteFriendsButton } from "./ui/InviteFriendsButton";
 export { PairSheet } from "./ui/PairSheet";
 export { SantaForm } from "./ui/SantaForm";

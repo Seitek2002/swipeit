@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { AppHeader } from "@/widgets/app-header";
 import { GiftDeck, GiftDeckSkeleton } from "@/widgets/gift-deck";
-import { SantaNudgeBanner } from "@/widgets/santa-nudge";
+import { useSantaNudgeBanner } from "@/widgets/santa-nudge";
 
 import { NAME_CAPTIONS, NameForm, useRequireName } from "@/features/ask-name";
 import { PickRequestSheet } from "@/features/pick-request-create";
@@ -51,6 +51,13 @@ export const GiftsPage = () => {
   // Друг увидит «Азамат хочет подарить тебе подарок» (DESIGN.md §8.6): нет
   // имени — NameSheet первым шагом шторки; NAME_REQUIRED — поверх и повтор.
   const requireName = useRequireName(NAME_CAPTIONS.pick);
+  // Санта ждёт вишлист (R06, Y03): строка над колодой, после первого свайпа —
+  // иконка в шапке.
+  const santa = useSantaNudgeBanner({
+    budgetMax: filters.budget.max,
+    onBudget: (max) =>
+      setFilters({ ...filters, budget: { ...filters.budget, max } }),
+  });
 
   return (
     <Screen>
@@ -58,6 +65,7 @@ export const GiftsPage = () => {
         title="Подарки"
         actions={
           <>
+            {santa.headerAction}
             {summary.shareUnlocked && <SendWishlistChip />}
             <FiltersButton
               filters={filters}
@@ -67,16 +75,12 @@ export const GiftsPage = () => {
         }
       />
       <div className="flex min-h-0 flex-1 flex-col pb-[var(--tabbar-space)]">
-        {/* Санта ждёт вишлист (R06): бюджет игры одним тапом. */}
-        <SantaNudgeBanner
-          onBudget={(max) =>
-            setFilters({ ...filters, budget: { ...filters.budget, max } })
-          }
-        />
+        {santa.banner}
         <ActiveFilterChips filters={filters} onChange={setFilters} />
         <GiftDeck
           filters={filters}
           onEditFilters={() => setFiltersOpen(true)}
+          onSwipe={santa.collapse}
         />
       </div>
       <FiltersSheet

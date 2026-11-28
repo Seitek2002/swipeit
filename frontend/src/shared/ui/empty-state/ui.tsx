@@ -7,6 +7,8 @@ type PaperObject = "envelope" | "tag" | "ticket";
 type Props = {
   action?: ReactNode;
   className?: string;
+  // Мелкая строка под кнопкой: код ошибки для владельца (S08).
+  footer?: ReactNode;
   object?: PaperObject;
   title: string;
 };
@@ -41,6 +43,7 @@ export const EmptyState = ({
   title,
   action,
   className,
+  footer,
 }: Props) => (
   <div
     className={cn(
@@ -60,5 +63,6 @@ export const EmptyState = ({
         {action}
       </div>
     )}
+    {footer && <div className="text-paper">{footer}</div>}
   </div>
 );

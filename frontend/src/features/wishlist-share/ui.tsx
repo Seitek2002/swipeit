@@ -633,7 +633,7 @@ export const WishlistShareSheet = ({
 
             <TextArea
               label="Сообщение"
-              placeholder="Например: буду рада любому подарку из списка"
+              placeholder="Например: порадует любой подарок из списка"
               maxLength={200}
               value={message}
               onChange={(event) => setMessage(event.target.value)}

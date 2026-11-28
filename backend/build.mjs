@@ -3,7 +3,7 @@
 // исходники TypeScript из рабочего пространства — вшиваются в сборку: Node не
 // запускает .ts из node_modules.
 import { build } from "esbuild";
-import { readFileSync } from "node:fs";
+import { cpSync, readFileSync, rmSync } from "node:fs";
 
 const pkg = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url)),
@@ -12,13 +12,17 @@ const external = Object.keys(pkg.dependencies ?? {}).filter(
   (name) => name !== "@swipeit/core",
 );
 
-// Сервер и скрипты отчёта владельцу (R02): в образе их запускают так —
-// docker compose exec api node dist/funnel.js --days 7.
+// Сервер, миграции (B18, S01: одноразовый контейнер migrate в
+// backend/deploy/docker-compose.yml) и скрипты отчёта владельцу (R02): в
+// образе их запускают так — docker compose exec api node dist/funnel.js --days 7.
 await build({
   entryPoints: {
     server: "src/server.ts",
+    migrate: "src/db/migrate-cli.ts",
     funnel: "src/db/funnel-cli.ts",
     "funnel-team": "src/db/funnel-team-cli.ts",
+    // Репетиция офиса и дымовой тест staging (S06): только HTTP и WebSocket.
+    rehearsal: "src/db/rehearsal-cli.ts",
   },
   outdir: "dist",
   bundle: true,
@@ -41,3 +45,8 @@ await build({
   ],
   logLevel: "info",
 });
+
+// SQL-миграции — рядом со сборкой: в dist/migrate.js папка миграций ищется
+// относительно самого файла (src/db/migrate.ts), то есть в dist/migrations.
+rmSync("dist/migrations", { recursive: true, force: true });
+cpSync("src/db/migrations", "dist/migrations", { recursive: true });
