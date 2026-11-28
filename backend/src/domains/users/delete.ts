@@ -8,6 +8,7 @@ import {
   friendships,
   identities,
   importantDates,
+  notifications,
   pickAnswers,
   pickRequests,
   planSwipes,
@@ -265,6 +266,8 @@ export const deleteMe: ServerHandler = async (ctx) => {
   await tx
     .delete(wishlistViews)
     .where(or(eq(wishlistViews.viewerId, id), eq(wishlistViews.ownerId, id)));
+  // Очередь бота (S10): тексты с названиями игр.
+  await tx.delete(notifications).where(eq(notifications.userId, id));
   await tx.delete(identities).where(eq(identities.userId, id));
   await tx.delete(sessions).where(eq(sessions.userId, id));
 

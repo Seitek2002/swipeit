@@ -59,6 +59,10 @@ import { datesOf } from "../dates/handlers";
 import { areFriends, makeFriends } from "../friends/handlers";
 import { countEvent, reachStep } from "../funnel/steps";
 import { guestItemsOf } from "../guest/handlers";
+import {
+  notifySantaDrawFailed,
+  notifySantaDrawn,
+} from "../notifications/events";
 import { readMe, readUser, type UserRow } from "../users/queries";
 import {
   countActiveWishes,
@@ -205,8 +209,9 @@ const priceOf = (ctx: ServerContext, item: WishlistItem) => {
   };
 };
 
-// Сколько желаний подопечного в бюджете игры (по нижней цене).
-const wishesInBudget = async (
+// Сколько желаний подопечного в бюджете игры (по нижней цене). Тот же счёт
+// — у напоминания «Добавь пару желаний» (S10).
+export const wishesInBudget = async (
   ctx: ServerContext,
   wardId: string,
   budget: number,
@@ -811,6 +816,7 @@ export const drawSantaGame: ServerHandler = async (ctx, { params }) => {
     },
   );
   await saveAssignments(ctx.tx, game.id, assignments);
+  await notifySantaDrawn(ctx.tx, game, ctx.clock.now());
   // Компания разыграла Санту (Q02): по игре, жеребьёвка бывает одна.
   await countEvent(ctx.tx, "santa_drawn_group", ctx.clock.now(), me.id);
   await countNamesakes(ctx, game, ctx.clock.now(), me.id);
@@ -974,11 +980,14 @@ const markDrawFailed = async (
   now: number,
 ) => {
   const before = await loadGame(ctx.tx, id, { lock: true });
+  const failedAt = new Date(now).toISOString();
   const game: StoredGame = {
     ...structuredClone(before),
-    drawFailed: { at: new Date(now).toISOString(), reason },
+    drawFailed: { at: failedAt, reason },
   };
   await saveGame(ctx.tx, before, game, now);
+  // В боте — без причины: она называет людей из исключений (S05).
+  await notifySantaDrawFailed(ctx.tx, game, failedAt, now);
   ctx.events.publish(
     {
       type: "toast",
@@ -1031,6 +1040,7 @@ export const drawDueSantaGames = async (
         const assignments = await performDraw(scoped, game);
         await saveGame(savepoint, before, game, now);
         await saveAssignments(savepoint, id, assignments);
+        await notifySantaDrawn(savepoint, game, now);
         await countEvent(savepoint, "santa_drawn_group", now, game.ownerId);
         await countNamesakes(scoped, game, now, game.ownerId);
         drawn.push(id);

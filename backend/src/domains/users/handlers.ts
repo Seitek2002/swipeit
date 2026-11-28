@@ -7,17 +7,17 @@ import {
 } from "@swipeit/core/api/users/types";
 import { validation } from "@swipeit/core/errors";
 import { parseInput } from "@swipeit/core/parse-input";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import { createSession, revokeSession } from "../../auth/sessions";
 import { reachStep } from "../funnel/steps";
 import type { ServerContext, ServerHandler } from "../../context";
-import { friendships, users, wishlistMeta } from "../../db/schema";
+import { friendships, identities, users, wishlistMeta } from "../../db/schema";
 import {
-  isTelegramLinked,
   lockMe,
   rowToUser,
+  telegramLinkOf,
   toMe,
   type UserRow,
 } from "./queries";
@@ -43,13 +43,17 @@ const writeMe = async (
 ): Promise<MeResponse> => {
   const me = await lockMe(ctx);
   const changes = patch(me);
-  const [row] = await ctx.tx
-    .update(users)
-    .set(changes)
-    .where(eq(users.id, me.id))
-    .returning();
+  // Только переключатель бота (S10) — строку профиля не трогаем.
+  const [row] =
+    Object.keys(changes).length === 0
+      ? [me]
+      : await ctx.tx
+          .update(users)
+          .set(changes)
+          .where(eq(users.id, me.id))
+          .returning();
   await usersChanged(ctx, me.id);
-  return toMe(rowToUser(row ?? me), await isTelegramLinked(ctx.tx, me.id));
+  return toMe(rowToUser(row ?? me), await telegramLinkOf(ctx.tx, me.id));
 };
 
 // POST /users (BACKEND.md §3.1): анонимный профиль и сессия, ответ
@@ -84,7 +88,7 @@ export const createUser: ServerHandler = async (ctx, { body }) => {
 
 export const getMe: ServerHandler = async (ctx) => {
   const me = await lockMe(ctx);
-  return toMe(rowToUser(me), await isTelegramLinked(ctx.tx, me.id));
+  return toMe(rowToUser(me), await telegramLinkOf(ctx.tx, me.id));
 };
 
 // PATCH /me — как в моке: имя и фон аватара, день рождения, свои интересы и
@@ -94,6 +98,27 @@ export const updateMe: ServerHandler = async (ctx, { body }) => {
   const { interests, mutedInterests } = patch;
   if (interests?.some((id) => mutedInterests?.includes(id))) {
     throw validation("Интерес не может быть и твоим, и «Не моё»");
+  }
+  // «Сообщения от бота в Telegram» (S10) — только у вошедших через
+  // Telegram. Включил — снимаем и отметку «бота заблокировали»: не вышло —
+  // следующий 403 поставит её снова.
+  if (patch.botMessages !== undefined) {
+    const linked = await ctx.tx
+      .update(identities)
+      .set({
+        botMessages: patch.botMessages,
+        ...(patch.botMessages ? { botBlockedAt: null } : {}),
+      })
+      .where(
+        and(
+          eq(identities.userId, ctx.userId ?? ""),
+          eq(identities.provider, "telegram"),
+        ),
+      )
+      .returning({ userId: identities.userId });
+    if (linked.length === 0) {
+      throw validation("Сначала войди через Telegram");
+    }
   }
   return writeMe(ctx, (me) => {
     const next: Partial<typeof users.$inferInsert> = {};

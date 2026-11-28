@@ -18,7 +18,12 @@ import {
 import type { ServerContext, ServerHandler } from "../context";
 import { identities, users, wishlistItems } from "../db/schema";
 import { createUser } from "../domains/users/handlers";
-import { lockMe, rowToUser, toMe } from "../domains/users/queries";
+import {
+  lockMe,
+  rowToUser,
+  telegramLinkOf,
+  toMe,
+} from "../domains/users/queries";
 import { createSession, revokeSession } from "./sessions";
 
 // Вход через Telegram (BACKEND.md §3.3, auto-tasks-pm-4 S03). Telegram Login
@@ -26,8 +31,9 @@ import { createSession, revokeSession } from "./sessions";
 // проверяет подпись по открытым ключам Telegram (JWKS), iss, aud = Client ID
 // бота, exp и одноразовый nonce. Без новых пакетов — node:crypto.
 //
-// Храним только sub и время привязки (identities). Имя, username и фото из
-// токена не читаем и никуда не пишем.
+// Храним sub, время привязки и id аккаунта (claim id — на него пишет бот,
+// S10: sub у Telegram OIDC — свой номер, не chat_id). Имя, username и фото
+// из токена не читаем и никуда не пишем.
 
 export const TELEGRAM_ISSUER = "https://oauth.telegram.org";
 const PROVIDER = "telegram";
@@ -161,7 +167,12 @@ const decodePart = (part: string): unknown => {
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-export type TelegramClaims = { nonce: string; sub: string };
+// chatId — claim id (scope profile): id аккаунта Telegram для sendMessage.
+export type TelegramClaims = {
+  chatId: null | string;
+  nonce: string;
+  sub: string;
+};
 
 export type TelegramAuthOptions = {
   clientId: string;
@@ -256,7 +267,15 @@ export const createTelegramAuth = ({
         : "";
     if (!sub || sub.length > 64) throw badToken();
     if (typeof claims.nonce !== "string" || !claims.nonce) throw badToken();
-    return { sub, nonce: claims.nonce };
+    const id =
+      typeof claims.id === "number" || typeof claims.id === "string"
+        ? String(claims.id)
+        : "";
+    return {
+      sub,
+      nonce: claims.nonce,
+      chatId: /^\d{1,20}$/.test(id) ? id : null,
+    };
   };
 
   // POST /auth/telegram/nonce.
@@ -284,8 +303,25 @@ export const createTelegramAuth = ({
     ctx.events.publish({ type: "db:changed", scope: ["users"], id: me.id }, [
       me.id,
     ]);
-    return { ...me, telegramLinked: true };
+    return { ...me, telegramLinked: true, telegramBotMessages: true };
   };
+
+  // Вход через Telegram снова — свежий id аккаунта для бота и снятая
+  // отметка «бота заблокировали»: окно входа заново спросило bot_access
+  // (S10). Переключатель человека не трогаем.
+  const refreshIdentity = (ctx: ServerContext, claims: TelegramClaims) =>
+    ctx.tx
+      .update(identities)
+      .set({
+        botBlockedAt: null,
+        ...(claims.chatId ? { chatId: claims.chatId } : {}),
+      })
+      .where(
+        and(
+          eq(identities.provider, PROVIDER),
+          eq(identities.subject, claims.sub),
+        ),
+      );
 
   // POST /auth/telegram { idToken, confirmSwitch? } (§3.3):
   // - у Telegram нет профиля → привязать к профилю этого телефона;
@@ -320,7 +356,12 @@ export const createTelegramAuth = ({
       .limit(1);
 
     if (linked && linked.userId === ctx.userId) {
-      return { status: "linked", me: toMe(rowToUser(await lockMe(ctx)), true) };
+      const me = await lockMe(ctx);
+      await refreshIdentity(ctx, claims);
+      return {
+        status: "linked",
+        me: toMe(rowToUser(me), await telegramLinkOf(ctx.tx, me.id)),
+      };
     }
 
     if (linked) {
@@ -337,6 +378,7 @@ export const createTelegramAuth = ({
         .where(eq(users.id, linked.userId))
         .limit(1);
       if (!row) throw badToken();
+      await refreshIdentity(ctx, claims);
       if (ctx.sessionId) await revokeSession(ctx.tx, ctx.sessionId, ctx.clock);
       const { token } = await createSession(
         ctx.tx,
@@ -344,7 +386,11 @@ export const createTelegramAuth = ({
         ctx.clock,
         ctx.userAgent,
       );
-      return { status: "switched", me: toMe(rowToUser(row), true), token };
+      return {
+        status: "switched",
+        me: toMe(rowToUser(row), await telegramLinkOf(ctx.tx, row.id)),
+        token,
+      };
     }
 
     if (ctx.userId) {
@@ -366,6 +412,7 @@ export const createTelegramAuth = ({
           userId: me.id,
           provider: PROVIDER,
           subject: claims.sub,
+          chatId: claims.chatId,
           createdAt: new Date(ctx.clock.now()),
         })
         .onConflictDoNothing()
@@ -386,11 +433,12 @@ export const createTelegramAuth = ({
       userId: created.me.id,
       provider: PROVIDER,
       subject: claims.sub,
+      chatId: claims.chatId,
       createdAt: new Date(ctx.clock.now()),
     });
     return {
       status: "created",
-      me: { ...created.me, telegramLinked: true },
+      me: { ...created.me, telegramLinked: true, telegramBotMessages: true },
       token: created.token,
     };
   };

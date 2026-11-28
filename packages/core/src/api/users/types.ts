@@ -175,8 +175,11 @@ export type UpdateDateInput = z.input<typeof UpdateDateInputSchema>;
 // telegramLinked — только remote и только в своём профиле (S03): к профилю
 // привязан вход через Telegram. Нет поля — не привязан. Ни id, ни имя из
 // Telegram в ответы не попадают — ни себе, ни друзьям.
+// telegramBotMessages — только вместе с telegramLinked (S10): бот пишет
+// уведомления (переключатель включён и бота не заблокировали).
 export type MeResponse = User & {
   inferredInterests: string[];
+  telegramBotMessages?: boolean;
   telegramLinked?: true;
 };
 
@@ -247,6 +250,9 @@ export const UpdateMeInputSchema = z.object({
     .max(INTEREST_IDS.length)
     .optional(),
   audience: z.enum(AUDIENCES).optional(),
+  // «Сообщения от бота в Telegram» (S10): только remote и только с входом
+  // через Telegram — иначе VALIDATION. Мок поле не читает.
+  botMessages: z.boolean().optional(),
 });
 export type UpdateMeInput = z.input<typeof UpdateMeInputSchema>;
 

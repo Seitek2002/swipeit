@@ -15,6 +15,10 @@ import {
   fetchJwks,
   type JwksSource,
 } from "./auth/telegram";
+import {
+  createLogSender,
+  createTelegramSender,
+} from "./domains/notifications/sender";
 import { createDiskStorage } from "./domains/uploads/storage";
 import { registerHttpGuards } from "./http-guards";
 import { createLimiter, limitConfigFrom } from "./limits";
@@ -205,6 +209,16 @@ export const buildApp = ({
         random,
         hub: events,
         log: app.log,
+        // Без токена бот никому не пишет — сообщения только в логе (S10).
+        notifications: {
+          appUrl: config.PUBLIC_APP_URL,
+          sender: config.TELEGRAM_BOT_TOKEN
+            ? createTelegramSender({
+                apiUrl: config.TELEGRAM_API_URL,
+                token: config.TELEGRAM_BOT_TOKEN,
+              })
+            : createLogSender(app.log),
+        },
       });
       app.addHook("onClose", async () => stop());
     }

@@ -6,8 +6,14 @@ import type { ServerCatalog } from "./catalog/load";
 import type { Clock, ServerContext } from "./context";
 import type { Db } from "./db/client";
 import { planParticipants } from "./db/schema";
+import {
+  type NotificationSender,
+  sendDueNotifications,
+  type SendReport,
+} from "./domains/notifications/sender";
 import { expireDuePlans } from "./domains/plans/handlers";
 import { drawDueSantaGames } from "./domains/santa/handlers";
+import { remindSantaMembers } from "./domains/santa/reminders";
 import type { AddressedEvent, EventHub } from "./realtime/hub";
 
 // Планировщик сервера (BACKEND.md B13): дедлайны «До даты» и жеребьёвка по
@@ -19,6 +25,8 @@ export type SchedulerDeps = {
   db: Db;
   hub: EventHub;
   log: FastifyBaseLogger;
+  // Уведомления ботом (S10): без них проход только ставит в очередь.
+  notifications?: { appUrl: string; sender: NotificationSender };
   random: Random;
 };
 
@@ -56,13 +64,31 @@ export const runSchedulerOnce = async (deps: SchedulerDeps) => {
       }
     }
     const santa = await drawDueSantaGames(ctx);
-    return { expired, ...santa };
+    // Напоминания Санты ботом (S10): завтра жеребьёвка, скоро обмен.
+    const reminded = await remindSantaMembers(ctx);
+    return { expired, ...santa, reminded };
   });
   deps.hub.deliver(events);
   if (result.failed.length > 0) {
     deps.log.warn({ failed: result.failed }, "Жеребьёвка по дате не прошла");
   }
-  return result;
+  // Отправка — после commit и отдельно: Telegram не ответил — проход
+  // планов и Санты всё равно состоялся.
+  let notified: null | SendReport = null;
+  if (deps.notifications) {
+    try {
+      notified = await sendDueNotifications({
+        appUrl: deps.notifications.appUrl,
+        clock: deps.clock,
+        db: deps.db,
+        log: deps.log,
+        sender: deps.notifications.sender,
+      });
+    } catch (error) {
+      deps.log.error({ err: error }, "Бот: проход отправки не удался");
+    }
+  }
+  return { ...result, notified };
 };
 
 const INTERVAL_MS = 15_000;

@@ -51,6 +51,8 @@ export const FUNNEL_STEPS = [
   "santa_removed_after_draw",
   // R04: жеребьёвка в игре, где есть тёзки (двойник с другого телефона?).
   "santa_drawn_with_namesakes",
+  // S10: бот отправил уведомление — только число, без текста и адресата.
+  "notification_sent",
   // R09: шаги клиента — POST /me/funnel.
   ...CLIENT_FUNNEL_STEPS,
 ] as const;

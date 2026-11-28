@@ -118,6 +118,16 @@ export const identities = pgTable(
     provider: text("provider").notNull(),
     subject: text("subject").notNull(),
     createdAt: createdAt(),
+    // Уведомления ботом (auto-tasks-pm-4 S10). chat_id — id аккаунта
+    // Telegram (claim id токена, не sub: sub у OIDC — свой номер, писать на
+    // него нельзя). Нет — бот этому человеку не пишет.
+    chatId: text("chat_id"),
+    // «Сообщения от бота в Telegram» в профиле.
+    botMessages: boolean("bot_messages").notNull().default(true),
+    // Telegram ответил 403 (бота заблокировали, писать нельзя) — больше не
+    // шлём, пока человек снова не войдёт через Telegram или не включит
+    // переключатель.
+    botBlockedAt: at("bot_blocked_at"),
   },
   (table) => [
     primaryKey({ columns: [table.provider, table.subject] }),
@@ -600,4 +610,47 @@ export const funnelDaily = pgTable(
     count: integer("count").notNull().default(0),
   },
   (table) => [primaryKey({ columns: [table.day, table.step] })],
+);
+
+// Очередь уведомлений ботом (auto-tasks-pm-4 S10). Ставит обработчик или
+// планировщик в той же транзакции, что и событие; отправляет планировщик.
+// dedupe_key — одна запись на событие и человека: повтор не отправится.
+// В тексте — только название игры или плана, без имён: сообщение видно на
+// заблокированном экране. Кому кто дарит, здесь нет.
+export const NOTIFICATION_KINDS = [
+  "santa_drawn",
+  "santa_new_letter",
+  "santa_draw_failed",
+  "santa_draw_tomorrow",
+  "santa_exchange_soon",
+  "plan_results",
+] as const;
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    // Игра или план — для кнопки «Открыть».
+    refId: text("ref_id").notNull(),
+    dedupeKey: text("dedupe_key").notNull(),
+    text: text("text").notNull(),
+    createdAt: createdAt(),
+    // Когда пробовать: null — больше не пробуем (отправлено или сдались).
+    nextAt: at("next_at").defaultNow(),
+    attempts: integer("attempts").notNull().default(0),
+    sentAt: at("sent_at"),
+    // Почему не ушло: blocked, disabled, no_chat, http_500… — без токена и
+    // без текста ответа Telegram.
+    error: text("error"),
+  },
+  (table) => [
+    uniqueIndex("notifications_dedupe_key").on(table.dedupeKey),
+    index("notifications_next_at").on(table.nextAt),
+    index("notifications_user_id").on(table.userId),
+    check("notifications_kind", oneOf("kind", NOTIFICATION_KINDS)),
+  ],
 );

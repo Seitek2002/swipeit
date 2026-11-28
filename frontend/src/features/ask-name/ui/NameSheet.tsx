@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 
+import Link from "next/link";
+
 import { NetworkPlaque, useMe, useUpdateMe } from "@/entities/user";
 
-import { AVATAR_COLORS, type AvatarColor } from "@/shared/config";
+import { AVATAR_COLORS, type AvatarColor, ROUTES } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
 import { Avatar, BottomSheet, Button, TextField } from "@/shared/ui";
 
@@ -140,6 +142,14 @@ export const NameForm = ({
       >
         Продолжить
       </Button>
+      {/* Имя увидят коллеги — мелко, что SwipeIt хранит (S11). Зона
+          нажатия ≥ 44 px — псевдоэлементом. */}
+      <Link
+        href={ROUTES.PRIVACY}
+        className="text-caption text-rose relative self-center underline underline-offset-2 before:absolute before:-inset-x-2 before:-inset-y-3.5 before:content-['']"
+      >
+        Что SwipeIt хранит
+      </Link>
     </div>
   );
 };

@@ -7,12 +7,13 @@ import {
   useDeleteMe,
   useLogout,
   useMe,
+  useUpdateMe,
 } from "@/entities/user";
 
 import { isTelegramLoginEnabled } from "@/shared/api";
 import { REMOTE_COPY } from "@/shared/config";
 import { useMounted } from "@/shared/lib/dom";
-import { Button, ConfirmDialog, toast } from "@/shared/ui";
+import { Button, ConfirmDialog, Switch, toast } from "@/shared/ui";
 
 // «Войти через Telegram», «Выйти» и «Удалить профиль» — в remote вместо
 // демо-кнопок (BACKEND.md §3.3, §3.4, §9.3). После «Выйти» и удаления — новый
@@ -22,6 +23,9 @@ import { Button, ConfirmDialog, toast } from "@/shared/ui";
 // Вход через Telegram (S03) — только при NEXT_PUBLIC_TELEGRAM_CLIENT_ID.
 // Предупреждение у «Выйти» — всегда, а текст зависит от привязки: без
 // Telegram вернуться в профиль с этого телефона нельзя.
+//
+// С Telegram — переключатель «Сообщения от бота в Telegram» (S10): включён у
+// вошедших, выключен, если человек его выключил или заблокировал бота.
 export const AccountActions = () => {
   const logout = useLogout();
   const deleteMe = useDeleteMe();
@@ -32,14 +36,40 @@ export const AccountActions = () => {
   const me = useMe();
   // Вернуться через «Войти через Telegram» можно, только если кнопка есть.
   const linked = telegramOn && me.data?.telegramLinked === true;
+  const updateMe = useUpdateMe();
+  // Пока сохраняется — уже новое положение, без мигания.
+  const pendingBot = updateMe.isPending
+    ? updateMe.variables?.botMessages
+    : undefined;
+  const botMessages = pendingBot ?? me.data?.telegramBotMessages !== false;
 
   return (
     <>
       {telegramOn &&
         (linked ? (
-          <p className="text-caption text-rose mt-3">
-            {REMOTE_COPY.telegramLinkedHint}
-          </p>
+          <>
+            <p className="text-caption text-rose mt-3">
+              {REMOTE_COPY.telegramLinkedHint}
+            </p>
+            <Switch
+              className="mt-3"
+              label={REMOTE_COPY.telegramBotMessages}
+              description={REMOTE_COPY.telegramBotMessagesHint}
+              checked={botMessages}
+              disabled={updateMe.isPending}
+              onChange={(next) =>
+                updateMe.mutate(
+                  { botMessages: next },
+                  {
+                    onError: () =>
+                      toast(REMOTE_COPY.telegramBotMessagesFailed, {
+                        tone: "error",
+                      }),
+                  },
+                )
+              }
+            />
+          </>
         ) : (
           <>
             <TelegramLoginButton className="mt-3" />

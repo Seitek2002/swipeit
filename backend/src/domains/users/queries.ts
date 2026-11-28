@@ -35,25 +35,44 @@ export const rowToUser = (row: UserRow): User => ({
   createdAt: row.createdAt.toISOString(),
 });
 
+// Вход через Telegram у профиля (S03) и пишет ли бот (S10): переключатель
+// включён и бота не заблокировали.
+export type TelegramLink = { botMessages: boolean };
+
 // Ответ GET /me и маршрутов, что меняют свой профиль: «Похоже, тебе
-// нравится» — из вкуса, который хранится в users.taste. telegramLinked — только
-// флаг (S03): ни id, ни имя из Telegram в ответ не идут.
-export const toMe = (user: User, telegramLinked = false): MeResponse => ({
+// нравится» — из вкуса, который хранится в users.taste. telegramLinked и
+// telegramBotMessages — только флаги (S03, S10): ни id, ни имя из Telegram в
+// ответ не идут.
+export const toMe = (
+  user: User,
+  telegram: null | TelegramLink = null,
+): MeResponse => ({
   ...user,
   inferredInterests: inferInterests(user.taste, user),
-  ...(telegramLinked ? { telegramLinked: true as const } : {}),
+  ...(telegram
+    ? {
+        telegramLinked: true as const,
+        telegramBotMessages: telegram.botMessages,
+      }
+    : {}),
 });
 
-// Привязан ли к профилю вход через Telegram (S03).
-export const isTelegramLinked = async (tx: Tx, userId: string) => {
+// Привязан ли к профилю вход через Telegram (S03): null — нет.
+export const telegramLinkOf = async (
+  tx: Tx,
+  userId: string,
+): Promise<null | TelegramLink> => {
   const [row] = await tx
-    .select({ userId: identities.userId })
+    .select({
+      botMessages: identities.botMessages,
+      botBlockedAt: identities.botBlockedAt,
+    })
     .from(identities)
     .where(
       and(eq(identities.userId, userId), eq(identities.provider, "telegram")),
     )
     .limit(1);
-  return Boolean(row);
+  return row ? { botMessages: row.botMessages && !row.botBlockedAt } : null;
 };
 
 // Свой профиль под блокировкой строки (§2.6): записи одного человека идут

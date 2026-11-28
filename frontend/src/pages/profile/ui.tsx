@@ -309,15 +309,25 @@ const ProfileForm = ({ user }: { user: User }) => {
             />
           </>
         )}
-        {/* Фото занятий — под CC BY и CC BY-SA: авторы обязательны (DESIGN.md §8.9).
-            Ссылка мелкая, а зона нажатия — ≥ 44 px за счёт псевдоэлемента:
-            сверху до кнопки сброса остаётся зазор, соседей она не перекрывает. */}
-        <Link
-          href={ROUTES.CREDITS}
-          className="text-caption text-rose relative mt-4 self-start underline underline-offset-2 before:absolute before:-inset-x-2 before:-inset-y-3.5 before:content-['']"
-        >
-          Авторы фото
-        </Link>
+        {/* «Что SwipeIt хранит» (S11) — сразу под «Удалить профиль» (в демо —
+            под сбросом). Фото занятий — под CC BY и CC BY-SA: авторы
+            обязательны (DESIGN.md §8.9). Ссылки мелкие, в одну строку, а
+            зона нажатия — ≥ 44 px за счёт псевдоэлемента: сверху до кнопки
+            остаётся зазор, друг друга они не перекрывают. */}
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-4">
+          <Link
+            href={ROUTES.PRIVACY}
+            className="text-caption text-rose relative underline underline-offset-2 before:absolute before:-inset-x-2 before:-inset-y-3.5 before:content-['']"
+          >
+            Что SwipeIt хранит
+          </Link>
+          <Link
+            href={ROUTES.CREDITS}
+            className="text-caption text-rose relative underline underline-offset-2 before:absolute before:-inset-x-2 before:-inset-y-3.5 before:content-['']"
+          >
+            Авторы фото
+          </Link>
+        </div>
       </div>
     </div>
   );

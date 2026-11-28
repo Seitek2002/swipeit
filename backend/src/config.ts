@@ -81,6 +81,18 @@ const ConfigSchema = z.object({
   // Лимит входа через Telegram — с IP, в минуту и в час (R01).
   RATE_TELEGRAM_MINUTE: z.coerce.number().int().min(1).default(20),
   RATE_TELEGRAM_HOUR: z.coerce.number().int().min(1).default(200),
+  // Уведомления ботом (auto-tasks-pm-4 S10): токен того же бота из
+  // @BotFather (секрет). Нет переменной — бот никому не пишет, сообщения
+  // только в логе сервера.
+  TELEGRAM_BOT_TOKEN: z
+    .string()
+    .regex(/^\d{1,20}:[\w-]{20,}$/, "Токен бота — «123456:ABC…» из @BotFather")
+    .optional(),
+  // Адрес Bot API — для подставного сервера в разработке.
+  TELEGRAM_API_URL: z
+    .url({ protocol: /^https?$/ })
+    .transform((url) => url.replace(/\/+$/, ""))
+    .default("https://api.telegram.org"),
 });
 
 // База из docker-compose для разработки и тестов.

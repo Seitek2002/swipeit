@@ -45,6 +45,7 @@ import {
 } from "../../db/schema";
 import { areFriends, makeFriends } from "../friends/handlers";
 import { reachPlanStep, reachStep } from "../funnel/steps";
+import { notifyPlanResults } from "../notifications/events";
 import { readMe, readUser, type UserRow } from "../users/queries";
 import {
   activitiesFor,
@@ -174,6 +175,8 @@ const withPlan = async <T>(
     await activitiesFor(ctx.tx, plan, ctx.catalog.activities),
   );
   await savePlan(ctx.tx, before, plan, ctx.clock.now());
+  // Итоги «До даты» готовы — ботом остальным (S10).
+  await notifyPlanResults(ctx.tx, before, plan, ctx.clock.now(), ctx.userId);
   // Свои занятия могли добавиться — источник колоды заново.
   const source = await activitiesFor(ctx.tx, plan, ctx.catalog.activities);
   return { result, source, plan };
@@ -879,6 +882,7 @@ export const expireDuePlans = async (
     const after = structuredClone(before);
     closeAtDeadline(after);
     await savePlan(tx, before, after, now);
+    await notifyPlanResults(tx, before, after, now);
     expired.push(id);
   }
   return expired;

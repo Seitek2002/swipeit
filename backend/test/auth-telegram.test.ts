@@ -223,6 +223,10 @@ describe("вход через Telegram: привязка и второй тел�
         provider: "telegram",
         subject: SUB,
         createdAt: expect.any(Date),
+        // Для бота (S10): id аккаунта из claim id, переключатель включён.
+        chatId: "5550001",
+        botMessages: true,
+        botBlockedAt: null,
       },
     ]);
   });

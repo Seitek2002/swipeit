@@ -22,6 +22,7 @@ export const ROUTES = {
     `/friends/profile/?id=${encodeURIComponent(id)}`,
   PROFILE: "/profile/",
   CREDITS: "/credits/",
+  PRIVACY: "/privacy/",
   KIT: "/kit/",
 } as const;
 
@@ -65,8 +66,9 @@ export const getActiveTab = (pathname: null | string): null | TabId => {
 
 // Экраны, которые открываются без профиля и сами его не создают: «/» (ведёт
 // в ленту), бывший онбординг (редирект), чужие ссылки (гость без регистрации,
-// DESIGN.md §8.5), приглашения (профиль — по «Вступить»), витрина и «Авторы
-// фото». Остальные без профиля создают его сами (app/session-gate.tsx).
+// DESIGN.md §8.5), приглашения (профиль — по «Вступить»), витрина, «Авторы
+// фото» и «Что SwipeIt хранит» (S11: открывается из шторки имени у гостя).
+// Остальные без профиля создают его сами (app/session-gate.tsx).
 const GUEST_PATHS = new Set([
   "/",
   "/onboarding",
@@ -77,6 +79,7 @@ const GUEST_PATHS = new Set([
   "/santa/join",
   "/kit",
   "/credits",
+  "/privacy",
 ]);
 
 export const requiresProfile = (pathname: null | string): boolean =>
