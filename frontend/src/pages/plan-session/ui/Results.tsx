@@ -11,6 +11,7 @@ import type { Activity } from "@/entities/activity";
 import {
   type PlanView,
   computeMatches,
+  countedParticipants,
   decisionCandidates,
   tallyVotes,
   voteCandidates,
@@ -28,7 +29,7 @@ import { pluralize } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 import { Button, EmptyState, toast } from "@/shared/ui";
 
-import { drumLabels } from "../model";
+import { drumLabels, resultNote } from "../model";
 
 type Props = { meId: string; view: PlanView };
 
@@ -76,7 +77,13 @@ export const Results = ({ view, meId }: Props) => {
   const queryClient = useQueryClient();
   const { plan, participants, activities } = view;
   const isOwner = plan.ownerId === meId;
-  const total = participants.length;
+  // Чьи свайпы в итогах: после «Показать итоги сейчас» — только долиставших.
+  const counted = new Set(countedParticipants(plan));
+  const total = counted.size;
+  const closedEarly = Boolean(plan.closedEarly);
+  const countedNames = participants
+    .filter((person) => counted.has(person.id))
+    .map((person) => person.name);
   const byId = new Map(activities.map((activity) => [activity.id, activity]));
   const { matches, almost } = computeMatches(plan, activities);
   const candidates = decisionCandidates(plan, activities);
@@ -133,6 +140,11 @@ export const Results = ({ view, meId }: Props) => {
       <p className="text-title-3 text-rose mt-0.5">
         Совпало {matches.length} из {plan.deck.length}
       </p>
+      {closedEarly && (
+        <p className="text-caption text-rose mt-1">
+          Итоги по тем, кто долистал: {countedNames.join(", ")}
+        </p>
+      )}
       {labels.hint && !voting && (
         <p className="text-body text-rose mt-1.5">{labels.hint}</p>
       )}
@@ -206,10 +218,7 @@ export const Results = ({ view, meId }: Props) => {
                   {
                     activity,
                     strong: true,
-                    note:
-                      likes === total
-                        ? `все ${total} — «Все за»`
-                        : `${likes} из ${total} — большинство за`,
+                    note: resultNote("match", likes, total, closedEarly),
                   },
                 ]
               : [];
@@ -221,7 +230,7 @@ export const Results = ({ view, meId }: Props) => {
                   {
                     activity,
                     strong: false,
-                    note: `${likes} из ${total} — «Почти»`,
+                    note: resultNote("almost", likes, total, closedEarly),
                   },
                 ]
               : [];
@@ -266,8 +275,11 @@ export const Results = ({ view, meId }: Props) => {
       </ul>
       {/* Действия — в липком низу (auto-tasks U08): при 9 совпадениях
           «Крутить барабан» уезжал на второй экран. Список прокручивается над
-          ним, бархатный градиент отделяет кнопки от карточек. */}
-      <div className="from-velvet sticky bottom-0 z-10 -mx-5 -mb-[calc(var(--tabbar-space)+1rem)] flex flex-col gap-2 bg-linear-to-t from-85% to-transparent px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+var(--tabbar-space)+12px)]">
+          ним, бархатный градиент отделяет кнопки от карточек. Липкий блок
+          прилипает к краю содержимого прокрутки, то есть выше её нижнего
+          отступа, — отсюда отрицательный bottom: иначе в этом отступе
+          между кнопками и краем экрана просвечивали строки (W08). */}
+      <div className="from-velvet sticky bottom-[calc(-1*var(--tabbar-space))] z-10 -mx-5 -mb-[calc(var(--tabbar-space)+1rem)] flex flex-col gap-2 bg-linear-to-t from-85% to-transparent px-5 pt-6 pb-[calc(env(safe-area-inset-bottom)+var(--tabbar-space)+12px)]">
         {voting ? (
           isOwner && (
             <>

@@ -72,6 +72,7 @@ export {
 export { type PickAnswer, type PickRequest } from "./pick/types";
 export {
   computeMatches,
+  countedParticipants,
   decisionCandidates,
   type DecisionCandidates,
   type PlanMatch,

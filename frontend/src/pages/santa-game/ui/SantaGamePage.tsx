@@ -250,7 +250,7 @@ const GameContent = () => {
       <div className="-mt-2 flex flex-col items-center gap-3 text-center">
         {view.game.status === "gathering" && (
           <>
-            <p className="text-title-3">{drawLabel(view.game)}</p>
+            <p className="text-title-3">{drawLabel(view)}</p>
             {isOwner && <SantaDrawButton view={view} />}
             {view.role === "invited" ? (
               <Button
@@ -261,7 +261,9 @@ const GameContent = () => {
                 Вступить в игру
               </Button>
             ) : (
-              view.drawIssue && (
+              // Без даты причина уже в строке выше — не повторяем (W09).
+              view.drawIssue &&
+              view.game.drawAt && (
                 <p className="text-caption text-rose">{view.drawIssue}</p>
               )
             )}

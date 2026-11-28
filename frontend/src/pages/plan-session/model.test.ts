@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { drumLabels } from "./model";
+import { drumLabels, resultNote } from "./model";
 
 describe("подписи барабана (P12)", () => {
   it("есть совпадения — как раньше, без пояснения", () => {
@@ -20,5 +20,23 @@ describe("подписи барабана (P12)", () => {
 
   it("ничего — подписи барабана не нужны (экран «Никто не совпал»), без пояснения", () => {
     expect(drumLabels("none").hint).toBeNull();
+  });
+});
+
+describe("подпись строки итогов (W05)", () => {
+  it("обычные итоги — как раньше", () => {
+    expect(resultNote("match", 4, 4, false)).toBe("все 4 — «Все за»");
+    expect(resultNote("match", 3, 4, false)).toBe("3 из 4 — большинство за");
+    expect(resultNote("almost", 3, 4, false)).toBe("3 из 4 — «Почти»");
+  });
+
+  it("после «Показать итоги сейчас» — из долиставших, без «большинства» при «Все за»", () => {
+    expect(resultNote("match", 2, 2, true)).toBe("2 из 2 долиставших — все за");
+    expect(resultNote("match", 2, 3, true)).toBe(
+      "2 из 3 долиставших — большинство за",
+    );
+    expect(resultNote("almost", 2, 3, true)).toBe(
+      "2 из 3 долиставших — «Почти»",
+    );
   });
 });

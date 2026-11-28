@@ -7,7 +7,9 @@ import { Plus } from "lucide-react";
 import { AppHeader } from "@/widgets/app-header";
 
 import {
+  ALL_IN,
   type SantaSummary,
+  gatheringStatus,
   santaTerms,
   useSantaGames,
 } from "@/entities/santa-game";
@@ -27,24 +29,17 @@ import {
 // Статус игры в списке. Подопечного называем, только когда конверт вскрыт —
 // список не должен испортить сюрприз.
 const statusOf = (summary: SantaSummary) => {
-  const joined = summary.members.filter((member) => member.joined).length;
   if (summary.game.status === "gathering") {
     if (summary.role === "invited") {
       return { text: "Тебя позвали — вступи", accent: true };
     }
-    // Все в сборе — организатору пора жеребьёвка (auto-tasks V09): «4 из 4»
-    // не говорило, что дальше его ход. Жеребьёвке нужно хотя бы трое.
-    if (
-      summary.role === "owner" &&
-      joined === summary.members.length &&
-      joined >= 3
-    ) {
-      return { text: "Все в сборе — проведи жеребьёвку", accent: true };
+    // Та же строка, что под конвертом (W09). Все в сборе — организатору
+    // пора тянуть пары (V09): выделяем.
+    const text = gatheringStatus(summary);
+    if (text === ALL_IN) {
+      return { text, accent: summary.role === "owner" };
     }
-    return {
-      text: `Собираемся: ${joined} из ${summary.members.length}`,
-      accent: false,
-    };
+    return { text, accent: false };
   }
   const me = summary.me;
   if (me?.envelope === "ready")

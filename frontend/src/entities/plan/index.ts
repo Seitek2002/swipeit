@@ -1,6 +1,7 @@
 export { usePlan, usePlans } from "./api";
 export {
   computeMatches,
+  countedParticipants,
   decisionCandidates,
   formatDeadline,
   type PlanMatches,

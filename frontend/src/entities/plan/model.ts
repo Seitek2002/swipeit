@@ -12,6 +12,7 @@ import { formatDayMonth } from "@/shared/lib/format";
 // entities (FSD). Для интерфейса — отсюда.
 export {
   computeMatches,
+  countedParticipants,
   decisionCandidates,
   tallyVotes,
   voteCandidates,
