@@ -42,11 +42,14 @@ export const registerHttpGuards = (
       .header("x-content-type-options", "nosniff")
       .header("referrer-policy", "no-referrer")
       .header("x-frame-options", "DENY")
-      .header("cross-origin-resource-policy", "cross-origin")
-      .header(
+      .header("cross-origin-resource-policy", "cross-origin");
+    // Страница превью /s/:code ставит свою политику — с переходом на фронт.
+    if (!reply.hasHeader("content-security-policy")) {
+      reply.header(
         "content-security-policy",
         "default-src 'none'; img-src 'self'; frame-ancestors 'none'",
       );
+    }
     return payload;
   });
 };

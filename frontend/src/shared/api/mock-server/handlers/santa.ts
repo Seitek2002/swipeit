@@ -385,14 +385,9 @@ export const listSantaGames: Handler = async (ctx) => {
 export const getSantaGame: Handler = async (ctx, { params }) => {
   const products = await productMap(ctx);
   const db = await ctx.db.read();
-  const user = requireUser(ctx, db);
-  return viewOf(
-    db,
-    findGame(db, params.id),
-    user.id,
-    products,
-    ctx.clock.now(),
-  );
+  // Гость без профиля по приглашению (X07): роль guest, «моего» нет.
+  const userId = ctx.userId && db.users[ctx.userId] ? ctx.userId : "";
+  return viewOf(db, findGame(db, params.id), userId, products, ctx.clock.now());
 };
 
 // POST /santa — новая игра. Организатор вступил сразу, друзья — «позваны»:

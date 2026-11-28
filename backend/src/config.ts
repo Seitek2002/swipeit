@@ -31,6 +31,12 @@ const ConfigSchema = z.object({
   // Дни считаются по календарю Бишкека (BACKEND.md §2.5): процесс живёт в
   // этом поясе, даже если сервер в UTC.
   TZ: z.string().min(1).default("Asia/Bishkek"),
+  // Адрес фронта продукта (с базовым путём, без «/» в конце): превью /s/:code
+  // переводит туда и берёт оттуда og.png (B16).
+  PUBLIC_APP_URL: z
+    .url({ protocol: /^https?$/ })
+    .transform((url) => url.replace(/\/+$/, ""))
+    .default("http://localhost:3000"),
   // Фото (B13): папка на диске сервера (том Docker, в бэкапе).
   UPLOADS_DIR: z.string().min(1).default("data/uploads"),
   // Отчёт владельцу по HTTPS (R02): GET /v1/ops/report с этим токеном. Нет

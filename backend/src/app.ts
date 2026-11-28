@@ -14,6 +14,7 @@ import { createDiskStorage } from "./domains/uploads/storage";
 import { registerHttpGuards } from "./http-guards";
 import { createLimiter, limitConfigFrom } from "./limits";
 import { registerOps } from "./routes-ops";
+import { registerPreview } from "./routes-preview";
 import { registerUploads } from "./routes-uploads";
 import { startScheduler } from "./scheduler";
 import { createSocketHub, type EventHub } from "./realtime/hub";
@@ -154,6 +155,12 @@ export const buildApp = ({
       hub: events,
       limiter: createLimiter(clock.now),
       limits: limitConfigFrom(config),
+      publicShareUrl: config.PUBLIC_SHARE_URL,
+    });
+    registerPreview(app, {
+      db,
+      clock,
+      frontUrl: config.PUBLIC_APP_URL,
       publicShareUrl: config.PUBLIC_SHARE_URL,
     });
     registerOps(app, {

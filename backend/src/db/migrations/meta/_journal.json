@@ -71,6 +71,13 @@
       "when": 1795842205534,
       "tag": "0009_santa_draw_failed",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795845330061,
+      "tag": "0010_wishlist_views",
+      "breakpoints": true
     }
   ]
 }

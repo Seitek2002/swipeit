@@ -8,6 +8,7 @@ import type {
   ExternalWishlist,
   GuestWishlist,
   MyReservation,
+  OpenedWishlist,
   Reservation,
   ReservationsView,
   WishlistItem,
@@ -25,7 +26,7 @@ import { hashString } from "@swipeit/core/logic/random";
 import { parseInput } from "@swipeit/core/parse-input";
 import type { RealtimeScope } from "@swipeit/core/realtime/types";
 import { decodeWishlist, sharedItemKey } from "@swipeit/core/share-codec";
-import { and, eq, gt, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import type { ServerContext, ServerHandler, Tx } from "../../context";
@@ -37,6 +38,7 @@ import {
   santaMembers,
   users,
   wishlistItems,
+  wishlistViews,
 } from "../../db/schema";
 import { datesOf } from "../dates/handlers";
 import { pickShare } from "../pick/handlers";
@@ -250,6 +252,20 @@ export const getShare: ServerHandler = async (ctx, { params }) => {
         const visitor = await readUser(ctx.tx, ctx.userId);
         // Воронка: профиль открыл чужой вишлист по ссылке (P09).
         if (visitor) {
+          // «Открывал по ссылке» (X03): последнее открытие этой ссылки.
+          const openedAt = new Date(ctx.clock.now());
+          await ctx.tx
+            .insert(wishlistViews)
+            .values({
+              viewerId: visitor.id,
+              ownerId: owner.id,
+              code: params.code ?? "",
+              openedAt,
+            })
+            .onConflictDoUpdate({
+              target: [wishlistViews.viewerId, wishlistViews.ownerId],
+              set: { code: params.code ?? "", openedAt },
+            });
           await reachStep(ctx.tx, visitor.id, "guest_opened", ctx.clock.now());
           // Ссылка дошла до другого профиля (Q01).
           await reachStep(ctx.tx, owner.id, "share_reached", ctx.clock.now(), {
@@ -575,6 +591,42 @@ export const importExternalWishlist: ServerHandler = async (ctx, { body }) => {
 // GET /me/reservations — свои брони (auto-tasks P02). Брони по старым
 // ссылкам (ext:) сервер показать не может: снимков он не хранит — их нет.
 // Других бронирующих в ответе нет; повод — как его видят гости.
+// GET /me/opened-wishlists — «Открывал по ссылке» (X03): вишлисты не
+// друзей, открытые по короткой ссылке, свежие сверху.
+export const getOpenedWishlists: ServerHandler = async (ctx) => {
+  const me = await readMe(ctx);
+  const rows = await ctx.tx
+    .select()
+    .from(wishlistViews)
+    .where(eq(wishlistViews.viewerId, me.id))
+    .orderBy(desc(wishlistViews.openedAt));
+  const result: OpenedWishlist[] = [];
+  for (const row of rows) {
+    if (await areFriends(ctx.tx, me.id, row.ownerId)) continue;
+    const owner = await readUser(ctx.tx, row.ownerId);
+    if (!owner) continue;
+    const meta = rowToMeta(owner.id, await readMeta(ctx.tx, owner.id));
+    const occasion = occasionForOthersFrom(
+      await datesOf(ctx.tx, owner.id),
+      meta.occasion,
+      ctx.clock.now(),
+    );
+    result.push({
+      id: row.code,
+      owner: {
+        name: owner.name ?? "",
+        avatarColor:
+          owner.avatarColor as OpenedWishlist["owner"]["avatarColor"],
+        userId: owner.id,
+      },
+      ...(occasion ? { occasion } : {}),
+      openedAt: row.openedAt.toISOString(),
+      url: `/s/${row.code}`,
+    });
+  }
+  return result;
+};
+
 export const getMyReservations: ServerHandler = async (ctx) => {
   const me = await readMe(ctx);
   const now = ctx.clock.now();
@@ -597,9 +649,26 @@ export const getMyReservations: ServerHandler = async (ctx) => {
       meta.occasion,
       now,
     );
+    // Не друг — пришёл по ссылке (X03): строка «Я дарю» ведёт к вишлисту
+    // по короткой ссылке, а не в профиль друга.
+    const byLink = !(await areFriends(ctx.tx, me.id, owner.id));
+    const [view] = byLink
+      ? await ctx.tx
+          .select({ code: wishlistViews.code })
+          .from(wishlistViews)
+          .where(
+            and(
+              eq(wishlistViews.viewerId, me.id),
+              eq(wishlistViews.ownerId, owner.id),
+            ),
+          )
+          .limit(1)
+      : [];
     list.push({
       id: row.id,
       itemKey: row.itemKey,
+      ...(byLink ? { byLink: true } : {}),
+      ...(view ? { wishlistUrl: `/s/${view.code}` } : {}),
       closed: Boolean(row.closedAt),
       ...(row.closedAt ? { closedAt: row.closedAt.toISOString() } : {}),
       at: row.at.toISOString(),

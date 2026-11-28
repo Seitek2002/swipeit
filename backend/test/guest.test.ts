@@ -512,3 +512,70 @@ describe("ревью сервера: дружба по ссылке", () => {
     );
   }, 60_000);
 });
+
+describe("X03 и X07: вишлист по ссылке и превью приглашений", () => {
+  it("X03: безымянный открыл ссылку — «Открывал по ссылке»; бронь — byLink и путь к ссылке; друг — не в списке", async () => {
+    const { owner, productIds } = await readyOwner();
+    const { code } = await share(owner);
+    const guest = await server.newUser();
+    await server.request(guest, "GET", `/share/${code}`);
+    const opened = (
+      await server.request(guest, "GET", "/me/opened-wishlists")
+    ).json() as Array<{ owner: { userId: string }; url: string }>;
+    expect(opened).toHaveLength(1);
+    expect(opened[0]).toMatchObject({
+      owner: { userId: owner.id },
+      url: `/s/${code}`,
+    });
+    await reserve(guest, {
+      ownerId: owner.id,
+      itemKey: productIds[0] ?? "",
+      name: "Бакыт",
+      share: code,
+    });
+    const mine = (
+      await server.request(guest, "GET", "/me/reservations")
+    ).json() as Array<{ byLink?: boolean; wishlistUrl?: string }>;
+    expect(mine[0]).toMatchObject({ byLink: true, wishlistUrl: `/s/${code}` });
+
+    // Посетитель с именем сразу друг — у него профиль друга, не «по ссылке».
+    const friend = await server.newUser({ name: "Друг" });
+    await server.request(friend, "GET", `/share/${code}`);
+    expect(
+      (await server.request(friend, "GET", "/me/opened-wishlists")).json(),
+    ).toEqual([]);
+  });
+
+  it("X07: план и игра открываются без профиля — превью без свайпов, голосов и пар", async () => {
+    const owner = await server.newUser({ name: "Айгерим" });
+    const plan = (
+      await server.request(owner, "POST", "/plans", {
+        title: "Пятница",
+        mode: "deadline",
+        deadline: new Date(NOW + 3600_000).toISOString(),
+        participantIds: [],
+        filters: { categories: [], budgetPerPerson: { min: 0, max: null } },
+      })
+    ).json() as { activities: Array<{ id: string }>; plan: { id: string } };
+    await server.request(owner, "POST", `/plans/${plan.plan.id}/swipes`, {
+      activityId: plan.activities[0]?.id,
+      decision: "like",
+    });
+    const preview = await server.request(null, "GET", `/plans/${plan.plan.id}`);
+    expect(preview.statusCode).toBe(200);
+    expect(preview.json()).toMatchObject({
+      plan: { title: "Пятница", swipes: {}, votes: {} },
+    });
+    const game = (
+      await server.request(owner, "POST", "/santa", {
+        title: "Офис",
+        budget: 2000,
+        exchangeDate: "2026-12-25",
+        participantIds: [],
+      })
+    ).json() as { game: { id: string } };
+    const santa = await server.request(null, "GET", `/santa/${game.game.id}`);
+    expect(santa.statusCode).toBe(200);
+    expect(santa.json()).toMatchObject({ role: "guest", me: null });
+  });
+});

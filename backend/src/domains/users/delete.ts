@@ -19,6 +19,7 @@ import {
   users,
   wishlistItems,
   wishlistMeta,
+  wishlistViews,
 } from "../../db/schema";
 import { repairPairsAfterDelete } from "../santa/store";
 import { lockMe } from "./queries";
@@ -283,6 +284,10 @@ export const deleteMe: ServerHandler = async (ctx) => {
     .delete(friendships)
     .where(or(eq(friendships.userId, id), eq(friendships.friendId, id)));
   await tx.delete(uploads).where(eq(uploads.ownerId, id));
+  // Кто чей вишлист открывал (X03) — и его просмотры, и просмотры его.
+  await tx
+    .delete(wishlistViews)
+    .where(or(eq(wishlistViews.viewerId, id), eq(wishlistViews.ownerId, id)));
   await tx.delete(identities).where(eq(identities.userId, id));
   await tx.delete(sessions).where(eq(sessions.userId, id));
 

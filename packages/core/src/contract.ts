@@ -100,7 +100,9 @@ export const CONTRACT: readonly ContractRoute[] = [
   route("GET", "/plans"),
   route("POST", "/plans"),
   route("POST", "/plans/expire", "user", DEMO),
-  route("GET", "/plans/:id"),
+  // Открыть может и гость без профиля — превью для экрана приглашения
+  // (UX-аудит X07): название, организатор, участники, без свайпов и голосов.
+  route("GET", "/plans/:id", "public"),
   route("POST", "/plans/:id/join"),
   route("POST", "/plans/:id/ready"),
   route("POST", "/plans/:id/start"),
@@ -122,7 +124,8 @@ export const CONTRACT: readonly ContractRoute[] = [
   route("GET", "/santa"),
   route("POST", "/santa"),
   route("POST", "/santa/tick", "user", DEMO),
-  route("GET", "/santa/:id"),
+  // Превью игры для приглашения без профиля (X07): без пар и «моего».
+  route("GET", "/santa/:id", "public"),
   route("PATCH", "/santa/:id"),
   route("POST", "/santa/:id/join"),
   route("POST", "/santa/:id/draw"),

@@ -211,10 +211,12 @@ const previewOf = (plan: PlanSession): PlanSession => ({
 
 // GET /plans/:id — участнику план целиком, остальным — превью.
 export const getPlan: ServerHandler = async (ctx, { params }) => {
-  const me = await readMe(ctx);
+  // Без профиля — гость по приглашению (X07): только превью.
+  const me = ctx.userId ? await readMe(ctx) : null;
   const plan = await loadPlan(ctx.tx, params.id ?? "", { lock: false });
   const source = await activitiesFor(ctx.tx, plan, ctx.catalog.activities);
-  const shown = plan.participantIds.includes(me.id) ? plan : previewOf(plan);
+  const shown =
+    me && plan.participantIds.includes(me.id) ? plan : previewOf(plan);
   return viewOf(ctx.tx, shown, source);
 };
 

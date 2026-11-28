@@ -555,6 +555,24 @@ export const santaAssignments = pgTable(
   ],
 );
 
+// Кто какой вишлист открывал по короткой ссылке (UX-аудит X03): гость,
+// собравший свой вишлист, найдёт вишлист друга в «Открывал по ссылке».
+// Одна строка на пару «кто — чей», последнее открытие.
+export const wishlistViews = pgTable(
+  "wishlist_views",
+  {
+    viewerId: text("viewer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    openedAt: at("opened_at").notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.viewerId, table.ownerId] })],
+);
+
 export const uploads = pgTable(
   "uploads",
   {

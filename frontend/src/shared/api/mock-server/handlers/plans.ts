@@ -170,8 +170,12 @@ export const listPlans: Handler = async (ctx) => {
 export const getPlan: Handler = async (ctx, { params }) => {
   const catalog = await ctx.catalog.activities();
   const db = await ctx.db.read();
-  requireUser(ctx, db);
-  return viewOf(db, findPlan(db, params.id), catalog);
+  const plan = findPlan(db, params.id);
+  // Гость без профиля по приглашению (X07) — превью без свайпов и голосов,
+  // как на сервере.
+  const me = ctx.userId ? db.users[ctx.userId] : undefined;
+  if (!me) return viewOf(db, { ...plan, swipes: {}, votes: {} }, catalog);
+  return viewOf(db, plan, catalog);
 };
 
 // POST /plans — новый план. «Прямо сейчас» начинается с лобби; «До даты»

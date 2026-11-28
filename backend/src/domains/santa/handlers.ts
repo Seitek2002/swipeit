@@ -462,11 +462,12 @@ export const listSantaGames: ServerHandler = async (ctx) => {
 // GET /santa/:id — игра глазами того, кто спрашивает. Открыть может любой
 // (экран приглашения); своя пара — только участнику.
 export const getSantaGame: ServerHandler = async (ctx, { params }) => {
-  const me = await readMe(ctx);
+  // Без профиля — гость по приглашению (X07): роль guest, «моего» нет.
+  const me = ctx.userId ? await readMe(ctx) : null;
   return viewOf(
     ctx,
     await loadGame(ctx.tx, params.id ?? "", { lock: false }),
-    me.id,
+    me?.id ?? "",
   );
 };
 
