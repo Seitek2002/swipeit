@@ -2,17 +2,26 @@
 
 import { type ReactNode, useState } from "react";
 
-import { Check, ExternalLink, Gift } from "lucide-react";
+import { Check, Copy, ExternalLink, Gift } from "lucide-react";
 
+import { useAppMode } from "@/shared/lib/app-status";
+import { copyText } from "@/shared/lib/dom";
 import { useGuestStore } from "@/shared/store";
-import { BottomSheet, Button, TextField } from "@/shared/ui";
+import {
+  BottomSheet,
+  Button,
+  DemoLinkNote,
+  TextField,
+  toast,
+} from "@/shared/ui";
 
 import {
   useCancelReservation,
   useReservations,
   useReserve,
   useReserver,
-} from "./model";
+} from "./api";
+import { reservationChatText } from "./model";
 
 // «Сначала имя, потом действие» от features/ask-name (useRequireName): его
 // даёт виджет — фичи друг друга не импортируют, а шторка на список одна.
@@ -35,6 +44,10 @@ type Props = {
   // После брони следующий шаг гостя — купить: ссылка в магазин сразу под
   // «Этот подарок выбран тобой» (DESIGN.md §8.5, UX-аудит 27.11.2026, M3).
   buy?: BuyLink;
+  // Что и у кого бронь — для «Скопировать для чата» (UX-аудит X01). Только
+  // у гостя по ссылке: в демо его бронь не уходит с телефона, и друзьям надо
+  // сказать самому. У демо-друзей из списка сказать некому — не передают.
+  chat?: { ownerName: string; title: string };
   itemKey: string;
   // Профиль без имени — NameSheet, имя сохраняется в профиль (DESIGN.md
   // §8.5); бронь продолжается сама. NAME_REQUIRED от сервера — та же шторка.
@@ -57,8 +70,11 @@ export const ReserveControl = ({
   buy,
   onReserved,
   afterBuy,
+  chat,
 }: Props) => {
   const reserver = useReserver();
+  // В «Локальной сети» брони общие — подпись и кнопка не нужны.
+  const demoOnly = useAppMode() === "local";
   const reservations = useReservations(ownerId);
   const reserve = useReserve(ownerId);
   const cancel = useCancelReservation(ownerId);
@@ -146,6 +162,34 @@ export const ReserveControl = ({
           </a>
         )}
         {afterBuy}
+        {chat && demoOnly && (
+          // Ниже «Купить на …»: следующий шаг после брони — всё ещё купить
+          // (M3), а сказать друзьям можно и потом.
+          <div className="flex flex-col items-center gap-0.5 text-center">
+            <DemoLinkNote className="text-ink-soft px-2">
+              В демо бронь видна только на этом телефоне — скажи остальным, что
+              берёшь это
+            </DemoLinkNote>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-ink"
+              icon={<Copy aria-hidden size={16} strokeWidth={2} />}
+              onClick={() =>
+                void copyText(reservationChatText(chat)).then((ok) =>
+                  toast(
+                    ok
+                      ? "Текст скопирован — отправь его в чат"
+                      : "Не получилось скопировать",
+                    { tone: ok ? "success" : "error" },
+                  ),
+                )
+              }
+            >
+              Скопировать для чата
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

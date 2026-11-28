@@ -31,6 +31,8 @@ const ConfigSchema = z.object({
   // Дни считаются по календарю Бишкека (BACKEND.md §2.5): процесс живёт в
   // этом поясе, даже если сервер в UTC.
   TZ: z.string().min(1).default("Asia/Bishkek"),
+  // Фото (B13): папка на диске сервера (том Docker, в бэкапе).
+  UPLOADS_DIR: z.string().min(1).default("data/uploads"),
 });
 
 // База из docker-compose для разработки и тестов.

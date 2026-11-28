@@ -19,20 +19,19 @@ import { lettersMessage } from "../model/letters";
 export const LettersReady = ({
   view,
   isOwner,
+  meId,
 }: {
   isOwner: boolean;
+  meId: string;
   view: SantaView;
 }) => {
   const [expanded, setExpanded] = useState(isOwner);
-  const joined = view.members.filter((member) => member.joined);
-  const waiting = joined
-    .filter((member) => !member.opened)
-    .map((member) => member.name);
   const text = lettersMessage({
     title: view.game.title,
     terms: santaTerms(view.game),
     exchange: formatDayMonth(view.game.exchangeDate),
-    waiting,
+    members: view.members.filter((member) => member.joined),
+    senderId: meId,
   });
 
   if (!expanded) {

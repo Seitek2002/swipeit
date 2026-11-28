@@ -40,6 +40,8 @@ export const wishlistKeys = {
   user: (userId: string) => [...wishlistKeys.all, "user", userId] as const,
   external: (encoded: string) =>
     [...wishlistKeys.all, "external", encoded] as const,
+  // «Открывал по ссылке» (X03).
+  opened: () => [...wishlistKeys.all, "opened"] as const,
 };
 
 export const reservationKeys = {

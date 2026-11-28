@@ -7,6 +7,10 @@ import {
   ReserveInputSchema,
 } from "@swipeit/core/api/wishlist/inputs";
 import { visibleMyReservations } from "@swipeit/core/logic/my-reservations";
+import {
+  openedWishlists,
+  snapshotForReservation,
+} from "@swipeit/core/logic/opened-wishlists";
 import { nanoid } from "nanoid";
 
 import { toDateKey } from "@/shared/lib/format";
@@ -20,6 +24,7 @@ import type {
   ExternalWishlist,
   GuestWishlist,
   MyReservation,
+  OpenedWishlist,
   Reservation,
   ReservationsView,
 } from "../../wishlist/types";
@@ -203,9 +208,14 @@ export const ownerReservationInfo = (db: Db, ownerId: string, now: number) => {
 
 // ── Гостевой просмотр ───────────────────────────────────────────────────
 
+// Путь гостевой ссылки — как в POST /wishlist/share.
+const guestLinkOf = (encoded: string) => `/w/?d=${encoded}`;
+
 // POST /external-wishlists — импорт снимка из ссылки на стороне гостя.
+// Кто открыл — запоминаем для «Открывал по ссылке» (X03): профиль или гость
+// без профиля по guestId (его снимки переходят к профилю, как и брони).
 export const importExternalWishlist: Handler = async (ctx, { body }) => {
-  const { encoded } = parseInput(ExternalWishlistInputSchema, body);
+  const { encoded, guestId } = parseInput(ExternalWishlistInputSchema, body);
   const shared = decodeWishlist(encoded);
   if (!shared) throw new ApiError(400, "VALIDATION", "Ссылка повреждена");
   const external: ExternalWishlist = {
@@ -221,11 +231,31 @@ export const importExternalWishlist: Handler = async (ctx, { body }) => {
       note: item.note,
     })),
     openedAt: nowIso(ctx.clock),
+    link: guestLinkOf(encoded),
   };
+  const viewer = reserverId(ctx, guestId);
   await ctx.db.write((db) => {
     db.externalWishlists[external.id] = external;
+    if (viewer) {
+      (db.openedWishlists[viewer] ??= {})[external.id] = external.openedAt;
+    }
   });
   return external;
+};
+
+// GET /me/opened-wishlists — «Открывал по ссылке» на «Друзьях» (X03).
+export const getOpenedWishlists: Handler = async (ctx) => {
+  const db = await ctx.db.read();
+  const user = requireUser(ctx, db);
+  const opened = db.openedWishlists[user.id] ?? {};
+  const list: OpenedWishlist[] = openedWishlists(
+    Object.entries(opened).flatMap(([id, openedAt]) => {
+      const snapshot = db.externalWishlists[id];
+      return snapshot ? [{ snapshot, openedAt }] : [];
+    }),
+    { friendIds: new Set(db.friends[user.id] ?? []), meId: user.id },
+  );
+  return list;
 };
 
 // GET /users/:id/wishlist — чужой вишлист: только активные желания (TECH_SPEC §6).
@@ -375,11 +405,13 @@ export const getMyReservations: Handler = async (ctx, { query }) => {
   const me = reserverId(ctx, guestId);
   if (!me) return [];
   const now = ctx.clock.now();
-  const externalOf = (ownerId: string) =>
-    db.externalWishlists[ownerId] ??
-    Object.values(db.externalWishlists).find(
-      (external) => external.owner.userId === ownerId,
-    );
+  // Снимок, к которому строка «Я дарю» ведёт обратно (X03): из открытых этим
+  // человеком, с этим желанием.
+  const snapshots = Object.values(db.externalWishlists);
+  const openedAt = db.openedWishlists[me] ?? {};
+  const snapshotOf = (ownerId: string, itemKey: string) =>
+    snapshotForReservation(snapshots, { ownerId, itemKey, openedAt });
+  const friendIds = new Set(db.friends[me] ?? []);
   const list: MyReservation[] = [];
   for (const reservation of db.reservations) {
     if (reservation.reserver.userId !== me) continue;
@@ -397,8 +429,16 @@ export const getMyReservations: Handler = async (ctx, { query }) => {
       );
       if (!item) continue;
       const occasion = occasionForOthers(db, owner.id, now);
+      // Не друг (вкладки, «Локальная сеть») — бронь по ссылке: обратно к
+      // ссылке, если её открывали, иначе — в профиль.
+      const byLink = !friendIds.has(owner.id);
+      const wishlistUrl = byLink
+        ? snapshotOf(owner.id, reservation.itemKey)?.link
+        : undefined;
       list.push({
         ...base,
+        ...(byLink ? { byLink } : {}),
+        ...(wishlistUrl ? { wishlistUrl } : {}),
         owner: {
           id: owner.id,
           name: owner.name ?? "",
@@ -419,13 +459,15 @@ export const getMyReservations: Handler = async (ctx, { query }) => {
       });
       continue;
     }
-    const external = externalOf(reservation.ownerId);
+    const external = snapshotOf(reservation.ownerId, reservation.itemKey);
     const item = external?.items.find(
       (entry) => entry.key === reservation.itemKey,
     );
     if (!external || !item) continue;
     list.push({
       ...base,
+      byLink: true,
+      ...(external.link ? { wishlistUrl: external.link } : {}),
       owner: {
         id: reservation.ownerId,
         name: external.owner.name,

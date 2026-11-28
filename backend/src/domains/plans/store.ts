@@ -9,6 +9,7 @@ import type {
 import type { User } from "@swipeit/core/api/users/types";
 import { notFound } from "@swipeit/core/errors";
 import { matchesPlanFilters } from "@swipeit/core/logic/activities";
+import { pickPlanDeck } from "@swipeit/core/logic/plan-deck";
 import { and, asc, eq, inArray } from "drizzle-orm";
 
 import type { Tx } from "../../context";
@@ -287,16 +288,18 @@ export const activitiesFor = async (
 };
 
 // Из чего собирается колода: свои занятия (в обход фильтров) и каталог по
-// фильтрам плана.
-export const poolOf = (
-  plan: PlanSession,
-  source: PlanActivities,
-): Activity[] => [
-  ...source.custom,
-  ...source.catalog.filter((activity) =>
-    matchesPlanFilters(activity, plan.filters),
-  ),
-];
+// фильтрам плана — не больше размера колоды, из разных категорий (X05).
+// Выбор одинаков при каждом чтении: лобби показывает ровно то, что
+// попадёт в колоду.
+export const poolOf = (plan: PlanSession, source: PlanActivities): Activity[] =>
+  pickPlanDeck(
+    source.custom,
+    source.catalog.filter((activity) =>
+      matchesPlanFilters(activity, plan.filters),
+    ),
+    plan.filters.deckSize ?? null,
+    plan.id,
+  );
 
 // Колода в общем порядке; пропавшие из каталога занятия просто не попадают
 // в выдачу.

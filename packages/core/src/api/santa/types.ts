@@ -140,6 +140,11 @@ export type SantaWardItem = GuestWishlist["items"][number] & {
   overBudget: boolean;
   priceMax: null | number;
   priceMin: null | number;
+  // Чужая открытая бронь (UX-аудит X02): друзья уже выбрали — Санте взять
+  // другое. Кто бронировал — не видно.
+  reserved?: boolean;
+  // Моя бронь — «Купил: …» в письме Санты.
+  reservedByMe?: boolean;
 };
 
 // Подопечный — только свой, только после жеребьёвки.
@@ -176,6 +181,10 @@ export type SantaView = {
   members: SantaMember[];
   openedCount: number;
   role: "guest" | "invited" | "owner" | "participant";
+  // Жеребьёвка по дате не прошла (R08): когда и почему. Пока игра не
+  // изменилась, по дате её больше не пробуют. Нет поля или null — всё в
+  // порядке.
+  drawFailed?: null | { at: string; reason: string };
 };
 
 // Элемент GET /santa — карточка игры в списке. Подопечный — только после

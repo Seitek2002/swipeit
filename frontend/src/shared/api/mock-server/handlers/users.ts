@@ -118,6 +118,13 @@ export const createUser: Handler = async (ctx, { body }) => {
           reservation.reserver.userId = user.id;
         }
       }
+      // И открытые по ссылке вишлисты (X03): «Открывал по ссылке» и путь
+      // обратно из «Я дарю».
+      const opened = db.openedWishlists[input.guestId];
+      if (opened) {
+        db.openedWishlists[user.id] = opened;
+        delete db.openedWishlists[input.guestId];
+      }
     }
   });
   usersChanged(ctx, user.id);

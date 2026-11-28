@@ -81,6 +81,7 @@ export {
   voteCandidates,
   type VoteTally,
 } from "./plans/matches";
+export { plannedDeckSize, QUICK_DECK_SIZE } from "./plans/deck";
 export {
   closePlan,
   leavePlan,
@@ -215,6 +216,7 @@ export {
   undoSwipe,
   updateWishlistItem,
   dismissGivenHint,
+  getOpenedWishlists,
   getUserWishlist,
   importExternalWishlist,
   shareWishlist,
@@ -234,6 +236,7 @@ export {
   type ProductSwipe,
   type Reservation,
   type MyReservation,
+  type OpenedWishlist,
   type ReservationsView,
   type SwipeContext,
   type SwipeDecision,

@@ -71,6 +71,9 @@ type Props = {
   // «Купить на …» (auto-tasks P01). dismiss — «Не сейчас»: до конца
   // страницы больше не показываем.
   renderAfterReserve?: (dismiss: () => void) => ReactNode;
+  // Гость по ссылке: после брони в демо — «Скопировать для чата» (X01).
+  // У демо-друзей из списка сказать о брони некому.
+  reservationChat?: boolean;
   // Под шапкой со своим h1 (профиль друга) — h2, на странице ссылки — h1.
   titleAs?: "h1" | "h2";
   wishlist: GuestWishlist;
@@ -125,6 +128,7 @@ const GuestWishCard = ({
   afterReserve,
   occasionDate,
   ownerName,
+  reservationChat,
 }: {
   afterReserve?: ReactNode;
   item: Item;
@@ -137,6 +141,7 @@ const GuestWishCard = ({
   ownerId: string;
   ownerName: string;
   readOnly: boolean;
+  reservationChat: boolean;
 }) => {
   const { data: product } = useProduct(item.productId);
   const image = product
@@ -230,6 +235,13 @@ const GuestWishCard = ({
                 nameGuard={nameGuard}
                 buy={buyLinkOf(item, product)}
                 onReserved={onReserved}
+                // Название — когда товар из каталога уже пришёл: «…» в
+                // тексте для чата никому не поможет.
+                chat={
+                  reservationChat && (product || item.custom)
+                    ? { ownerName, title }
+                    : undefined
+                }
                 afterBuy={
                   occasionDate ? (
                     <CalendarReminder
@@ -260,6 +272,7 @@ export const GuestWishlistView = ({
   headerAction,
   readOnly = false,
   renderAfterReserve,
+  reservationChat = false,
   titleAs: Title = "h1",
 }: Props) => {
   const [details, setDetails] = useState<{
@@ -339,6 +352,7 @@ export const GuestWishlistView = ({
               onReserved={() => setPromoKey((key) => key ?? item.key)}
               occasionDate={wishlist.meta.occasion?.date}
               ownerName={wishlist.owner.name}
+              reservationChat={reservationChat}
               afterReserve={promoKey === item.key ? promo : null}
             />
           ))}

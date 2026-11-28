@@ -27,7 +27,7 @@ import {
 } from "@swipeit/core/logic/draw";
 import { occasionForOthersFrom } from "@swipeit/core/logic/occasion";
 import { parseInput } from "@swipeit/core/parse-input";
-import { and, desc, eq, inArray, isNotNull, lte } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, lte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
@@ -37,7 +37,7 @@ import {
   type ServerHandler,
   type Tx,
 } from "../../context";
-import { santaGames, santaMembers, users } from "../../db/schema";
+import { reservations, santaGames, santaMembers, users } from "../../db/schema";
 import { datesOf } from "../dates/handlers";
 import { areFriends, makeFriends } from "../friends/handlers";
 import { countEvent, reachStep } from "../funnel/steps";
@@ -67,7 +67,11 @@ import {
 
 const MAX_MEMBERS = 30;
 
-const BoughtBodySchema = z.object({ bought: z.boolean().default(true) });
+// itemKey — что купил (X02): бронь желания подопечного.
+const BoughtBodySchema = z.object({
+  bought: z.boolean().default(true),
+  itemKey: z.string().min(1).max(200).optional(),
+});
 
 const unique = (ids: readonly string[]) => [...new Set(ids)];
 
@@ -194,6 +198,7 @@ const wardOf = async (
   ctx: ServerContext,
   game: StoredGame,
   wardId: string,
+  santaId: string,
 ): Promise<null | SantaWard> => {
   const ward = (await readPeople(ctx.tx, [wardId])).get(wardId);
   if (!ward) return null;
@@ -203,10 +208,24 @@ const wardOf = async (
     meta.occasion,
     ctx.clock.now(),
   );
+  // Открытые брони на вишлист подопечного (X02): ключ → кто бронировал.
+  const reservers = new Map(
+    (
+      await ctx.tx
+        .select({ itemKey: reservations.itemKey, by: reservations.reserverId })
+        .from(reservations)
+        .where(
+          and(eq(reservations.ownerRef, wardId), isNull(reservations.closedAt)),
+        )
+    ).map((row) => [row.itemKey, row.by]),
+  );
   const wishlist = (await guestItemsOf(ctx.tx, wardId)).map(
     (item): SantaWardItem => {
       const price = priceOf(ctx, item);
+      const reserver = reservers.get(itemKeyOf(item));
       return {
+        ...(reserver === santaId ? { reservedByMe: true } : {}),
+        ...(reserver && reserver !== santaId ? { reserved: true } : {}),
         key: itemKeyOf(item),
         ...(item.source.kind === "product"
           ? { productId: item.source.productId }
@@ -231,7 +250,10 @@ const wardOf = async (
     ...profileOf(ward),
     ...(occasion ? { occasion } : {}),
     ...(meta.message ? { message: meta.message } : {}),
-    wishlist,
+    // Уже выбранное друзьями — вниз (X02).
+    wishlist: wishlist.sort(
+      (a, b) => Number(Boolean(a.reserved)) - Number(Boolean(b.reserved)),
+    ),
     overBudgetCount: wishlist.filter((item) => item.overBudget).length,
   };
 };
@@ -287,7 +309,8 @@ const viewOf = async (
       ? {
           envelope: envelopeOf(game, userId),
           bought: game.boughtIds.includes(userId),
-          ward: withWard && wardId ? await wardOf(ctx, game, wardId) : null,
+          ward:
+            withWard && wardId ? await wardOf(ctx, game, wardId, userId) : null,
           // Жеребьёвка была, а пары нет — подопечный удалил профиль (Q05).
           ...(game.status === "drawn" && !wardId ? { wardLeft: true } : {}),
         }
@@ -295,6 +318,7 @@ const viewOf = async (
     boughtCount: game.boughtIds.length,
     openedCount: game.openedIds.length,
     drawIssue: drawIssue(game, people),
+    drawFailed: game.drawFailed ?? null,
   };
 };
 
@@ -488,6 +512,7 @@ export const updateSantaGame: ServerHandler = async (ctx, { params, body }) => {
   const { game } = await withGame(ctx, params.id ?? "", async (game) => {
     requireOwner(game, me, "Менять игру может только организатор");
     requireGathering(game);
+    clearDrawFailed(game);
     if (patch.title !== undefined) game.title = patch.title;
     if (patch.budget !== undefined) game.budget = patch.budget;
     const exchangeDate = patch.exchangeDate ?? game.exchangeDate;
@@ -537,6 +562,7 @@ export const joinSantaGame: ServerHandler = async (ctx, { params }) => {
       }
       game.participantIds.push(me.id);
       game.invitedIds = game.invitedIds.filter((id) => id !== me.id);
+      clearDrawFailed(game);
       return true;
     },
   );
@@ -575,6 +601,7 @@ export const leaveSantaGame: ServerHandler = async (ctx, { params }) => {
         throw conflict("Жеребьёвка уже прошла — выйти нельзя");
       }
       dropMember(game, me.id);
+      clearDrawFailed(game);
       return true;
     },
   );
@@ -597,6 +624,7 @@ export const removeSantaMember: ServerHandler = async (ctx, { params }) => {
     }
     dropMember(game, target);
     game.removedIds = unique([...game.removedIds, target]);
+    clearDrawFailed(game);
   });
   changed(ctx, game, [params.userId ?? ""]);
   return viewOf(ctx, game, me.id);
@@ -665,7 +693,7 @@ export const openSantaEnvelope: ServerHandler = async (ctx, { params }) => {
 
 // POST /santa/:id/bought { bought? } — «Я купил подарок» и снять отметку.
 export const setSantaBought: ServerHandler = async (ctx, { params, body }) => {
-  const { bought } = parseInput(BoughtBodySchema, body ?? {});
+  const { bought, itemKey } = parseInput(BoughtBodySchema, body ?? {});
   const me = await readMe(ctx);
   const { game, result: changedNow } = await withGame(
     ctx,
@@ -681,6 +709,12 @@ export const setSantaBought: ServerHandler = async (ctx, { params, body }) => {
       return was !== bought;
     },
   );
+  // «Купил: …» (X02) — бронь желания подопечного под своим именем: у гостей
+  // и других Сант оно занято, подопечный, как всегда, не видит кто.
+  if (bought && itemKey) {
+    const wardId = await wardIdOf(ctx.tx, game.id, me.id);
+    if (wardId) await reserveForWard(ctx, wardId, itemKey, me);
+  }
   if (changedNow) changed(ctx, game);
   if (changedNow && bought) {
     await reachStep(ctx.tx, me.id, "santa_bought", ctx.clock.now());
@@ -688,7 +722,89 @@ export const setSantaBought: ServerHandler = async (ctx, { params, body }) => {
   return viewOf(ctx, game, me.id);
 };
 
+const reserveForWard = async (
+  ctx: ServerContext,
+  wardId: string,
+  itemKey: string,
+  me: UserRow,
+) => {
+  const items = await guestItemsOf(ctx.tx, wardId);
+  if (!items.some((item) => itemKeyOf(item) === itemKey)) {
+    throw notFound("Такого желания нет");
+  }
+  const [taken] = await ctx.tx
+    .select({ by: reservations.reserverId })
+    .from(reservations)
+    .where(
+      and(
+        eq(reservations.ownerRef, wardId),
+        eq(reservations.itemKey, itemKey),
+        isNull(reservations.closedAt),
+      ),
+    )
+    .limit(1);
+  if (taken && taken.by !== me.id) {
+    throw conflict("Кто-то уже выбрал этот подарок");
+  }
+  if (taken) return;
+  const inserted = await ctx.tx
+    .insert(reservations)
+    .values({
+      id: `rs_${nanoid(10)}`,
+      ownerRef: wardId,
+      itemKey,
+      reserverId: me.id,
+      reserverName: me.name ?? "",
+      at: new Date(ctx.clock.now()),
+    })
+    .onConflictDoNothing()
+    .returning({ id: reservations.id });
+  // Гонка: кто-то успел в ту же миллисекунду — уникальный индекс открытой брони.
+  if (inserted.length === 0) throw conflict("Кто-то уже выбрал этот подарок");
+  ctx.events.publish(
+    {
+      type: "db:changed",
+      scope: ["reservations", "wishlist"],
+      id: wardId,
+    },
+    [wardId, me.id],
+  );
+};
+
 // ── Жеребьёвка по дате (планировщик — B13) ─────────────────────────
+
+// Жеребьёвка по дате не прошла (R08): отметка в игре, тост организатору и
+// шаг воронки — один раз. Дальше планировщик игру пропускает, пока она не
+// изменится.
+const markDrawFailed = async (
+  ctx: ServerContext,
+  id: string,
+  reason: string,
+  now: number,
+) => {
+  const before = await loadGame(ctx.tx, id, { lock: true });
+  const game: StoredGame = {
+    ...structuredClone(before),
+    drawFailed: { at: new Date(now).toISOString(), reason },
+  };
+  await saveGame(ctx.tx, before, game, now);
+  ctx.events.publish(
+    {
+      type: "toast",
+      text: `Жеребьёвка по дате в «${game.title}» не прошла: ${reason}`,
+      forUserId: game.ownerId,
+    },
+    [game.ownerId],
+  );
+  await countEvent(ctx.tx, "santa_draw_failed", now, game.ownerId);
+  changed(ctx, game);
+};
+
+// Игра изменилась (вступили, вышли, убрали, правка) — жеребьёвку по дате
+// можно попробовать снова (R08).
+const clearDrawFailed = (game: StoredGame) => {
+  delete game.drawFailed;
+};
 
 // Игры, у которых наступил drawAt, — жеребьёвка. Не вышло (меньше 3,
 // исключения) — игра ждёт организатора, ничего не записано. Каждая игра —
@@ -705,8 +821,12 @@ export const drawDueSantaGames = async (
         eq(santaGames.status, "gathering"),
         isNotNull(santaGames.drawAt),
         lte(santaGames.drawAt, new Date(now)),
+        // Уже не прошла и с тех пор не менялась (R08) — не пробуем.
+        isNull(santaGames.drawFailedAt),
       ),
-    );
+    )
+    // Строку держит запрос человека — пропустим до следующего прохода.
+    .for("update", { skipLocked: true });
   const drawn: string[] = [];
   const drawnGames: StoredGame[] = [];
   const failed: SantaTickResult["failed"] = [];
@@ -727,6 +847,7 @@ export const drawDueSantaGames = async (
     } catch (error) {
       if (!isApiError(error)) throw error;
       failed.push({ id, reason: error.message });
+      await markDrawFailed(ctx, id, error.message, now);
     }
   }
   for (const game of drawnGames) changed(ctx, game);

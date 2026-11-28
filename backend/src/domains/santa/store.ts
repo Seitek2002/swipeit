@@ -11,7 +11,10 @@ import { santaAssignments, santaGames, santaMembers } from "../../db/schema";
 // же SantaGame, что и мок, но БЕЗ assignments: пары читает только wardIdOf
 // (§4.6, п. 2), и в загруженную игру они не попадают никогда.
 
-export type StoredGame = Omit<SantaGame, "assignments">;
+export type StoredGame = Omit<SantaGame, "assignments"> & {
+  // Жеребьёвка по дате не прошла (R08).
+  drawFailed?: { at: string; reason: string };
+};
 
 const toDay = (value: string) => value.slice(0, 10);
 
@@ -50,6 +53,14 @@ export const loadGame = async (
     openedIds: joined.filter((m) => m.openedAt).map((m) => m.userId),
     boughtIds: joined.filter((m) => m.boughtAt).map((m) => m.userId),
     removedIds: row.removedIds,
+    ...(row.drawFailedAt
+      ? {
+          drawFailed: {
+            at: row.drawFailedAt.toISOString(),
+            reason: row.drawFailedReason ?? "",
+          },
+        }
+      : {}),
     createdAt: row.createdAt.toISOString(),
   };
 };
@@ -64,6 +75,8 @@ const gameColumns = (game: StoredGame) => ({
   exclusions: game.exclusions,
   drawnAt: game.drawnAt ? new Date(game.drawnAt) : null,
   removedIds: game.removedIds,
+  drawFailedAt: game.drawFailed ? new Date(game.drawFailed.at) : null,
+  drawFailedReason: game.drawFailed?.reason ?? null,
 });
 
 export const insertGame = async (tx: Tx, game: StoredGame, now: number) => {

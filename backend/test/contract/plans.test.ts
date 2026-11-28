@@ -19,6 +19,11 @@ const FILTERS = {
   categories: ["culture"],
   budgetPerPerson: { min: 0, max: 200 },
 };
+// Без фильтров — весь каталог (X05: короткая колода «Прямо сейчас»).
+const NO_FILTERS = {
+  categories: [],
+  budgetPerPerson: { min: 0, max: null },
+};
 // Под это нет ни одного занятия: вечеринки до 100 сом.
 const EMPTY_FILTERS = {
   categories: ["party"],
@@ -254,6 +259,50 @@ describe.each(CLIENTS)("«Че делать будем?» — %s", (_name, creat
       // Лобби нет — «Поехали» и «Готов» не нужны.
       await fails(act(owner, view.plan.id, "/start"), "CONFLICT");
       await fails(act(azamat, view.plan.id, "/ready"), "CONFLICT");
+    });
+
+    it("«Прямо сейчас» без фильтров — 20 занятий из разных категорий; «Все» и «До даты» — весь каталог (X05)", async () => {
+      const { owner, azamat } = await trio();
+      const all = await api.call<Activity[]>(owner, "GET", "/activities");
+      expect(all.length).toBeGreaterThan(20);
+      const categories = new Set(all.map((activity) => activity.category));
+      const quick = await createPlan(owner, {
+        participantIds: [azamat.id],
+        filters: NO_FILTERS,
+      });
+      expect(quick.plan.filters).toEqual({ ...NO_FILTERS, deckSize: 20 });
+      // Лобби показывает ровно те 20, что попадут в колоду, — при каждом
+      // чтении одни и те же.
+      const lobby = quick.activities.map((activity) => activity.id);
+      expect(lobby).toHaveLength(20);
+      expect(new Set(quick.activities.map((a) => a.category))).toEqual(
+        categories,
+      );
+      const again = await getPlan(azamat, quick.plan.id);
+      expect(again.activities.map((activity) => activity.id)).toEqual(lobby);
+      const [summary] = await api.call<PlanSummary[]>(owner, "GET", "/plans");
+      expect(summary?.activityCount).toBe(20);
+      await act(azamat, quick.plan.id, "/ready");
+      const started = await act(owner, quick.plan.id, "/start");
+      expect(sorted(started.plan.deck)).toEqual(sorted(lobby));
+
+      // «Все 50» — переключатель на шаге «Что выбираем?».
+      const full = await createPlan(owner, {
+        filters: { ...NO_FILTERS, deckSize: null },
+      });
+      expect(full.activities).toHaveLength(all.length);
+      // «До даты» — как раньше: весь каталог по фильтрам.
+      const later = await createPlan(owner, {
+        mode: "deadline",
+        deadline: new Date(NOW + DAY).toISOString(),
+        filters: NO_FILTERS,
+      });
+      expect(later.plan.filters.deckSize).toBeNull();
+      expect(later.plan.deck).toHaveLength(all.length);
+      await fails(
+        createPlan(owner, { filters: { ...NO_FILTERS, deckSize: 0 } }),
+        "VALIDATION",
+      );
     });
   });
 

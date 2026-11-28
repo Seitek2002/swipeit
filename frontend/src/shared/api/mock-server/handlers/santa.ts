@@ -37,7 +37,12 @@ import { itemKeyOf } from "./wishlist";
 
 const MAX_MEMBERS = 30;
 
-const BoughtBodySchema = z.object({ bought: z.boolean().default(true) });
+// itemKey — что купил (X02): желание подопечного бронируется обычной бронью,
+// у гостей и других Сант оно занято.
+const BoughtBodySchema = z.object({
+  bought: z.boolean().default(true),
+  itemKey: z.string().min(1).max(200).optional(),
+});
 
 const forbidden = (message: string) => new ApiError(403, "FORBIDDEN", message);
 const conflict = (message: string) => new ApiError(409, "CONFLICT", message);
@@ -184,20 +189,33 @@ const wardOf = (
   wardId: string,
   products: Map<string, Product>,
   now: number,
+  santaId: string,
 ): null | SantaWard => {
   const ward = db.users[wardId];
   if (!ward) return null;
   const meta = db.wishlistMeta[wardId];
-  const wishlist = guestItems(db, wardId).map((source): SantaWardItem => {
-    const item = guestItemView(source);
-    const price = priceOf(item, products);
-    return {
-      ...item,
-      priceMin: price.min,
-      priceMax: price.max,
-      overBudget: price.min !== null && price.min > game.budget,
-    };
-  });
+  // Открытые брони на вишлист подопечного (X02): ключ → кто бронировал.
+  const reservers = new Map(
+    db.reservations
+      .filter((entry) => entry.ownerId === wardId && !entry.closedAt)
+      .map((entry) => [entry.itemKey, entry.reserver.userId]),
+  );
+  const wishlist = guestItems(db, wardId)
+    .map((source): SantaWardItem => {
+      const item = guestItemView(source);
+      const price = priceOf(item, products);
+      const reserver = reservers.get(item.key);
+      return {
+        ...item,
+        priceMin: price.min,
+        priceMax: price.max,
+        overBudget: price.min !== null && price.min > game.budget,
+        ...(reserver === santaId ? { reservedByMe: true } : {}),
+        ...(reserver && reserver !== santaId ? { reserved: true } : {}),
+      };
+    })
+    // Уже выбранное друзьями — вниз (X02); порядок остального — прежний.
+    .sort((a, b) => Number(Boolean(a.reserved)) - Number(Boolean(b.reserved)));
   return {
     ...profileOf(ward),
     // Даты подопечного личные: Санте — только дата и готовый повод.
@@ -239,7 +257,7 @@ const viewOf = (
           bought: game.boughtIds.includes(userId),
           ward:
             game.status === "drawn" && wardId
-              ? wardOf(db, game, wardId, products, now)
+              ? wardOf(db, game, wardId, products, now, userId)
               : null,
         }
       : null,
@@ -609,7 +627,7 @@ export const openSantaEnvelope: Handler = async (ctx, { params }) => {
 // POST /santa/:id/bought { bought?: boolean } — «Я купил подарок» (и снять
 // отметку). Сначала — вскрыть конверт: покупать, не зная кому, нечего.
 export const setSantaBought: Handler = async (ctx, { params, body }) => {
-  const { bought } = parseInput(BoughtBodySchema, body ?? {});
+  const { bought, itemKey } = parseInput(BoughtBodySchema, body ?? {});
   const products = await productMap(ctx);
   const { changedNow, view } = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
@@ -617,6 +635,31 @@ export const setSantaBought: Handler = async (ctx, { params, body }) => {
     requireDrawnParticipant(game, user);
     if (!game.openedIds.includes(user.id)) {
       throw conflict("Сначала открой конверт");
+    }
+    // «Купил: …» (X02) — бронь желания подопечного под своим именем.
+    const wardId = game.assignments?.[user.id];
+    if (bought && itemKey && wardId) {
+      if (!guestItems(db, wardId).some((item) => itemKeyOf(item) === itemKey)) {
+        throw notFound("Такого желания нет");
+      }
+      const taken = db.reservations.find(
+        (entry) =>
+          entry.ownerId === wardId &&
+          entry.itemKey === itemKey &&
+          !entry.closedAt,
+      );
+      if (taken && taken.reserver.userId !== user.id) {
+        throw conflict("Кто-то уже выбрал этот подарок");
+      }
+      if (!taken) {
+        db.reservations.push({
+          id: `rs_${nanoid(10)}`,
+          ownerId: wardId,
+          itemKey,
+          reserver: { userId: user.id, name: user.name ?? "" },
+          at: nowIso(ctx.clock),
+        });
+      }
     }
     const was = game.boughtIds.includes(user.id);
     const others = game.boughtIds.filter((id) => id !== user.id);

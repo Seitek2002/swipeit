@@ -24,6 +24,7 @@ import {
 } from "@/shared/ui";
 
 import { MyReservations } from "./my-reservations";
+import { OpenedWishlists } from "./opened-wishlists";
 
 // Ближайший день рождения ближе этого порога — карточкой над списком.
 const SOON_DAYS = 30;
@@ -197,8 +198,9 @@ export const FriendsPage = () => {
           </div>
         ) : list.length === 0 ? (
           <>
-            {/* Брони по ссылкам бывают и без друзей в списке. */}
+            {/* Брони и вишлисты по ссылкам бывают и без друзей в списке. */}
             <MyReservations />
+            <OpenedWishlists />
             <EmptyState className="h-full" title="Друзей пока нет." />
           </>
         ) : (
@@ -206,8 +208,11 @@ export const FriendsPage = () => {
             {soon && (
               <SoonCard friend={soon} onPick={() => setPickOpen(true)} />
             )}
-            {/* «Я дарю» — свои брони над списком (auto-tasks P02). */}
+            {/* «Я дарю» — свои брони над списком (auto-tasks P02), под
+                ними — кого открывал по ссылке (X03): это живые люди, их
+                ставим выше демо-друзей. */}
             <MyReservations />
+            <OpenedWishlists />
             {getMode() === "lan" ? (
               <>
                 {/* Сеть (DESIGN.md §8.11): люди с мятной точкой онлайна

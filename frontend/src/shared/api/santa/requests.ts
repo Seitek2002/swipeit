@@ -54,9 +54,15 @@ export const removeSantaMember = (
   );
 
 // «Я купил подарок» (bought: false — снять отметку).
-export const setSantaBought = (id: string, bought = true): Promise<SantaView> =>
+// itemKey — что купил (X02): желание подопечного бронируется.
+export const setSantaBought = (
+  id: string,
+  bought = true,
+  itemKey?: string,
+): Promise<SantaView> =>
   getTransport().request<SantaView>("POST", `${gamePath(id)}/bought`, {
     bought,
+    ...(itemKey ? { itemKey } : {}),
   });
 
 // Жеребьёвка по дате: планировщик зовёт раз в 15 с и при возвращении во

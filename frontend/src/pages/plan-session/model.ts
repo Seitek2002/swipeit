@@ -44,3 +44,51 @@ export const drumLabels = (source: DrumSource): DrumLabels =>
         button: "Крутить барабан",
         forGuests: "Барабан крутит организатор — все увидят, что выпало.",
       };
+
+// «Выбрать самим»: кто уже проголосовал (auto-tasks-ux-4 X04). Голос
+// считается, только если он за одного из кандидатов — как у tallyVotes.
+export type VoteProgress = {
+  total: number;
+  voted: number;
+  // Имена тех, кто ещё не проголосовал, в порядке участников.
+  waiting: string[];
+};
+
+export const voteProgress = (
+  participants: ReadonlyArray<{ id: string; name: string }>,
+  votes: Readonly<Record<string, string>>,
+  candidates: readonly string[],
+): VoteProgress => {
+  const allowed = new Set(candidates);
+  const waiting = participants.filter((person) => {
+    const vote = votes[person.id];
+    return vote === undefined || !allowed.has(vote);
+  });
+  return {
+    total: participants.length,
+    voted: participants.length - waiting.length,
+    waiting: waiting.map((person) => person.name),
+  };
+};
+
+// Больше пяти имён в одной строке не читают — «и ещё 2».
+const MAX_NAMED = 5;
+
+const namesOf = (names: readonly string[]) =>
+  names.length > MAX_NAMED
+    ? `${names.slice(0, MAX_NAMED).join(", ")} и ещё ${names.length - MAX_NAMED}`
+    : names.join(", ");
+
+// Строка над списком голосования: «Проголосовали 1 из 4 · ждём: Азамат,
+// Тимур, Мээрим» — организатор видит, кого ждать, а не утверждает вслепую.
+export const voteStatus = ({ voted, total, waiting }: VoteProgress): string =>
+  waiting.length === 0
+    ? "Все проголосовали"
+    : `Проголосовали ${voted} из ${total} · ждём: ${namesOf(waiting)}`;
+
+// Подтверждение «Утвердить», пока проголосовали не все; все — null, кнопка
+// утверждает сразу.
+export const approveWarning = ({ waiting }: VoteProgress): null | string =>
+  waiting.length === 0
+    ? null
+    : `Не все проголосовали (ждём: ${namesOf(waiting)}). Утвердить сейчас?`;

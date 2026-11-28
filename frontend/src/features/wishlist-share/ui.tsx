@@ -50,6 +50,7 @@ import {
   Button,
   Chip,
   DayMonthPicker,
+  DemoLinkNote,
   ShareActions,
   Spinner,
   TextArea,
@@ -392,11 +393,18 @@ export const WishlistShareSheet = ({
             Дальше
           </Button>
         ) : current === "send" ? (
-          <ShareActions
-            getPayload={getPayload}
-            onError={onShareError}
-            qrLabel="QR-код ссылки на вишлист"
-          />
+          <>
+            <ShareActions
+              getPayload={getPayload}
+              onError={onShareError}
+              qrLabel="QR-код ссылки на вишлист"
+            />
+            {/* UX-аудит X01: в демо бронь гостя остаётся на его телефоне —
+                владелец не должен ждать, что «сколько выбрали» вырастет. */}
+            <DemoLinkNote className="text-center">
+              В демо брони друзей сюда не придут — они договорятся в чате
+            </DemoLinkNote>
+          </>
         ) : undefined
       }
     >

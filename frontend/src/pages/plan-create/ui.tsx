@@ -17,10 +17,12 @@ import { useFriends } from "@/entities/user";
 
 import {
   type PlanFilters,
+  QUICK_DECK_SIZE,
   activityKeys,
   createPlan,
   getActivities,
   isApiError,
+  plannedDeckSize,
 } from "@/shared/api";
 import {
   ACTIVITY_CATEGORY_IDS,
@@ -40,6 +42,7 @@ import {
   Screen,
   ScreenBody,
   SegmentedControl,
+  Switch,
   TextField,
   toast,
 } from "@/shared/ui";
@@ -202,18 +205,31 @@ const StepPeople = ({
   );
 };
 
+const ACTIVITY_FORMS = ["занятие", "занятия", "занятий"] as const;
+
+// Размер колоды для запроса: «Прямо сейчас» — короткая колода, пока не
+// включили «Все» (X05); «До даты» — все, как раньше.
+const deckSizeFor = (mode: Mode, fullDeck: boolean) =>
+  mode === "live" && !fullDeck ? QUICK_DECK_SIZE : null;
+
 // Шаг 3: что выбираем — категории, бюджет, свои занятия.
 const StepActivities = ({
+  mode,
   filters,
   onFilters,
+  fullDeck,
+  onFullDeck,
   custom,
   onAddCustom,
   onRemoveCustom,
 }: {
   custom: Activity[];
   filters: PlanFilters;
+  fullDeck: boolean;
+  mode: Mode;
   onAddCustom: () => void;
   onFilters: (filters: PlanFilters) => void;
+  onFullDeck: (value: boolean) => void;
   onRemoveCustom: (id: string) => void;
 }) => {
   const catalog = useQuery({
@@ -221,7 +237,16 @@ const StepActivities = ({
     queryFn: () => getActivities(filters),
     placeholderData: keepPreviousData,
   });
-  const total = (catalog.data?.length ?? 0) + custom.length;
+  const catalogCount = catalog.data?.length ?? 0;
+  const total = catalogCount + custom.length;
+  const inDeck = plannedDeckSize(
+    custom.length,
+    catalogCount,
+    deckSizeFor(mode, fullDeck),
+  );
+  // Переключатель «Все N» — только когда «Прямо сейчас» правда урезает
+  // колоду: при 12 занятиях резать нечего.
+  const canTrim = mode === "live" && total > QUICK_DECK_SIZE;
 
   return (
     <div className="flex flex-col gap-6">
@@ -252,6 +277,31 @@ const StepActivities = ({
           onFilters({ ...filters, budgetPerPerson })
         }
       />
+      {/* Размер колоды — сразу под фильтрами и меняется от них (X05):
+          компания «прямо сейчас» должна знать, сколько листать. */}
+      <div className="-mt-2 flex flex-col gap-2">
+        <p className="text-body text-paper" aria-live="polite">
+          {catalog.data
+            ? total === 0
+              ? "В этих рамках занятий нет — убери фильтр или добавь своё."
+              : canTrim && !fullDeck
+                ? `В колоде: ${pluralize(inDeck, ACTIVITY_FORMS)} из разных категорий`
+                : `В колоде: ${pluralize(inDeck, ACTIVITY_FORMS)}`
+            : "Считаем занятия…"}
+        </p>
+        {canTrim && (
+          <Switch
+            label={`Все ${total}`}
+            description={
+              fullDeck
+                ? "Листать дольше, зато видно всё"
+                : `${QUICK_DECK_SIZE} хватит, чтобы решить за пару минут`
+            }
+            checked={fullDeck}
+            onChange={onFullDeck}
+          />
+        )}
+      </div>
       <div className="flex flex-col gap-3">
         <p className="text-label">Свои занятия</p>
         {custom.map((activity) => (
@@ -275,13 +325,6 @@ const StepActivities = ({
           Своё занятие
         </Button>
       </div>
-      <p className="text-caption text-rose" aria-live="polite">
-        {catalog.data
-          ? total === 0
-            ? "В этих рамках занятий нет — убери фильтр или добавь своё."
-            : `В колоде будет ${pluralize(total, ["занятие", "занятия", "занятий"])}`
-          : "Считаем занятия…"}
-      </p>
     </div>
   );
 };
@@ -305,6 +348,7 @@ export const PlanCreatePage = () => {
   const [participants, setParticipants] = useState<string[]>([]);
   const [matchRule, setMatchRule] = useState<MatchRule>("all");
   const [filters, setFilters] = useState<PlanFilters>(EMPTY_FILTERS);
+  const [fullDeck, setFullDeck] = useState(false);
   const [custom, setCustom] = useState<Activity[]>([]);
   const [customOpen, setCustomOpen] = useState(false);
 
@@ -345,7 +389,7 @@ export const PlanCreatePage = () => {
         mode === "deadline" ? new Date(deadline).toISOString() : undefined,
       participantIds: participants,
       matchRule,
-      filters,
+      filters: { ...filters, deckSize: deckSizeFor(mode, fullDeck) },
       customActivityIds: custom.map((activity) => activity.id),
     };
     requireName.run(() => create.mutate(input));
@@ -395,8 +439,11 @@ export const PlanCreatePage = () => {
         )}
         {step === 2 && (
           <StepActivities
+            mode={mode}
             filters={filters}
             onFilters={setFilters}
+            fullDeck={fullDeck}
+            onFullDeck={setFullDeck}
             custom={custom}
             onAddCustom={() => setCustomOpen(true)}
             onRemoveCustom={(id) =>

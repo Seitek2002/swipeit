@@ -64,6 +64,13 @@
       "when": 1795836550298,
       "tag": "0008_funnel_internal",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795842205534,
+      "tag": "0009_santa_draw_failed",
+      "breakpoints": true
     }
   ]
 }

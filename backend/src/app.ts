@@ -10,6 +10,9 @@ import type { Clock } from "./context";
 import type { Db } from "./db/client";
 import { registerErrors } from "./errors";
 import { resolveSession } from "./auth/sessions";
+import { createDiskStorage } from "./domains/uploads/storage";
+import { registerUploads } from "./routes-uploads";
+import { startScheduler } from "./scheduler";
 import { createSocketHub, type EventHub } from "./realtime/hub";
 import { registerRoutes } from "./routes";
 
@@ -29,6 +32,9 @@ export type AppOptions = {
   // Поток логов (тест «в логах нет токена»).
   logStream?: Writable;
   random?: Random;
+  // Планировщик дедлайнов и жеребьёвки по дате (B13): включает server.ts;
+  // тесты зовут runSchedulerOnce сами.
+  scheduler?: boolean;
 };
 
 // Fastify-приложение без запуска: тесты зовут его через app.inject, а
@@ -41,6 +47,7 @@ export const buildApp = ({
   random = createCryptoRandom(),
   hub,
   logStream,
+  scheduler = false,
 }: AppOptions): FastifyInstance => {
   const app = Fastify({
     logger:
@@ -121,6 +128,24 @@ export const buildApp = ({
       hub: events,
       publicShareUrl: config.PUBLIC_SHARE_URL,
     });
+    registerUploads(app, {
+      db,
+      catalog,
+      clock,
+      random,
+      storage: createDiskStorage(config.UPLOADS_DIR),
+    });
+    if (scheduler) {
+      const stop = startScheduler({
+        db,
+        catalog,
+        clock,
+        random,
+        hub: events,
+        log: app.log,
+      });
+      app.addHook("onClose", async () => stop());
+    }
   }
 
   return app;

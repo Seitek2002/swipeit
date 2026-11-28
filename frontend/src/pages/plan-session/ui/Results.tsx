@@ -27,9 +27,15 @@ import {
 import { withBasePath } from "@/shared/lib/base-path";
 import { pluralize } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
-import { Button, EmptyState, toast } from "@/shared/ui";
+import { Button, ConfirmDialog, EmptyState, toast } from "@/shared/ui";
 
-import { drumLabels, resultNote } from "../model";
+import {
+  approveWarning,
+  drumLabels,
+  resultNote,
+  voteProgress,
+  voteStatus,
+} from "../model";
 
 type Props = { meId: string; view: PlanView };
 
@@ -95,6 +101,11 @@ export const Results = ({ view, meId }: Props) => {
   const [votingToggle, setVoting] = useState(false);
   const voting = votingToggle || hasVotes;
   const [customOpen, setCustomOpen] = useState(false);
+  // Кого ждём в голосовании (X04): пока не все, «Утвердить» — вторичная и
+  // спрашивает подтверждение; все — главная и утверждает сразу.
+  const progress = voteProgress(participants, plan.votes, votable);
+  const warning = approveWarning(progress);
+  const [confirmId, setConfirmId] = useState<null | string>(null);
 
   const onSuccess = (next: PlanView) => {
     queryClient.setQueryData(planKeys.detail(plan.id), next);
@@ -113,7 +124,10 @@ export const Results = ({ view, meId }: Props) => {
   const approve = useMutation({
     mutationFn: (activityId: string) =>
       decidePlan(plan.id, { method: "vote", activityId }),
-    onSuccess,
+    onSuccess: (next: PlanView) => {
+      setConfirmId(null);
+      onSuccess(next);
+    },
     onError,
   });
   const vote = useMutation({
@@ -143,6 +157,13 @@ export const Results = ({ view, meId }: Props) => {
       {closedEarly && (
         <p className="text-caption text-rose mt-1">
           Итоги по тем, кто долистал: {countedNames.join(", ")}
+        </p>
+      )}
+      {/* Не долистал, а итоги уже показали (X06) — говорим прямо, иначе
+          человек ищет в списке свои лайки и не понимает, куда они делись. */}
+      {closedEarly && !counted.has(meId) && (
+        <p className="text-body text-paper mt-1.5">
+          Итоги показали без тебя: организатор не стал ждать
         </p>
       )}
       {labels.hint && !voting && (
@@ -241,12 +262,24 @@ export const Results = ({ view, meId }: Props) => {
     <div className="flex flex-col gap-5 pb-4">
       {header}
       {voting && (
-        <p className="text-body text-rose">
-          У каждого один голос.{" "}
-          {isOwner
-            ? "Когда все проголосуют — утверди победителя."
-            : "Решение утвердит организатор."}
-        </p>
+        <div className="flex flex-col gap-1.5">
+          <p className="text-body text-rose">
+            У каждого один голос.{" "}
+            {isOwner
+              ? "Когда все проголосуют — утверди победителя."
+              : "Решение утвердит организатор."}
+          </p>
+          <p
+            className={cn(
+              "text-caption",
+              warning ? "text-rose" : "text-mint flex items-center gap-1",
+            )}
+            aria-live="polite"
+          >
+            {!warning && <Check aria-hidden size={14} strokeWidth={2.25} />}
+            {voteStatus(progress)}
+          </p>
+        </div>
       )}
       <ul className="flex flex-col gap-3">
         {rows.map((row) => (
@@ -298,9 +331,19 @@ export const Results = ({ view, meId }: Props) => {
                   key={id}
                   size="lg"
                   // Ничья — несколько «Утвердить»: ни одна не главная (V07).
-                  variant={tally.leaders.length > 1 ? "secondary" : "primary"}
-                  loading={approve.isPending && approve.variables === id}
-                  onClick={() => approve.mutate(id)}
+                  // Проголосовали не все — тоже не главная (X04): утвердить
+                  // при одном голосе — «решили без нас».
+                  variant={
+                    tally.leaders.length > 1 || warning
+                      ? "secondary"
+                      : "primary"
+                  }
+                  loading={
+                    !confirmId && approve.isPending && approve.variables === id
+                  }
+                  onClick={() =>
+                    warning ? setConfirmId(id) : approve.mutate(id)
+                  }
                 >
                   Утвердить: {byId.get(id)?.title ?? ""}
                 </Button>
@@ -330,6 +373,15 @@ export const Results = ({ view, meId }: Props) => {
           </Button>
         )}
       </div>
+      <ConfirmDialog
+        open={confirmId !== null}
+        onClose={() => setConfirmId(null)}
+        onConfirm={() => confirmId && approve.mutate(confirmId)}
+        isLoading={approve.isPending}
+        title={`Утвердить: ${byId.get(confirmId ?? "")?.title ?? ""}`}
+        description={warning ?? undefined}
+        confirmLabel="Утвердить"
+      />
     </div>
   );
 };

@@ -30,9 +30,9 @@ import { useConnectionStatus } from "@/shared/lib/realtime";
 import { cn } from "@/shared/lib/utils";
 import { BottomSheet, Countdown, buttonClassName, toast } from "@/shared/ui";
 
+import { joinNames } from "../model";
 import { DeckEnd } from "./DeckEnd";
 import { ProgressRings } from "./ProgressRings";
-import { joinNames } from "./names";
 
 type Props = { meId: string; view: PlanView };
 
@@ -145,8 +145,15 @@ export const ActivityDeck = ({ view, meId }: Props) => {
     ]),
   );
   const matches = computeMatches(plan, activities).matches.length;
+  // Счётчик «7 из 20» под названием (X05): номер карточки наверху колоды;
+  // колода кончилась — «20 из 20».
+  const position = Math.min(total - queue.length + 1, total);
   const others = participants.filter((person) => person.id !== meId);
-  const swiping = others.filter((person) => (done[person.id] ?? 0) < total);
+  // Кто ещё листает и сколько ему осталось — для «Напомнить» (X06).
+  const swiping = others.flatMap((person) => {
+    const left = total - (done[person.id] ?? 0);
+    return left > 0 ? [{ id: person.id, name: person.name, left }] : [];
+  });
   const status =
     others.length === 0
       ? "Ты листаешь один"
@@ -180,23 +187,33 @@ export const ActivityDeck = ({ view, meId }: Props) => {
         )}
         <div className="min-w-0 flex-1">
           <p className="text-title-3 truncate">{plan.title}</p>
-          {plan.mode === "deadline" && plan.deadline ? (
-            // «До даты» (DESIGN.md §8.7): свайпают, когда удобно; итоги — по
-            // дедлайну или когда закончат все.
-            <Countdown
-              to={plan.deadline}
-              now={clock.now}
-              className="text-caption text-rose"
-            />
-          ) : (
-            <p className="text-caption text-rose flex items-center gap-1.5">
-              <i
-                aria-hidden
-                className="bg-mint size-2 rounded-full shadow-[0_0_0_4px_rgb(143_227_198/0.18)]"
+          <p className="text-caption text-rose flex items-center gap-1.5 whitespace-nowrap">
+            {plan.mode === "deadline" && plan.deadline ? (
+              // «До даты» (DESIGN.md §8.7): свайпают, когда удобно; итоги —
+              // по дедлайну или когда закончат все.
+              <Countdown
+                to={plan.deadline}
+                now={clock.now}
+                className="text-caption text-rose truncate"
               />
-              Прямо сейчас
-            </p>
-          )}
+            ) : (
+              <>
+                <i
+                  aria-hidden
+                  className="bg-mint size-2 flex-none rounded-full shadow-[0_0_0_4px_rgb(143_227_198/0.18)]"
+                />
+                Прямо сейчас
+              </>
+            )}
+            {total > 0 && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="tabular-nums">
+                  {position} из {total}
+                </span>
+              </>
+            )}
+          </p>
         </div>
         <span
           aria-live="polite"

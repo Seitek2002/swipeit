@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   getMyReservations,
   getMyWishlist,
+  getOpenedWishlists,
   getUserWishlist,
   reservationKeys,
   wishlistKeys,
@@ -30,6 +31,19 @@ export const useMyReservations = () => {
   return useQuery({
     queryKey: reservationKeys.mine(),
     queryFn: () => getMyReservations(),
+    enabled: mounted && Boolean(userId),
+  });
+};
+
+// Чьи вишлисты открывал по ссылке — «Открывал по ссылке» на «Друзьях»
+// (UX-аудит X03): иначе гость, собравший свой вишлист, искал бы ссылку
+// друга в чате.
+export const useOpenedWishlists = () => {
+  const mounted = useMounted();
+  const userId = useSessionStore((state) => state.activeUserId);
+  return useQuery({
+    queryKey: wishlistKeys.opened(),
+    queryFn: getOpenedWishlists,
     enabled: mounted && Boolean(userId),
   });
 };

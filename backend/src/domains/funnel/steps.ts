@@ -44,6 +44,8 @@ export const FUNNEL_STEPS = [
   "share_with_birthday",
   // R06: участник игры Санты собрал три желания — его Санте есть из чего.
   "santa_member_wishlist",
+  // R08: жеребьёвка по дате не прошла — один раз на отметку.
+  "santa_draw_failed",
 ] as const;
 
 export type FunnelStep = (typeof FUNNEL_STEPS)[number];

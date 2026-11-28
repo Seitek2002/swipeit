@@ -54,9 +54,15 @@ const WardRow = ({
   const variant = product ? describeVariant(product, item.variantChoice) : "";
   const price =
     item.priceMin === null ? "" : formatPrice(item.priceMin, item.priceMax);
-  const buy = buyLinkOf(item, product);
+  // Друзья уже выбрали (X02) — без «Купить», приглушённо.
+  const buy = item.reserved ? null : buyLinkOf(item, product);
   return (
-    <li className="paper rounded-paper shadow-paper flex items-start gap-3 p-2.5">
+    <li
+      className={cn(
+        "paper rounded-paper shadow-paper flex items-start gap-3 p-2.5",
+        item.reserved && "opacity-60",
+      )}
+    >
       {/* Фото открывает подробности (только посмотреть — выбор подопечного),
           как у гостя (auto-tasks U10). */}
       <button
@@ -100,6 +106,16 @@ const WardRow = ({
             {[variant && `Подойдёт: ${variant}`, item.note && `«${item.note}»`]
               .filter(Boolean)
               .join(". ")}
+          </p>
+        )}
+        {item.reserved && (
+          <p className="text-caption text-ink-soft mt-1">
+            Уже выбрали — возьми другое
+          </p>
+        )}
+        {item.reservedByMe && (
+          <p className="text-caption text-ink mt-1 font-semibold">
+            Ты купил это
           </p>
         )}
         {buy && (

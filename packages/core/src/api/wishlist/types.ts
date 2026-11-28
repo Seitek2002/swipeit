@@ -139,6 +139,10 @@ export const ExternalWishlistSchema = z.object({
     }),
   ),
   openedAt: z.string(),
+  // Путь, по которому снимок открывают снова (UX-аудит X03): «/w/?d=…» в
+  // демо, короткая ссылка на сервере. Адрес сайта и basePath добавляет
+  // клиент. У снимков, сохранённых до X03, пути нет.
+  link: z.string().optional(),
 });
 
 export type SwipeDecision = z.infer<typeof SwipeDecisionSchema>;
@@ -205,6 +209,25 @@ export type MyReservation = {
     productId?: string;
   };
   itemKey: string;
+  // Бронь по ссылке, а не у друга из списка (X03): у строки подпись «по
+  // ссылке» — человек по ссылке и демо-друг с тем же именем не сливаются.
+  byLink?: boolean;
   occasion?: Occasion;
   owner: { avatarColor: AvatarColor; id: string; name: string };
+  // Куда вернуться к вишлисту по ссылке (X03): путь снимка, в котором есть
+  // это желание. Нет — у друга из списка ведёт его профиль, у старой
+  // ссылки без пути — никуда.
+  wishlistUrl?: string;
+};
+
+// GET /me/opened-wishlists — «Открывал по ссылке» на «Друзьях» (X03): чьи
+// вишлисты человек открывал по ссылке. По одному на владельца, свежие
+// сверху; друзей из списка и свой вишлист здесь нет.
+export type OpenedWishlist = {
+  // id снимка (ew_…).
+  id: string;
+  occasion?: Occasion;
+  openedAt: string;
+  owner: Pick<ExternalWishlist["owner"], "avatarColor" | "name" | "userId">;
+  url: string;
 };

@@ -14,6 +14,7 @@ import { useCreateUser } from "@/entities/user";
 
 import { getPlan, isApiError, joinPlan, planKeys } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { useAppMode } from "@/shared/lib/app-status";
 import { pluralize } from "@/shared/lib/format";
 import { useSessionStore } from "@/shared/store";
 import {
@@ -91,6 +92,7 @@ const JoinContent = () => {
   const queryClient = useQueryClient();
   const id = useSearchParams()?.get("id") ?? "";
   const meId = useSessionStore((state) => state.activeUserId);
+  const mode = useAppMode();
   const plan = usePlan(meId ? id : undefined);
   const view = plan.data;
   const isMember = Boolean(
@@ -146,6 +148,12 @@ const JoinContent = () => {
       },
     });
 
+  // Без профиля в local плана на этом телефоне нет: его создатель здесь с
+  // профилем, и сессия вкладки его подхватывает (shared/store/session.ts).
+  // Значит, ссылку открыли на другом телефоне — говорим сразу, а не после
+  // «Вступить» (UX-аудит X07). В lan план на ноутбуке, и до профиля API его
+  // не отдаёт — остаётся «Вступить».
+  if (!meId && mode === "local") return <NotHere />;
   if (!meId) {
     return (
       <GuestInvite

@@ -901,6 +901,54 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
       );
       return response.wishlistItemId ?? "";
     };
+
+    it("X02: бронь друга — «занято» в письме и внизу; «Купил: …» — бронь Санты, у гостя занято", async () => {
+      const { owner, azamat, nurai, id } = await drawnGame();
+      const everyone = [owner, azamat, nurai];
+      // Каждому — три желания из каталога (p_0010, p_0001, p_0002).
+      for (const person of everyone) {
+        for (const productId of ["p_0010", "p_0001", "p_0002"]) {
+          await swipe(person, productId);
+        }
+      }
+      const opened = await act(owner, id, "/open");
+      const wardId = opened.me?.ward?.id ?? "";
+      const ward = everyone.find((p) => p.id === wardId) as Caller;
+      // Друг подопечного бронирует его первое желание.
+      const friend = await person("Друг");
+      await api.befriend(friend, ward);
+      await api.call(friend, "POST", "/reservations", {
+        ownerId: wardId,
+        itemKey: "p_0010",
+      });
+      const view = await getGame(owner, id);
+      const items = view.me?.ward?.wishlist ?? [];
+      expect(items.at(-1)).toMatchObject({ key: "p_0010", reserved: true });
+      expect(items.filter((item) => item.reserved)).toHaveLength(1);
+      expect(JSON.stringify(view)).not.toContain(friend.id);
+
+      // «Купил: p_0001» — бронь Санты.
+      const bought = await act(owner, id, "/bought", {
+        bought: true,
+        itemKey: "p_0001",
+      });
+      expect(bought.me?.bought).toBe(true);
+      expect(
+        bought.me?.ward?.wishlist.find((item) => item.key === "p_0001"),
+      ).toMatchObject({ reservedByMe: true });
+      const asGuest = await api.call<{
+        items: Array<{ itemKey: string; mine: boolean }>;
+      }>(friend, "GET", "/reservations", undefined, { ownerId: wardId });
+      expect(asGuest.items.map((item) => item.itemKey).sort()).toEqual([
+        "p_0001",
+        "p_0010",
+      ]);
+      // Занятое другом не купить.
+      await fails(
+        act(owner, id, "/bought", { bought: true, itemKey: "p_0010" }),
+        "CONFLICT",
+      );
+    });
     const wish = (caller: Caller, body: Record<string, unknown>) =>
       api.call(caller, "POST", "/wishlist/items", body);
     const priceOf = (productId: string) => {

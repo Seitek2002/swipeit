@@ -261,7 +261,45 @@ describe("создание плана", () => {
     });
     expect(view.plan.status).toBe("swiping");
     expect(view.plan.deck).toHaveLength(5);
+    expect(view.plan.filters.deckSize).toBeNull();
     expect(triggers("plan:started")).toHaveLength(1);
+  });
+
+  it("размер колоды (X05): «Прямо сейчас» по умолчанию 20, урезанная — из разных категорий", async () => {
+    const noFilters = {
+      categories: [],
+      budgetPerPerson: { min: 0, max: null },
+    };
+    const create = (filters: Record<string, unknown>) =>
+      call<PlanView>("POST", "/plans", DEMO_USER_ID, {
+        title: "Суббота",
+        mode: "live",
+        participantIds: BOTS,
+        filters,
+      });
+    // В заглушке каталога 12 занятий — колода из 20 их не урезает.
+    const quick = await create(noFilters);
+    expect(quick.plan.filters.deckSize).toBe(20);
+    expect(quick.activities).toHaveLength(activities.length);
+    // 7 из 12 — по одному из каждой из 7 категорий, одни и те же при
+    // каждом чтении и после старта.
+    const short = await create({ ...noFilters, deckSize: 7 });
+    const ids = short.activities.map((activity) => activity.id);
+    expect(ids).toHaveLength(7);
+    expect(new Set(short.activities.map((a) => a.category)).size).toBe(7);
+    const again = await call<PlanView>(
+      "GET",
+      planPath(short.plan.id),
+      DEMO_USER_ID,
+    );
+    expect(again.activities.map((activity) => activity.id)).toEqual(ids);
+    await call("POST", planPath(short.plan.id, "/ready"), "u_azamat");
+    const started = await call<PlanView>(
+      "POST",
+      planPath(short.plan.id, "/start"),
+      DEMO_USER_ID,
+    );
+    expect([...started.plan.deck].sort()).toEqual([...ids].sort());
   });
 });
 

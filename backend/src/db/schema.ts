@@ -489,6 +489,10 @@ export const santaGames = pgTable(
       .notNull()
       .default(sql`'[]'::jsonb`),
     drawnAt: at("drawn_at"),
+    // Жеребьёвка по дате не прошла (R08): планировщик больше не пробует,
+    // пока игра не изменилась (вступили, вышли, правка).
+    drawFailedAt: at("draw_failed_at"),
+    drawFailedReason: text("draw_failed_reason"),
     // Кого организатор убрал из игры (Q05): снова вступить не могут.
     removedIds: text("removed_ids")
       .array()

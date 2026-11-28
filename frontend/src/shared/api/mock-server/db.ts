@@ -27,6 +27,12 @@ export const DbSchema = z.object({
   wishlistMeta: z.record(z.string(), WishlistMetaSchema),
   reservations: z.array(ReservationSchema),
   externalWishlists: z.record(z.string(), ExternalWishlistSchema),
+  // Кто какие снимки открывал (UX-аудит X03): id профиля или гостя «g_…» →
+  // id снимка → когда открыл. Снимки общие на базу, а в «Локальной сети»
+  // база одна на всех — «Открывал по ссылке» у каждого свой.
+  openedWishlists: z
+    .record(z.string(), z.record(z.string(), z.string()))
+    .default({}),
   pickRequests: z.record(z.string(), PickRequestSchema),
   pickAnswers: z.array(PickAnswerSchema),
   customActivities: z.record(z.string(), ActivitySchema),
@@ -50,6 +56,7 @@ export const createEmptyDb = (): Db => ({
   wishlistMeta: {},
   reservations: [],
   externalWishlists: {},
+  openedWishlists: {},
   pickRequests: {},
   pickAnswers: [],
   customActivities: {},

@@ -16,6 +16,7 @@ import {
   tallyVotes,
   voteCandidates,
 } from "@swipeit/core/logic/matches";
+import { resolveDeckSize } from "@swipeit/core/logic/plan-deck";
 import { parseInput } from "@swipeit/core/parse-input";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -254,7 +255,11 @@ export const createPlan: ServerHandler = async (ctx, { body }) => {
     participantIds: [owner.id, ...invited],
     readyIds: live ? [owner.id] : [],
     matchRule: input.matchRule,
-    filters: input.filters,
+    // Размер колоды — уже итоговый: по умолчанию «Прямо сейчас» — 20 (X05).
+    filters: {
+      ...input.filters,
+      deckSize: resolveDeckSize(input.mode, input.filters.deckSize),
+    },
     customActivityIds: customIds,
     deck: [],
     swipes: {},

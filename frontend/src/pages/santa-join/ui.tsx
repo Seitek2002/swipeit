@@ -19,6 +19,7 @@ import {
   santaKeys,
 } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { useAppMode } from "@/shared/lib/app-status";
 import { pluralize } from "@/shared/lib/format";
 import { useSessionStore } from "@/shared/store";
 import {
@@ -96,6 +97,7 @@ const JoinContent = () => {
   const queryClient = useQueryClient();
   const id = useSearchParams()?.get("id") ?? "";
   const meId = useSessionStore((state) => state.activeUserId);
+  const mode = useAppMode();
   const game = useSantaGame(meId ? id : undefined);
   const view = game.data;
   const isMember = view?.role === "owner" || view?.role === "participant";
@@ -149,6 +151,12 @@ const JoinContent = () => {
       },
     });
 
+  // Без профиля в local игры на этом телефоне нет: её создатель здесь с
+  // профилем, и сессия вкладки его подхватывает (shared/store/session.ts).
+  // Значит, ссылку открыли на другом телефоне — говорим сразу, а не после
+  // «Вступить» (UX-аудит X07). В lan игра на ноутбуке, и до профиля API её
+  // не отдаёт — остаётся «Вступить».
+  if (!meId && mode === "local") return <NotHere />;
   if (!meId) {
     return (
       <GuestInvite

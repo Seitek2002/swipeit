@@ -30,4 +30,10 @@ export { type SwipeAction, SwipeActionButton } from "./swipe-action-button";
 export { Switch } from "./switch";
 export { TextArea, TextField } from "./text-field";
 export { toast, Toaster, type ToastTone, useCurrentToast } from "./toast";
-export { InAppBrowserNote } from "./in-app-note";
+export {
+  InAppBrowserNote,
+  InAppBrowserText,
+  copyPageLink,
+  useInAppBrowser,
+  useMarkInAppNoteShown,
+} from "./in-app-note";

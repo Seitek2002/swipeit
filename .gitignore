@@ -24,3 +24,6 @@ coverage/
 
 # сборка сервера (esbuild)
 backend/dist/
+
+# фото сервера (B13): том Docker, не репозиторий
+backend/data/

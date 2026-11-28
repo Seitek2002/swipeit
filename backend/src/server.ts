@@ -31,7 +31,7 @@ const main = async () => {
     path.resolve(process.cwd(), config.CATALOG_DIR),
     bootLog,
   );
-  const app = buildApp({ config, db, catalog });
+  const app = buildApp({ config, db, catalog, scheduler: true });
   // Пул закрывается после того, как доотвечали начатые запросы.
   app.addHook("onClose", () => db.close());
   await app.listen({ host: config.HOST, port: config.PORT });

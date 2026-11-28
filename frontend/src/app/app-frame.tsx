@@ -16,7 +16,7 @@ import {
   usePlanSeenVersion,
   usePlans,
 } from "@/entities/plan";
-import { useSantaGames } from "@/entities/santa-game";
+import { santaTabDot, useSantaGames } from "@/entities/santa-game";
 
 import { rendersBeforeReady } from "@/shared/config";
 import { useAppReady, useAppStatus } from "@/shared/lib/app-status";
@@ -33,15 +33,14 @@ const DemoPanel = dynamic(
   { ssr: false },
 );
 
-// Конверт Санты ждёт вскрытия — точка на табе «Санта» (reference.html).
+// Конверт Санты ждёт вскрытия (reference.html) или организатору пора тянуть
+// пары (X10) — точка на табе «Санта».
 // Напоминание о своей дате — точка на табе «Вишлист» (DESIGN.md §8.3).
 // AppTabBar рисуется только у запущенной вкладки, а напоминание спрашивается
 // ещё и только при сессии (useActiveReminder).
 const AppTabBar = () => {
   const games = useSantaGames();
-  const ready = (games.data ?? []).some(
-    (summary) => summary.me?.envelope === "ready",
-  );
+  const santa = santaTabDot(games.data ?? []);
   const reminder = useActiveReminder();
   // Ждут меня в плане (Q09) — по отметке «видел» этого устройства.
   const plans = usePlans();
@@ -52,7 +51,8 @@ const AppTabBar = () => {
   );
   return (
     <TabBar
-      santaReady={ready}
+      santaReady={santa.envelopeReady}
+      santaDrawDue={santa.drawDue}
       plansNeedMe={plansNeedMe}
       wishlistReminder={reminder !== null}
     />

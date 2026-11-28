@@ -1,11 +1,12 @@
 "use client";
 
-import { type ReactNode, Suspense } from "react";
+import { type ReactNode, Suspense, useId } from "react";
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Copy } from "lucide-react";
 
 import {
   GuestWishlistHeader,
@@ -17,16 +18,21 @@ import { useWishlistSummary } from "@/entities/wishlist";
 
 import { importExternalWishlist, wishlistKeys } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { IN_APP_BROWSER_NAMES } from "@/shared/lib/in-app-browser";
 import { decodeWishlist } from "@/shared/lib/share-codec";
+import { useGuestStore } from "@/shared/store";
 import {
   Brand,
   BrokenLink,
   Button,
-  InAppBrowserNote,
+  InAppBrowserText,
   Screen,
   ScreenBody,
   Skeleton,
   buttonClassName,
+  copyPageLink,
+  useInAppBrowser,
+  useMarkInAppNoteShown,
 } from "@/shared/ui";
 
 import { type GuestNextStep, guestNextStep } from "./model";
@@ -47,41 +53,89 @@ const GuestSkeleton = () => (
 // После первой брони — под карточкой, ниже «Купить на …»: следующий шаг
 // гостя, на шаг «купить» не наступает (auto-tasks P01). Тексты без рода и
 // без падежей имени: гость и владелец могут быть кем угодно.
+//
+// Во встроенном браузере мессенджера (UX-аудит X09) порядок другой: сначала
+// строка о том, что всё останется в Telegram, главная кнопка — «Скопировать
+// ссылку» (открыть в Chrome или Safari), а свой вишлист здесь — вторичная, с
+// подписью «здесь, в Telegram». Иначе человек нажимал оранжевую кнопку, не
+// дочитав, и собирал вишлист там, где он потеряется.
 const NextStepPlaque = ({
   step,
   onDismiss,
 }: {
   onDismiss: () => void;
   step: GuestNextStep;
-}) => (
-  <div
-    role="status"
-    className="bg-paper-2 rounded-field flex flex-col gap-2.5 px-3.5 pt-3 pb-2.5"
-  >
-    <p className="text-body text-ink">
-      {step === "send"
-        ? "Подарок выбран. Ответь своим вишлистом — тебе тоже угадают с подарком."
-        : "Подарок выбран. А что хочешь ты? Собери свой вишлист за 2 минуты — друзья угадают с подарком."}
-    </p>
-    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-      <Link
-        href={step === "send" ? `${ROUTES.WISHLIST}?share=1` : ROUTES.GIFTS}
-        className={buttonClassName({ size: "sm" })}
-      >
-        {step === "send" ? "Отправить свой вишлист" : "Собрать свой вишлист"}
-      </Link>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="text-ink-soft"
-        onClick={onDismiss}
-      >
-        Не сейчас
-      </Button>
+}) => {
+  const browser = useInAppBrowser();
+  // Предупреждение здесь — всегда, раз главная кнопка без него непонятна;
+  // шторка «Вишлист готов» его уже не повторит (Q08: раз за сессию).
+  useMarkInAppNoteShown(browser);
+  const whereId = useId();
+  const href = step === "send" ? `${ROUTES.WISHLIST}?share=1` : ROUTES.GIFTS;
+  const label =
+    step === "send" ? "Отправить свой вишлист" : "Собрать свой вишлист";
+  const dismiss = (
+    <Button
+      size="sm"
+      variant="ghost"
+      className="text-ink-soft"
+      onClick={onDismiss}
+    >
+      Не сейчас
+    </Button>
+  );
+
+  return (
+    <div
+      role="status"
+      className="bg-paper-2 rounded-field flex flex-col gap-2.5 px-3.5 pt-3 pb-2.5"
+    >
+      <p className="text-body text-ink">
+        {step === "send"
+          ? "Подарок выбран. Ответь своим вишлистом — тебе тоже угадают с подарком."
+          : "Подарок выбран. А что хочешь ты? Собери свой вишлист за 2 минуты — друзья угадают с подарком."}
+      </p>
+      {browser ? (
+        <>
+          <InAppBrowserText browser={browser} />
+          <Button
+            size="sm"
+            className="self-start"
+            icon={<Copy aria-hidden size={16} strokeWidth={2} />}
+            onClick={copyPageLink}
+          >
+            Скопировать ссылку
+          </Button>
+          <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+            <span className="flex flex-col items-start gap-1">
+              <Link
+                href={href}
+                aria-describedby={whereId}
+                className={buttonClassName({
+                  variant: "secondary",
+                  size: "sm",
+                })}
+              >
+                {label}
+              </Link>
+              <span id={whereId} className="text-caption text-ink-soft">
+                здесь, в {IN_APP_BROWSER_NAMES[browser]}
+              </span>
+            </span>
+            {dismiss}
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          <Link href={href} className={buttonClassName({ size: "sm" })}>
+            {label}
+          </Link>
+          {dismiss}
+        </div>
+      )}
     </div>
-    <InAppBrowserNote />
-  </div>
-);
+  );
+};
 
 const GuestContent = () => {
   const encoded = useSearchParams()?.get("d") ?? "";
@@ -95,9 +149,17 @@ const GuestContent = () => {
   // (имя, повод, сообщение) — сразу из ссылки (UX-аудит H2).
   const decoded = decodeWishlist(encoded);
   const isValid = decoded !== null;
+  const queryClient = useQueryClient();
+  // guestId — всегда: у профиля мок возьмёт его самого, а гостя без профиля
+  // запомнит по нему для «Открывал по ссылке» (X03).
+  const guestId = useGuestStore((state) => state.guestId);
   const external = useQuery({
     queryKey: wishlistKeys.external(encoded),
-    queryFn: () => importExternalWishlist(encoded),
+    queryFn: async () => {
+      const result = await importExternalWishlist(encoded, guestId);
+      void queryClient.invalidateQueries({ queryKey: wishlistKeys.opened() });
+      return result;
+    },
     enabled: isValid,
     staleTime: Infinity,
   });
@@ -134,6 +196,7 @@ const GuestContent = () => {
       wishlist={wishlist}
       ownerId={ownerId}
       readOnly={isMine}
+      reservationChat
       renderAfterReserve={(dismiss) => (
         <NextStepPlaque step={step} onDismiss={dismiss} />
       )}

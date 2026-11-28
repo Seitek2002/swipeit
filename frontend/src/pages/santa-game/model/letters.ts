@@ -8,18 +8,34 @@ export const namesLine = (names: readonly string[]): string => {
   return `${names.slice(0, MAX_NAMES - 1).join(", ")} и ещё ${names.length - (MAX_NAMES - 1)}`;
 };
 
+type LetterMember = { id: string; name: string; opened: boolean };
+
 export const lettersMessage = ({
   title,
   terms,
   exchange,
-  waiting,
+  members,
+  senderId,
 }: {
   exchange: string;
+  // Вступившие в игру: у них есть письмо.
+  members: readonly LetterMember[];
+  // Кто отправит текст: себя он в чат не зовёт (UX-аудит X08).
+  senderId: string;
   terms: string;
   title: string;
-  // Имена тех, кто ещё не открыл письмо.
-  waiting: readonly string[];
-}): string =>
-  waiting.length > 0
-    ? `Жеребьёвка в «${title}» прошла: ${namesLine(waiting)} — откройте письмо и узнайте, кому дарите. ${terms}`
-    : `Все открыли письма в «${title}». Обмен ${exchange} — не забудьте подарки!`;
+}): string => {
+  const sealed = members.filter((member) => !member.opened);
+  const waiting = sealed
+    .filter((member) => member.id !== senderId)
+    .map((member) => member.name);
+  if (waiting.length > 0) {
+    return `Жеребьёвка в «${title}» прошла: ${namesLine(waiting)} — откройте письмо и узнайте, кому дарите. ${terms}`;
+  }
+  // Не открыл только сам отправитель — зовём всех, без имён: «все открыли»
+  // было бы неправдой.
+  if (sealed.length > 0) {
+    return `Жеребьёвка в «${title}» прошла — откройте письмо и узнайте, кому дарите. ${terms}`;
+  }
+  return `Все открыли письма в «${title}». Обмен ${exchange} — не забудьте подарки!`;
+};

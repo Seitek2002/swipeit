@@ -4,6 +4,7 @@ import type {
   ExternalWishlist,
   GuestWishlist,
   Occasion,
+  OpenedWishlist,
   SwipeContext,
   SwipeDecision,
   SwipeResponse,
@@ -106,12 +107,19 @@ export const shareWishlist = (): Promise<{ url: string }> =>
 export const dismissGivenHint = (): Promise<{ ok: true }> =>
   getTransport().request("POST", "/wishlist/given-hint/dismiss");
 
+// guestId — гость без профиля: кто открыл ссылку (X03, «Открывал по ссылке»).
 export const importExternalWishlist = (
   encoded: string,
+  guestId?: string,
 ): Promise<ExternalWishlist> =>
   getTransport().request<ExternalWishlist>("POST", "/external-wishlists", {
     encoded,
+    guestId,
   });
+
+// «Открывал по ссылке» на «Друзьях» (X03).
+export const getOpenedWishlists = (): Promise<OpenedWishlist[]> =>
+  getTransport().request<OpenedWishlist[]>("GET", "/me/opened-wishlists");
 
 export const getUserWishlist = (userId: string): Promise<GuestWishlist> =>
   getTransport().request<GuestWishlist>(

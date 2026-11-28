@@ -119,9 +119,12 @@ export const ReservationDeleteQuerySchema = z.object({
   guestId: GuestIdSchema.optional(),
 });
 
-// POST /external-wishlists — снимок из старой длинной ссылки.
+// POST /external-wishlists — снимок из старой длинной ссылки. guestId —
+// гость без профиля: кто открыл, для «Открывал по ссылке» (X03); профиль
+// мок узнаёт сам, сервер guestId не принимает.
 export const ExternalWishlistInputSchema = z.object({
   encoded: z.string().min(1),
+  guestId: GuestIdSchema.optional(),
 });
 
 // POST /share-links — короткая ссылка на план или игру (§6.2).

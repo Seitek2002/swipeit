@@ -13,6 +13,13 @@ export const PlanFiltersSchema = z.object({
     min: z.number().nonnegative(),
     max: z.number().nonnegative().nullable(),
   }),
+  // Сколько занятий каталога взять в колоду (auto-tasks-ux-4 X05): null —
+  // все. Не передали — для «Прямо сейчас» короткая колода из разных
+  // категорий (QUICK_DECK_SIZE), для «До даты» — все; в план сервер
+  // записывает уже итоговое значение. Лежит в фильтрах, потому что, как и
+  // они, решает, из чего собрать колоду. Каталог (GET /activities) поле
+  // не учитывает.
+  deckSize: z.number().int().min(1).max(200).nullable().optional(),
 });
 
 // «Че делать будем?» (TECH_SPEC §5).

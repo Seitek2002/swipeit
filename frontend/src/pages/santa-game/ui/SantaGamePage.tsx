@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -49,13 +49,44 @@ import {
   toast,
 } from "@/shared/ui";
 
+import { type MemberStatus, memberStatus } from "../model/member-status";
+import { BoughtSheet } from "./BoughtSheet";
 import { LettersReady } from "./LettersReady";
 import { LeaveGameButton, RemoveMemberButton } from "./MemberActions";
 import { RemindWithoutWishlist } from "./RemindWithoutWishlist";
 import { WardWishlist } from "./WardWishlist";
 
-// Участники со статусами (DESIGN.md §8.8): «вишлист готов» мятной галочкой,
-// «без вишлиста» пыльной розой; у себя — «Собрать вишлист».
+// Готово — мятной галочкой, ждём — пыльной розой (DESIGN.md §8.8).
+const MemberStatusCell = ({ status }: { status: MemberStatus }) => {
+  switch (status) {
+    case "collect":
+      return (
+        <Link
+          href={ROUTES.GIFTS}
+          className={buttonClassName({ size: "sm", variant: "secondary" })}
+        >
+          Собрать вишлист
+        </Link>
+      );
+    case "invited":
+      return <span className="text-caption text-rose">ещё не в игре</span>;
+    case "letter-opened":
+    case "wishlist-ready":
+      return (
+        <span className="text-caption text-mint inline-flex items-center gap-1">
+          <Check aria-hidden size={16} strokeWidth={2.25} />
+          {status === "letter-opened" ? "письмо открыто" : "вишлист готов"}
+        </span>
+      );
+    case "letter-sealed":
+      return <span className="text-caption text-rose">письмо не открыто</span>;
+    case "no-wishlist":
+      return <span className="text-caption text-rose">без вишлиста</span>;
+  }
+};
+
+// Участники со статусами (DESIGN.md §8.8): до жеребьёвки — вишлист, после —
+// письмо (X08); у себя — «Собрать вишлист».
 const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
   const joined = view.members.filter((member) => member.joined);
   const invited = view.members.filter((member) => !member.joined);
@@ -96,38 +127,13 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
                 </span>
               )}
             </span>
-            {!member.joined ? (
-              <span className="text-caption text-rose">ещё не в игре</span>
-            ) : drawn && !member.opened ? (
-              <span className="text-caption text-rose">письмо не открыто</span>
-            ) : member.id === meId && needWishes && !drawn ? (
-              <Link
-                href={ROUTES.GIFTS}
-                className={buttonClassName({
-                  size: "sm",
-                  variant: "secondary",
-                })}
-              >
-                Собрать вишлист
-              </Link>
-            ) : member.hasWishlist ? (
-              <span className="text-caption text-mint inline-flex items-center gap-1">
-                <Check aria-hidden size={16} strokeWidth={2.25} />
-                вишлист готов
-              </span>
-            ) : member.id === meId ? (
-              <Link
-                href={ROUTES.GIFTS}
-                className={buttonClassName({
-                  size: "sm",
-                  variant: "secondary",
-                })}
-              >
-                Собрать вишлист
-              </Link>
-            ) : (
-              <span className="text-caption text-rose">без вишлиста</span>
-            )}
+            <MemberStatusCell
+              status={memberStatus(member, {
+                drawn,
+                isMe: member.id === meId,
+                needWishes,
+              })}
+            />
             {canRemove && member.id !== view.game.ownerId && (
               <RemoveMemberButton view={view} member={member} />
             )}
@@ -166,13 +172,21 @@ const GameContent = () => {
     onSuccess: save,
     onError: () => toast("Не получилось открыть письмо", { tone: "error" }),
   });
+  // «Что купил?» (X02): выбранное желание бронируется — друзья подопечного
+  // не купят второе такое же.
+  const [boughtOpen, setBoughtOpen] = useState(false);
   const bought = useMutation({
-    mutationFn: () => setSantaBought(id ?? "", true),
+    mutationFn: (itemKey: null | string) =>
+      setSantaBought(id ?? "", true, itemKey ?? undefined),
     onSuccess: (next) => {
+      setBoughtOpen(false);
       save(next);
       toast("Отмечено: подарок куплен");
     },
-    onError: () => toast("Не получилось сохранить", { tone: "error" }),
+    onError: (error: Error) =>
+      toast(isApiError(error) ? error.message : "Не получилось сохранить", {
+        tone: "error",
+      }),
   });
   const join = useMutation({
     mutationFn: () => joinSantaGame(id ?? ""),
@@ -349,19 +363,25 @@ const GameContent = () => {
             <Button
               size="lg"
               variant="secondary"
-              loading={bought.isPending}
-              onClick={() => bought.mutate()}
+              onClick={() => setBoughtOpen(true)}
             >
               Отметить покупку подарка
             </Button>
           )}
+          <BoughtSheet
+            open={boughtOpen}
+            items={ward.wishlist}
+            pending={bought.isPending}
+            onClose={() => setBoughtOpen(false)}
+            onPick={(itemKey) => bought.mutate(itemKey)}
+          />
         </>
       )}
 
       <Members view={view} meId={meId} />
 
       {view.game.status === "drawn" && view.me && (
-        <LettersReady view={view} isOwner={isOwner} />
+        <LettersReady view={view} isOwner={isOwner} meId={meId} />
       )}
 
       {view.game.status === "gathering" && (

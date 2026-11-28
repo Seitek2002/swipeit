@@ -2,6 +2,7 @@ export {
   useGivingCount,
   useMyReservations,
   useMyWishlist,
+  useOpenedWishlists,
   useUserWishlist,
   useWishlistSummary,
 } from "./api";

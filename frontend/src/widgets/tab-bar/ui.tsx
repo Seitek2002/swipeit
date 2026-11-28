@@ -13,6 +13,9 @@ import { cn } from "@/shared/lib/utils";
 type Props = {
   // В каком-то плане ждут меня (Q09): не долистал, не проголосовал, итоги.
   plansNeedMe?: boolean;
+  // Организатору пора провести жеребьёвку (UX-аудит X10).
+  santaDrawDue?: boolean;
+  // Письмо Санты ждёт вскрытия.
   santaReady?: boolean;
   // Активное напоминание о своей дате (DESIGN.md §7 ReminderBanner, §8.3).
   wishlistReminder?: boolean;
@@ -37,6 +40,7 @@ const TABS: Tab[] = [
 // мандариновая точка 4px; бейджи — бумага с чернилами, не мандарин.
 export const TabBar = ({
   santaReady = false,
+  santaDrawDue = false,
   plansNeedMe = false,
   wishlistReminder = false,
 }: Props) => {
@@ -84,9 +88,9 @@ export const TabBar = ({
                   className="bg-mandarin absolute -top-0.5 -right-0.5 size-2 rounded-full shadow-[0_0_0_2px_var(--color-velvet-2)]"
                 />
               )}
-              {id === "santa" && santaReady && (
+              {id === "santa" && (santaReady || santaDrawDue) && (
                 <b
-                  aria-label="Конверт готов"
+                  aria-hidden
                   className="bg-mandarin absolute -top-0.5 -right-0.5 size-2 rounded-full shadow-[0_0_0_2px_var(--color-velvet-2)]"
                 />
               )}
@@ -97,6 +101,14 @@ export const TabBar = ({
             )}
             {id === "plans" && plansNeedMe && (
               <span className="sr-only">, тебя ждут в плане</span>
+            )}
+            {/* Причину точки — текстом в имени ссылки, как у «Планов»:
+                aria-label у <b> без роли диктор может пропустить. */}
+            {id === "santa" && santaReady && (
+              <span className="sr-only">, конверт готов</span>
+            )}
+            {id === "santa" && santaDrawDue && (
+              <span className="sr-only">, пора провести жеребьёвку</span>
             )}
             {isActive && (
               <span

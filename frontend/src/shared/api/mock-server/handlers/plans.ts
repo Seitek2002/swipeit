@@ -1,3 +1,4 @@
+import { pickPlanDeck, resolveDeckSize } from "@swipeit/core/logic/plan-deck";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
@@ -76,11 +77,16 @@ const customOf = (db: Db, plan: PlanSession): Activity[] =>
     .filter((activity): activity is Activity => Boolean(activity));
 
 // Из чего собирается колода: свои занятия (в обход фильтров — их добавили
-// специально) и каталог по фильтрам плана.
-const poolOf = (db: Db, plan: PlanSession, catalog: Activity[]): Activity[] => [
-  ...customOf(db, plan),
-  ...catalog.filter((activity) => matchesPlanFilters(activity, plan.filters)),
-];
+// специально) и каталог по фильтрам плана — не больше размера колоды, из
+// разных категорий (X05). Выбор одинаков при каждом чтении: лобби
+// показывает ровно то, что попадёт в колоду.
+const poolOf = (db: Db, plan: PlanSession, catalog: Activity[]): Activity[] =>
+  pickPlanDeck(
+    customOf(db, plan),
+    catalog.filter((activity) => matchesPlanFilters(activity, plan.filters)),
+    plan.filters.deckSize ?? null,
+    plan.id,
+  );
 
 // Колода в общем порядке. Занятие могло пропасть из каталога после
 // обновления — тогда его просто нет в выдаче, порядок остальных тот же.
@@ -213,7 +219,11 @@ export const createPlan: Handler = async (ctx, { body }) => {
       participantIds: [owner.id, ...invited],
       readyIds: live ? [owner.id] : [],
       matchRule: input.matchRule,
-      filters: input.filters,
+      // Размер колоды — уже итоговый: по умолчанию «Прямо сейчас» — 20.
+      filters: {
+        ...input.filters,
+        deckSize: resolveDeckSize(input.mode, input.filters.deckSize),
+      },
       customActivityIds: customIds,
       deck: [],
       swipes: {},

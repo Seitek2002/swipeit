@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CalendarPlus, ExternalLink, Gift } from "lucide-react";
 
@@ -27,6 +29,8 @@ import { withBasePath } from "@/shared/lib/base-path";
 import { clock } from "@/shared/lib/clock";
 import { occasionLabel } from "@/shared/lib/format";
 import { Button, toast } from "@/shared/ui";
+
+import { reservationCaption, reservationWishlistHref } from "./model";
 
 // Куда идти покупать: товар — в самый дешёвый магазин, своё желание — по
 // ссылке владельца.
@@ -56,35 +60,61 @@ const ReservationRow = ({
   const title = product?.title ?? reservation.item.custom?.title ?? "…";
   const occasion = occasionLabel(reservation.occasion, clock.now());
   const buy = reservation.closed ? null : buyLinkOf(reservation, product);
+  // Фото и название — обратно к вишлисту друга (UX-аудит X03): выбрать
+  // второй подарок или сверить цвет, не ища ссылку в чате.
+  const href = reservationWishlistHref(reservation);
+  const photo = (
+    <span className="bg-paper-2 grid size-14 flex-none place-items-center overflow-hidden rounded-[12px]">
+      {image ? (
+        <img
+          src={withBasePath(image.src)}
+          alt=""
+          className="size-full object-cover"
+        />
+      ) : (
+        <Gift
+          aria-hidden
+          size={24}
+          strokeWidth={1.5}
+          className="text-ink-soft"
+        />
+      )}
+    </span>
+  );
 
   return (
     <li
       className={`border-line flex gap-3 border-b py-3 ${reservation.closed ? "opacity-60" : ""}`}
     >
-      <span className="bg-paper-2 grid size-14 flex-none place-items-center overflow-hidden rounded-[12px]">
-        {image ? (
-          <img
-            src={withBasePath(image.src)}
-            alt=""
-            className="size-full object-cover"
-          />
-        ) : (
-          <Gift
-            aria-hidden
-            size={24}
-            strokeWidth={1.5}
-            className="text-ink-soft"
-          />
-        )}
-      </span>
+      {href ? (
+        // Вторая ссылка туда же — мимо диктора и Tab: хватит названия.
+        <Link href={href} tabIndex={-1} aria-hidden className="flex-none">
+          {photo}
+        </Link>
+      ) : (
+        photo
+      )}
       <span className="min-w-0 flex-1">
-        <span className="text-body text-paper block font-semibold">
-          {title}
-        </span>
+        {href ? (
+          <Link
+            href={href}
+            aria-label={`${title} — вишлист: ${reservation.owner.name}`}
+            className="text-body text-paper block font-semibold"
+          >
+            {title}
+          </Link>
+        ) : (
+          <span className="text-body text-paper block font-semibold">
+            {title}
+          </span>
+        )}
         <span className="text-caption text-rose block">
-          {reservation.owner.name}
-          {occasion ? ` · ${occasion}` : ""}
-          {reservation.closed ? " · уже подарено" : ""}
+          {reservationCaption({
+            ownerName: reservation.owner.name,
+            byLink: reservation.byLink,
+            occasion,
+            closed: reservation.closed,
+          })}
         </span>
         {!reservation.closed && (
           <span className="mt-1 flex flex-wrap items-center gap-x-3">

@@ -3,12 +3,13 @@
 import { useState } from "react";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Bell } from "lucide-react";
 
 import { type PlanView, formatDeadline } from "@/entities/plan";
 
 import { closePlan, isApiError, planKeys } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
-import { absoluteUrl } from "@/shared/lib/dom";
+import { absoluteUrl, copyText } from "@/shared/lib/dom";
 import {
   Button,
   ConfirmDialog,
@@ -17,21 +18,23 @@ import {
   toast,
 } from "@/shared/ui";
 
-import { joinNames } from "./names";
+import { type Lagging, joinNames, remindText } from "../model";
 
 // Сколько должны долистать, чтобы показать итоги раньше (как в моке).
 const MIN_FINISHED_TO_CLOSE = 2;
 
 type Props = {
   meId: string;
-  // Кто ещё листает — не долистал колоду.
-  swiping: ReadonlyArray<{ id: string; name: string }>;
+  // Кто ещё листает — не долистал колоду, и сколько ему осталось.
+  swiping: ReadonlyArray<Lagging & { id: string }>;
   view: PlanView;
 };
 
 // «Колода закончилась» без тупика (auto-tasks P04, PRD §6.3 «решение за 5
 // минут»): видно, кто ещё листает, им можно напомнить в чате, а организатор
-// может показать итоги, не дожидаясь бросивших колоду.
+// может показать итоги, не дожидаясь бросивших колоду. Организатору —
+// «Напомнить» с именами и сколько осталось (X06): раньше у него была только
+// ссылка-приглашение, которую отстающий уже открывал.
 export const DeckEnd = ({ view, meId, swiping }: Props) => {
   const { plan } = view;
   const queryClient = useQueryClient();
@@ -58,6 +61,19 @@ export const DeckEnd = ({ view, meId, swiping }: Props) => {
       ),
   });
 
+  // Текст и ссылка — одной строкой, как «Скопировать» в ShareActions: в
+  // чат вставляется сразу готовое сообщение. Ссылка — та же, что в
+  // приглашении: участника /plans/join сразу переводит в колоду плана.
+  const remind = async () => {
+    const text = remindText(swiping, plan.title);
+    const ok = await copyText(
+      `${text} ${absoluteUrl(ROUTES.PLAN_JOIN(plan.id))}`,
+    );
+    toast(ok ? "Текст со ссылкой скопирован" : "Не получилось скопировать", {
+      tone: ok ? "success" : "error",
+    });
+  };
+
   const deadline =
     plan.mode === "deadline" && plan.deadline
       ? formatDeadline(plan.deadline).replace(/^До /, "")
@@ -78,15 +94,26 @@ export const DeckEnd = ({ view, meId, swiping }: Props) => {
           <p className="text-body text-rose text-center">
             {names} {swiping.length === 1 ? "ещё листает" : "ещё листают"}
           </p>
-          <ShareActions
-            secondary
-            qrLabel="QR-код приглашения в план"
-            getPayload={async () => ({
-              title: plan.title,
-              text: `${names} — долистайте план «${plan.title}», без вас итоги не откроются`,
-              url: absoluteUrl(ROUTES.PLAN_JOIN(plan.id)),
-            })}
-          />
+          {isOwner ? (
+            <Button
+              size="lg"
+              className="w-full"
+              icon={<Bell aria-hidden size={18} strokeWidth={2} />}
+              onClick={() => void remind()}
+            >
+              Напомнить
+            </Button>
+          ) : (
+            <ShareActions
+              secondary
+              qrLabel="QR-код приглашения в план"
+              getPayload={async () => ({
+                title: plan.title,
+                text: `${names} — долистайте план «${plan.title}», без вас итоги не откроются`,
+                url: absoluteUrl(ROUTES.PLAN_JOIN(plan.id)),
+              })}
+            />
+          )}
           {isOwner && finished >= MIN_FINISHED_TO_CLOSE && (
             <Button
               variant="secondary"

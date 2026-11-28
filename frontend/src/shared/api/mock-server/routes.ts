@@ -29,6 +29,7 @@ import {
   deleteReservation,
   dismissGivenHint,
   getMyReservations,
+  getOpenedWishlists,
   getReservations,
   getUserWishlist,
   importExternalWishlist,
@@ -159,6 +160,11 @@ export const ROUTE_TABLE: Route[] = [
   },
   { method: "GET", pattern: "/reservations", handler: getReservations },
   { method: "GET", pattern: "/me/reservations", handler: getMyReservations },
+  {
+    method: "GET",
+    pattern: "/me/opened-wishlists",
+    handler: getOpenedWishlists,
+  },
   { method: "POST", pattern: "/reservations", handler: createReservation },
   {
     method: "DELETE",

@@ -4,6 +4,7 @@ export {
   type SantaNudge,
   santaWishlistNudge,
 } from "./nudge";
+export { drawIsDue, santaTabDot } from "./tab-dot";
 export {
   ALL_IN,
   drawLabel,
