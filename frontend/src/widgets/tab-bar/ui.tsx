@@ -11,6 +11,8 @@ import { ROUTES, type TabId, getActiveTab, hasTabBar } from "@/shared/config";
 import { cn } from "@/shared/lib/utils";
 
 type Props = {
+  // В каком-то плане ждут меня (Q09): не долистал, не проголосовал, итоги.
+  plansNeedMe?: boolean;
   santaReady?: boolean;
   // Активное напоминание о своей дате (DESIGN.md §7 ReminderBanner, §8.3).
   wishlistReminder?: boolean;
@@ -35,6 +37,7 @@ const TABS: Tab[] = [
 // мандариновая точка 4px; бейджи — бумага с чернилами, не мандарин.
 export const TabBar = ({
   santaReady = false,
+  plansNeedMe = false,
   wishlistReminder = false,
 }: Props) => {
   const pathname = usePathname();
@@ -75,6 +78,12 @@ export const TabBar = ({
                   className="bg-mandarin absolute -top-[3px] -left-[9px] size-1.5 rounded-full shadow-[0_0_0_2px_var(--color-velvet-2)]"
                 />
               )}
+              {id === "plans" && plansNeedMe && (
+                <b
+                  aria-hidden
+                  className="bg-mandarin absolute -top-0.5 -right-0.5 size-2 rounded-full shadow-[0_0_0_2px_var(--color-velvet-2)]"
+                />
+              )}
               {id === "santa" && santaReady && (
                 <b
                   aria-label="Конверт готов"
@@ -85,6 +94,9 @@ export const TabBar = ({
             <span className="text-micro">{label}</span>
             {id === "wishlist" && wishlistReminder && (
               <span className="sr-only">, есть напоминание</span>
+            )}
+            {id === "plans" && plansNeedMe && (
+              <span className="sr-only">, тебя ждут в плане</span>
             )}
             {isActive && (
               <span

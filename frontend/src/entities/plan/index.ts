@@ -1,5 +1,13 @@
 export { usePlan, usePlans } from "./api";
 export {
+  markPlanSeen,
+  PLAN_NEED_LABELS,
+  type PlanNeed,
+  planNeedsMe,
+  readPlanSeen,
+  usePlanSeenVersion,
+} from "./needs-me";
+export {
   computeMatches,
   countedParticipants,
   decisionCandidates,

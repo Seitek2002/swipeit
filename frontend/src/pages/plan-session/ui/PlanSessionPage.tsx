@@ -8,7 +8,7 @@ import { ActivityDeck } from "@/widgets/activity-deck";
 import { AppHeader } from "@/widgets/app-header";
 import { MatchOverlay } from "@/widgets/match-overlay";
 
-import { usePlan } from "@/entities/plan";
+import { markPlanSeen, usePlan } from "@/entities/plan";
 
 import { isApiError } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
@@ -48,6 +48,14 @@ const SessionContent = () => {
   const isMember = Boolean(
     view && meId && view.plan.participantIds.includes(meId),
   );
+
+  // Открыл итоги — точка «Итоги готовы» на табе гаснет (Q09).
+  const seenStatus = isMember ? view?.plan.status : undefined;
+  useEffect(() => {
+    if (id && (seenStatus === "results" || seenStatus === "decided")) {
+      markPlanSeen(id, seenStatus);
+    }
+  }, [id, seenStatus]);
 
   // Открыл план, в котором не участвуешь, — сначала приглашение.
   useEffect(() => {

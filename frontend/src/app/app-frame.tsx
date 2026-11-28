@@ -10,10 +10,17 @@ import { TabBar } from "@/widgets/tab-bar";
 
 import { useActiveReminder } from "@/features/date-reminder";
 
+import {
+  planNeedsMe,
+  readPlanSeen,
+  usePlanSeenVersion,
+  usePlans,
+} from "@/entities/plan";
 import { useSantaGames } from "@/entities/santa-game";
 
 import { rendersBeforeReady } from "@/shared/config";
 import { useAppReady, useAppStatus } from "@/shared/lib/app-status";
+import { useSessionStore } from "@/shared/store";
 import { Button, EmptyState } from "@/shared/ui";
 
 import { RouteSkeleton } from "./route-skeleton";
@@ -36,7 +43,20 @@ const AppTabBar = () => {
     (summary) => summary.me?.envelope === "ready",
   );
   const reminder = useActiveReminder();
-  return <TabBar santaReady={ready} wishlistReminder={reminder !== null} />;
+  // Ждут меня в плане (Q09) — по отметке «видел» этого устройства.
+  const plans = usePlans();
+  const meId = useSessionStore((state) => state.activeUserId);
+  usePlanSeenVersion();
+  const plansNeedMe = (plans.data ?? []).some(
+    ({ plan }) => planNeedsMe(plan, meId, readPlanSeen(plan.id)) !== null,
+  );
+  return (
+    <TabBar
+      santaReady={ready}
+      plansNeedMe={plansNeedMe}
+      wishlistReminder={reminder !== null}
+    />
+  );
 };
 
 // Пока вкладка не запустилась (app/environment.ts), большинство экранов

@@ -6,11 +6,20 @@ import { Plus } from "lucide-react";
 
 import { AppHeader } from "@/widgets/app-header";
 
-import { type PlanSummary, planStatus, usePlans } from "@/entities/plan";
+import {
+  PLAN_NEED_LABELS,
+  type PlanSummary,
+  planNeedsMe,
+  planStatus,
+  readPlanSeen,
+  usePlanSeenVersion,
+  usePlans,
+} from "@/entities/plan";
 
 import { ROUTES } from "@/shared/config";
 import { withBasePath } from "@/shared/lib/base-path";
 import { cn } from "@/shared/lib/utils";
+import { useSessionStore } from "@/shared/store";
 import {
   AvatarStack,
   Button,
@@ -28,7 +37,16 @@ const PlanCard = ({ summary }: { summary: PlanSummary }) => {
   const decision = plan.decision
     ? preview.find((activity) => activity.id === plan.decision?.activityId)
     : undefined;
-  const status = planStatus(plan, decision?.title);
+  const meId = useSessionStore((state) => state.activeUserId);
+  usePlanSeenVersion();
+  // Ждут меня (Q09): «Ждём тебя» и «Твой голос» вместо обычного статуса;
+  // непросмотренные итоги — тот же статус, но выделен.
+  const need = planNeedsMe(plan, meId, readPlanSeen(plan.id));
+  const base = planStatus(plan, decision?.title);
+  const status =
+    need === "swipe" || need === "vote"
+      ? { live: false, text: PLAN_NEED_LABELS[need] }
+      : base;
   const photos = preview.filter((activity) => activity.image).slice(0, 3);
 
   return (
@@ -42,7 +60,11 @@ const PlanCard = ({ summary }: { summary: PlanSummary }) => {
           <p
             className={cn(
               "text-caption mt-0.5 flex items-center gap-1.5",
-              status.live ? "text-ink" : "text-ink-soft",
+              need
+                ? "text-mandarin-ink font-semibold"
+                : status.live
+                  ? "text-ink"
+                  : "text-ink-soft",
             )}
           >
             {status.live && (
