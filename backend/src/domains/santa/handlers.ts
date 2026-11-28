@@ -7,6 +7,7 @@ import {
   type SantaView,
   type SantaWard,
   type SantaWardItem,
+  type UpdateSantaInput,
   UpdateSantaInputSchema,
 } from "@swipeit/core/api/santa/types";
 import type { User } from "@swipeit/core/api/users/types";
@@ -26,6 +27,11 @@ import {
   drawIssueWithInvites,
 } from "@swipeit/core/logic/draw";
 import { occasionForOthersFrom } from "@swipeit/core/logic/occasion";
+import {
+  AFTER_DRAW_PATCH_MESSAGE,
+  lockedAfterDraw,
+  termsChangedText,
+} from "@swipeit/core/logic/santa-update";
 import { parseInput } from "@swipeit/core/parse-input";
 import { and, desc, eq, inArray, isNotNull, isNull, lte } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -505,39 +511,71 @@ export const createSantaGame: ServerHandler = async (ctx, { body }) => {
   return viewOf(ctx, game, owner.id);
 };
 
-// PATCH /santa/:id — только организатор и только до жеребьёвки.
+// PATCH /santa/:id — только организатор. До жеребьёвки — всё, после —
+// только дата обмена (R03: праздник перенесли). Бюджет или дата обмена
+// поменялись — участникам тост, организатору — нет.
 export const updateSantaGame: ServerHandler = async (ctx, { params, body }) => {
   const patch = parseInput(UpdateSantaInputSchema, body);
   const me = await readMe(ctx);
-  const { game } = await withGame(ctx, params.id ?? "", async (game) => {
-    requireOwner(game, me, "Менять игру может только организатор");
-    requireGathering(game);
-    clearDrawFailed(game);
-    if (patch.title !== undefined) game.title = patch.title;
-    if (patch.budget !== undefined) game.budget = patch.budget;
-    const exchangeDate = patch.exchangeDate ?? game.exchangeDate;
-    let drawAt = game.drawAt;
-    if (patch.drawMode === "manual") drawAt = undefined;
-    else if (patch.drawAt !== undefined) drawAt = patch.drawAt;
-    // Даты проверяем, только если их меняли: старая дата жеребьёвки могла
-    // пройти, пока игра ждала (тогда её проведёт планировщик).
-    if (
-      patch.exchangeDate !== undefined ||
-      patch.drawAt !== undefined ||
-      patch.drawMode !== undefined
-    ) {
-      checkDates(ctx, exchangeDate, drawAt);
-    }
-    game.exchangeDate = exchangeDate;
-    if (drawAt) game.drawAt = new Date(drawAt).toISOString();
-    else delete game.drawAt;
-    if (patch.exclusions !== undefined) {
-      game.exclusions = normalizeExclusions(game, patch.exclusions);
-      await checkExclusionsPossible(ctx.tx, game);
-    }
-  });
+  const { game, result: notice } = await withGame(
+    ctx,
+    params.id ?? "",
+    async (game) => {
+      requireOwner(game, me, "Менять игру может только организатор");
+      const before = { ...game };
+      if (game.status === "drawn") {
+        if (lockedAfterDraw(patch)) throw conflict(AFTER_DRAW_PATCH_MESSAGE);
+        if (patch.exchangeDate !== undefined) {
+          checkDates(ctx, patch.exchangeDate, undefined);
+          game.exchangeDate = patch.exchangeDate;
+        }
+        return termsChangedText(before, game);
+      }
+      await updateGathering(ctx, game, patch);
+      return termsChangedText(before, game);
+    },
+  );
   changed(ctx, game);
+  if (notice) {
+    const others = game.participantIds.filter((id) => id !== game.ownerId);
+    for (const forUserId of others) {
+      ctx.events.publish({ type: "toast", text: notice, forUserId }, [
+        forUserId,
+      ]);
+    }
+  }
   return viewOf(ctx, game, me.id);
+};
+
+// Правка до жеребьёвки: любые поля, даты и исключения — с проверкой.
+const updateGathering = async (
+  ctx: ServerContext,
+  game: StoredGame,
+  patch: UpdateSantaInput,
+) => {
+  clearDrawFailed(game);
+  if (patch.title !== undefined) game.title = patch.title;
+  if (patch.budget !== undefined) game.budget = patch.budget;
+  const exchangeDate = patch.exchangeDate ?? game.exchangeDate;
+  let drawAt = game.drawAt;
+  if (patch.drawMode === "manual") drawAt = undefined;
+  else if (patch.drawAt !== undefined) drawAt = patch.drawAt;
+  // Даты проверяем, только если их меняли: старая дата жеребьёвки могла
+  // пройти, пока игра ждала (тогда её проведёт планировщик).
+  if (
+    patch.exchangeDate !== undefined ||
+    patch.drawAt !== undefined ||
+    patch.drawMode !== undefined
+  ) {
+    checkDates(ctx, exchangeDate, drawAt);
+  }
+  game.exchangeDate = exchangeDate;
+  if (drawAt) game.drawAt = new Date(drawAt).toISOString();
+  else delete game.drawAt;
+  if (patch.exclusions !== undefined) {
+    game.exclusions = normalizeExclusions(game, patch.exclusions);
+    await checkExclusionsPossible(ctx.tx, game);
+  }
 };
 
 // POST /santa/:id/join — позванный по кнопке или кто угодно по ссылке.
@@ -643,6 +681,8 @@ const performDraw = async (ctx: ServerContext, game: StoredGame) => {
   game.status = "drawn";
   game.drawnAt = nowIso(ctx.clock);
   game.invitedIds = [];
+  // Провели вручную после неудачи по дате — отметка больше не нужна (R08).
+  clearDrawFailed(game);
   return assignments;
 };
 

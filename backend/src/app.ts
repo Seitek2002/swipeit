@@ -11,6 +11,7 @@ import type { Db } from "./db/client";
 import { registerErrors } from "./errors";
 import { resolveSession } from "./auth/sessions";
 import { createDiskStorage } from "./domains/uploads/storage";
+import { registerOps } from "./routes-ops";
 import { registerUploads } from "./routes-uploads";
 import { startScheduler } from "./scheduler";
 import { createSocketHub, type EventHub } from "./realtime/hub";
@@ -102,6 +103,7 @@ export const buildApp = ({
     // WebSocket /v1/ws (B12): вход — hello { token }, дальше события только
     // адресатам. В тестах можно подставить свой хаб.
     let events: EventHub;
+    let online: (() => { people: number; sockets: number }) | undefined;
     if (hub) {
       events = hub;
     } else {
@@ -119,6 +121,7 @@ export const buildApp = ({
       });
       app.addHook("onClose", () => sockets.close());
       events = sockets;
+      online = sockets.stats;
     }
     registerRoutes(app, {
       db,
@@ -127,6 +130,13 @@ export const buildApp = ({
       random,
       hub: events,
       publicShareUrl: config.PUBLIC_SHARE_URL,
+    });
+    registerOps(app, {
+      db,
+      catalog,
+      clock,
+      online,
+      token: config.OPS_TOKEN,
     });
     registerUploads(app, {
       db,

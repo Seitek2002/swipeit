@@ -33,6 +33,9 @@ const ConfigSchema = z.object({
   TZ: z.string().min(1).default("Asia/Bishkek"),
   // Фото (B13): папка на диске сервера (том Docker, в бэкапе).
   UPLOADS_DIR: z.string().min(1).default("data/uploads"),
+  // Отчёт владельцу по HTTPS (R02): GET /v1/ops/report с этим токеном. Нет
+  // переменной — маршрута как будто нет.
+  OPS_TOKEN: z.string().min(24).optional(),
 });
 
 // База из docker-compose для разработки и тестов.

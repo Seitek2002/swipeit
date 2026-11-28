@@ -42,8 +42,9 @@ export const readProfilesByVia = async (
   db: Database,
   days: number,
   now: number,
+  sinceDay?: string,
 ): Promise<Array<{ count: number; via: string }>> => {
-  const since = new Date(`${toDateKey(now - (days - 1) * DAY_MS)}T00:00:00`);
+  const since = new Date(`${firstDay(days, now, sinceDay)}T00:00:00`);
   const rows = await db
     .select({ via: users.createdVia, count: count() })
     .from(users)
@@ -57,12 +58,20 @@ export type FunnelRow = { count: number; day: string; step: string };
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Последние `days` дней, считая сегодняшний.
+// Первый день отчёта: последние days дней, но не раньше since (R02 —
+// прогоны команды и нагрузочный тест до живой группы не в счёт).
+const firstDay = (days: number, now: number, since?: string) => {
+  const byDays = toDateKey(now - (days - 1) * DAY_MS);
+  return since && since > byDays ? since : byDays;
+};
+
 export const readFunnel = async (
   db: Database,
   days: number,
   now: number,
+  since?: string,
 ): Promise<FunnelRow[]> => {
-  const since = toDateKey(now - (days - 1) * DAY_MS);
+  const from = firstDay(days, now, since);
   return db
     .select({
       day: funnelDaily.day,
@@ -70,7 +79,7 @@ export const readFunnel = async (
       count: funnelDaily.count,
     })
     .from(funnelDaily)
-    .where(gte(funnelDaily.day, since));
+    .where(gte(funnelDaily.day, from));
 };
 
 const percent = (part: number, whole: number) =>

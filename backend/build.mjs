@@ -12,9 +12,15 @@ const external = Object.keys(pkg.dependencies ?? {}).filter(
   (name) => name !== "@swipeit/core",
 );
 
+// Сервер и скрипты отчёта владельцу (R02): в образе их запускают так —
+// docker compose exec api node dist/funnel.js --days 7.
 await build({
-  entryPoints: ["src/server.ts"],
-  outfile: "dist/server.js",
+  entryPoints: {
+    server: "src/server.ts",
+    funnel: "src/db/funnel-cli.ts",
+    "funnel-team": "src/db/funnel-team-cli.ts",
+  },
+  outdir: "dist",
   bundle: true,
   platform: "node",
   target: "node24",

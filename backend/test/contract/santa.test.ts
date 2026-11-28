@@ -501,12 +501,108 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
       expect((await getGame(owner, other.id)).game).toMatchObject(GAME);
     });
 
-    it("после жеребьёвки менять нельзя — CONFLICT", async () => {
+    it("R03: после жеребьёвки — только дата обмена, остальное CONFLICT", async () => {
       const { owner, azamat, id } = await drawnGame();
-      await fails(patchGame(owner, id, { budget: 1000 }), "CONFLICT");
+      const wardBefore = (await getGame(azamat, id)).me?.ward?.id;
+      expect(wardBefore).toEqual(expect.any(String));
+      const moved = await patchGame(owner, id, { exchangeDate: "2026-12-27" });
+      expect(moved.game).toMatchObject({
+        exchangeDate: "2026-12-27",
+        status: "drawn",
+      });
+      await expect(
+        patchGame(owner, id, { budget: 1000 }),
+      ).rejects.toMatchObject({
+        code: "CONFLICT",
+        status: STATUS.CONFLICT,
+        message: "Жеребьёвка уже прошла — менять можно только дату обмена",
+      });
+      // Вместе с датой — тоже нельзя, и дата не записалась.
+      await fails(
+        patchGame(owner, id, { exchangeDate: "2026-12-26", title: "Офис" }),
+        "CONFLICT",
+      );
+      await fails(
+        patchGame(owner, id, { exchangeDate: "2026-11-01" }),
+        "VALIDATION",
+      );
       // Не организатору — по-прежнему FORBIDDEN.
-      await fails(patchGame(azamat, id, { budget: 1000 }), "FORBIDDEN");
-      expect((await getGame(owner, id)).game.budget).toBe(GAME.budget);
+      await fails(
+        patchGame(azamat, id, { exchangeDate: "2026-12-26" }),
+        "FORBIDDEN",
+      );
+      const after = (await getGame(azamat, id)).game;
+      expect(after).toMatchObject({
+        budget: GAME.budget,
+        title: GAME.title,
+        exchangeDate: "2026-12-27",
+      });
+      // Пары не поменялись: у Азамата тот же подопечный.
+      expect((await getGame(azamat, id)).me?.ward?.id).toBe(wardBefore);
+    });
+
+    it("R03: исключение между вступившими по ссылке соблюдается — 20 жеребьёвок", async () => {
+      for (let run = 0; run < 20; run += 1) {
+        const owner = await person("Айгерим");
+        const friend = await friendOf(owner, "Азамат");
+        const [first, second] = await crowd(2);
+        if (!first || !second) throw new Error("нет гостей");
+        const { game } = await createGame(owner, {
+          participantIds: [friend.id],
+        });
+        await act(friend, game.id, "/join");
+        // Пришли по ссылке — организатор их не звал.
+        await act(first, game.id, "/join");
+        await act(second, game.id, "/join");
+        const patched = await patchGame(owner, game.id, {
+          exclusions: [[first.id, second.id]],
+        });
+        expect(patched.game.exclusions).toEqual([[first.id, second.id]]);
+        expect(patched.drawIssue).toBeNull();
+        await act(owner, game.id, "/draw");
+        const everyone = [owner, friend, first, second];
+        const wards = await wardsOf(game.id, everyone);
+        expectPairs(
+          wards,
+          everyone.map((caller) => caller.id),
+        );
+        expect(wards[first.id]).not.toBe(second.id);
+        expect(wards[second.id]).not.toBe(first.id);
+      }
+    });
+
+    it("R03: невозможные исключения — CONFLICT, игра не изменилась", async () => {
+      const { owner, azamat, nurai, id } = await gathered();
+      // Втроём Азамат и Нурай не дарят друг другу — оба могут дарить только
+      // организатору.
+      await fails(
+        patchGame(owner, id, { exclusions: [[azamat.id, nurai.id]] }),
+        "CONFLICT",
+      );
+      expect((await getGame(owner, id)).game.exclusions).toEqual([]);
+    });
+
+    it("R03: бюджет или дата обмена поменялись — тост участникам, не организатору", async () => {
+      const { owner, azamat, nurai, id } = await gathered();
+      const toasts = () =>
+        api
+          .events()
+          .flatMap((event) => (event.type === "toast" ? [event] : []));
+      await patchGame(owner, id, { title: "Офис" });
+      expect(toasts()).toEqual([]);
+      await patchGame(owner, id, { budget: 3000 });
+      const text =
+        "Организатор изменил условия «Офис»: бюджет 3 000 сом, обмен 28 декабря";
+      expect(toasts()).toEqual(
+        expect.arrayContaining([
+          { type: "toast", text, forUserId: azamat.id },
+          { type: "toast", text, forUserId: nurai.id },
+        ]),
+      );
+      expect(toasts()).toHaveLength(2);
+      expect(toasts().some((event) => event.forUserId === owner.id)).toBe(
+        false,
+      );
     });
   });
 

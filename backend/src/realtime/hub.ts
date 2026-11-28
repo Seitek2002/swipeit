@@ -37,6 +37,8 @@ const HEARTBEAT_MS = 20_000;
 
 export type SocketHub = EventHub & {
   close: () => Promise<void>;
+  // Открытые сокеты и разные люди (R02, отчёт владельцу).
+  stats: () => { people: number; sockets: number };
   // Upgrade-запрос на /v1/ws с http-сервера Fastify.
   handleUpgrade: (
     request: IncomingMessage,
@@ -134,6 +136,10 @@ export const createSocketHub = ({
         }
       }
     },
+    stats: () => ({
+      people: byUser.size,
+      sockets: [...byUser.values()].reduce((sum, set) => sum + set.size, 0),
+    }),
     handleUpgrade: (request, socket, head) => {
       wss.handleUpgrade(request, socket, head, (ws) =>
         wss.emit("connection", ws, request),
