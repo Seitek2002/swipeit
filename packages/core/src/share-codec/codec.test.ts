@@ -87,6 +87,113 @@ describe("кодек вишлиста", () => {
   });
 });
 
+// Несколько вишлистов (spec-multi-wishlists §3.7, L02): название едет в «l».
+describe("кодек вишлиста: название вишлиста", () => {
+  // Снимок, закодированный кодеком до L02 (без поля «l»): такие ссылки уже
+  // разосланы, и они должны открываться как прежде.
+  const legacy: SharedWishlist = {
+    owner: {
+      name: "Айгерим",
+      avatarColor: "mandarin",
+      userId: "u_aigerim",
+      birthday: "03-14",
+    },
+    occasion: { kind: "birthday", date: "2027-03-14" },
+    message: "Буду рада любому подарку",
+    items: [
+      {
+        productId: "p_0001",
+        priority: "top",
+        variantChoice: { color: "black" },
+        note: "Лучше чёрный",
+      },
+      {
+        custom: { title: "Абонемент в бассейн", priceMin: 2500 },
+        key: "custom:w_7",
+        priority: "normal",
+      },
+    ],
+  };
+  const legacyEncoded =
+    "N4IgbiBcCMA0IGsogO4BsTwCZVAe1xADtlAEEEE4QQZhBBWEEAEQQDhBAeEExAGNkBbAQyKy4CcAliXgBXZKID6XQQHMApkI4sARsgAMAZgC00ACwgAvvDztIoJJBArB-AC4ALPgE8WOKwCZ1HgOzatugbGIMpWgIgggMIggCwgEQAEtIAMIFEJsYDcIIByIICMIIB8IIxxgPwg2cm0gFwgESyCUADaoAAOyLWS6s3QLHZQcOCErHhoePzIKmhcrEjBJFaA2CARgOIggBIg1LEzgIogtIC8IIDSIORGsBbIrKIAznZ4HJAokj4sZqDtVqQ5a9SM1GuAQiCxgEwgsZkJgIIgf2o5DWLC4UA8AFZmoZDABdGFAA";
+
+  it("старая ссылка без «l» разбирается как раньше — без названия", () => {
+    const decoded = decodeWishlist(legacyEncoded);
+    expect(decoded).toEqual(legacy);
+    expect(decoded?.listName).toBeUndefined();
+  });
+
+  it("без названия ссылка байт в байт прежняя — не длиннее", () => {
+    expect(encodeWishlist(legacy)).toBe(legacyEncoded);
+    expect(encodeWishlist({ ...legacy, listName: undefined })).toBe(
+      legacyEncoded,
+    );
+    // Пустое и из одних пробелов — как нет названия.
+    expect(encodeWishlist({ ...legacy, listName: "" })).toBe(legacyEncoded);
+    expect(encodeWishlist({ ...legacy, listName: "   " })).toBe(legacyEncoded);
+  });
+
+  it("название едет туда и обратно", () => {
+    const named = { ...legacy, listName: "День рождения" };
+    const encoded = encodeWishlist(named);
+    expect(decodeWishlist(encoded)).toEqual(named);
+    expect(encoded).toMatch(/^[A-Za-z0-9+\-$]+$/);
+  });
+
+  it("название ровно в 40 символов — можно, 41+ — ссылка битая", () => {
+    const name40 = "Н".repeat(40);
+    expect(
+      decodeWishlist(encodeWishlist({ ...legacy, listName: name40 }))?.listName,
+    ).toBe(name40);
+
+    const shortOf = (l: string) => ({
+      o: { n: "Айгерим", c: "mandarin" },
+      l,
+      i: [{ p: "p_0001" }],
+    });
+    expect(
+      decodeWishlist(encodeEnvelope("wl", shortOf(name40))),
+    ).not.toBeNull();
+    expect(
+      decodeWishlist(encodeEnvelope("wl", shortOf("Н".repeat(41)))),
+    ).toBeNull();
+    expect(
+      decodeWishlist(encodeEnvelope("wl", shortOf("Н".repeat(200)))),
+    ).toBeNull();
+    // Не строка — тоже битая.
+    expect(
+      decodeWishlist(
+        encodeEnvelope("wl", { o: { n: "А", c: "mint" }, l: 5, i: [] }),
+      ),
+    ).toBeNull();
+  });
+
+  it("кодер не кладёт в ссылку больше 40 символов названия", () => {
+    const decoded = decodeWishlist(
+      encodeWishlist({ ...legacy, listName: `  ${"Я".repeat(60)}  ` }),
+    );
+    expect(decoded?.listName).toBe("Я".repeat(40));
+  });
+
+  it("30 желаний и название в 40 символов укладываются в 2 000 символов URL", () => {
+    const big: SharedWishlist = {
+      ...sample,
+      listName: "Новоселье в новой квартире на Южных воротах".slice(0, 40),
+      items: Array.from({ length: 30 }, (_, index) => ({
+        productId: `p_${String(index + 1).padStart(4, "0")}`,
+        priority: index < 3 ? ("top" as const) : ("normal" as const),
+        variantChoice:
+          index % 4 === 0 ? { color: "black", size: "m" } : undefined,
+        note: index % 5 === 0 ? "Можно любой цвет" : undefined,
+      })),
+    };
+    expect(big.listName).toHaveLength(40);
+    const url = `https://seitek2002.github.io/swipeit/w/?d=${encodeWishlist(big)}`;
+    expect(url.length).toBeLessThanOrEqual(2000);
+    expect(decodeWishlist(encodeWishlist(big))).toEqual(big);
+  });
+});
+
 describe("кодек ссылки-фильтра и ответа", () => {
   it("ссылка-фильтр: туда и обратно, скрытые цены", async () => {
     const { decodePickRequest, encodePickRequest } = await import("./codec");

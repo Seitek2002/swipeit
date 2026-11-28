@@ -14,6 +14,7 @@ import {
   type OccasionKind,
 } from "../config/index";
 import { PICK_LIMIT_MAX } from "../api/pick/limit";
+import { WISHLIST_NAME_MAX } from "../logic/wishlists";
 
 // lz-string — CommonJS без разметки экспортов: Node в ESM (tsx, `npm run dev`
 // сервера) видит только default, бандлеры и vitest — и имена. Берём то, что
@@ -120,6 +121,10 @@ const WishlistShort = z.object({
   }),
   oc: OccasionShort.optional(),
   m: z.string().max(200).optional(),
+  // Название вишлиста (spec-multi-wishlists §3.7). Нет — «Общий» или старая
+  // ссылка: гость видит просто «Вишлист Даны». Длиннее лимита — ссылку
+  // правили руками, считаем битой.
+  l: z.string().max(WISHLIST_NAME_MAX).optional(),
   i: z
     .array(
       z.object({
@@ -157,6 +162,9 @@ export type SharedWishlist = {
     productId?: string;
     variantChoice?: Record<string, string>;
   }>;
+  // Название для гостя (guestListName): только если его показываем — у
+  // непереименованного «Общего» нет, и ссылка не длиннее прежней.
+  listName?: string;
   message?: string;
   occasion?: SharedOccasion;
   owner: {
@@ -177,6 +185,7 @@ export const encodeWishlist = (wishlist: SharedWishlist): string =>
     },
     oc: encodeOccasion(wishlist.occasion),
     m: wishlist.message?.slice(0, 200) || undefined,
+    l: wishlist.listName?.trim().slice(0, WISHLIST_NAME_MAX) || undefined,
     i: wishlist.items.map((item) => ({
       p: item.productId,
       k: item.key,
@@ -213,6 +222,7 @@ export const decodeWishlist = (
     },
     occasion: decodeOccasion(short.oc),
     message: short.m,
+    listName: short.l?.trim() || undefined,
     items: short.i.map((item) => ({
       productId: item.p,
       key: item.k,
