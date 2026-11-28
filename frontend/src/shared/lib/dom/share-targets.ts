@@ -16,6 +16,9 @@ const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 // Абсолютный адрес: origin + basePath + относительный путь из API.
 export const absoluteUrl = (path: string) => {
+  // Уже полный адрес — короткая ссылка сервера «https://…/s/<код>»
+  // (BACKEND.md §6.2): не приклеиваем к нему свой домен.
+  if (/^https?:\/\//i.test(path)) return path;
   const origin =
     shareOrigin && LOOPBACK.has(window.location.hostname)
       ? shareOrigin
