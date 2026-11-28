@@ -18,6 +18,7 @@ import {
   isTasteJustFormed,
   tasteOf,
 } from "../taste";
+import { ensureLists, resolveListOf } from "../wishlists";
 import { parseInput, requireUser } from "./common";
 import { nextOrder } from "./wishlist";
 
@@ -119,6 +120,8 @@ export const createSwipe: Handler = async (ctx, { body }) => {
           ownerId: user.id,
           source: { kind: "product", productId: input.productId },
           priority,
+          // В главный вишлист (spec-multi-wishlists §2.3).
+          wishlistId: resolveListOf(db, ensureLists(db, user.id), user.id).id,
           order: nextOrder(items),
           variantChoice: input.variantChoice,
           status: "active",

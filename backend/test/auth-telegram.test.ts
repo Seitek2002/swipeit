@@ -13,6 +13,7 @@ import {
   sessions,
   users,
   wishlistItems,
+  wishlists,
 } from "../src/db/schema";
 import { makeFriends } from "../src/domains/friends/handlers";
 import { testConfig } from "./config";
@@ -354,6 +355,12 @@ describe("вход через Telegram: привязка и второй тел�
     expect(body.me.name).toBeUndefined();
     const me = (await call(body.token, "GET", "/me")).json() as MeResponse;
     expect(me).toMatchObject({ id: body.me.id, telegramLinked: true });
+    // «Общий» — вместе с профилем (spec-multi-wishlists §3.3).
+    const lists = await database.db
+      .select({ name: wishlists.name, isDefault: wishlists.isDefault })
+      .from(wishlists)
+      .where(eq(wishlists.ownerId, body.me.id));
+    expect(lists).toEqual([{ name: "Общий", isDefault: true }]);
   });
 
   it("профиль уже привязан к другому Telegram — 409", async () => {
@@ -421,6 +428,14 @@ describe("вход через Telegram: шаги воронки (M10)", () => {
     });
     // Удалять ли пустой B — решение PM (M10 п. 2): пока профиль цел.
     expect(await exists(second.id)).toBe(true);
+    // У B есть «Общий» (spec-multi-wishlists §3.3), но профиль пустой:
+    // isEmptyProfile считает желания, а не вишлисты.
+    expect(
+      await database.db
+        .select({ id: wishlists.id })
+        .from(wishlists)
+        .where(eq(wishlists.ownerId, second.id)),
+    ).toHaveLength(1);
 
     // Третий телефон: дубль снова +1, «вернул профиль» — раз на человека.
     const third = await signUp();

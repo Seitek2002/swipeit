@@ -22,8 +22,8 @@ import {
   wishlistItems,
 } from "./db/schema";
 import { datesOf } from "./domains/dates/handlers";
-import { resolveShareLink } from "./domains/share/links";
-import { readMeta, rowToMeta } from "./domains/wishlist/queries";
+import { resolveShareLink, wishlistOfLink } from "./domains/share/links";
+import { inList, metaOf } from "./domains/wishlists/queries";
 
 // Превью коротких ссылок (BACKEND.md §6.3, B16): /s/<код> — маленькая HTML-
 // страница с тегами og для Telegram и WhatsApp (они JavaScript не выполняют)
@@ -57,9 +57,12 @@ const previewOf = async (db: Db, code: string, now: number): Promise<Preview> =>
       (await tx.select().from(users).where(eq(users.id, id)).limit(1))[0];
     switch (link.kind) {
       case "wishlist": {
-        const owner = await userOf(link.targetId);
+        // «u_…» — «Общий» владельца (ссылки до 0015), «wl_…» — вишлист.
+        const owner = await userOf(link.ownerId);
         if (!owner || owner.deletedAt) return CLOSED;
-        const meta = rowToMeta(owner.id, await readMeta(tx, owner.id));
+        const list = await wishlistOfLink(tx, link);
+        if (!list) return CLOSED;
+        const meta = await metaOf(tx, owner.id, list);
         // Повод — только дата и готовый повод, без своего названия.
         const occasion = occasionForOthersFrom(
           await datesOf(tx, owner.id),
@@ -72,6 +75,7 @@ const previewOf = async (db: Db, code: string, now: number): Promise<Preview> =>
           .where(
             and(
               eq(wishlistItems.ownerId, owner.id),
+              inList(list),
               eq(wishlistItems.status, "active"),
             ),
           );

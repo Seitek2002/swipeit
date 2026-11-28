@@ -1,7 +1,6 @@
 import { itemKeyOf } from "@swipeit/core/logic/wishlists";
 import type {
   CustomWish,
-  Occasion,
   WishlistItem,
   WishlistMeta,
 } from "@swipeit/core/api/wishlist/types";
@@ -12,6 +11,9 @@ import { and, asc, count, eq, isNull, sql } from "drizzle-orm";
 import type { Tx } from "../../context";
 import { reservations, wishlistItems, wishlistMeta } from "../../db/schema";
 import { reachStep } from "../funnel/steps";
+import { inList, type WishlistRow } from "../wishlists/queries";
+
+export { type MetaRow, readMeta } from "../wishlists/queries";
 
 // Вишлист на сервере: чтение, порог отправки, счётчик броней — для свайпов
 // (B06), своего вишлиста (B07) и гостевого (B08).
@@ -62,7 +64,6 @@ export const checkShareUnlock = async (
 };
 
 export type ItemRow = typeof wishlistItems.$inferSelect;
-export type MetaRow = typeof wishlistMeta.$inferSelect;
 
 // «Подарили» без служебной метки закрытия броней (ревью R6).
 const publicGiven = (given: unknown): WishlistItem["given"] => {
@@ -88,30 +89,10 @@ export const rowToItem = (row: ItemRow): WishlistItem => ({
   ...(row.note ? { note: row.note } : {}),
   status: row.status as WishlistItem["status"],
   ...(row.given ? { given: publicGiven(row.given) } : {}),
+  ...(row.wishlistId ? { wishlistId: row.wishlistId } : {}),
+  ...(row.originId ? { originId: row.originId } : {}),
   addedAt: row.addedAt.toISOString(),
 });
-
-export const rowToMeta = (ownerId: string, row?: MetaRow): WishlistMeta => ({
-  ownerId,
-  ...(row?.occasion ? { occasion: row.occasion as Occasion } : {}),
-  ...(row?.message ? { message: row.message } : {}),
-  hideReservationCount: row?.hideReservationCount ?? false,
-  ...(row?.shareUnlockedAt
-    ? { shareUnlockedAt: row.shareUnlockedAt.toISOString() }
-    : {}),
-  ...(row?.dismissedGivenHintFor
-    ? { dismissedGivenHintFor: row.dismissedGivenHintFor }
-    : {}),
-});
-
-export const readMeta = async (tx: Tx, ownerId: string) => {
-  const [row] = await tx
-    .select()
-    .from(wishlistMeta)
-    .where(eq(wishlistMeta.ownerId, ownerId))
-    .limit(1);
-  return row;
-};
 
 // Желания владельца без удалённых, в его порядке.
 export const itemsOf = async (tx: Tx, ownerId: string) =>
@@ -122,6 +103,26 @@ export const itemsOf = async (tx: Tx, ownerId: string) =>
       .where(
         and(
           eq(wishlistItems.ownerId, ownerId),
+          isNull(wishlistItems.deletedAt),
+        ),
+      )
+      .orderBy(asc(wishlistItems.sortOrder), asc(wishlistItems.addedAt))
+  ).map(rowToItem);
+
+// Желания одного вишлиста без удалённых, в его порядке (spec §2.4).
+export const listItemsOf = async (
+  tx: Tx,
+  ownerId: string,
+  list: Pick<WishlistRow, "id" | "isDefault">,
+) =>
+  (
+    await tx
+      .select()
+      .from(wishlistItems)
+      .where(
+        and(
+          eq(wishlistItems.ownerId, ownerId),
+          inList(list),
           isNull(wishlistItems.deletedAt),
         ),
       )

@@ -329,9 +329,14 @@ export const registerErrors = (
     const internal = internalOf(request);
     if (isApiError(error)) {
       log.count(error.code, internal);
-      return reply
-        .status(error.status)
-        .send({ code: error.code, message: error.message, requestId });
+      // reason — уточнение кода для экрана (MULTI_WISHLISTS_OFF,
+      // WISHLIST_DELETED): клиент, который причин не знает, берёт message.
+      return reply.status(error.status).send({
+        code: error.code,
+        message: error.message,
+        ...(error.reason ? { reason: error.reason } : {}),
+        requestId,
+      });
     }
     if (error.code === "FST_ERR_CTP_BODY_TOO_LARGE") {
       log.count("VALIDATION", internal);

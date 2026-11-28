@@ -12,6 +12,7 @@ import { nanoid } from "nanoid";
 
 import { createSession, revokeSession } from "../../auth/sessions";
 import { reachStep } from "../funnel/steps";
+import { createDefaultList } from "../wishlists/queries";
 import type { ServerContext, ServerHandler } from "../../context";
 import { friendships, identities, users, wishlistMeta } from "../../db/schema";
 import {
@@ -77,6 +78,9 @@ export const createUser: ServerHandler = async (ctx, { body }) => {
     })
     .returning();
   await ctx.tx.insert(wishlistMeta).values({ ownerId: id });
+  // «Общий» — вместе с профилем, в той же транзакции (spec-multi-wishlists
+  // §3.3): и при входе через Telegram с новым профилем.
+  await createDefaultList(ctx.tx, id, createdAt);
   const { token } = await createSession(ctx.tx, id, ctx.clock, ctx.userAgent);
   await reachStep(ctx.tx, id, "profile_created", ctx.clock.now());
   // Новый гость получает профиль при брони или после «Собрать свой

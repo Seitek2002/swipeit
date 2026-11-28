@@ -17,6 +17,7 @@ import type { Db } from "../db";
 import { notFound, validation } from "../errors";
 import { BOT_IDS, DEMO_USER_ID } from "../seed";
 import { inferInterests, tasteOf } from "../taste";
+import { ensureLists } from "../wishlists";
 import { parseInput, requireUser } from "./common";
 
 const addFriends = (
@@ -105,6 +106,8 @@ export const createUser: Handler = async (ctx, { body }) => {
       ownerId: user.id,
       hideReservationCount: false,
     };
+    // «Общий» — вместе с профилем (spec-multi-wishlists §3.3).
+    ensureLists(db, user.id);
     addFriends(
       db.friends,
       user.id,

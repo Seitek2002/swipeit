@@ -14,15 +14,17 @@ import {
   nextAutoNumber,
   nextOccurrence,
 } from "@swipeit/core/logic/dates";
+import { findOccasionWishlist } from "@swipeit/core/logic/wishlists";
 import type { RealtimeScope } from "@swipeit/core/realtime/types";
 import { parseInput } from "@swipeit/core/parse-input";
 import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import type { ServerContext, ServerHandler, Tx } from "../../context";
-import { importantDates, users, wishlistMeta } from "../../db/schema";
+import { importantDates, users, wishlists } from "../../db/schema";
 import { lockMe, rowToUser } from "../users/queries";
-import { countActiveWishes, readMeta, rowToMeta } from "../wishlist/queries";
+import { countActiveWishes } from "../wishlist/queries";
+import { defaultOf, ownListsOf, rowToWishlist } from "../wishlists/queries";
 
 // «Мои даты» и напоминания — как в моке (handlers/dates.ts), на функциях
 // dates из core. Всё здесь — личное (BACKEND.md §4.6, п. 3): id владельца
@@ -73,40 +75,41 @@ export const datesOf = async (tx: Tx, ownerId: string) =>
       .where(eq(importantDates.ownerId, ownerId))
   ).map(rowToDate);
 
-// Повод вишлиста владельца под блокировкой: его меняют правка и удаление
-// даты.
-const lockMeta = async (tx: Tx, ownerId: string) => {
-  const [meta] = await tx
+// Вишлисты владельца под блокировкой: их повод меняют правка и удаление
+// даты. Повод — у каждого вишлиста свой (spec-multi-wishlists §2.1).
+const lockLists = (tx: Tx, ownerId: string) =>
+  tx
     .select()
-    .from(wishlistMeta)
-    .where(eq(wishlistMeta.ownerId, ownerId))
-    .for("update")
-    .limit(1);
-  return meta;
-};
+    .from(wishlists)
+    .where(eq(wishlists.ownerId, ownerId))
+    .for("update");
 
 const isOccasionOf = (occasion: unknown, dateId: string) => {
   const value = occasion as null | Occasion;
   return value?.kind === "important" && value.dateId === dateId;
 };
 
-// Повод вишлиста — эта дата: при её правке поправить и повод.
+// Повод вишлиста — эта дата: при её правке поправить и повод (во всех
+// вишлистах с этой датой).
 const syncOccasion = async (
   tx: Tx,
   date: ImportantDate,
   now: number,
 ): Promise<boolean> => {
-  const meta = await lockMeta(tx, date.ownerId);
-  if (!meta || !isOccasionOf(meta.occasion, date.id)) return false;
-  const occasion = { ...(meta.occasion as Occasion) };
-  occasion.date = nextOccurrence(date.date, now);
-  if (date.preset) occasion.preset = date.preset;
-  else delete occasion.preset;
-  await tx
-    .update(wishlistMeta)
-    .set({ occasion })
-    .where(eq(wishlistMeta.ownerId, date.ownerId));
-  return true;
+  let synced = false;
+  for (const list of await lockLists(tx, date.ownerId)) {
+    if (!isOccasionOf(list.occasion, date.id)) continue;
+    const occasion = { ...(list.occasion as Occasion) };
+    occasion.date = nextOccurrence(date.date, now);
+    if (date.preset) occasion.preset = date.preset;
+    else delete occasion.preset;
+    await tx
+      .update(wishlists)
+      .set({ occasion })
+      .where(eq(wishlists.id, list.id));
+    synced = true;
+  }
+  return synced;
 };
 
 // GET /me/dates — значимые даты владельца, ближайшие сверху.
@@ -207,13 +210,14 @@ export const deleteDate: ServerHandler = async (ctx, { params }) => {
     .where(
       and(eq(importantDates.id, target.id), eq(importantDates.ownerId, me.id)),
     );
-  const meta = await lockMeta(ctx.tx, me.id);
-  const occasionReset = Boolean(meta && isOccasionOf(meta.occasion, target.id));
-  if (occasionReset) {
+  let occasionReset = false;
+  for (const list of await lockLists(ctx.tx, me.id)) {
+    if (!isOccasionOf(list.occasion, target.id)) continue;
     await ctx.tx
-      .update(wishlistMeta)
+      .update(wishlists)
       .set({ occasion: { kind: "just_because" } })
-      .where(eq(wishlistMeta.ownerId, me.id));
+      .where(eq(wishlists.id, list.id));
+    occasionReset = true;
   }
   changed(ctx, occasionReset ? ["users", "wishlist"] : ["users"]);
   return { ok: true, date: viewOf(target, now), occasionReset };
@@ -225,11 +229,13 @@ const remindersOf = async (
   dates: readonly ImportantDate[],
   now: number,
 ): Promise<Reminder[]> => {
-  // Новый год (P06): число желаний и нынешний повод вишлиста.
-  const meta = rowToMeta(user.id, await readMeta(tx, user.id));
+  // Новый год (P06): число желаний и нынешний повод вишлиста — вишлиста
+  // с поводом «Новый год», если он есть, иначе «Общего».
+  const lists = await ownListsOf(tx, user.id);
+  const newYear = findOccasionWishlist(lists.map(rowToWishlist), "new_year");
   const reminder = activeReminder(user, dates, now, {
     wishCount: await countActiveWishes(tx, user.id),
-    occasion: meta.occasion,
+    occasion: newYear?.occasion ?? rowToWishlist(defaultOf(lists)).occasion,
   });
   return reminder ? [reminder] : [];
 };

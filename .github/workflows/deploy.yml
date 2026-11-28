@@ -141,7 +141,7 @@ jobs:
           TELEGRAM_CLIENT_ID: ${{ vars.TELEGRAM_CLIENT_ID }}
           # Несколько вишлистов в продукте — переменная репозитория
           # MULTI_WISHLISTS=1 (ADMIN.md §15). Нет переменной — выключено.
-          MULTI_WISHLISTS: ${{ vars.MULTI_WISHLISTS || "0" }}
+          MULTI_WISHLISTS: ${{ vars.MULTI_WISHLISTS || '0' }}
         run: |
           docker build -f backend/deploy/web/Dockerfile \
             --build-arg CLIENT_BUILD="$GITHUB_RUN_NUMBER" \

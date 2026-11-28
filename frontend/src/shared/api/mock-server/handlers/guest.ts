@@ -5,6 +5,7 @@ import {
   ReservationDeleteQuerySchema,
   ReservationsQueryInputSchema,
   ReserveInputSchema,
+  WishlistTargetInputSchema,
 } from "@swipeit/core/api/wishlist/inputs";
 import { visibleMyReservations } from "@swipeit/core/logic/my-reservations";
 import {
@@ -27,12 +28,23 @@ import type {
   OpenedWishlist,
   Reservation,
   ReservationsView,
+  Wishlist,
+  WishlistItem,
+  WishlistMeta,
 } from "../../wishlist/types";
 import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, notFound, validation } from "../errors";
 import { normalizeOccasion, occasionForOthers } from "../occasion";
 import { hashString } from "../random";
+import {
+  defaultListFrom,
+  ensureLists,
+  listItemsOf,
+  listMetaOf,
+  listsOf,
+  resolveListOf,
+} from "../wishlists";
 import { parseInput, requireNamed, requireUser } from "./common";
 import { itemKeyOf } from "./wishlist";
 
@@ -64,10 +76,16 @@ const uniqueByKey = <T>(items: T[], keyOf: (item: T) => string) => {
 };
 
 // Желания, которые видят друзья: только активные, «Очень хочу» сверху,
-// без повторов по ключу брони.
-export const guestItems = (db: Db, ownerId: string) =>
+// без повторов по ключу брони. Вишлист list, без него — «Общий»
+// (spec-multi-wishlists: друзья, Санта и боты пока видят его).
+export const guestItems = (db: Db, ownerId: string, list?: Wishlist) =>
   uniqueByKey(
-    (db.wishlistItems[ownerId] ?? [])
+    listItemsOf(
+      db,
+      listsOf(db, ownerId),
+      ownerId,
+      list ?? defaultListFrom(db, ownerId),
+    )
       .filter((item) => item.status === "active")
       .sort((a, b) =>
         a.priority === b.priority
@@ -80,25 +98,36 @@ export const guestItems = (db: Db, ownerId: string) =>
   );
 
 // PATCH /wishlist/meta — повод, сообщение, «Не показывать мне даже это».
+// Повод и сообщение — вишлиста wishlistId (без него — главного),
+// «Не показывать мне даже это» — человека (spec-multi-wishlists §2.1).
 export const updateMeta: Handler = async (ctx, { body }) => {
   const patch = parseInput(MetaPatchInputSchema, body);
   const now = ctx.clock.now();
   const meta = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
+    const list = resolveListOf(
+      db,
+      ensureLists(db, user.id),
+      user.id,
+      patch.wishlistId,
+    );
     const current = (db.wishlistMeta[user.id] ??= {
       ownerId: user.id,
       hideReservationCount: false,
     });
-    if (patch.occasion === null) delete current.occasion;
+    if (patch.occasion === null) delete list.occasion;
     else if (patch.occasion) {
-      current.occasion = normalizeOccasion(db, user, patch.occasion, now);
+      list.occasion = normalizeOccasion(db, user, patch.occasion, now);
     }
-    if (patch.message !== undefined)
-      current.message = patch.message.trim() || undefined;
+    if (patch.message !== undefined) {
+      const message = patch.message.trim();
+      if (message) list.message = message;
+      else delete list.message;
+    }
     if (patch.hideReservationCount !== undefined) {
       current.hideReservationCount = patch.hideReservationCount;
     }
-    return current;
+    return listMetaOf(db, user.id, list);
   });
   changed(ctx, ["wishlist"]);
   return meta;
@@ -116,7 +145,9 @@ export const shareWishlist: Handler = async (ctx) => {
   }
   // Имя — после проверки порога: до 5 «Хочу» спрашивать его рано.
   const user = requireNamed(profile);
-  const items = guestItems(db, user.id);
+  // Отправляется «Общий», пока клиент не шлёт wishlistId (L06).
+  const list = defaultListFrom(db, user.id);
+  const items = guestItems(db, user.id, list);
   const encoded = encodeWishlist({
     owner: {
       name: user.name,
@@ -127,7 +158,7 @@ export const shareWishlist: Handler = async (ctx) => {
     // У значимой даты — только дата и готовый повод: своё название и
     // dateId личные и в ссылку не попадают (TECH_SPEC §8).
     occasion: occasionForOthers(db, user.id, ctx.clock.now()),
-    message: meta.message,
+    message: list.message,
     items: items.map((item) => ({
       productId:
         item.source.kind === "product" ? item.source.productId : undefined,
@@ -157,13 +188,20 @@ export const shareWishlist: Handler = async (ctx) => {
   return { url: `/w/?d=${encoded}` };
 };
 
-// POST /wishlist/given-hint/dismiss — «Скрыть» подсказку «Возможно, тебе
-// подарили это» для текущего повода.
-export const dismissGivenHint: Handler = async (ctx) => {
+// POST /wishlist/given-hint/dismiss { wishlistId? } — «Скрыть» подсказку
+// «Возможно, тебе подарили это» для текущего повода этого вишлиста (без
+// wishlistId — главного).
+export const dismissGivenHint: Handler = async (ctx, { body }) => {
+  const { wishlistId } = parseInput(WishlistTargetInputSchema, body ?? {});
   await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
-    const meta = db.wishlistMeta[user.id];
-    if (meta?.occasion?.date) meta.dismissedGivenHintFor = meta.occasion.date;
+    const list = resolveListOf(
+      db,
+      ensureLists(db, user.id),
+      user.id,
+      wishlistId,
+    );
+    if (list.occasion?.date) list.dismissedGivenHintFor = list.occasion.date;
   });
   changed(ctx, ["wishlist"]);
   return { ok: true };
@@ -174,13 +212,17 @@ const openReservations = (db: Db, ownerId: string) =>
     (reservation) => reservation.ownerId === ownerId && !reservation.closedAt,
   );
 
-// Счётчик броней и подсказка после повода — для GET /wishlist владельца.
-export const ownerReservationInfo = (db: Db, ownerId: string, now: number) => {
-  const meta = db.wishlistMeta[ownerId];
+// Счётчик броней и подсказка после повода — для GET /wishlist владельца:
+// по желаниям и поводу открытого вишлиста (spec §2.8).
+export const ownerReservationInfo = (
+  db: Db,
+  ownerId: string,
+  now: number,
+  items: readonly WishlistItem[],
+  meta: WishlistMeta,
+) => {
   const activeKeys = new Set(
-    (db.wishlistItems[ownerId] ?? [])
-      .filter((item) => item.status === "active")
-      .map(itemKeyOf),
+    items.filter((item) => item.status === "active").map(itemKeyOf),
   );
   const reservedKeys = new Set(
     openReservations(db, ownerId)
@@ -189,11 +231,11 @@ export const ownerReservationInfo = (db: Db, ownerId: string, now: number) => {
   );
   // Повод прошёл — брони больше не секрет: показываем, что, возможно, уже
   // подарили (DESIGN.md §8.3, P1). До даты повода брони скрыты.
-  const date = meta?.occasion?.date;
+  const date = meta.occasion?.date;
   const passed = Boolean(date && date < toDateKey(now));
   const givenHintIds =
-    passed && meta?.dismissedGivenHintFor !== date
-      ? (db.wishlistItems[ownerId] ?? [])
+    passed && meta.dismissedGivenHintFor !== date
+      ? items
           .filter(
             (item) =>
               item.status === "active" && reservedKeys.has(itemKeyOf(item)),
@@ -201,7 +243,7 @@ export const ownerReservationInfo = (db: Db, ownerId: string, now: number) => {
           .map((item) => item.id)
       : [];
   return {
-    reservationCount: meta?.hideReservationCount ? null : reservedKeys.size,
+    reservationCount: meta.hideReservationCount ? null : reservedKeys.size,
     givenHintIds,
   };
 };
@@ -263,7 +305,8 @@ export const getUserWishlist: Handler = async (ctx, { params }) => {
   const db = await ctx.db.read();
   const owner = db.users[params.id ?? ""];
   if (!owner) throw notFound("Профиль не найден");
-  const meta = db.wishlistMeta[owner.id];
+  // «Общий», пока друг не выбирает вишлист (?list, L06).
+  const list = defaultListFrom(db, owner.id);
   const occasion = occasionForOthers(db, owner.id, ctx.clock.now());
   const view: GuestWishlist = {
     owner: {
@@ -273,8 +316,8 @@ export const getUserWishlist: Handler = async (ctx, { params }) => {
       avatarColor: owner.avatarColor,
       userId: owner.id,
     },
-    meta: { occasion, message: meta?.message },
-    items: guestItems(db, owner.id).map((item) => ({
+    meta: { occasion, message: list.message },
+    items: guestItems(db, owner.id, list).map((item) => ({
       key: itemKeyOf(item),
       productId:
         item.source.kind === "product" ? item.source.productId : undefined,
@@ -308,11 +351,19 @@ export const getReservations: Handler = async (ctx, { query }) => {
   const { ownerId, guestId } = parseInput(ReservationsQueryInputSchema, query);
   const db = await ctx.db.read();
   if (ctx.userId === ownerId) {
+    // Владельцу — счётчик главного вишлиста, как GET /wishlist без list.
+    const lists = listsOf(db, ownerId);
+    const list = resolveListOf(db, lists, ownerId);
+    const info = ownerReservationInfo(
+      db,
+      ownerId,
+      ctx.clock.now(),
+      listItemsOf(db, lists, ownerId, list),
+      listMetaOf(db, ownerId, list),
+    );
     const view: ReservationsView = {
       role: "owner",
-      count:
-        ownerReservationInfo(db, ownerId, ctx.clock.now()).reservationCount ??
-        0,
+      count: info.reservationCount ?? 0,
     };
     return view;
   }

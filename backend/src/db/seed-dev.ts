@@ -1,3 +1,4 @@
+import { DEFAULT_WISHLIST_NAME } from "@swipeit/core/logic/wishlists";
 import { inArray } from "drizzle-orm";
 
 import { loadConfig } from "../config";
@@ -50,6 +51,16 @@ try {
       })),
     );
     for (const person of PEOPLE) {
+      // «Общий» — у каждого профиля (spec-multi-wishlists §3.3); повод — в
+      // нём, а не в wishlist_meta.
+      const wishlistId = `wl_seed_${person.id.slice(7)}`;
+      await tx.insert(schema.wishlists).values({
+        id: wishlistId,
+        ownerId: person.id,
+        name: DEFAULT_WISHLIST_NAME,
+        isDefault: true,
+        occasion: { kind: "birthday" },
+      });
       await tx.insert(schema.wishlistItems).values(
         person.wishes.map((productId, index) => ({
           id: `wi_seed_${person.id.slice(7)}_${index}`,
@@ -57,12 +68,12 @@ try {
           sourceKind: "product",
           productId,
           sortOrder: index,
+          wishlistId,
           addedAt: now,
         })),
       );
       await tx.insert(schema.wishlistMeta).values({
         ownerId: person.id,
-        occasion: { kind: "birthday" },
         shareUnlockedAt: person.wishes.length >= 5 ? now : null,
       });
     }

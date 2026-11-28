@@ -48,14 +48,22 @@ import { lockMe, readMe, readUser, type UserRow } from "../users/queries";
 import {
   itemKeyOf,
   itemsOf,
+  listItemsOf,
   ownerReservationInfo,
   readMeta,
-  rowToMeta,
 } from "../wishlist/queries";
 import {
+  ensureDefaultList,
+  metaOf,
+  resolveList,
+  type WishlistRow,
+} from "../wishlists/queries";
+import {
   ensureShareLink,
+  ensureWishlistLink,
   isWishlistCode,
   resolveShareLink,
+  wishlistOfLink,
 } from "../share/links";
 
 // Отправка вишлиста короткой ссылкой, гостевой вид, брони и старые длинные
@@ -74,10 +82,21 @@ const changed = (ctx: ServerContext, scope: RealtimeScope[], id: string) =>
 // ── Гостевой вид ─────────────────────────────────────────────────────────
 
 // Желания, которые видят друзья: только активные, «Очень хочу» сверху, без
-// повторов по ключу брони (как guestItems мока).
-export const guestItemsOf = async (tx: Tx, ownerId: string) => {
+// повторов по ключу брони (как guestItems мока). Вишлист list, без него —
+// «Общий» (spec-multi-wishlists: друзья, Санта и брони пока видят его).
+export const guestItemsOf = async (
+  tx: Tx,
+  ownerId: string,
+  list?: WishlistRow,
+) => {
   const seen = new Set<string>();
-  return (await itemsOf(tx, ownerId))
+  return (
+    await listItemsOf(
+      tx,
+      ownerId,
+      list ?? (await ensureDefaultList(tx, ownerId)),
+    )
+  )
     .filter((item) => item.status === "active")
     .sort((a, b) =>
       a.priority === b.priority
@@ -100,8 +119,10 @@ export const guestItemsOf = async (tx: Tx, ownerId: string) => {
 const guestView = async (
   ctx: ServerContext,
   owner: UserRow,
+  list?: WishlistRow,
 ): Promise<GuestWishlist> => {
-  const meta = rowToMeta(owner.id, await readMeta(ctx.tx, owner.id));
+  const shown = list ?? (await ensureDefaultList(ctx.tx, owner.id));
+  const meta = await metaOf(ctx.tx, owner.id, shown);
   const occasion = occasionForOthersFrom(
     await datesOf(ctx.tx, owner.id),
     meta.occasion,
@@ -117,7 +138,7 @@ const guestView = async (
       ...(occasion ? { occasion } : {}),
       ...(meta.message ? { message: meta.message } : {}),
     },
-    items: (await guestItemsOf(ctx.tx, owner.id)).map((item) => ({
+    items: (await guestItemsOf(ctx.tx, owner.id, shown)).map((item) => ({
       key: itemKeyOf(item),
       ...(item.source.kind === "product"
         ? { productId: item.source.productId }
@@ -152,7 +173,9 @@ export const shareWishlist: ServerHandler = async (ctx) => {
     throw forbidden("Отправить можно после 5 «Хочу»");
   }
   if (!me.name) throw nameRequired();
-  const link = await ensureShareLink(ctx, "wishlist", me.id, me.id);
+  // Отправляется «Общий», пока клиент не шлёт wishlistId (L06).
+  const list = await ensureDefaultList(ctx.tx, me.id);
+  const link = await ensureWishlistLink(ctx, list);
   const firstShare = await reachStep(
     ctx.tx,
     me.id,
@@ -161,7 +184,7 @@ export const shareWishlist: ServerHandler = async (ctx) => {
   );
   // «Назовут день рождения при отправке» (PRD §7.4; Q03): при первой
   // отправке в профиле есть день рождения или у повода есть дата.
-  const occasion = rowToMeta(me.id, meta).occasion;
+  const occasion = (await metaOf(ctx.tx, me.id, list)).occasion;
   if (firstShare && (me.birthday || occasion?.date)) {
     await reachStep(ctx.tx, me.id, "share_with_birthday", ctx.clock.now());
   }
@@ -246,8 +269,10 @@ export const getShare: ServerHandler = async (ctx, { params }) => {
   const link = await resolveShareLink(ctx.tx, params.code);
   switch (link.kind) {
     case "wishlist": {
-      const owner = await readUser(ctx.tx, link.targetId);
-      if (!owner) throw notFound("Ссылка больше не работает");
+      // «u_…» — «Общий» владельца (ссылки до 0015), «wl_…» — сам вишлист.
+      const owner = await readUser(ctx.tx, link.ownerId);
+      const list = owner ? await wishlistOfLink(ctx.tx, link) : null;
+      if (!owner || !list) throw notFound("Ссылка больше не работает");
       if (ctx.userId && ctx.userId !== owner.id) {
         const visitor = await readUser(ctx.tx, ctx.userId);
         // Воронка: профиль открыл чужой вишлист по ссылке (P09).
@@ -299,7 +324,7 @@ export const getShare: ServerHandler = async (ctx, { params }) => {
       return {
         kind: "wishlist",
         ownerId: owner.id,
-        wishlist: await guestView(ctx, owner),
+        wishlist: await guestView(ctx, owner, list),
       };
     }
     case "plan":
@@ -364,8 +389,10 @@ export const getReservations: ServerHandler = async (ctx, { query }) => {
   let activeKeys = new Set<string>();
   if (target.kind === "user") {
     if (me && target.owner.id === me.id) {
-      const items = await itemsOf(ctx.tx, me.id);
-      const meta = rowToMeta(me.id, await readMeta(ctx.tx, me.id));
+      // Владельцу — счётчик главного вишлиста, как GET /wishlist без list.
+      const list = await resolveList(ctx.tx, me);
+      const items = await listItemsOf(ctx.tx, me.id, list);
+      const meta = await metaOf(ctx.tx, me.id, list);
       const info = await ownerReservationInfo(
         ctx.tx,
         me.id,
@@ -609,7 +636,7 @@ export const getOpenedWishlists: ServerHandler = async (ctx) => {
     if (await areFriends(ctx.tx, me.id, row.ownerId)) continue;
     const owner = await readUser(ctx.tx, row.ownerId);
     if (!owner) continue;
-    const meta = rowToMeta(owner.id, await readMeta(ctx.tx, owner.id));
+    const meta = await metaOf(ctx.tx, owner.id);
     const occasion = occasionForOthersFrom(
       await datesOf(ctx.tx, owner.id),
       meta.occasion,
@@ -647,7 +674,7 @@ export const getMyReservations: ServerHandler = async (ctx) => {
       (entry) => itemKeyOf(entry) === row.itemKey,
     );
     if (!item) continue;
-    const meta = rowToMeta(owner.id, await readMeta(ctx.tx, owner.id));
+    const meta = await metaOf(ctx.tx, owner.id);
     const occasion = occasionForOthersFrom(
       await datesOf(ctx.tx, owner.id),
       meta.occasion,

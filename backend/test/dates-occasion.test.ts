@@ -1,12 +1,13 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { wishlistMeta } from "../src/db/schema";
+import { wishlists } from "../src/db/schema";
 import { createTestDb, resetDb } from "./db";
 import { createTestServer } from "./server";
 
-// Повод вишлиста «Значимая дата» следует за датой (как в моке). Маршрута
-// повода на сервере пока нет (B07) — повод ставим прямо в базе.
+// Повод вишлиста «Значимая дата» следует за датой (как в моке). Повод
+// ставим прямо в базе — в «Общий»: с 0015 повод живёт в вишлисте, а не в
+// wishlist_meta (spec-multi-wishlists §2.1).
 const database = createTestDb();
 afterAll(() => database.close());
 
@@ -17,12 +18,15 @@ beforeEach(async () => {
 });
 afterEach(() => server.close());
 
+const ofDefault = (ownerId: string) =>
+  and(eq(wishlists.ownerId, ownerId), eq(wishlists.isDefault, true));
+
 const occasionOf = async (ownerId: string) => {
-  const [meta] = await database.db
+  const [list] = await database.db
     .select()
-    .from(wishlistMeta)
-    .where(eq(wishlistMeta.ownerId, ownerId));
-  return meta?.occasion;
+    .from(wishlists)
+    .where(ofDefault(ownerId));
+  return list?.occasion;
 };
 
 describe("повод important и «Мои даты»", () => {
@@ -38,7 +42,7 @@ describe("повод important и «Мои даты»", () => {
       await server.request(me, "POST", "/me/dates", { date: "07-01" })
     ).json() as { id: string };
     await database.db
-      .update(wishlistMeta)
+      .update(wishlists)
       .set({
         occasion: {
           kind: "important",
@@ -47,7 +51,7 @@ describe("повод important и «Мои даты»", () => {
           date: "2027-06-02",
         },
       })
-      .where(eq(wishlistMeta.ownerId, me.id));
+      .where(ofDefault(me.id));
 
     await server.request(me, "PATCH", `/me/dates/${own.id}`, {
       date: "06-10",

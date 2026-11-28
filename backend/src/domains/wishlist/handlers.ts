@@ -6,6 +6,8 @@ import {
   ReorderInputSchema,
   RestoreInputSchema,
   UNDELETE_WINDOW_MS,
+  WishlistQueryInputSchema,
+  WishlistTargetInputSchema,
 } from "@swipeit/core/api/wishlist/inputs";
 import type {
   WishlistItem,
@@ -25,6 +27,7 @@ import {
   uploads,
   wishlistItems,
   wishlistMeta,
+  wishlists,
 } from "../../db/schema";
 import { areFriends } from "../friends/handlers";
 import { lockMe, readMe, rowToUser } from "../users/queries";
@@ -33,12 +36,13 @@ import {
   countActiveWishes,
   itemKeyOf,
   itemsOf,
+  listItemsOf,
   nextOrderFor,
   ownerReservationInfo,
   readMeta,
   rowToItem,
-  rowToMeta,
 } from "./queries";
+import { listMetaOf, resolveList, rowToWishlist } from "../wishlists/queries";
 import { checkSantaMemberWishlist, reachStep } from "../funnel/steps";
 
 // Свой вишлист (BACKEND.md B07) — логика мока (handlers/wishlist.ts и
@@ -74,15 +78,19 @@ const findItem = async (tx: Tx, ownerId: string, id: string | undefined) => {
   return row;
 };
 
-// GET /wishlist — свой вишлист с мета-данными, счётчиком броней и
-// подсказкой «Возможно, тебе подарили это».
-export const getMyWishlist: ServerHandler = async (ctx) => {
+// GET /wishlist?list — свой вишлист с мета-данными, счётчиком броней и
+// подсказкой «Возможно, тебе подарили это». Без list — главный
+// (spec-multi-wishlists §2.3); повод, сообщение и подсказка — его.
+export const getMyWishlist: ServerHandler = async (ctx, { query }) => {
+  const { list: listId } = parseInput(WishlistQueryInputSchema, query ?? {});
   const me = await readMe(ctx);
-  const items = await itemsOf(ctx.tx, me.id);
-  const meta = rowToMeta(me.id, await readMeta(ctx.tx, me.id));
+  const list = await resolveList(ctx.tx, me, listId);
+  const items = await listItemsOf(ctx.tx, me.id, list);
+  const meta = listMetaOf(me.id, await readMeta(ctx.tx, me.id), list);
   const response: WishlistResponse = {
     items,
     meta,
+    wishlist: rowToWishlist(list),
     wishCount: await countActiveWishes(ctx.tx, me.id),
     ...(await ownerReservationInfo(
       ctx.tx,
@@ -96,9 +104,12 @@ export const getMyWishlist: ServerHandler = async (ctx) => {
 };
 
 // POST /wishlist/items — своё желание. Фото — только свой загруженный файл.
+// Вишлист — wishlistId из тела (открытый на экране), без него — главный.
 export const createCustomWish: ServerHandler = async (ctx, { body }) => {
   const custom = parseInput(CustomWishInputSchema, body);
+  const { wishlistId } = parseInput(WishlistTargetInputSchema, body);
   const me = await lockMe(ctx);
+  const list = await resolveList(ctx.tx, me, wishlistId);
   if (custom.imageKey) {
     const [file] = await ctx.tx
       .select({ key: uploads.key })
@@ -116,6 +127,7 @@ export const createCustomWish: ServerHandler = async (ctx, { body }) => {
       sourceKind: "custom",
       custom,
       sortOrder: nextOrderFor(me.id),
+      wishlistId: list.id,
       addedAt: at,
     })
     .returning();
@@ -364,11 +376,14 @@ export const restoreItem: ServerHandler = async (ctx, { params, body }) => {
 
 // PATCH /wishlist/meta — повод, сообщение, «Не показывать мне даже это».
 // Повод дополняет сервер: дату и готовый повод — по своим датам и профилю.
+// Повод и сообщение — вишлиста wishlistId (без него — главного),
+// «Не показывать мне даже это» — человека (spec §2.1).
 export const updateMeta: ServerHandler = async (ctx, { body }) => {
   const patch = parseInput(MetaPatchInputSchema, body);
   const row = await lockMe(ctx);
   const me = rowToUser(row);
-  const current = rowToMeta(me.id, await readMeta(ctx.tx, me.id));
+  const list = await resolveList(ctx.tx, row, patch.wishlistId);
+  const current = listMetaOf(me.id, await readMeta(ctx.tx, me.id), list);
   const next = { ...current };
   if (patch.occasion === null) delete next.occasion;
   else if (patch.occasion) {
@@ -387,11 +402,11 @@ export const updateMeta: ServerHandler = async (ctx, { body }) => {
   if (patch.hideReservationCount !== undefined) {
     next.hideReservationCount = patch.hideReservationCount;
   }
-  const values = {
-    occasion: next.occasion ?? null,
-    message: next.message ?? null,
-    hideReservationCount: next.hideReservationCount,
-  };
+  await ctx.tx
+    .update(wishlists)
+    .set({ occasion: next.occasion ?? null, message: next.message ?? null })
+    .where(eq(wishlists.id, list.id));
+  const values = { hideReservationCount: next.hideReservationCount };
   await ctx.tx
     .insert(wishlistMeta)
     .values({ ownerId: me.id, ...values })
@@ -400,16 +415,19 @@ export const updateMeta: ServerHandler = async (ctx, { body }) => {
   return next;
 };
 
-// POST /wishlist/given-hint/dismiss — «Скрыть» подсказку «Возможно, тебе
-// подарили это» для текущего повода.
-export const dismissGivenHint: ServerHandler = async (ctx) => {
+// POST /wishlist/given-hint/dismiss { wishlistId? } — «Скрыть» подсказку
+// «Возможно, тебе подарили это» для текущего повода этого вишлиста (без
+// wishlistId — главного).
+export const dismissGivenHint: ServerHandler = async (ctx, { body }) => {
+  const { wishlistId } = parseInput(WishlistTargetInputSchema, body ?? {});
   const me = await lockMe(ctx);
-  const meta = rowToMeta(me.id, await readMeta(ctx.tx, me.id));
-  if (meta.occasion?.date) {
+  const list = await resolveList(ctx.tx, me, wishlistId);
+  const date = rowToWishlist(list).occasion?.date;
+  if (date) {
     await ctx.tx
-      .update(wishlistMeta)
-      .set({ dismissedGivenHintFor: meta.occasion.date })
-      .where(eq(wishlistMeta.ownerId, me.id));
+      .update(wishlists)
+      .set({ dismissedGivenHintFor: date })
+      .where(eq(wishlists.id, list.id));
   }
   changed(ctx, ["wishlist"]);
   return { ok: true };

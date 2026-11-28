@@ -103,6 +103,13 @@ import {
   updateMeta,
 } from "./domains/wishlist/handlers";
 import {
+  activateWishlist,
+  createWishlist,
+  deleteWishlist,
+  getWishlists,
+  patchWishlist,
+} from "./domains/wishlists/handlers";
+import {
   createUser,
   getMe,
   logout,
@@ -149,6 +156,11 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "PATCH /wishlist/meta": updateMeta,
   "POST /wishlist/given-hint/dismiss": dismissGivenHint,
   "POST /wishlist/share": shareWishlist,
+  "GET /wishlists": getWishlists,
+  "POST /wishlists": createWishlist,
+  "PATCH /wishlists/:id": patchWishlist,
+  "DELETE /wishlists/:id": deleteWishlist,
+  "POST /wishlists/:id/activate": activateWishlist,
   "POST /share-links": createShareLink,
   "GET /share/:code": getShare,
   "GET /users/:id/wishlist": getUserWishlist,
@@ -203,6 +215,8 @@ export type RouteDeps = {
   hub: EventHub;
   limiter: Limiter;
   limits: LimitConfig;
+  // Несколько вишлистов (FEATURE_MULTI_WISHLISTS): ctx.multiWishlists.
+  multiWishlists?: boolean;
   // Служебный токен: заголовок репетиции (M01). Нет — заголовок не действует.
   opsToken?: string;
   publicShareUrl: string;
@@ -280,6 +294,7 @@ export const registerRoutes = (app: FastifyInstance, deps: RouteDeps) => {
                 publish: (event, to) => events.push({ event, to }),
               },
               log: request.log,
+              multiWishlists: deps.multiWishlists ?? false,
               publicShareUrl: deps.publicShareUrl,
             },
             {

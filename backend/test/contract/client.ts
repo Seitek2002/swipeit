@@ -3,7 +3,11 @@
 // памяти и на сервере (app.inject + PostgreSQL).
 import type { MeResponse } from "@swipeit/core/api/users/types";
 import type { RealtimeEvent } from "@swipeit/core/realtime/types";
-import { ApiError, type ApiErrorCode } from "@swipeit/core/errors";
+import {
+  ApiError,
+  type ApiErrorCode,
+  type ApiErrorReason,
+} from "@swipeit/core/errors";
 import type { HttpMethod } from "@swipeit/core/contract";
 import { createSeededRandom } from "@swipeit/core/logic/random";
 import path from "node:path";
@@ -68,7 +72,15 @@ let catalogPromise: null | Promise<ServerCatalog> = null;
 export const testCatalog = () =>
   (catalogPromise ??= loadCatalog(CATALOG_DIR, { warn: () => undefined }));
 
-export const createMockClient = async (now = NOW): Promise<ApiClient> => {
+// Флаги функций клиента (config/features): по умолчанию — как в тестах и
+// демо, всё включено. multiWishlists: false — сервер с
+// FEATURE_MULTI_WISHLISTS=0 и мок с выключенным флагом.
+export type ClientOptions = { multiWishlists?: boolean };
+
+export const createMockClient = async (
+  now = NOW,
+  options: ClientOptions = {},
+): Promise<ApiClient> => {
   const { products, activities, meta } = await testCatalog();
   const clock = createFixedClock(now);
   const db = createMemoryDb(async () =>
@@ -83,6 +95,7 @@ export const createMockClient = async (now = NOW): Promise<ApiClient> => {
     ),
     clock,
     db,
+    multiWishlists: options.multiWishlists ?? true,
     realtime,
     random: createSeededRandom("contract"),
     settings: createMemorySettings(),
@@ -136,13 +149,20 @@ export const createMockClient = async (now = NOW): Promise<ApiClient> => {
   };
 };
 
-export const createServerClient = async (now = NOW): Promise<ApiClient> => {
+export const createServerClient = async (
+  now = NOW,
+  options: ClientOptions = {},
+): Promise<ApiClient> => {
   const database = createTestDb();
   await resetDb(database);
   let current = now;
   const hub = createRecordingHub();
   const app = buildApp({
-    config: testConfig(),
+    config: testConfig(
+      options.multiWishlists === false
+        ? { FEATURE_MULTI_WISHLISTS: "0" }
+        : { FEATURE_MULTI_WISHLISTS: "1" },
+    ),
     db: database,
     catalog: await testCatalog(),
     clock: { now: () => current },
@@ -162,12 +182,15 @@ export const createServerClient = async (now = NOW): Promise<ApiClient> => {
     const json = response.json() as {
       code?: ApiErrorCode;
       message?: string;
+      reason?: ApiErrorReason;
     };
     if (response.statusCode >= 400) {
       throw new ApiError(
         response.statusCode,
         json.code ?? "INTERNAL",
         json.message ?? "",
+        undefined,
+        json.reason,
       );
     }
     return json as never;

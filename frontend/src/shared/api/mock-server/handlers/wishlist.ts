@@ -5,6 +5,8 @@ import {
   ReorderInputSchema,
   RestoreInputSchema,
   UNDELETE_WINDOW_MS,
+  WishlistQueryInputSchema,
+  WishlistTargetInputSchema,
 } from "@swipeit/core/api/wishlist/inputs";
 import { itemKeyOf } from "@swipeit/core/logic/wishlists";
 import { nanoid } from "nanoid";
@@ -18,6 +20,14 @@ import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, notFound } from "../errors";
 import { checkShareUnlock, countActiveWishes } from "../share-threshold";
+import {
+  defaultListOf,
+  ensureLists,
+  listItemsOf,
+  listMetaOf,
+  listsOf,
+  resolveListOf,
+} from "../wishlists";
 import { parseInput, requireUser } from "./common";
 import { ownerReservationInfo } from "./guest";
 
@@ -40,28 +50,44 @@ const changed = (
   scope: Array<"reservations" | "wishlist">,
 ) => ctx.realtime.publish({ type: "db:changed", scope, by: ctx.userId ?? "" });
 
-// GET /wishlist — свой вишлист с мета-данными, счётчиком броней и
-// подсказкой «Возможно, тебе подарили это».
-export const getMyWishlist: Handler = async (ctx) => {
+// GET /wishlist?list — свой вишлист с мета-данными, счётчиком броней и
+// подсказкой «Возможно, тебе подарили это». Без list — главный
+// (spec-multi-wishlists §2.3); повод, сообщение и подсказка — его.
+export const getMyWishlist: Handler = async (ctx, { query }) => {
+  const { list: listId } = parseInput(WishlistQueryInputSchema, query ?? {});
   const db = await ctx.db.read();
   const user = requireUser(ctx, db);
+  const lists = listsOf(db, user.id);
+  const list = resolveListOf(db, lists, user.id, listId);
+  const fallback = defaultListOf(lists).id;
+  // У старых строк вишлиста нет — в ответе он есть всегда, как у сервера.
+  const items = listItemsOf(db, lists, user.id, list)
+    .map((item) => ({ ...item, wishlistId: item.wishlistId ?? fallback }))
+    .sort((a, b) => a.order - b.order);
+  const meta = listMetaOf(db, user.id, list);
   const response: WishlistResponse = {
-    items: [...listOf(db, user.id)].sort((a, b) => a.order - b.order),
-    meta: db.wishlistMeta[user.id] ?? {
-      ownerId: user.id,
-      hideReservationCount: false,
-    },
+    items,
+    meta,
+    wishlist: list,
     wishCount: countActiveWishes(db, user.id),
-    ...ownerReservationInfo(db, user.id, ctx.clock.now()),
+    ...ownerReservationInfo(db, user.id, ctx.clock.now(), items, meta),
   };
   return response;
 };
 
 // POST /wishlist/items — своё желание: название, цена, ссылка, фото.
+// Вишлист — wishlistId из тела (открытый на экране), без него — главный.
 export const createCustomWish: Handler = async (ctx, { body }) => {
   const custom = parseInput(CustomWishInputSchema, body);
+  const { wishlistId } = parseInput(WishlistTargetInputSchema, body);
   const result = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
+    const list = resolveListOf(
+      db,
+      ensureLists(db, user.id),
+      user.id,
+      wishlistId,
+    );
     const items = listOf(db, user.id);
     const created: WishlistItem = {
       id: `wi_${nanoid(10)}`,
@@ -70,6 +96,7 @@ export const createCustomWish: Handler = async (ctx, { body }) => {
       priority: "normal",
       order: nextOrder(items),
       status: "active",
+      wishlistId: list.id,
       addedAt: nowIso(ctx.clock),
     };
     items.push(created);

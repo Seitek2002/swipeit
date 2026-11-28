@@ -1,3 +1,5 @@
+import { multiWishlistsOnClient } from "@swipeit/core/config/features";
+
 import { clock } from "@/shared/lib/clock";
 import { getRealtime } from "@/shared/lib/realtime";
 import { useDemoSettingsStore } from "@/shared/store";
@@ -24,6 +26,12 @@ export const getBrowserMockServer = (): MockServer => {
   server = createMockServer({
     catalog,
     clock,
+    // Несколько вишлистов: в демо включено, без NEXT_PUBLIC_MULTI_WISHLISTS=0.
+    // Имя переменной — буквально: Next подставляет его при сборке.
+    multiWishlists: multiWishlistsOnClient(
+      "local",
+      process.env.NEXT_PUBLIC_MULTI_WISHLISTS,
+    ),
     realtime,
     random: createCryptoRandom(),
     db: createLocalStorageDb({

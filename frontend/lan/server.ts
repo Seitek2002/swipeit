@@ -1,3 +1,4 @@
+import { multiWishlistsOnClient } from "@swipeit/core/config/features";
 import { nanoid } from "nanoid";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, readFile, rm } from "node:fs/promises";
@@ -205,6 +206,12 @@ export const createLanServer = async ({
     catalog,
     clock,
     db,
+    // Несколько вишлистов: в демо включено, NEXT_PUBLIC_MULTI_WISHLISTS=0 —
+    // выключено (тот же переключатель, что у сборки фронта).
+    multiWishlists: multiWishlistsOnClient(
+      "lan",
+      process.env.NEXT_PUBLIC_MULTI_WISHLISTS,
+    ),
     random,
     realtime,
     settings,
@@ -385,6 +392,7 @@ export const createLanServer = async ({
           sendJson(res, error.status, {
             code: error.code,
             message: error.message,
+            ...(error.reason ? { reason: error.reason } : {}),
           });
           return;
         }

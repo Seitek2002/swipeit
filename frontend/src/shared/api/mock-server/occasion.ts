@@ -10,6 +10,7 @@ import {
 import type { User } from "../users/types";
 import type { Occasion } from "../wishlist/types";
 import type { Db } from "./db";
+import { defaultListFrom } from "./wishlists";
 
 export { publicOccasion };
 
@@ -40,6 +41,8 @@ export const occasionForOthers = (
 ): Occasion | undefined =>
   occasionForOthersFrom(
     db.importantDates[ownerId] ?? [],
-    db.wishlistMeta[ownerId]?.occasion,
+    // Повод «Общего» — его видят друзья, Санта и ссылка (L06, L07 — по
+    // вишлисту).
+    defaultListFrom(db, ownerId).occasion,
     now,
   );

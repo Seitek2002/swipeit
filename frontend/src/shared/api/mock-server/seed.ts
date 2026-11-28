@@ -17,6 +17,7 @@ import { type Db, createEmptyDb } from "./db";
 import { matchesAudience } from "./feed";
 import { type Random, createSeededRandom } from "./random";
 import { computeTaste } from "./taste";
+import { normalizeWishlists } from "./wishlists";
 
 // Демо-пользователь «Айгерим» (TECH_SPEC §6, POST /auth/demo): готовый профиль
 // с вишлистом. Это тот же человек, что и бот-подруга Айгерим, — при демо-входе
@@ -289,7 +290,8 @@ export const createSeedDb = ({
     db.wishlistMeta[bot.id] = meta;
   }
 
-  return db;
+  // «Общий» каждому — с поводом и сообщением из meta (spec §3.6).
+  return normalizeWishlists(db);
 };
 
 // Начальная база для адаптеров: сид из текущего каталога и часов.

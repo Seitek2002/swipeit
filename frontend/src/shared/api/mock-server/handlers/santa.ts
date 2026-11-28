@@ -37,6 +37,7 @@ import { type Handler, type HandlerContext, nowIso } from "../context";
 import type { Db } from "../db";
 import { ApiError, isApiError, notFound, validation } from "../errors";
 import { occasionForOthers } from "../occasion";
+import { defaultListFrom } from "../wishlists";
 import { parseInput, requireNamedUser, requireUser } from "./common";
 import { guestItems } from "./guest";
 import { itemKeyOf } from "./wishlist";
@@ -230,7 +231,8 @@ const wardOf = (
 ): null | SantaWard => {
   const ward = db.users[wardId];
   if (!ward) return null;
-  const meta = db.wishlistMeta[wardId];
+  // Сообщение «Общего», пока игра не знает выбранного вишлиста (L07).
+  const meta = defaultListFrom(db, wardId);
   // Открытые брони на вишлист подопечного (X02): ключ → кто бронировал.
   const reservers = new Map(
     db.reservations

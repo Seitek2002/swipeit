@@ -43,6 +43,10 @@ export type ServerDeps = {
   // §7a). Влияет на правила, а не на устройство: в lan все люди сервера —
   // друзья друг другу. По умолчанию local.
   mode?: "lan" | "local";
+  // Несколько вишлистов (spec-multi-wishlists, флаг в config/features):
+  // false — у человека только «Общий», второй вишлист мок не создаёт
+  // (MULTI_WISHLISTS_OFF). Не задано — включено, как в демо.
+  multiWishlists?: boolean;
   random: Random;
   realtime: RealtimePublisher;
   settings: SettingsAccess;

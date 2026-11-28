@@ -1,3 +1,4 @@
+import { findOccasionWishlist } from "@swipeit/core/logic/wishlists";
 import { nanoid } from "nanoid";
 
 import { importantDateTitle } from "@/shared/config";
@@ -21,6 +22,7 @@ import {
 import type { Db } from "../db";
 import { ApiError, notFound, validation } from "../errors";
 import { countActiveWishes } from "../share-threshold";
+import { defaultListOf, ensureLists, listsOf } from "../wishlists";
 import { parseInput, requireUser } from "./common";
 
 // «Мои даты» и напоминания (TECH_SPEC §6 «Даты и напоминания», DESIGN §8.4,
@@ -58,13 +60,16 @@ const sortedViews = (dates: readonly ImportantDate[], now: number) =>
         a.createdAt.localeCompare(b.createdAt),
     );
 
-// Повод вишлиста — эта дата: при её правке поправить и повод.
+// Повод вишлиста — эта дата: при её правке поправить и повод (во всех
+// вишлистах с этой датой — повод у каждого свой, spec-multi-wishlists §2.1).
 const syncOccasion = (db: Db, user: User, date: ImportantDate, now: number) => {
-  const occasion = db.wishlistMeta[user.id]?.occasion;
-  if (occasion?.kind !== "important" || occasion.dateId !== date.id) return;
-  occasion.date = nextOccurrence(date.date, now);
-  if (date.preset) occasion.preset = date.preset;
-  else delete occasion.preset;
+  for (const list of ensureLists(db, user.id)) {
+    const occasion = list.occasion;
+    if (occasion?.kind !== "important" || occasion.dateId !== date.id) continue;
+    occasion.date = nextOccurrence(date.date, now);
+    if (date.preset) occasion.preset = date.preset;
+    else delete occasion.preset;
+  }
 };
 
 // GET /me/dates — значимые даты владельца, ближайшие сверху.
@@ -159,22 +164,33 @@ export const deleteDate: Handler = async (ctx, { params }) => {
     db.importantDates[user.id] = datesOf(db, user.id).filter(
       (entry) => entry.id !== target.id,
     );
-    const meta = db.wishlistMeta[user.id];
-    const reset =
-      meta?.occasion?.kind === "important" &&
-      meta.occasion.dateId === target.id;
-    if (meta && reset) meta.occasion = { kind: "just_because" };
+    let reset = false;
+    for (const list of ensureLists(db, user.id)) {
+      if (
+        list.occasion?.kind !== "important" ||
+        list.occasion.dateId !== target.id
+      ) {
+        continue;
+      }
+      list.occasion = { kind: "just_because" };
+      reset = true;
+    }
     return { date: target, occasionReset: reset };
   });
   changed(ctx, occasionReset ? ["users", "wishlist"] : ["users"]);
   return { ok: true, date: viewOf(date, now), occasionReset };
 };
 
-// Новый год (P06): нужны число желаний и нынешний повод вишлиста.
-const newYearContextOf = (db: Db, userId: string) => ({
-  wishCount: countActiveWishes(db, userId),
-  occasion: db.wishlistMeta[userId]?.occasion,
-});
+// Новый год (P06): нужны число желаний и нынешний повод вишлиста —
+// вишлиста с поводом «Новый год», если он есть, иначе «Общего».
+const newYearContextOf = (db: Db, userId: string) => {
+  const lists = listsOf(db, userId);
+  return {
+    wishCount: countActiveWishes(db, userId),
+    occasion: (findOccasionWishlist(lists, "new_year") ?? defaultListOf(lists))
+      .occasion,
+  };
+};
 
 const remindersOf = (db: Db, user: User, now: number): Reminder[] => {
   const reminder = activeReminder(

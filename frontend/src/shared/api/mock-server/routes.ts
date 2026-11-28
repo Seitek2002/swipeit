@@ -97,6 +97,13 @@ import {
   undeleteItem,
   updateItem,
 } from "./handlers/wishlist";
+import {
+  activateWishlist,
+  createWishlist,
+  deleteWishlist,
+  getWishlists,
+  patchWishlist,
+} from "./handlers/wishlists";
 
 export type HttpMethod = "DELETE" | "GET" | "PATCH" | "POST";
 
@@ -149,6 +156,15 @@ export const ROUTE_TABLE: Route[] = [
   },
   { method: "PATCH", pattern: "/wishlist/meta", handler: updateMeta },
   { method: "POST", pattern: "/wishlist/share", handler: shareWishlist },
+  { method: "GET", pattern: "/wishlists", handler: getWishlists },
+  { method: "POST", pattern: "/wishlists", handler: createWishlist },
+  { method: "PATCH", pattern: "/wishlists/:id", handler: patchWishlist },
+  { method: "DELETE", pattern: "/wishlists/:id", handler: deleteWishlist },
+  {
+    method: "POST",
+    pattern: "/wishlists/:id/activate",
+    handler: activateWishlist,
+  },
   {
     method: "POST",
     pattern: "/wishlist/given-hint/dismiss",

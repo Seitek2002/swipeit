@@ -68,7 +68,8 @@ import {
   notifySantaDrawn,
 } from "../notifications/events";
 import { readMe, readUser, type UserRow } from "../users/queries";
-import { itemKeyOf, readMeta, rowToMeta } from "../wishlist/queries";
+import { itemKeyOf } from "../wishlist/queries";
+import { metaOf } from "../wishlists/queries";
 import { repairAfterRemoval } from "./repair";
 import {
   insertGame,
@@ -236,7 +237,8 @@ const wardOf = async (
 ): Promise<null | SantaWard> => {
   const ward = (await readPeople(ctx.tx, [wardId])).get(wardId);
   if (!ward) return null;
-  const meta = rowToMeta(wardId, await readMeta(ctx.tx, wardId));
+  // Повод — «Общего», пока игра не знает выбранного вишлиста (L07).
+  const meta = await metaOf(ctx.tx, wardId);
   const occasion = occasionForOthersFrom(
     await datesOf(ctx.tx, wardId),
     meta.occasion,

@@ -13,6 +13,7 @@ import { matchesPlanFilters } from "../handlers/activities";
 import { type Random, createSeededRandom } from "../random";
 import { DEMO_USER_ID } from "../seed";
 import { computeTaste } from "../taste";
+import { defaultListOf, ensureLists } from "../wishlists";
 
 // Сценарий «Новый год» (TASKS T19, кнопка в демо-панели — DESIGN.md §8.10):
 // поверх свежего сида — всё, что нужно для показа за 7 минут. Айгерим с
@@ -162,6 +163,10 @@ const buildWishlist = (db: Db, { now, products }: ScenarioInput) => {
     occasion: { kind: "new_year", date: `${year}-12-31` },
     message: WISH_MESSAGE,
   };
+  // Повод и сообщение живут в вишлисте (spec-multi-wishlists §2.1).
+  const list = defaultListOf(ensureLists(db, DEMO_USER_ID));
+  list.occasion = { kind: "new_year", date: `${year}-12-31` };
+  list.message = WISH_MESSAGE;
 };
 
 // Зимние занятия: без сезона (круглый год) или с зимой.

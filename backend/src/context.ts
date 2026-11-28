@@ -27,6 +27,10 @@ export type ServerContext = {
   // дружбу по ссылке (Q07).
   isRefetch: boolean;
   log: FastifyBaseLogger;
+  // Несколько вишлистов включены (FEATURE_MULTI_WISHLISTS, multiWishlists-
+  // Enabled). Нет или false — у человека только «Общий», второй вишлист
+  // сервер не создаёт (MULTI_WISHLISTS_OFF).
+  multiWishlists?: boolean;
   // Начало коротких ссылок: url = publicShareUrl/s/<код> (§6.2).
   publicShareUrl: string;
   random: Random;

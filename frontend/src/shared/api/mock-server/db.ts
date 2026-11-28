@@ -11,7 +11,9 @@ import {
   ReservationSchema,
   WishlistItemSchema,
   WishlistMetaSchema,
+  WishlistSchema,
 } from "../wishlist/types";
+import { normalizeWishlists } from "./wishlists";
 
 // База демо (TECH_SPEC §5 «База»). Одна схема для обоих режимов: в local —
 // ключ localStorage, в lan — JSON-файл на ноутбуке.
@@ -25,6 +27,11 @@ export const DbSchema = z.object({
   productSwipes: z.array(ProductSwipeSchema),
   wishlistItems: z.record(z.string(), z.array(WishlistItemSchema)),
   wishlistMeta: z.record(z.string(), WishlistMetaSchema),
+  // Несколько вишлистов (spec-multi-wishlists §3.6): ownerId → вишлисты,
+  // «Общий» — у каждого профиля; ownerId → главный (пусто — «Общий»).
+  // default — старая база читается без сброса (normalizeWishlists).
+  wishlists: z.record(z.string(), z.array(WishlistSchema)).default({}),
+  activeWishlist: z.record(z.string(), z.string()).default({}),
   reservations: z.array(ReservationSchema),
   externalWishlists: z.record(z.string(), ExternalWishlistSchema),
   // Кто какие снимки открывал (UX-аудит X03): id профиля или гостя «g_…» →
@@ -54,6 +61,8 @@ export const createEmptyDb = (): Db => ({
   productSwipes: [],
   wishlistItems: {},
   wishlistMeta: {},
+  wishlists: {},
+  activeWishlist: {},
   reservations: [],
   externalWishlists: {},
   openedWishlists: {},
@@ -71,7 +80,7 @@ export const parseDb = (raw: null | string): "broken" | Db | null => {
   if (raw === null || raw === "") return null;
   try {
     const result = DbSchema.safeParse(JSON.parse(raw));
-    return result.success ? result.data : "broken";
+    return result.success ? normalizeWishlists(result.data) : "broken";
   } catch {
     return "broken";
   }

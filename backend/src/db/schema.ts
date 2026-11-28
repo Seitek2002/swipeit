@@ -7,6 +7,7 @@
 // Миграции после первого деплоя в prod — только добавляющие (§4.2).
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   bigserial,
   boolean,
   check,
@@ -85,6 +86,12 @@ export const users = pgTable(
     // Последний день по Бишкеку, когда человек заходил (M06): сменился —
     // +1 к active_day в funnel_daily. Только день, не время.
     lastActiveDay: date("last_active_day"),
+    // Главный вишлист (spec-multi-wishlists §2.3): сюда летят «Хочу» из
+    // ленты. Пусто или вишлист удалён — главный «Общий».
+    activeWishlistId: text("active_wishlist_id").references(
+      (): AnyPgColumn => wishlists.id,
+      { onDelete: "set null" },
+    ),
   },
   () => [
     check("users_birthday_format", monthDay("birthday")),
@@ -195,6 +202,10 @@ export const productSwipes = pgTable(
     contextKey: text("context_key").notNull(),
     pickRequestId: text("pick_request_id"),
     variantChoice: jsonb("variant_choice"),
+    // Куда лёг «Хочу» (spec-multi-wishlists §3.4): оттуда его убирают
+    // «Вернуть» и «Мимо». Нет — из главного. Без внешнего ключа: вишлист
+    // удаляют, история свайпов остаётся.
+    wishlistId: text("wishlist_id"),
     at: at("at").notNull(),
     // Порядок записи (B06): по нему считается вкус и выбирается свайп для
     // «Вернуть». Время для этого не годится: два свайпа одной миллисекунды
@@ -222,6 +233,41 @@ export const productSwipes = pgTable(
   ],
 );
 
+// Вишлисты человека, как плейлисты (spec-multi-wishlists §2.1): «Общий»
+// (is_default) есть у каждого профиля — создаётся вместе с ним, удалить его
+// нельзя; остальные человек создаёт сам. Повод, сообщение и подсказка
+// «Возможно, тебе подарили это» — у каждого вишлиста свои.
+export const wishlists = pgTable(
+  "wishlists",
+  {
+    id: text("id").primaryKey(),
+    ownerId: text("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    isDefault: boolean("is_default").notNull().default(false),
+    occasion: jsonb("occasion"),
+    message: text("message"),
+    dismissedGivenHintFor: text("dismissed_given_hint_for"),
+    createdAt: createdAt(),
+    // Порядок в ряду: «Общий» первым, дальше по созданию (§2.1).
+    seq: bigserial("seq", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    // Ровно один «Общий» у человека.
+    uniqueIndex("wishlists_owner_default")
+      .on(table.ownerId)
+      .where(sql`is_default`),
+    // Название уникально без учёта регистра (§2.1).
+    uniqueIndex("wishlists_owner_name").on(
+      table.ownerId,
+      sql`lower(${table.name})`,
+    ),
+    index("wishlists_owner_id").on(table.ownerId, table.seq),
+    check("wishlists_name_length", sql`char_length(name) between 1 and 40`),
+  ],
+);
+
 export const wishlistItems = pgTable(
   "wishlist_items",
   {
@@ -241,6 +287,14 @@ export const wishlistItems = pgTable(
     addedAt: at("added_at").notNull(),
     // «Удалить» → 10 минут на «Вернуть», потом фоновая чистка (B07).
     deletedAt: at("deleted_at"),
+    // Вишлист строки (spec-multi-wishlists §2.4). Nullable, чтобы миграция
+    // 0015 была добавляющей; код пишет его всегда, NOT NULL — отдельным
+    // релизом. Пусто — строка в «Общем».
+    wishlistId: text("wishlist_id").references(() => wishlists.id, {
+      onDelete: "cascade",
+    }),
+    // Копия своего желания: id исходного — ключ брони один на все копии.
+    originId: text("origin_id"),
   },
   (table) => [
     index("wishlist_items_owner_status_order").on(
@@ -248,10 +302,16 @@ export const wishlistItems = pgTable(
       table.status,
       table.sortOrder,
     ),
-    // Один товар — одно живое желание.
-    uniqueIndex("wishlist_items_owner_product_active")
-      .on(table.ownerId, table.productId)
+    // Один товар — одно живое желание в вишлисте; в разных вишлистах —
+    // копии (§2.4). До 0015 — один на человека (owner_id, product_id).
+    uniqueIndex("wishlist_items_list_product_active")
+      .on(table.wishlistId, table.productId)
       .where(sql`status = 'active' and deleted_at is null`),
+    index("wishlist_items_list_status_order").on(
+      table.wishlistId,
+      table.status,
+      table.sortOrder,
+    ),
     check(
       "wishlist_items_source_kind",
       oneOf("source_kind", ["product", "custom"]),
@@ -265,6 +325,9 @@ export const wishlistItems = pgTable(
   ],
 );
 
+// Настройки человека: порог отправки и «Не показывать мне даже это».
+// occasion, message и dismissed_given_hint_for с 0015 живут в wishlists:
+// код их больше не читает и не пишет, колонки удалим отдельным релизом.
 export const wishlistMeta = pgTable("wishlist_meta", {
   ownerId: text("owner_id")
     .primaryKey()
@@ -541,6 +604,11 @@ export const santaMembers = pgTable(
     openedAt: at("opened_at"),
     boughtAt: at("bought_at"),
     joinedAt: at("joined_at"),
+    // Какой вишлист видит Санта этого участника (spec §2.9). Пусто или
+    // вишлист удалён — «Общий».
+    wishlistId: text("wishlist_id").references(() => wishlists.id, {
+      onDelete: "set null",
+    }),
     // Порядок участников: организатор, позванные, вступившие (B11).
     seq: bigserial("seq", { mode: "number" }).notNull(),
   },
@@ -587,6 +655,8 @@ export const wishlistViews = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     code: text("code").notNull(),
     openedAt: at("opened_at").notNull(),
+    // Какой вишлист открывали последним (spec §3.5).
+    wishlistId: text("wishlist_id"),
   },
   (table) => [primaryKey({ columns: [table.viewerId, table.ownerId] })],
 );

@@ -39,9 +39,10 @@ describe("миграции", () => {
     const before = (await tables()).rows[0];
     await runMigrations(db);
     expect((await tables()).rows[0]).toEqual(before);
-    // 21 таблица §4.2 + funnel_daily (P09) + wishlist_views (X03) + notifications (S10) + errors_daily (M05); служебная таблица drizzle — в
-    // своей схеме.
-    expect(before.n).toBe(25);
+    // 21 таблица §4.2 + funnel_daily (P09) + wishlist_views (X03) + notifications (S10) + errors_daily (M05) + wishlists
+    // (spec-multi-wishlists, 0015); служебная таблица drizzle — в своей
+    // схеме.
+    expect(before.n).toBe(26);
   });
 });
 
@@ -169,23 +170,99 @@ describe("ограничения схемы (BACKEND.md §4.2)", () => {
     ).toBe(CHECK);
   });
 
-  it("одно живое желание на товар; удалённое не мешает добавить снова", async () => {
+  it("одно живое желание на товар в вишлисте; удалённое не мешает добавить снова, в другом вишлисте — копия", async () => {
     await user("u_1");
-    const item = (id: string) =>
+    const list = (id: string, name: string, isDefault = false) =>
+      db
+        .insert(schema.wishlists)
+        .values({ id, ownerId: "u_1", name, isDefault });
+    await list("wl_main", "Общий", true);
+    await list("wl_ny", "Новый год");
+    const item = (id: string, wishlistId = "wl_main") =>
       db.insert(schema.wishlistItems).values({
         id,
         ownerId: "u_1",
         sourceKind: "product",
         productId: "p_0001",
         sortOrder: 0,
+        wishlistId,
         addedAt: NOW,
       });
     await item("wi_1");
     expect(await pgCode(item("wi_2"))).toBe(UNIQUE);
+    // Копия (spec §2.4): тот же товар в другом вишлисте — можно.
+    expect(await pgCode(item("wi_copy", "wl_ny"))).toBeNull();
     await db
       .update(schema.wishlistItems)
       .set({ deletedAt: NOW })
       .where(eq(schema.wishlistItems.id, "wi_1"));
     expect(await pgCode(item("wi_3"))).toBeNull();
+  });
+
+  it("вишлисты: один «Общий» у человека, название уникально без учёта регистра, 1–40 символов", async () => {
+    await user("u_1");
+    await user("u_2");
+    const list = (
+      id: string,
+      ownerId: string,
+      name: string,
+      isDefault = false,
+    ) => db.insert(schema.wishlists).values({ id, ownerId, name, isDefault });
+    await list("wl_a", "u_1", "Общий", true);
+    expect(await pgCode(list("wl_b", "u_1", "Второй общий", true))).toBe(
+      UNIQUE,
+    );
+    await list("wl_c", "u_1", "Новый год");
+    expect(await pgCode(list("wl_d", "u_1", "НОВЫЙ год"))).toBe(UNIQUE);
+    // У другого человека — те же названия можно.
+    expect(await pgCode(list("wl_e", "u_2", "Общий", true))).toBeNull();
+    expect(await pgCode(list("wl_f", "u_2", "Новый год"))).toBeNull();
+    expect(await pgCode(list("wl_g", "u_1", ""))).toBe(CHECK);
+    expect(await pgCode(list("wl_h", "u_1", "я".repeat(41)))).toBe(CHECK);
+  });
+
+  it("удалили вишлист — главный и выбор в Санте пустеют (→ «Общий»), желания уходят каскадом", async () => {
+    await user("u_1");
+    await db.insert(schema.wishlists).values([
+      { id: "wl_main", ownerId: "u_1", name: "Общий", isDefault: true },
+      { id: "wl_bd", ownerId: "u_1", name: "День рождения" },
+    ]);
+    await db
+      .update(schema.users)
+      .set({ activeWishlistId: "wl_bd" })
+      .where(eq(schema.users.id, "u_1"));
+    await db.insert(schema.santaGames).values({
+      id: "sg_1",
+      title: "Офис",
+      ownerId: "u_1",
+      budget: 2000,
+      exchangeDate: "2026-12-27",
+    });
+    await db.insert(schema.santaMembers).values({
+      gameId: "sg_1",
+      userId: "u_1",
+      state: "joined",
+      wishlistId: "wl_bd",
+    });
+    await db.insert(schema.wishlistItems).values({
+      id: "wi_1",
+      ownerId: "u_1",
+      sourceKind: "product",
+      productId: "p_0001",
+      sortOrder: 0,
+      wishlistId: "wl_bd",
+      addedAt: NOW,
+    });
+    await db.delete(schema.wishlists).where(eq(schema.wishlists.id, "wl_bd"));
+    const [me] = await db
+      .select({ active: schema.users.activeWishlistId })
+      .from(schema.users)
+      .where(eq(schema.users.id, "u_1"));
+    expect(me?.active).toBeNull();
+    const [member] = await db
+      .select({ wishlistId: schema.santaMembers.wishlistId })
+      .from(schema.santaMembers);
+    expect(member?.wishlistId).toBeNull();
+    expect(await db.select().from(schema.wishlistItems)).toEqual([]);
   });
 });

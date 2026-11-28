@@ -21,6 +21,7 @@ import {
   users,
   wishlistItems,
   wishlistMeta,
+  wishlists,
   wishlistViews,
 } from "../../db/schema";
 import { repairAfterRemoval } from "../santa/repair";
@@ -257,6 +258,8 @@ export const deleteMe: ServerHandler = async (ctx) => {
   await tx.delete(productSwipes).where(eq(productSwipes.userId, id));
   await tx.delete(wishlistItems).where(eq(wishlistItems.ownerId, id));
   await tx.delete(wishlistMeta).where(eq(wishlistMeta.ownerId, id));
+  // Вишлисты (spec-multi-wishlists): главный и выбор в Санте — set null.
+  await tx.delete(wishlists).where(eq(wishlists.ownerId, id));
   await tx.delete(importantDates).where(eq(importantDates.ownerId, id));
   await tx
     .delete(friendships)

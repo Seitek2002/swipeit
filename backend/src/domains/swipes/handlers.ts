@@ -26,6 +26,7 @@ import {
   nextOrderFor,
 } from "../wishlist/queries";
 import { swipesOf } from "./queries";
+import { resolveList } from "../wishlists/queries";
 import { checkSantaMemberWishlist, hasStep, reachStep } from "../funnel/steps";
 
 // Свайпы своей ленты и ленты по ссылке-фильтру (BACKEND.md B06) — логика
@@ -82,10 +83,12 @@ const removeActiveItem = async (tx: Tx, ownerId: string, productId: string) =>
   ).length > 0;
 
 // «Хочу» и «Очень хочу» в своей ленте — желание в вишлисте. Уже есть —
-// обновить приоритет и вариант; нет — в конец списка.
+// обновить приоритет и вариант; нет — в начало вишлиста wishlistId
+// (главного, spec-multi-wishlists §2.3).
 const upsertWish = async (
   tx: Tx,
   ownerId: string,
+  wishlistId: string,
   productId: string,
   priority: "normal" | "top",
   variantChoice: Record<string, string> | undefined,
@@ -112,6 +115,7 @@ const upsertWish = async (
     priority,
     sortOrder: nextOrderFor(ownerId),
     variantChoice: variantChoice ?? null,
+    wishlistId,
     addedAt: at,
   });
   return id;
@@ -208,6 +212,7 @@ export const createSwipe: ServerHandler = async (ctx, { body }) => {
       ? await upsertWish(
           ctx.tx,
           user.id,
+          (await resolveList(ctx.tx, row)).id,
           input.productId,
           input.decision === "superlike" ? "top" : "normal",
           input.variantChoice,

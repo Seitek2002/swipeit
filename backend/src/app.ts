@@ -9,7 +9,7 @@ import { randomUUID } from "node:crypto";
 import type { Writable } from "node:stream";
 
 import type { ServerCatalog } from "./catalog/load";
-import type { Config } from "./config";
+import { type Config, multiWishlistsEnabled } from "./config";
 import type { Clock } from "./context";
 import type { Db } from "./db/client";
 import {
@@ -235,6 +235,7 @@ export const buildApp = ({
       hub: events,
       limiter: createLimiter(clock.now),
       limits: limitConfigFrom(config),
+      multiWishlists: multiWishlistsEnabled(config),
       opsToken: config.OPS_TOKEN,
       publicShareUrl: config.PUBLIC_SHARE_URL,
     });
