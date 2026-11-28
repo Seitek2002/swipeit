@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 import type { PlanParticipant } from "../plans/types";
-import type { GuestWishlist, Occasion } from "../wishlist/types";
+import {
+  type GuestWishlist,
+  type Occasion,
+  WishlistIdSchema,
+} from "../wishlist/types";
 
 // Тайный Санта (TECH_SPEC §5).
 export const SantaGameSchema = z.object({
@@ -97,6 +101,9 @@ export const CreateSantaInputSchema = z
     // «позваны» и вступают сами; организатор вступил с момента создания.
     participantIds: z.array(z.string().min(1)).max(29, "Не больше 30 человек"),
     exclusions: ExclusionsSchema.default([]),
+    // Какой вишлист увидит Санта организатора (он тоже участник). Без него —
+    // pickSantaWishlist (spec §2.9).
+    wishlistId: WishlistIdSchema.optional(),
   })
   .refine((input) => input.drawMode === "manual" || Boolean(input.drawAt), {
     message: "Выбери дату жеребьёвки",
@@ -129,7 +136,21 @@ export const HandOverSantaInputSchema = z.object({
     .min(1, "Выбери, кому передать игру"),
 });
 
+// Тело POST /santa/:id/join — какой вишлист увидит мой Санта. Без него —
+// pickSantaWishlist (spec §2.9). Пустое тело — как раньше.
+export const JoinSantaInputSchema = z.object({
+  wishlistId: WishlistIdSchema.optional(),
+});
+
+// Тело POST /santa/:id/wishlist — сменить свой вишлист в игре. Можно и после
+// жеребьёвки: Санта сразу видит новый (spec §2.9, §5.3).
+export const SantaWishlistInputSchema = z.object({
+  wishlistId: WishlistIdSchema,
+});
+
 export type CreateSantaInput = z.input<typeof CreateSantaInputSchema>;
+export type JoinSantaInput = z.input<typeof JoinSantaInputSchema>;
+export type SantaWishlistInput = z.input<typeof SantaWishlistInputSchema>;
 export type HandOverSantaInput = z.input<typeof HandOverSantaInputSchema>;
 export type UpdateSantaInput = z.input<typeof UpdateSantaInputSchema>;
 
@@ -190,6 +211,10 @@ export type SantaMe = {
   // Есть сразу после жеребьёвки (до вскрытия — чтобы анимация конверта не
   // ждала сети). Показывать — только когда envelope === "opened".
   ward: null | SantaWard;
+  // Мой выбранный вишлист в игре (spec §2.9, §4.8) — только мне: другим
+  // участникам и организатору название не уходит. Нет поля — мок и сервер
+  // ещё не знают о выборе (до L07).
+  wishlist?: null | { id: string; name: string };
 };
 
 // GET /santa/:id и ответы всех действий с игрой.

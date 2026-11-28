@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { CONTRACT, contractFor, routeKey } from "./contract";
+import { CONTRACT, contractFor, featureRoutes, routeKey } from "./contract";
 
 describe("контракт API", () => {
   it("без повторов", () => {
@@ -18,5 +18,34 @@ describe("контракт API", () => {
     expect(
       contractFor("local").some((item) => item.path === "/auth/telegram"),
     ).toBe(false);
+  });
+
+  it("несколько вишлистов: маршруты spec §3.2 во всех режимах, нужен профиль", () => {
+    const keys = featureRoutes("multiWishlists").map((item) =>
+      routeKey(item.method, item.path),
+    );
+    expect(keys.sort()).toEqual(
+      [
+        "GET /wishlists",
+        "POST /wishlists",
+        "PATCH /wishlists/:id",
+        "DELETE /wishlists/:id",
+        "POST /wishlists/:id/activate",
+        "POST /wishlist/items/:id/move",
+        "POST /wishlist/items/:id/copy",
+        "GET /users/:id/wishlists",
+        "POST /santa/:id/wishlist",
+      ].sort(),
+    );
+    for (const item of featureRoutes("multiWishlists")) {
+      expect(item.access).toBe("user");
+      expect([...item.modes].sort()).toEqual(["lan", "local", "remote"]);
+    }
+    // Прежние маршруты вишлиста остаются без пометки функции.
+    expect(
+      CONTRACT.find(
+        (item) => item.path === "/wishlist" && item.method === "GET",
+      )?.feature,
+    ).toBeUndefined();
   });
 });

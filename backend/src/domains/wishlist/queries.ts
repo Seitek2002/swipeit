@@ -1,3 +1,4 @@
+import { itemKeyOf } from "@swipeit/core/logic/wishlists";
 import type {
   CustomWish,
   Occasion,
@@ -135,8 +136,8 @@ export const nextOrderFor = (ownerId: string) =>
   sql<number>`(select coalesce(min(sort_order), 1) - 1 from wishlist_items where owner_id = ${ownerId} and deleted_at is null)`;
 
 // itemKey брони: productId или "custom:<id>" (как itemKeyOf мока).
-export const itemKeyOf = (item: WishlistItem) =>
-  item.source.kind === "product" ? item.source.productId : `custom:${item.id}`;
+// Общий с моком (core): у копии своего желания — ключ оригинала.
+export { itemKeyOf };
 
 // Счётчик броней и подсказка «Возможно, тебе подарили это» — для GET
 // /wishlist владельца (как ownerReservationInfo мока). Кто бронировал — не

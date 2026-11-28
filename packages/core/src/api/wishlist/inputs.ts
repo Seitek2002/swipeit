@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { CustomWishSchema, OccasionSchema } from "./types";
+import { WISHLIST_NAME_MAX } from "../../logic/wishlists";
+import { CustomWishSchema, OccasionSchema, WishlistIdSchema } from "./types";
 
 // Вариант из «Подробнее» («Цвет: чёрный, Размер: M»): ключей немного,
 // строки короткие (ревью R8) — у каталога вариантов не больше пары групп.
@@ -41,8 +42,25 @@ export const PatchItemInputSchema = z.object({
   note: z.string().max(140, "Заметка — до 140 символов").optional(),
 });
 
-// POST /wishlist/reorder { ids } — все желания в нужном порядке.
-export const ReorderInputSchema = z.object({ ids: z.array(z.string()) });
+// Какой вишлист (несколько вишлистов, spec §3.2): без wishlistId — главный.
+// Тело POST /wishlist/items (своё желание — рядом с CustomWishInputSchema:
+// поле не уходит в custom), POST /wishlist/given-hint/dismiss.
+export const WishlistTargetInputSchema = z.object({
+  wishlistId: WishlistIdSchema.optional(),
+});
+
+// GET /wishlist?list=, GET /users/:id/wishlist?list= — без list у себя
+// главный, у друга — pickFriendWishlist.
+export const WishlistQueryInputSchema = z.object({
+  list: WishlistIdSchema.optional(),
+});
+
+// POST /wishlist/reorder { ids, wishlistId? } — все желания этого вишлиста в
+// нужном порядке. Без wishlistId — главный.
+export const ReorderInputSchema = z.object({
+  ids: z.array(z.string()),
+  wishlistId: WishlistIdSchema.optional(),
+});
 
 // POST /wishlist/items/:id/given — «Мне это подарили».
 export const GivenInputSchema = z.object({
@@ -73,10 +91,54 @@ export const OccasionInputSchema = OccasionSchema.extend({
 });
 
 // PATCH /wishlist/meta — повод, сообщение, «Не показывать мне даже это».
+// Повод и сообщение — вишлиста wishlistId (без него — главного),
+// hideReservationCount — человека (spec §2.1).
 export const MetaPatchInputSchema = z.object({
   occasion: OccasionInputSchema.nullable().optional(),
   message: z.string().trim().max(200, "Сообщение — до 200 символов").optional(),
   hideReservationCount: z.boolean().optional(),
+  wishlistId: WishlistIdSchema.optional(),
+});
+
+// ── Несколько вишлистов (spec §3.1) ───────────────────────────────────────
+
+// Название вишлиста: 1–40 символов после trim. Уникально у человека без
+// учёта регистра — это проверяет обработчик (findWishlistNameClash).
+export const WishlistNameSchema = z
+  .string({ error: "Назови вишлист" })
+  .trim()
+  .min(1, "Назови вишлист")
+  .max(WISHLIST_NAME_MAX, `Название — до ${WISHLIST_NAME_MAX} символов`);
+
+// POST /wishlists. makeActive — сразу сделать главным: с экрана вишлиста и
+// из плашки над колодой — да, из меню карточки и «Переместить /
+// Скопировать» — нет (решение владельца В7).
+export const CreateWishlistInputSchema = z.object({
+  name: WishlistNameSchema,
+  occasion: OccasionInputSchema.optional(),
+  makeActive: z.boolean().optional(),
+});
+
+// PATCH /wishlists/:id — переименовать («Общий» тоже можно).
+export const PatchWishlistInputSchema = z.object({
+  name: WishlistNameSchema.optional(),
+});
+
+// POST /wishlist/items/:id/move. order — только для «Отменить»: вернуть на
+// прежнее место (как undelete). Без него — наверх вишлиста.
+export const MoveItemInputSchema = z.object({
+  wishlistId: WishlistIdSchema,
+  order: z.number().finite().optional(),
+});
+
+// POST /wishlist/items/:id/copy — копия встаёт наверх вишлиста.
+export const CopyItemInputSchema = z.object({ wishlistId: WishlistIdSchema });
+
+// POST /wishlist/share — какой вишлист отправляем. Без wishlistId —
+// VALIDATION: клиент всегда знает, что отправляет (spec §3.2). Мок и сервер
+// разбирают тело этой схемой с L06; до того отправляют «Общий».
+export const ShareWishlistInputSchema = z.object({
+  wishlistId: WishlistIdSchema,
 });
 
 // Сколько удалённое желание ждёт «Отменить» (BACKEND.md §4.4, B07).

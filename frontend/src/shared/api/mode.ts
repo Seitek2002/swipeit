@@ -1,6 +1,6 @@
+import { multiWishlistsOnClient } from "@swipeit/core/config/features";
 import type { ApiMode } from "@swipeit/core/contract";
 
-import { multiWishlistsFlag } from "@/shared/config/features";
 import { withBasePath } from "@/shared/lib/base-path";
 
 import { getRemoteApiBase } from "./remote-base";
@@ -107,4 +107,5 @@ export const getMode = (): ApiMode => current;
 // Несколько вишлистов (spec-multi-wishlists): явный переключатель сборки, а
 // без него — в демо (local, lan) включено, в remote выключено.
 export const isMultiWishlistsEnabled = (): boolean =>
-  multiWishlistsFlag() ?? getMode() !== "remote";
+  // Имя переменной — буквально: Next подставляет NEXT_PUBLIC_* при сборке.
+  multiWishlistsOnClient(getMode(), process.env.NEXT_PUBLIC_MULTI_WISHLISTS);

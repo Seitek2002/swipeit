@@ -6,6 +6,7 @@ import {
   RestoreInputSchema,
   UNDELETE_WINDOW_MS,
 } from "@swipeit/core/api/wishlist/inputs";
+import { itemKeyOf } from "@swipeit/core/logic/wishlists";
 import { nanoid } from "nanoid";
 
 import {
@@ -158,8 +159,8 @@ export const reorderItems: Handler = async (ctx, { body }) => {
 };
 
 // itemKey брони: productId или "custom:<title>" (TECH_SPEC §5 Reservation).
-export const itemKeyOf = (item: WishlistItem) =>
-  item.source.kind === "product" ? item.source.productId : `custom:${item.id}`;
+// Ключ брони — общий с сервером (core): у копии своего желания — ключ оригинала.
+export { itemKeyOf };
 
 // POST /wishlist/items/:id/given — «Мне это подарили»: желание уходит во
 // вкладку «Подарили», брони на него закрываются (гость видит «Уже подарено»).

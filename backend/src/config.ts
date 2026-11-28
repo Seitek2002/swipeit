@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { multiWishlistsOnServer } from "@swipeit/core/config/features";
 
 // Часовой пояс календаря продукта (BACKEND.md §2.5). Неизвестный пояс Node
 // молча заменил бы на UTC — лучше сразу сказать.
@@ -192,6 +193,4 @@ export const timeZoneOf = (env: NodeJS.ProcessEnv = process.env): string => {
 export const multiWishlistsEnabled = (
   config: Pick<Config, "FEATURE_MULTI_WISHLISTS" | "NODE_ENV">,
 ): boolean =>
-  config.FEATURE_MULTI_WISHLISTS
-    ? config.FEATURE_MULTI_WISHLISTS === "1"
-    : config.NODE_ENV !== "production";
+  multiWishlistsOnServer(config.NODE_ENV, config.FEATURE_MULTI_WISHLISTS);

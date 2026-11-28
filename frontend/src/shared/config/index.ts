@@ -45,7 +45,6 @@ export {
   WISHLIST_LINK_DESCRIPTION,
   WISHLIST_LINK_TITLE,
 } from "./site";
-export { multiWishlistsFlag } from "./features";
 export { telegramClientId } from "./telegram";
 export { COLORS } from "./tokens";
 export {

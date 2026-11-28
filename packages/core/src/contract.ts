@@ -11,8 +11,14 @@ export type HttpMethod = "DELETE" | "GET" | "PATCH" | "POST";
 // обработчик (§4.4).
 export type RouteAccess = "public" | "user";
 
+// Функция, к которой относится маршрут (флаг в config/features). Маршрут
+// есть всегда — с выключенным флагом он отвечает как с одним «Общим», а
+// создать второй вишлист нельзя (multiWishlistsOff).
+export type ContractFeature = "multiWishlists";
+
 export type ContractRoute = {
   access: RouteAccess;
+  feature?: ContractFeature;
   method: HttpMethod;
   modes: readonly ApiMode[];
   path: string;
@@ -31,6 +37,13 @@ const route = (
   access: RouteAccess = "user",
   modes: readonly ApiMode[] = EVERYWHERE,
 ): ContractRoute => ({ method, path, access, modes });
+
+// Несколько вишлистов (spec-multi-wishlists §3.2): во всех режимах, нужен
+// профиль. Свой ли вишлист и друг ли владелец — проверяет обработчик.
+const listsRoute = (method: HttpMethod, path: string): ContractRoute => ({
+  ...route(method, path),
+  feature: "multiWishlists",
+});
 
 export const CONTRACT: readonly ContractRoute[] = [
   // Здоровье и вход
@@ -83,9 +96,20 @@ export const CONTRACT: readonly ContractRoute[] = [
   route("PATCH", "/wishlist/meta"),
   route("POST", "/wishlist/share"),
   route("POST", "/wishlist/given-hint/dismiss"),
+  // Несколько вишлистов: ряд, создание, переименование, удаление (желания —
+  // в «Общий»), главный; перемещение и копия желания.
+  listsRoute("GET", "/wishlists"),
+  listsRoute("POST", "/wishlists"),
+  listsRoute("PATCH", "/wishlists/:id"),
+  listsRoute("DELETE", "/wishlists/:id"),
+  listsRoute("POST", "/wishlists/:id/activate"),
+  listsRoute("POST", "/wishlist/items/:id/move"),
+  listsRoute("POST", "/wishlist/items/:id/copy"),
   route("POST", "/share-links", "user", REMOTE),
   route("GET", "/share/:code", "public", REMOTE),
   route("GET", "/users/:id/wishlist"),
+  // Непустые вишлисты друга (§2.10): только друзьям, иначе NOT_FOUND.
+  listsRoute("GET", "/users/:id/wishlists"),
   route("POST", "/external-wishlists", "public"),
   // Гость по короткой ссылке без профиля тоже видит, что занято (B15): с
   // верным кодом share — без «моих» броней.
@@ -146,6 +170,8 @@ export const CONTRACT: readonly ContractRoute[] = [
   // «Передать роль организатора» — до и после жеребьёвки (auto-tasks-pm-4
   // S04): организатор потерял телефон или уезжает.
   route("POST", "/santa/:id/owner"),
+  // Какой вишлист видит мой Санта — сменить, и после жеребьёвки (§2.9).
+  listsRoute("POST", "/santa/:id/wishlist"),
 
   // Фото своих желаний и занятий
   route("POST", "/uploads", "user", NETWORK),
@@ -166,3 +192,8 @@ export const contractFor = (mode: ApiMode): ContractRoute[] =>
 
 export const routeKey = (method: HttpMethod, path: string) =>
   `${method} ${path}`;
+
+// Маршруты функции — для тестов контракта мока и сервера, пока функция
+// заезжает по задачам (L04–L07).
+export const featureRoutes = (feature: ContractFeature): ContractRoute[] =>
+  CONTRACT.filter((item) => item.feature === feature);

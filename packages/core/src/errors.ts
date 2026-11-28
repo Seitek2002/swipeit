@@ -16,8 +16,20 @@ export type ApiErrorCode =
   | "UNAUTHORIZED"
   | "VALIDATION";
 
+// Уточнение кода для экрана, когда одного кода мало (несколько вишлистов,
+// spec §5.2): NOT_FOUND «Этот вишлист удалили» ведёт на свой экран, а не на
+// «Ссылка больше не работает». Клиент, который причин не знает, показывает
+// message — он и так понятный.
+export type ApiErrorReason =
+  // Несколько вишлистов выключены флагом (FEATURE_MULTI_WISHLISTS): сервер
+  // не создаёт второй вишлист.
+  | "MULTI_WISHLISTS_OFF"
+  // Ссылка удалённого вишлиста.
+  | "WISHLIST_DELETED";
+
 export class ApiError extends Error {
   readonly code: ApiErrorCode;
+  readonly reason?: ApiErrorReason;
   // requestId из ответа сервера (remote, auto-tasks-pm-4 S08): по нему
   // владелец находит сбой в логах. У мока и LAN его нет.
   readonly requestId?: string;
@@ -28,12 +40,14 @@ export class ApiError extends Error {
     code: ApiErrorCode,
     message: string,
     requestId?: string,
+    reason?: ApiErrorReason,
   ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
     if (requestId) this.requestId = requestId;
+    if (reason) this.reason = reason;
   }
 }
 
@@ -70,3 +84,12 @@ export const nameRequired = () =>
 // На NAME_REQUIRED клиент открывает NameSheet и повторяет запрос.
 export const isNameRequired = (value: unknown): value is ApiError =>
   isApiError(value) && value.code === "NAME_REQUIRED";
+
+// Причина ошибки — у ApiError и у ошибки, пришедшей по сети как объект.
+export const apiErrorReason = (value: unknown): ApiErrorReason | undefined => {
+  if (!isApiError(value)) return undefined;
+  const reason = (value as { reason?: unknown }).reason;
+  return reason === "MULTI_WISHLISTS_OFF" || reason === "WISHLIST_DELETED"
+    ? reason
+    : undefined;
+};
