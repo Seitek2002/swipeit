@@ -23,6 +23,8 @@ type Props = {
   className?: string;
   // В колоде билет растягивается на высоту стола, в списках — по контенту.
   fill?: boolean;
+  // Описание целиком (экран «Решено»); иначе — до 3 строк (UX-аудит W06).
+  fullDescription?: boolean;
 };
 
 // Перфорация (DESIGN.md §7, reference .ticket): полукруглые вырезы по бокам
@@ -88,6 +90,7 @@ export const ActivityTicket = ({
   activity,
   className,
   fill = false,
+  fullDescription = false,
 }: Props) => {
   const duration = formatDuration(activity.durationMin, activity.durationMax);
   const where = activity.distanceNote ?? activity.place;
@@ -110,8 +113,10 @@ export const ActivityTicket = ({
           className="relative h-[18px] flex-none before:absolute before:inset-x-[18px] before:top-1/2 before:border-t-2 before:border-dashed before:border-[rgb(122_90_110/0.4)] before:content-['']"
         />
         <div className="flex min-h-0 flex-1 flex-col px-1.5 pt-1">
-          <h3 className="text-title-2 line-clamp-2">{activity.title}</h3>
-          <p className="text-price mt-1.5">
+          <h3 className="text-title-2 line-clamp-2 flex-none">
+            {activity.title}
+          </h3>
+          <p className="text-price mt-1.5 flex-none">
             {formatPerPerson(activity)}
             {activity.pricePerPersonMax > 0 && (
               <span className="text-ink-soft text-[15px] font-medium">
@@ -121,7 +126,7 @@ export const ActivityTicket = ({
             )}
           </p>
           {(duration || where) && (
-            <p className="text-ink-soft mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-[18px] font-medium">
+            <p className="text-ink-soft mt-2 flex flex-none flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-[18px] font-medium">
               {duration && (
                 <span className="inline-flex items-center gap-1.5">
                   <Clock aria-hidden size={16} strokeWidth={1.75} />
@@ -141,8 +146,24 @@ export const ActivityTicket = ({
               )}
             </p>
           )}
+          {/* Описание — между временем и метками (W06): по одному фото
+              «Ужин с видом на город» не понять, что это. В колоде до 3
+              строк и сжимается первым — метки не уезжают за край. */}
+          {activity.description && (
+            <p
+              className={cn(
+                "text-ink-soft mt-2 text-[14px] leading-5",
+                // Низкий экран (360×640) — одна строка: иначе вторая обрезается
+                // посередине.
+                !fullDescription &&
+                  "line-clamp-3 min-h-0 overflow-hidden [@media(max-height:700px)]:line-clamp-1",
+              )}
+            >
+              {activity.description}
+            </p>
+          )}
           {tags.length > 0 && (
-            <div className="mt-auto flex flex-wrap gap-1.5 pt-2.5">
+            <div className="mt-auto flex flex-none flex-wrap gap-1.5 pt-2.5">
               {tags.map((tag) => (
                 <StoreTag key={tag}>{ACTIVITY_TAG_LABELS[tag]}</StoreTag>
               ))}

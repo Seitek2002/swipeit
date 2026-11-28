@@ -188,7 +188,7 @@ export const Decided = ({ view, meId }: Props) => {
         </div>
       </div>
       <div className="mx-auto w-full max-w-[300px]">
-        <ActivityTicket activity={activity} />
+        <ActivityTicket activity={activity} fullDescription />
       </div>
       <ShareActions
         getPayload={async () => ({
