@@ -7,7 +7,13 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app";
 import type { JwksSource } from "../src/auth/telegram";
 import { loadConfig } from "../src/config";
-import { identities, sessions, wishlistItems } from "../src/db/schema";
+import {
+  funnelDaily,
+  identities,
+  sessions,
+  users,
+  wishlistItems,
+} from "../src/db/schema";
 import { makeFriends } from "../src/domains/friends/handlers";
 import { testConfig } from "./config";
 import { NOW, testCatalog } from "./contract/client";
@@ -378,6 +384,87 @@ describe("вход через Telegram: привязка и второй тел�
       idToken(await nonce(person), { alg: "ES256" }),
     );
     expect(response.json()).toMatchObject({ status: "linked" });
+  });
+});
+
+// M10: люди, а не профили — сколько привязали Telegram, вернули профиль и
+// оставили пустой дубль. Только счётчики дня, без id.
+describe("вход через Telegram: шаги воронки (M10)", () => {
+  const steps = async () =>
+    Object.fromEntries(
+      (await database.db.select().from(funnelDaily)).map((row) => [
+        row.step,
+        row.count,
+      ]),
+    );
+  const exists = async (id: string) =>
+    (
+      await database.db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, id))
+    ).length === 1;
+
+  it("A привязан; новый телефон B пустой → вход в A: telegram_restored +1, profile_merged +1, B пока остаётся", async () => {
+    const first = await signUp();
+    await login(first, idToken(await nonce(first)));
+    expect(await steps()).toMatchObject({ telegram_linked: 1 });
+
+    const second = await signUp();
+    const response = await login(second, idToken(await nonce(second)));
+    expect(response.json()).toMatchObject({ status: "switched" });
+    expect(await steps()).toMatchObject({
+      profile_created: 2,
+      telegram_linked: 1,
+      telegram_restored: 1,
+      profile_merged: 1,
+    });
+    // Удалять ли пустой B — решение PM (M10 п. 2): пока профиль цел.
+    expect(await exists(second.id)).toBe(true);
+
+    // Третий телефон: дубль снова +1, «вернул профиль» — раз на человека.
+    const third = await signUp();
+    await login(third, idToken(await nonce(third)));
+    expect(await steps()).toMatchObject({
+      telegram_restored: 1,
+      profile_merged: 2,
+    });
+    const [row] = await database.db.select().from(funnelDaily).limit(1);
+    expect(Object.keys(row ?? {}).sort()).toEqual(["count", "day", "step"]);
+  });
+
+  it("в B есть желание → confirm, потом вход: profile_merged не растёт", async () => {
+    const first = await signUp();
+    await login(first, idToken(await nonce(first)));
+    const second = await signUp();
+    await addWish(second, "Шарф");
+    const token = idToken(await nonce(second));
+    expect((await login(second, token)).json()).toMatchObject({
+      status: "confirm",
+    });
+    expect((await login(second, token, true)).json()).toMatchObject({
+      status: "switched",
+    });
+    const counted = await steps();
+    expect(counted.telegram_restored).toBe(1);
+    expect(counted.profile_merged).toBeUndefined();
+  });
+
+  it("«Сессия закончилась» → вход в A: telegram_restored без дубля; новый профиль с Telegram — telegram_linked", async () => {
+    const first = await signUp();
+    await login(first, idToken(await nonce(first)));
+    await login(null, idToken(await nonce()));
+    expect(await steps()).toMatchObject({
+      telegram_linked: 1,
+      telegram_restored: 1,
+    });
+    expect((await steps()).profile_merged).toBeUndefined();
+
+    await login(
+      null,
+      idToken(await nonce(), { claims: { sub: "telegram-sub-other" } }),
+    );
+    expect((await steps()).telegram_linked).toBe(2);
   });
 });
 

@@ -6,7 +6,7 @@ import {
 } from "@swipeit/core/api/users/types";
 import { ApiError, conflict, unauthorized } from "@swipeit/core/errors";
 import { parseInput } from "@swipeit/core/parse-input";
-import { and, count, eq, isNull } from "drizzle-orm";
+import { and, count, eq, isNull, sql } from "drizzle-orm";
 import {
   createPublicKey,
   type JsonWebKey,
@@ -17,6 +17,7 @@ import {
 
 import type { ServerContext, ServerHandler } from "../context";
 import { identities, users, wishlistItems } from "../db/schema";
+import { reachStep } from "../domains/funnel/steps";
 import { createUser } from "../domains/users/handlers";
 import {
   lockMe,
@@ -299,6 +300,20 @@ export const createTelegramAuth = ({
     return row?.value ?? 0;
   };
 
+  // Профиль телефона, в котором ничего нет (M10): ни желаний, ни свайпов,
+  // ни планов, ни игр. Брошенный при входе в другой — дубль человека.
+  const isEmptyProfile = async (ctx: ServerContext, userId: string) => {
+    const { rows } = await ctx.tx.execute<{ used: boolean }>(sql`
+      select
+        exists (select 1 from wishlist_items where owner_id = ${userId})
+        or exists (select 1 from product_swipes where user_id = ${userId})
+        or exists (select 1 from plan_participants where user_id = ${userId})
+        or exists (select 1 from santa_members where user_id = ${userId})
+        as used
+    `);
+    return !rows[0]?.used;
+  };
+
   const linkedMe = (ctx: ServerContext, me: MeResponse): MeResponse => {
     ctx.events.publish({ type: "db:changed", scope: ["users"], id: me.id }, [
       me.id,
@@ -379,6 +394,13 @@ export const createTelegramAuth = ({
         .limit(1);
       if (!row) throw badToken();
       await refreshIdentity(ctx, claims);
+      // Люди, а не профили (M10): вернул свой профиль; пустой профиль этого
+      // телефона — дубль. Сам профиль остаётся (§3.3, решение PM — M10 п. 2).
+      const now = ctx.clock.now();
+      if (ctx.userId && (await isEmptyProfile(ctx, ctx.userId))) {
+        await reachStep(ctx.tx, ctx.userId, "profile_merged", now);
+      }
+      await reachStep(ctx.tx, row.id, "telegram_restored", now);
       if (ctx.sessionId) await revokeSession(ctx.tx, ctx.sessionId, ctx.clock);
       const { token } = await createSession(
         ctx.tx,
@@ -420,6 +442,7 @@ export const createTelegramAuth = ({
       if (inserted.length === 0) {
         throw conflict("Этот Telegram уже привязан к другому профилю");
       }
+      await reachStep(ctx.tx, me.id, "telegram_linked", ctx.clock.now());
       return { status: "linked", me: linkedMe(ctx, toMe(rowToUser(me))) };
     }
 
@@ -436,6 +459,7 @@ export const createTelegramAuth = ({
       chatId: claims.chatId,
       createdAt: new Date(ctx.clock.now()),
     });
+    await reachStep(ctx.tx, created.me.id, "telegram_linked", ctx.clock.now());
     return {
       status: "created",
       me: { ...created.me, telegramLinked: true, telegramBotMessages: true },

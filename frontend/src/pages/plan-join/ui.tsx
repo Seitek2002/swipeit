@@ -190,28 +190,32 @@ const JoinContent = () => {
 
   // Без профиля «Вступить» создаёт его сам (TECH_SPEC §10). План читаем уже
   // от нового профиля: если вступить можно — NameSheet, потом вступление.
+  // Профиль — «по приглашению в план» (M02): так его видит воронка.
   const createUser = useCreateUser();
   const joinAsNew = () =>
-    createUser.mutate(undefined, {
-      onSuccess: async (user) => {
-        const next = await queryClient
-          .fetchQuery({
-            queryKey: planKeys.detail(id),
-            queryFn: () => getPlan(id),
-          })
-          .catch(() => null);
-        // Не нашёлся, уже закрыт или ты в нём — экран покажет это сам.
-        if (
-          !next ||
-          next.plan.participantIds.includes(user.id) ||
-          next.plan.status === "results" ||
-          next.plan.status === "decided"
-        ) {
-          return;
-        }
-        requireName.run(joinUnlessNewNamesake(false));
+    createUser.mutate(
+      { via: "plan_invite" },
+      {
+        onSuccess: async (user) => {
+          const next = await queryClient
+            .fetchQuery({
+              queryKey: planKeys.detail(id),
+              queryFn: () => getPlan(id),
+            })
+            .catch(() => null);
+          // Не нашёлся, уже закрыт или ты в нём — экран покажет это сам.
+          if (
+            !next ||
+            next.plan.participantIds.includes(user.id) ||
+            next.plan.status === "results" ||
+            next.plan.status === "decided"
+          ) {
+            return;
+          }
+          requireName.run(joinUnlessNewNamesake(false));
+        },
       },
-    });
+    );
 
   const demo = mode === "local";
   if (code) {

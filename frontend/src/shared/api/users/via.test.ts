@@ -14,6 +14,13 @@ describe("viaForNewUser (Q01)", () => {
     expect(viaForNewUser("remote", "reservation", "wishlist_link")).toBe(
       "reservation",
     );
+    // M02: приглашение в игру или план — не «по ссылке на вишлист».
+    expect(viaForNewUser("remote", "santa_invite", "wishlist_link")).toBe(
+      "santa_invite",
+    );
+    expect(viaForNewUser("remote", "plan_invite", "pick_link")).toBe(
+      "plan_invite",
+    );
   });
 
   it("remote: пришёл по ссылке — wishlist_link, иначе feed", () => {

@@ -112,6 +112,9 @@ export type PilotData = {
     idle: number;
     merged?: number;
     restored?: number;
+    // M06: вернулись на другой день и позже, через неделю и позже.
+    returnedD1?: number;
+    returnedD7?: number;
     telegram: number;
   };
   santa: null | PilotSanta;
@@ -371,11 +374,16 @@ export const readPilot = async (
             where a.user_id = u.id and b.user_id = v.viewer_id
           )
         ))::int as outsiders,
-        count(*) filter (where exists (
-          select 1 from sessions s
-          where s.user_id = u.id
-            and s.last_used_at >= ${exchangeEnd ?? new Date(options.now)}
-        ))::int as returned
+        -- Заходил после дня обмена (M06: last_active_day; сессия — для
+        -- профилей, что заходили до появления колонки).
+        count(*) filter (where
+          u.last_active_day > ${santa?.exchangeDate ?? toDateKey(options.now)}::date
+          or exists (
+            select 1 from sessions s
+            where s.user_id = u.id
+              and s.last_used_at >= ${exchangeEnd ?? new Date(options.now)}
+          )
+        )::int as returned
       from users u
       where u.created_via = 'santa_invite' and u.created_at >= ${since}
         and (${internalOk} or not u.funnel_internal)
@@ -423,6 +431,12 @@ export const readPilot = async (
           : {}),
         ...(known("telegram_restored")
           ? { restored: steps.telegram_restored ?? 0 }
+          : {}),
+        ...(known("returned_d1")
+          ? {
+              returnedD1: steps.returned_d1 ?? 0,
+              returnedD7: steps.returned_d7 ?? 0,
+            }
           : {}),
       },
       santa,
@@ -558,7 +572,14 @@ export const formatPilot = (data: PilotData): string => {
       : [`  вернули профиль через Telegram: ${people.restored}`]),
     ...(people.merged === undefined
       ? []
-      : [`  слились при входе (дубли): ${people.merged}`]),
+      : [
+          `  из новых — пустые дубли, брошенные при входе через Telegram: ${people.merged}`,
+        ]),
+    ...(people.returnedD1 === undefined
+      ? []
+      : [
+          `  вернулись на другой день и позже: ${people.returnedD1}, через неделю и позже: ${people.returnedD7 ?? 0}`,
+        ]),
     "",
     ...(data.santa
       ? formatSanta(data.santa, data.botEnabled)

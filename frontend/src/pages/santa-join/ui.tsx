@@ -289,28 +289,32 @@ const JoinContent = () => {
 
   // Без профиля «Вступить» создаёт его сам (TECH_SPEC §10). Игру читаем уже
   // от нового профиля: если вступить можно — NameSheet, потом вступление.
+  // Профиль — «по приглашению в Санту» (M02): так его видит воронка.
   const createUser = useCreateUser();
   const joinAsNew = () =>
-    createUser.mutate(undefined, {
-      onSuccess: async () => {
-        const next = await queryClient
-          .fetchQuery({
-            queryKey: santaKeys.detail(id),
-            queryFn: () => getSantaGame(id),
-          })
-          .catch(() => null);
-        // Не нашлась, жеребьёвка прошла или ты уже в игре — экран покажет сам.
-        if (
-          !next ||
-          next.role === "owner" ||
-          next.role === "participant" ||
-          next.game.status === "drawn"
-        ) {
-          return;
-        }
-        requireName.run(joinUnlessNewNamesake(false));
+    createUser.mutate(
+      { via: "santa_invite" },
+      {
+        onSuccess: async () => {
+          const next = await queryClient
+            .fetchQuery({
+              queryKey: santaKeys.detail(id),
+              queryFn: () => getSantaGame(id),
+            })
+            .catch(() => null);
+          // Не нашлась, жеребьёвка прошла или ты уже в игре — экран покажет сам.
+          if (
+            !next ||
+            next.role === "owner" ||
+            next.role === "participant" ||
+            next.game.status === "drawn"
+          ) {
+            return;
+          }
+          requireName.run(joinUnlessNewNamesake(false));
+        },
       },
-    });
+    );
 
   const demo = mode === "local";
   if (code) {

@@ -796,6 +796,33 @@ const countNamesakes = async (
   }
 };
 
+// Готовность к жеребьёвке (M04) — те же числа, что «Сейчас» (readLive):
+// вступившие, позванные и не вступившие, с вишлистом, с тремя желаниями в
+// бюджете. Только числа, без id; пишется один раз — строка игры уже
+// заблокирована, вторая жеребьёвка получит CONFLICT раньше.
+const writeDrawSnapshot = async (ctx: ServerContext, game: StoredGame) => {
+  let withWishlist = 0;
+  let enoughInBudget = 0;
+  for (const userId of game.participantIds) {
+    const items = await guestItemsOf(ctx.tx, userId);
+    if (items.length > 0) withWishlist += 1;
+    if (inBudgetOf(ctx, items, game.budget) >= SANTA_WISHES_ENOUGH) {
+      enoughInBudget += 1;
+    }
+  }
+  await ctx.tx
+    .update(santaGames)
+    .set({
+      drawSnapshot: {
+        members: game.participantIds.length,
+        invitedDropped: game.invitedIds.length,
+        withWishlist,
+        enoughInBudget,
+      },
+    })
+    .where(and(eq(santaGames.id, game.id), isNull(santaGames.drawSnapshot)));
+};
+
 // Жеребьёвка — общая для кнопки и планировщика. Пары — среди вступивших;
 // кто так и не вступил, выбывает.
 const performDraw = async (ctx: ServerContext, game: StoredGame) => {
@@ -806,6 +833,8 @@ const performDraw = async (ctx: ServerContext, game: StoredGame) => {
     ctx.random,
     describeIn(people),
   );
+  // Пары сошлись — до того, как позванные выбыли.
+  await writeDrawSnapshot(ctx, game);
   game.status = "drawn";
   game.drawnAt = nowIso(ctx.clock);
   game.invitedIds = [];
@@ -900,6 +929,16 @@ export const setSantaBought: ServerHandler = async (ctx, { params, body }) => {
   if (changedNow) changed(ctx, game);
   if (changedNow && bought) {
     await reachStep(ctx.tx, me.id, "santa_bought", ctx.clock.now());
+  }
+  // North Star пилота (M04): купил желание из вишлиста, а не «Другое». Раз
+  // на человека: сменил покупку — не заново.
+  if (bought && itemKey && wardId) {
+    await reachStep(
+      ctx.tx,
+      me.id,
+      "santa_bought_from_wishlist",
+      ctx.clock.now(),
+    );
   }
   return viewOf(ctx, game, me.id);
 };

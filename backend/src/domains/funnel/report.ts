@@ -6,9 +6,17 @@ import { funnelDaily, users } from "../../db/schema";
 import { FUNNEL_STEPS, type FunnelStep } from "./steps";
 
 // Подписи шагов для владельца (auto-tasks-metrics-1 M07): по-русски и с
-// единицей счёта. «чел.» — первый раз у человека; планы, игры, сообщения и
-// «раз» — каждый раз у плана, игры или события.
-export type StepUnit = "игр" | "планов" | "раз" | "сообщ." | "чел.";
+// единицей счёта. «чел.» — первый раз у человека; «чел. в день» — раз в день
+// у человека (M06); планы, игры, сообщения и «раз» — каждый раз у плана, игры
+// или события.
+export type StepUnit =
+  "игр" | "планов" | "раз" | "сообщ." | "чел." | "чел. в день";
+
+// Строки таблицы «день × шаг» — шаги людей.
+const inTable = (step: FunnelStep) => {
+  const { unit } = STEP_LABELS[step];
+  return unit === "чел." || unit === "чел. в день";
+};
 
 export const STEP_LABELS: Record<
   FunnelStep,
@@ -45,6 +53,10 @@ export const STEP_LABELS: Record<
   envelope_opened: { label: "открыли письмо", unit: "чел." },
   ward_empty: { label: "у подопечного пусто", unit: "чел." },
   santa_bought: { label: "отметили «Купил»", unit: "чел." },
+  santa_bought_from_wishlist: {
+    label: "купили из вишлиста",
+    unit: "чел.",
+  },
   santa_drawn_group: { label: "разыграно игр", unit: "игр" },
   santa_drawn_with_namesakes: {
     label: "разыграно игр с тёзками",
@@ -56,6 +68,12 @@ export const STEP_LABELS: Record<
     unit: "раз",
   },
   notification_sent: { label: "бот отправил сообщений", unit: "сообщ." },
+  active_day: { label: "заходили (людей за день)", unit: "чел. в день" },
+  returned_d1: { label: "вернулись на другой день", unit: "чел." },
+  returned_d7: { label: "вернулись через неделю", unit: "чел." },
+  telegram_linked: { label: "привязали Telegram", unit: "чел." },
+  telegram_restored: { label: "вернули профиль (Telegram)", unit: "чел." },
+  profile_merged: { label: "пустой дубль при входе", unit: "чел." },
   first_swipe_feed: { label: "первый свайп из ленты", unit: "чел." },
   first_swipe_10s: { label: "из них за 10 секунд", unit: "чел." },
   swipes_20: { label: "прошли 20 карточек", unit: "чел." },
@@ -119,6 +137,7 @@ export const FUNNEL_SECTIONS: ReadonlyArray<{
       "envelope_opened",
       "ward_empty",
       "santa_bought",
+      "santa_bought_from_wishlist",
       "santa_drawn_group",
       "santa_drawn_with_namesakes",
       "santa_draw_failed",
@@ -126,6 +145,11 @@ export const FUNNEL_SECTIONS: ReadonlyArray<{
     ],
   },
   { title: "Бот", steps: ["notification_sent"] },
+  { title: "Возвраты", steps: ["active_day", "returned_d1", "returned_d7"] },
+  {
+    title: "Вход через Telegram",
+    steps: ["telegram_linked", "telegram_restored", "profile_merged"],
+  },
   {
     title: "Цели PRD",
     steps: [
@@ -170,6 +194,12 @@ export const FUNNEL_CONVERSIONS: [from: FunnelStep, to: FunnelStep][] = [
   ["santa_joined", "santa_member_wishlist"],
   ["envelope_opened", "ward_empty"],
   ["envelope_opened", "santa_bought"],
+  // M04: North Star пилота — купили то, что подопечный хотел.
+  ["santa_bought", "santa_bought_from_wishlist"],
+  // M06: возвращаются ли люди; M10: сколько привязали Telegram.
+  ["profile_created", "returned_d1"],
+  ["returned_d1", "returned_d7"],
+  ["profile_created", "telegram_linked"],
   // Q03: цели PRD. Знаменатель «за 10 секунд» — первый свайп из ленты (M07).
   ["first_swipe_feed", "first_swipe_10s"],
   ["first_swipe", "swipes_20"],
@@ -191,8 +221,14 @@ export const VIA_LABELS: Readonly<Record<string, string>> = {
   plan_invite: "по приглашению в план",
   pick_link: "по ссылке-фильтру",
 };
-export const viaLabel = (via: null | string) =>
-  via === null || via === "—" ? "не указано" : (VIA_LABELS[via] ?? "другое");
+// Удалённые профили периода (M02 п. 2): отдельной строкой, а не в «—» —
+// у строки удалённого created_via обнулён.
+export const DELETED_VIA = "deleted";
+export const viaLabel = (via: null | string) => {
+  if (via === null || via === "—") return "не указано";
+  if (via === DELETED_VIA) return "удалили профиль";
+  return VIA_LABELS[via] ?? "другое";
+};
 
 export type FunnelRow = { count: number; day: string; step: string };
 
@@ -211,6 +247,8 @@ export const dayStart = (day: string) => new Date(`${day}T00:00:00`);
 
 // Откуда пришли профили за период (Q01): users.created_via. Только
 // счётчики, без id. Свои профили команды и репетиции не в счёт (M01, M02).
+// Удалённые, чья строка осталась, — последней строкой DELETED_VIA (M02 п. 2);
+// удалённых физически не видно вовсе.
 export const readProfilesByVia = async (
   db: Database,
   days: number,
@@ -218,12 +256,21 @@ export const readProfilesByVia = async (
   sinceDay?: string,
 ): Promise<Array<{ count: number; via: string }>> => {
   const since = dayStart(firstDay(days, now, sinceDay));
+  const deleted = sql<boolean>`${users.deletedAt} is not null`;
   const rows = await db
-    .select({ via: users.createdVia, count: count() })
+    .select({ via: users.createdVia, deleted, count: count() })
     .from(users)
     .where(and(gte(users.createdAt, since), eq(users.funnelInternal, false)))
-    .groupBy(users.createdVia);
-  return rows.map((row) => ({ via: row.via ?? "—", count: row.count }));
+    .groupBy(users.createdVia, deleted);
+  const gone = rows
+    .filter((row) => row.deleted)
+    .reduce((sum, row) => sum + row.count, 0);
+  return [
+    ...rows
+      .filter((row) => !row.deleted)
+      .map((row) => ({ via: row.via ?? "—", count: row.count })),
+    ...(gone > 0 ? [{ via: DELETED_VIA, count: gone }] : []),
+  ];
 };
 
 export const readFunnel = async (
@@ -348,7 +395,7 @@ export const formatFunnel = (
       .reduce((sum, row) => sum + row.count, 0);
 
   const labelWidth = Math.max(
-    ...FUNNEL_STEPS.filter((step) => STEP_LABELS[step].unit === "чел.").map(
+    ...FUNNEL_STEPS.filter(inTable).map(
       (step) => STEP_LABELS[step].label.length,
     ),
   );
@@ -361,12 +408,8 @@ export const formatFunnel = (
     "Люди — первый раз у человека; планы, игры и сообщения — каждый раз.",
   ];
   for (const section of FUNNEL_SECTIONS) {
-    const people = section.steps.filter(
-      (step) => STEP_LABELS[step].unit === "чел.",
-    );
-    const things = section.steps.filter(
-      (step) => STEP_LABELS[step].unit !== "чел.",
-    );
+    const people = section.steps.filter(inTable);
+    const things = section.steps.filter((step) => !inTable(step));
     const conversions = FUNNEL_CONVERSIONS.filter(([, to]) =>
       section.steps.includes(to),
     );

@@ -1,8 +1,10 @@
 import { eq } from "drizzle-orm";
 import { toDateKey } from "@swipeit/core/format";
+import { createSeededRandom } from "@swipeit/core/logic/random";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { funnelDaily, users } from "../src/db/schema";
+import { funnelDaily, santaGames, users } from "../src/db/schema";
+import { makeFriends } from "../src/domains/friends/handlers";
 import {
   countCompanies,
   formatFunnel,
@@ -15,6 +17,8 @@ import {
   STEP_LABELS,
 } from "../src/domains/funnel/report";
 import { FUNNEL_STEPS } from "../src/domains/funnel/steps";
+import { createRecordingHub } from "../src/realtime/hub";
+import { runSchedulerOnce } from "../src/scheduler";
 import { NOW, testCatalog } from "./contract/client";
 import { createTestDb, resetDb } from "./db";
 import { createTestServer, makeClock, type TestUser } from "./server";
@@ -100,6 +104,8 @@ describe("воронка P09", () => {
       first_swipe_feed: 3,
       first_swipe_10s: 3,
       share_with_birthday: 1,
+      // M06: трое заходили в этот день — по одному разу, сколько бы запросов.
+      active_day: 3,
     });
     const rows = await database.db.select().from(funnelDaily);
     // День — по часам сервера, в момент действия.
@@ -170,6 +176,77 @@ describe("воронка P09", () => {
     expect(await readProfilesByVia(database.db, 14, NOW)).toEqual([
       { via: "feed", count: 1 },
     ]);
+  });
+
+  it("M02: удалённый профиль — строкой «удалили профиль», не в «не указано»; свой удалённый — нигде", async () => {
+    const created = async (via: string) => {
+      const body = (
+        await server.request(null, "POST", "/users", { via })
+      ).json() as { me: { id: string }; token: string };
+      return { id: body.me.id, token: body.token };
+    };
+    await created("feed");
+    const gone = await created("santa_invite");
+    const team = await created("santa_invite");
+    await database.db
+      .update(users)
+      .set({ funnelInternal: true })
+      .where(eq(users.id, team.id));
+    // Строка удалённого, на которого ещё ссылаются чужие итоги, — как её
+    // оставляет DELETE /me (delete.ts): без created_via, с deleted_at.
+    for (const member of [gone, team]) {
+      await database.db
+        .update(users)
+        .set({ createdVia: null, name: null, deletedAt: new Date(NOW) })
+        .where(eq(users.id, member.id));
+    }
+
+    const byVia = await readProfilesByVia(database.db, 14, NOW);
+    expect(byVia).toContainEqual({ via: "deleted", count: 1 });
+    expect(byVia.find((r) => r.via === "—")).toBeUndefined();
+    expect(byVia.find((r) => r.via === "santa_invite")).toBeUndefined();
+    const report = formatFunnel([], 14, byVia);
+    expect(report).toContain("удалили профиль: 1");
+    expect(report).not.toContain("не указано");
+  });
+
+  it("M02: вступил в игру новым профилем — santa_invite; свайп через 5 с не идёт в «за 10 секунд»", async () => {
+    const { products } = await testCatalog();
+    const clock = makeClock();
+    await server.close();
+    server = await createTestServer(database, clock);
+    const owner = await server.newUser({ name: "Айгерим" });
+    const game = (
+      await server.request(owner, "POST", "/santa", {
+        title: "Офис",
+        budget: 2000,
+        exchangeDate: "2026-12-25",
+        participantIds: [],
+      })
+    ).json() as { game: { id: string } };
+    const body = (
+      await server.request(null, "POST", "/users", { via: "santa_invite" })
+    ).json() as { me: { id: string }; token: string };
+    const colleague = { id: body.me.id, token: body.token };
+    await server.request(colleague, "PATCH", "/me", { name: "Азамат" });
+    await server.request(colleague, "POST", `/santa/${game.game.id}/join`);
+    clock.advance(5_000);
+    await swipe(colleague, products[0]?.id ?? "");
+
+    const [row] = await database.db
+      .select({ via: users.createdVia, steps: users.funnelSteps })
+      .from(users)
+      .where(eq(users.id, colleague.id));
+    expect(row?.via).toBe("santa_invite");
+    expect(row?.steps).toContain("santa_joined");
+    const counted = await counts();
+    expect(counted.first_swipe).toBe(1);
+    expect(counted.first_swipe_feed).toBeUndefined();
+    expect(counted.first_swipe_10s).toBeUndefined();
+    expect(await readProfilesByVia(database.db, 14, NOW)).toContainEqual({
+      via: "santa_invite",
+      count: 1,
+    });
   });
 
   it("Q01: владелец открыл свою ссылку — share_reached не ставится", async () => {
@@ -499,6 +576,220 @@ describe("воронка P09", () => {
   });
 });
 
+// M04: снимок готовности при жеребьёвке и «купил из вишлиста».
+describe("Санта M04", () => {
+  const snapshotOf = async (id: string) => {
+    const [row] = await database.db
+      .select({ snapshot: santaGames.drawSnapshot })
+      .from(santaGames)
+      .where(eq(santaGames.id, id));
+    return row?.snapshot;
+  };
+
+  // Игра на троих: у Азамата 3 желания в бюджете, у Нурай одно, у
+  // организатора пусто.
+  const gameOfThree = async () => {
+    const { products } = await testCatalog();
+    const cheap = products.filter((product) => product.priceMin <= 2000);
+    const owner = await server.newUser({ name: "Айгерим" });
+    const { game } = (
+      await server.request(owner, "POST", "/santa", {
+        title: "Офис",
+        budget: 2000,
+        exchangeDate: "2026-12-25",
+        participantIds: [],
+      })
+    ).json() as { game: { id: string } };
+    const azamat = await server.newUser({ name: "Азамат" });
+    const nurai = await server.newUser({ name: "Нурай" });
+    for (const member of [azamat, nurai]) {
+      await server.request(member, "POST", `/santa/${game.id}/join`);
+    }
+    for (const product of cheap.slice(0, 3)) await swipe(azamat, product.id);
+    await swipe(nurai, cheap[3]?.id ?? "");
+    return { id: game.id, people: [owner, azamat, nurai] };
+  };
+
+  it("жеребьёвка кнопкой пишет снимок — только числа; две жеребьёвки разом — одна", async () => {
+    const { id, people } = await gameOfThree();
+    const [owner] = people as [TestUser];
+    const statuses = (
+      await Promise.all([
+        server.request(owner, "POST", `/santa/${id}/draw`),
+        server.request(owner, "POST", `/santa/${id}/draw`),
+      ])
+    ).map((response) => response.statusCode);
+    expect(statuses.sort()).toEqual([200, 409]);
+    const snapshot = await snapshotOf(id);
+    expect(snapshot).toEqual({
+      members: 3,
+      invitedDropped: 0,
+      withWishlist: 2,
+      enoughInBudget: 1,
+    });
+    expect(Object.keys(snapshot as object).sort()).toEqual([
+      "enoughInBudget",
+      "invitedDropped",
+      "members",
+      "withWishlist",
+    ]);
+    expect(
+      Object.values(snapshot as object).every((v) => typeof v === "number"),
+    ).toBe(true);
+    expect((await counts()).santa_drawn_group).toBe(1);
+  });
+
+  it("«Купил» желанием — оба шага; «Другое» — только santa_bought; сменил покупку — не заново", async () => {
+    const { id, people } = await gameOfThree();
+    const [owner] = people as [TestUser];
+    await server.request(owner, "POST", `/santa/${id}/draw`);
+    type View = {
+      me: { ward: null | { wishlist: Array<{ key: string }> } };
+    };
+    // Кому кто достался, знают только Санты — смотрим письма всех.
+    const wishful: Array<{ keys: string[]; santa: TestUser }> = [];
+    const empty: TestUser[] = [];
+    for (const person of people) {
+      const view = (
+        await server.request(person, "POST", `/santa/${id}/open`)
+      ).json() as View;
+      const keys = (view.me.ward?.wishlist ?? []).map((item) => item.key);
+      if (keys.length > 0) wishful.push({ santa: person, keys });
+      else empty.push(person);
+    }
+    // Первым — тот, у чьего подопечного есть из чего сменить покупку.
+    const [first, second] = wishful.sort(
+      (a, b) => b.keys.length - a.keys.length,
+    );
+    if (!first || !second || !empty[0]) throw new Error("пары без желаний");
+
+    // Купил желание, потом сменил на другое — шаг один.
+    await server.request(first.santa, "POST", `/santa/${id}/bought`, {
+      bought: true,
+      itemKey: first.keys[0],
+    });
+    if (first.keys[1]) {
+      await server.request(first.santa, "POST", `/santa/${id}/bought`, {
+        bought: true,
+        itemKey: first.keys[1],
+      });
+    }
+    // Второй — «Другое», третий тоже «Другое».
+    await server.request(second.santa, "POST", `/santa/${id}/bought`, {
+      bought: true,
+    });
+    await server.request(empty[0], "POST", `/santa/${id}/bought`, {
+      bought: true,
+    });
+    const counted = await counts();
+    expect(counted.santa_bought).toBe(3);
+    expect(counted.santa_bought_from_wishlist).toBe(1);
+  });
+
+  it("жеребьёвка по дате пишет снимок; позванный и не вступивший — в invitedDropped", async () => {
+    const owner = await server.newUser({ name: "Айгерим" });
+    const invited: TestUser[] = [];
+    for (const name of ["Азамат", "Нурай", "Бакыт"]) {
+      const friend = await server.newUser({ name });
+      await database.db.transaction((tx) =>
+        makeFriends(tx, owner.id, friend.id, "plan", { now: () => NOW }),
+      );
+      invited.push(friend);
+    }
+    const { game } = (
+      await server.request(owner, "POST", "/santa", {
+        title: "Офис",
+        budget: 2000,
+        exchangeDate: "2026-12-25",
+        drawMode: "date",
+        drawAt: new Date(NOW + 3600_000).toISOString(),
+        participantIds: invited.map((friend) => friend.id),
+      })
+    ).json() as { game: { id: string } };
+    for (const friend of invited.slice(0, 2)) {
+      await server.request(friend, "POST", `/santa/${game.id}/join`);
+    }
+    const clock = { now: () => NOW + 2 * 3600_000 };
+    const result = await runSchedulerOnce({
+      db: database,
+      catalog: await testCatalog(),
+      clock,
+      random: createSeededRandom("m04"),
+      hub: createRecordingHub(),
+      log: server.app.log,
+    });
+    expect(result.drawn).toEqual([game.id]);
+    expect(await snapshotOf(game.id)).toEqual({
+      members: 3,
+      invitedDropped: 1,
+      withWishlist: 0,
+      enoughInBudget: 0,
+    });
+  });
+});
+
+// M06: возвраты — разные люди за день, без id.
+describe("возвраты M06", () => {
+  const activeByDay = async () =>
+    Object.fromEntries(
+      (
+        await database.db
+          .select()
+          .from(funnelDaily)
+          .where(eq(funnelDaily.step, "active_day"))
+      ).map((row) => [row.day, row.count]),
+    );
+
+  it("23:59 и 00:01 по Бишкеку — два дня; два захода в день — один; через 7 дней — returned_d7", async () => {
+    // 28.11 23:59 по Бишкеку.
+    const clock = makeClock(Date.UTC(2026, 10, 28, 17, 59));
+    await server.close();
+    server = await createTestServer(database, clock);
+    const user = await server.newUser();
+    await server.request(user, "GET", "/me");
+    await server.request(user, "GET", "/me");
+    expect(await activeByDay()).toEqual({ "2026-11-28": 1 });
+    expect((await counts()).returned_d1).toBeUndefined();
+
+    clock.advance(2 * 60_000);
+    await server.request(user, "GET", "/me");
+    await server.request(user, "GET", "/me");
+    expect(await activeByDay()).toEqual({
+      "2026-11-28": 1,
+      "2026-11-29": 1,
+    });
+    expect((await counts()).returned_d1).toBe(1);
+    expect((await counts()).returned_d7).toBeUndefined();
+
+    clock.advance(7 * 24 * 3600_000);
+    await server.request(user, "GET", "/me");
+    clock.advance(24 * 3600_000);
+    await server.request(user, "GET", "/me");
+    const counted = await counts();
+    expect(counted.returned_d1).toBe(1);
+    expect(counted.returned_d7).toBe(1);
+    expect(Object.values(await activeByDay())).toEqual([1, 1, 1, 1]);
+    // В счётчиках — только день, шаг и число.
+    const [row] = await database.db.select().from(funnelDaily).limit(1);
+    expect(Object.keys(row ?? {}).sort()).toEqual(["count", "day", "step"]);
+  });
+
+  it("свой профиль не считается", async () => {
+    const team = await server.newUser();
+    await database.db
+      .update(users)
+      .set({ funnelInternal: true })
+      .where(eq(users.id, team.id));
+    await server.request(team, "GET", "/me");
+    expect(await activeByDay()).toEqual({});
+    const [row] = await database.db
+      .select({ day: users.lastActiveDay })
+      .from(users)
+      .where(eq(users.id, team.id));
+    expect(row?.day).toBeNull();
+  });
+});
+
 // M07: русские подписи, разделы и честные знаменатели.
 describe("отчёт воронки M07", () => {
   const deadlinePlan = (owner: TestUser) =>
@@ -712,6 +1003,7 @@ describe("отчёт воронки M07", () => {
         открыли письмо                   0      2      2  (envelope_opened)
         у подопечного пусто              0      0      0  (ward_empty)
         отметили «Купил»                 0      0      0  (santa_bought)
+        купили из вишлиста               0      0      0  (santa_bought_from_wishlist)
         разыграно игр: 1  (santa_drawn_group)
         разыграно игр с тёзками: 0  (santa_drawn_with_namesakes)
         жеребьёвка по дате не прошла: 0 раз  (santa_draw_failed)
@@ -719,9 +1011,25 @@ describe("отчёт воронки M07", () => {
         вступили в игру → собрали 3+ желания: 0% (0 из 4)
         открыли письмо → у подопечного пусто: 0% (0 из 2)
         открыли письмо → отметили «Купил»: 0% (0 из 2)
+        отметили «Купил» → купили из вишлиста: — (0 из 0)
 
       Бот
         бот отправил сообщений: 0  (notification_sent)
+
+      Возвраты
+                                     27.11  28.11  всего
+        заходили (людей за день)         0      0      0  (active_day)
+        вернулись на другой день         0      0      0  (returned_d1)
+        вернулись через неделю           0      0      0  (returned_d7)
+        новые профили → вернулись на другой день: 0% (0 из 5)
+        вернулись на другой день → вернулись через неделю: — (0 из 0)
+
+      Вход через Telegram
+                                     27.11  28.11  всего
+        привязали Telegram               0      0      0  (telegram_linked)
+        вернули профиль (Telegram)       0      0      0  (telegram_restored)
+        пустой дубль при входе           0      0      0  (profile_merged)
+        новые профили → привязали Telegram: 0% (0 из 5)
 
       Цели PRD
                                      27.11  28.11  всего

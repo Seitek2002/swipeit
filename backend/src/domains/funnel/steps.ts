@@ -56,6 +56,19 @@ export const FUNNEL_STEPS = [
   "santa_drawn_with_namesakes",
   // S10: бот отправил уведомление — только число, без текста и адресата.
   "notification_sent",
+  // M04: Санта отметил «Купил» желанием из вишлиста подопечного, не «Другое».
+  "santa_bought_from_wishlist",
+  // M06: заходил в этот день — +1 за каждый день человека (разные люди за
+  // день); вернулся на следующий день и позже, через 7 дней и позже.
+  "active_day",
+  "returned_d1",
+  "returned_d7",
+  // M10: привязал Telegram к своему профилю; вошёл в уже привязанный с
+  // другого телефона или после «Сессия закончилась»; профиль телефона, пустой,
+  // остался брошенным при таком входе (дубль).
+  "telegram_linked",
+  "telegram_restored",
+  "profile_merged",
   // R09: шаги клиента — POST /me/funnel.
   ...CLIENT_FUNNEL_STEPS,
 ] as const;
@@ -189,4 +202,33 @@ export const hasStep = async (tx: Tx, userId: string, step: FunnelStep) => {
     .where(and(eq(users.id, userId), sql`${step} = any(${users.funnelSteps})`))
     .limit(1);
   return Boolean(row);
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Человек зашёл (M06): первый заход за день по Бишкеку — +1 к active_day,
+// так в funnel_daily получается число разных людей за день без id. Первый
+// заход на следующий день после создания и позже — returned_d1, через 7
+// дней и позже — returned_d7, раз на человека. Свой профиль не считаем.
+// Гонка двух запросов в полночь: второй update не найдёт строку.
+export const touchActiveDay = async (tx: Tx, userId: string, now: number) => {
+  const today = toDateKey(now);
+  const [row] = await tx
+    .update(users)
+    .set({ lastActiveDay: today })
+    .where(
+      and(
+        eq(users.id, userId),
+        eq(users.funnelInternal, false),
+        sql`${users.lastActiveDay} is distinct from ${today}::date`,
+      ),
+    )
+    .returning({ createdAt: users.createdAt });
+  if (!row) return;
+  await countDay(tx, "active_day", now);
+  const days =
+    (Date.parse(today) - Date.parse(toDateKey(row.createdAt.getTime()))) /
+    DAY_MS;
+  if (days >= 1) await reachStep(tx, userId, "returned_d1", now);
+  if (days >= 7) await reachStep(tx, userId, "returned_d7", now);
 };

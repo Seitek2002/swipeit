@@ -82,6 +82,9 @@ export const users = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'`),
+    // Последний день по Бишкеку, когда человек заходил (M06): сменился —
+    // +1 к active_day в funnel_daily. Только день, не время.
+    lastActiveDay: date("last_active_day"),
   },
   () => [
     check("users_birthday_format", monthDay("birthday")),
@@ -510,6 +513,9 @@ export const santaGames = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'`),
+    // Снимок готовности при жеребьёвке (M04): только числа — members,
+    // invitedDropped, withWishlist, enoughInBudget. Пишется один раз.
+    drawSnapshot: jsonb("draw_snapshot"),
     createdAt: createdAt(),
     // Порядок создания: «новые сверху» при равном времени (B11).
     seq: bigserial("seq", { mode: "number" }).notNull(),

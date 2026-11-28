@@ -1,3 +1,4 @@
+import { toDateKey } from "@swipeit/core/format";
 import { and, eq, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { createHash, randomBytes } from "node:crypto";
@@ -5,6 +6,7 @@ import { createHash, randomBytes } from "node:crypto";
 import type { Clock, Tx } from "../context";
 import type { Database } from "../db/client";
 import { sessions, users } from "../db/schema";
+import { touchActiveDay } from "../domains/funnel/steps";
 
 // Сессии (BACKEND.md §3.2): токен — 32 случайных байта в base64url, в базе —
 // только SHA-256 от него. Не пользовались 180 дней — закрыта; last_used_at
@@ -53,6 +55,7 @@ export const resolveSession = async (
       userId: sessions.userId,
       lastUsedAt: sessions.lastUsedAt,
       internal: users.funnelInternal,
+      lastActiveDay: users.lastActiveDay,
     })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
@@ -79,6 +82,11 @@ export const resolveSession = async (
       .update(sessions)
       .set({ lastUsedAt: new Date(now) })
       .where(eq(sessions.id, row.id));
+  }
+  // Возвраты (M06): день сменился — отдельная короткая транзакция, до
+  // транзакции запроса. Чаще раза в день на человека сюда не попадаем.
+  if (!row.internal && row.lastActiveDay !== toDateKey(now)) {
+    await db.transaction((tx) => touchActiveDay(tx, row.userId, now));
   }
   return { sessionId: row.id, userId: row.userId, internal: row.internal };
 };
