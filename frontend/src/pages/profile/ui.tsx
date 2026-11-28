@@ -30,6 +30,7 @@ import {
   useReturnToOwnUser,
   useUpdateMe,
 } from "@/entities/user";
+import { useGivingCount } from "@/entities/wishlist";
 
 import {
   AUDIENCES,
@@ -146,6 +147,8 @@ const ProfileForm = ({ user }: { user: User }) => {
   const isDirty = !sameDraft(draft, saved);
   const hasErrors = Object.keys(errors).length > 0;
   const friendCount = friends.data?.length ?? 0;
+  // «· я дарю 1» у ссылки «Друзья» (W04): там раздел «Я дарю».
+  const giving = useGivingCount();
 
   const update = (patch: Partial<ProfileDraft>) =>
     setDraft((current) => ({ ...current, ...patch }));
@@ -226,9 +229,15 @@ const ProfileForm = ({ user }: { user: User }) => {
           className="border-line flex min-h-14 items-center gap-3 border-b"
         >
           <span className="text-body text-paper flex-1">Друзья</span>
-          {friendCount > 0 && (
+          {(friendCount > 0 || giving > 0) && (
             <span className="text-caption text-rose">
-              {friendCount} {plural(friendCount, ["друг", "друга", "друзей"])}
+              {[
+                friendCount > 0 &&
+                  `${friendCount} ${plural(friendCount, ["друг", "друга", "друзей"])}`,
+                giving > 0 && `я дарю ${giving}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           )}
           <ChevronRight

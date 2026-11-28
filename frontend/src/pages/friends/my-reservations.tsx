@@ -1,7 +1,13 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Gift } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { CalendarPlus, ExternalLink, Gift } from "lucide-react";
+
+import {
+  buildIcs,
+  downloadIcs,
+  giftReminderDay,
+} from "@/features/calendar-export";
 
 import {
   cheapestOffer,
@@ -9,16 +15,16 @@ import {
   storeLabel,
   useProduct,
 } from "@/entities/product";
+import { useMyReservations } from "@/entities/wishlist";
 
 import {
   type MyReservation,
   createReservation,
   deleteReservation,
-  getMyReservations,
   reservationKeys,
 } from "@/shared/api";
 import { withBasePath } from "@/shared/lib/base-path";
-import { useMounted } from "@/shared/lib/dom";
+import { clock } from "@/shared/lib/clock";
 import { occasionLabel } from "@/shared/lib/format";
 import { Button, toast } from "@/shared/ui";
 
@@ -93,6 +99,37 @@ const ReservationRow = ({
                 <ExternalLink aria-hidden size={16} strokeWidth={2} />
               </a>
             )}
+            {reservation.occasion?.date && (
+              // «Напомнить в календаре» и здесь (W04): за покупкой
+              // возвращаются через неделю — сюда, а не к брони у друга.
+              <button
+                type="button"
+                onClick={() => {
+                  const now = clock.now();
+                  const date = reservation.occasion?.date ?? "";
+                  downloadIcs(
+                    "swipeit-gift.ics",
+                    buildIcs(
+                      {
+                        uid: `gift-${reservation.id}-${now}`,
+                        title: `Купить подарок: ${title} (вишлист: ${reservation.owner.name})`,
+                        start: giftReminderDay(date, now),
+                        allDay: true,
+                        durationMinutes: 60,
+                        description: buy
+                          ? `Где купить: ${buy.href}`
+                          : "Подарок из вишлиста",
+                      },
+                      now,
+                    ),
+                  );
+                }}
+                className="text-rose flex min-h-11 items-center gap-1.5 text-[15px] leading-5 font-semibold"
+              >
+                <CalendarPlus aria-hidden size={16} strokeWidth={2} />
+                Напомнить в календаре
+              </button>
+            )}
             <Button
               size="sm"
               variant="ghost"
@@ -113,13 +150,8 @@ const ReservationRow = ({
 // ближайший повод сверху, «Уже подарено» внизу приглушённо. Нет броней —
 // раздела нет.
 export const MyReservations = () => {
-  const mounted = useMounted();
   const queryClient = useQueryClient();
-  const query = useQuery({
-    queryKey: reservationKeys.mine(),
-    queryFn: () => getMyReservations(),
-    enabled: mounted,
-  });
+  const query = useMyReservations();
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: reservationKeys.all });
@@ -152,7 +184,11 @@ export const MyReservations = () => {
   if (list.length === 0) return null;
 
   return (
-    <section className="mt-5 px-5" aria-labelledby="my-reservations-title">
+    <section
+      id="giving"
+      className="mt-5 scroll-mt-4 px-5"
+      aria-labelledby="my-reservations-title"
+    >
       <h2 id="my-reservations-title" className="text-label">
         Я дарю
       </h2>

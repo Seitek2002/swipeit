@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { Plus, Share2 } from "lucide-react";
+import { ChevronRight, Gift, Plus, Share2 } from "lucide-react";
 import { Reorder } from "motion/react";
 
 import { AppHeader } from "@/widgets/app-header";
@@ -34,7 +34,11 @@ import { WishlistShareSheet } from "@/features/wishlist-share";
 
 import type { Product } from "@/entities/product";
 import { useFriends } from "@/entities/user";
-import { type WishlistItem, useMyWishlist } from "@/entities/wishlist";
+import {
+  type WishlistItem,
+  useGivingCount,
+  useMyWishlist,
+} from "@/entities/wishlist";
 
 import type { Occasion } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
@@ -83,6 +87,7 @@ export const WishlistPage = () => {
   const restoreItem = useRestoreItem();
 
   const [tab, setTab] = useState<Tab>("want");
+  const giving = useGivingCount();
   const [sheet, setSheet] = useState<null | Sheet>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -258,6 +263,18 @@ export const WishlistPage = () => {
             { value: "given", label: `Подарили ${given.length}` },
           ]}
         />
+        {giving > 0 && (
+          // Свои брони у друзей — на виду (W04): кто вернётся через неделю
+          // купить подарок, иначе искал бы их в «Профиль → Друзья».
+          <Link
+            href={`${ROUTES.FRIENDS}#giving`}
+            className="text-caption text-rose mx-5 mt-3 flex min-h-11 items-center gap-1.5"
+          >
+            <Gift aria-hidden size={16} strokeWidth={1.75} />Я дарю:{" "}
+            {pluralize(giving, ["подарок", "подарка", "подарков"])}
+            <ChevronRight aria-hidden size={16} strokeWidth={1.75} />
+          </Link>
+        )}
 
         {(isLoading || (data && waitingFriends)) && (
           <div className="flex flex-col gap-2.5 px-5 pt-4">

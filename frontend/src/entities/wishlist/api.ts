@@ -2,7 +2,13 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { getMyWishlist, getUserWishlist, wishlistKeys } from "@/shared/api";
+import {
+  getMyReservations,
+  getMyWishlist,
+  getUserWishlist,
+  reservationKeys,
+  wishlistKeys,
+} from "@/shared/api";
 import { useMounted } from "@/shared/lib/dom";
 import { useSessionStore } from "@/shared/store";
 
@@ -15,6 +21,22 @@ export const useMyWishlist = () => {
     enabled: mounted && Boolean(userId),
   });
 };
+
+// Мои брони у друзей — «Я дарю» (auto-tasks P02). Один запрос и кэш на
+// раздел в «Друзьях», строку на «Вишлисте» и счётчик в профиле (W04).
+export const useMyReservations = () => {
+  const mounted = useMounted();
+  const userId = useSessionStore((state) => state.activeUserId);
+  return useQuery({
+    queryKey: reservationKeys.mine(),
+    queryFn: () => getMyReservations(),
+    enabled: mounted && Boolean(userId),
+  });
+};
+
+// Сколько подарков я ещё дарю: открытые брони.
+export const useGivingCount = () =>
+  (useMyReservations().data ?? []).filter((item) => !item.closed).length;
 
 // Сводка для ленты прогресса и бейджа таба «Вишлист».
 export const useWishlistSummary = () => {
