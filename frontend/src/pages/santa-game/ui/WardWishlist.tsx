@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ExternalLink, Gift, Star } from "lucide-react";
 
 import { ProductDetailsSheet } from "@/features/product-details";
@@ -16,9 +17,13 @@ import {
 } from "@/entities/product";
 import type { SantaWardItem } from "@/entities/santa-game";
 
+import { EMPTY_FILTERS, catalogKeys, getFeed } from "@/shared/api";
 import { withBasePath } from "@/shared/lib/base-path";
 import { formatPrice } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
+import { Skeleton } from "@/shared/ui";
+
+import { needsSantaIdeas, santaIdeas } from "../model/ideas";
 
 type OpenDetails = (product: Product, choice?: Record<string, string>) => void;
 
@@ -116,10 +121,76 @@ const WardRow = ({
 
 // Вишлист подопечного (DESIGN.md §8.8): сначала то, что в бюджете игры;
 // дороже бюджета — свёрнуто под «Дороже бюджета: 4».
+// Идеи из каталога в бюджете игры (P05): лента без записи свайпов, с
+// запасом — чтобы набрать 6 из разных категорий.
+const useSantaIdeas = (budget: number, enabled: boolean) =>
+  useQuery({
+    queryKey: catalogKeys.feed("santa-ideas", {
+      ...EMPTY_FILTERS,
+      budget: { min: 0, max: budget },
+    }),
+    queryFn: () =>
+      getFeed({
+        filters: { ...EMPTY_FILTERS, budget: { min: 0, max: budget } },
+        context: "self",
+        limit: 30,
+      }),
+    enabled,
+    staleTime: Infinity,
+  });
+
+// Идея — в виде строки вишлиста подопечного, но без звезды и заметки.
+const ideaItem = (product: Product): SantaWardItem => ({
+  key: product.id,
+  productId: product.id,
+  priority: "normal",
+  overBudget: false,
+  priceMin: product.priceMin,
+  priceMax: product.priceMax,
+});
+
+const SantaIdeas = ({
+  budget,
+  name,
+  empty,
+  exclude,
+  onOpen,
+}: {
+  budget: number;
+  empty: boolean;
+  exclude: ReadonlySet<string>;
+  name: string;
+  onOpen: OpenDetails;
+}) => {
+  const feed = useSantaIdeas(budget, true);
+  const ideas = santaIdeas(feed.data?.items ?? [], budget, exclude);
+  if (feed.isPending) {
+    return <Skeleton tone="paper" className="h-20 rounded-[18px]" />;
+  }
+  if (ideas.length === 0) return null;
+  return (
+    <section aria-label="Идеи в бюджете" className="flex flex-col gap-3">
+      <h2 className="text-label">Идеи до {formatPrice(budget)}</h2>
+      <p className="text-caption text-rose -mt-1.5">
+        {empty
+          ? `Вишлист пока пустой (${name}) — вот что есть в бюджете игры`
+          : "В бюджете мало желаний — вот ещё идеи из каталога"}
+      </p>
+      <ul className="flex flex-col gap-3">
+        {ideas.map((product) => (
+          <WardRow key={product.id} item={ideaItem(product)} onOpen={onOpen} />
+        ))}
+      </ul>
+    </section>
+  );
+};
+
 export const WardWishlist = ({
   items,
   name,
+  budget,
 }: {
+  budget: number;
   items: SantaWardItem[];
   name: string;
 }) => {
@@ -133,12 +204,31 @@ export const WardWishlist = ({
   const inBudget = items.filter((item) => !item.overBudget);
   const overBudget = items.filter((item) => item.overBudget);
 
+  // Меньше трёх желаний в бюджете — идеи из каталога (P05).
+  const showIdeas = needsSantaIdeas(inBudget.length);
+  const wishlistProductIds = new Set(
+    items.flatMap((item) => (item.productId ? [item.productId] : [])),
+  );
+  const ideasBlock = showIdeas && (
+    <SantaIdeas
+      budget={budget}
+      name={name}
+      empty={items.length === 0}
+      exclude={wishlistProductIds}
+      onOpen={open}
+    />
+  );
+
   if (items.length === 0) {
     return (
-      <p className="text-body text-rose">
-        У {name} пока пустой вишлист. Загляни позже — или подари что-то на свой
-        вкус в рамках бюджета.
-      </p>
+      <div className="flex flex-col gap-5">
+        {ideasBlock}
+        <ProductDetailsSheet
+          product={details?.product ?? null}
+          choice={details?.choice}
+          onClose={() => setDetails(null)}
+        />
+      </div>
     );
   }
 
@@ -180,6 +270,7 @@ export const WardWishlist = ({
           )}
         </>
       )}
+      {ideasBlock}
       <ProductDetailsSheet
         product={details?.product ?? null}
         choice={details?.choice}

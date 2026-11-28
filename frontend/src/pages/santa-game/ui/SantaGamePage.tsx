@@ -291,7 +291,11 @@ const GameContent = () => {
 
       {envelope === "opened" && ward && (
         <>
-          <WardWishlist items={ward.wishlist} name={ward.name} />
+          <WardWishlist
+            items={ward.wishlist}
+            name={ward.name}
+            budget={view.game.budget}
+          />
           {view.me?.bought ? (
             <p className="text-caption text-mint inline-flex items-center justify-center gap-1.5">
               <Check aria-hidden size={16} strokeWidth={2.25} />

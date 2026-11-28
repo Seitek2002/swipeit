@@ -188,6 +188,27 @@ describe.each(CLIENTS)("лента и свайпы — %s", (_name, create) => {
     });
   });
 
+  it("идеи для Санты (P05): лента с бюджетом только читает — вишлист и вкус не меняются", async () => {
+    const page = await feed({
+      filters: JSON.stringify({
+        budget: { min: 0, max: 2000 },
+        categories: [],
+        marketplaces: [],
+      }),
+      limit: 30,
+    });
+    expect(page.items.length).toBeGreaterThan(0);
+    expect(page.items.every((p) => p.priceMin <= 2000)).toBe(true);
+    const me1 = await profile();
+    expect(me1.taste).toBeUndefined();
+    const wishlist = await api.call<{ items: unknown[]; wishCount: number }>(
+      me,
+      "GET",
+      "/wishlist",
+    );
+    expect(wishlist).toMatchObject({ items: [], wishCount: 0 });
+  });
+
   it("товар, магазины, meta и занятия — без профиля", async () => {
     const product = products[0];
     expect(
