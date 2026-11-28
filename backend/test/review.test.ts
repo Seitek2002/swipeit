@@ -2,7 +2,7 @@ import { createSeededRandom } from "@swipeit/core/logic/random";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../src/app";
-import { loadConfig } from "../src/config";
+import { testConfig } from "./config";
 import { createEventHub, createRecordingHub } from "../src/realtime/hub";
 import { NOW, testCatalog } from "./contract/client";
 import { createTestDb, resetDb } from "./db";
@@ -24,7 +24,7 @@ describe("R4: хаб событий не копит память", () => {
     expect("delivered" in createEventHub()).toBe(false);
     const hub = createRecordingHub();
     const app = buildApp({
-      config: loadConfig({ LOG_LEVEL: "silent" }),
+      config: testConfig(),
       db: database,
       catalog: await testCatalog(),
       clock: { now: () => NOW },

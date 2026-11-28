@@ -7,7 +7,7 @@ import sharp from "sharp";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../src/app";
-import { loadConfig } from "../src/config";
+import { testConfig } from "./config";
 import { NOW, testCatalog } from "./contract/client";
 import { createTestDb, resetDb } from "./db";
 
@@ -22,7 +22,7 @@ beforeEach(async () => {
   await resetDb(database);
   dir = await mkdtemp(path.join(tmpdir(), "swipeit-uploads-"));
   app = buildApp({
-    config: loadConfig({ LOG_LEVEL: "silent", UPLOADS_DIR: dir }),
+    config: testConfig({ UPLOADS_DIR: dir }),
     db: database,
     catalog: await testCatalog(),
     clock: { now: () => NOW },

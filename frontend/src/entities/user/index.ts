@@ -1,8 +1,11 @@
 export {
+  startAnonymousAgain,
   useCreateUser,
+  useDeleteMe,
   useFriends,
   readOwnUserId,
   useLoginDemo,
+  useLogout,
   useMe,
   useReturnToOwnUser,
   usePresence,

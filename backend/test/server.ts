@@ -4,7 +4,7 @@ import type { MeResponse } from "@swipeit/core/api/users/types";
 import { createSeededRandom } from "@swipeit/core/logic/random";
 
 import { buildApp } from "../src/app";
-import { loadConfig } from "../src/config";
+import { testConfig } from "./config";
 import type { Db } from "../src/db/client";
 import { NOW, testCatalog } from "./contract/client";
 
@@ -21,7 +21,7 @@ export const createTestServer = async (
   clock: { now: () => number } = { now: () => NOW },
 ) => {
   const app = buildApp({
-    config: loadConfig({ LOG_LEVEL: "silent" }),
+    config: testConfig(),
     db: database,
     catalog: await testCatalog(),
     clock,

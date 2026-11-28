@@ -569,7 +569,8 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
         expect(wards[first.id]).not.toBe(second.id);
         expect(wards[second.id]).not.toBe(first.id);
       }
-    });
+      // 20 жеребьёвок на сервере — дольше 5 с по умолчанию.
+    }, 60_000);
 
     it("R03: невозможные исключения — CONFLICT, игра не изменилась", async () => {
       const { owner, azamat, nurai, id } = await gathered();

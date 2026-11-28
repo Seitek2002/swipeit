@@ -95,7 +95,7 @@ let clock: ReturnType<typeof createFixedClock>;
 let db: ReturnType<typeof createMemoryDb>;
 
 const call = <T>(
-  method: "GET" | "PATCH" | "POST",
+  method: "DELETE" | "GET" | "PATCH" | "POST",
   path: string,
   userId: null | string,
   body?: unknown,
@@ -390,14 +390,64 @@ describe("правка до жеребьёвки", () => {
     });
   });
 
-  it("после жеребьёвки менять нельзя", async () => {
+  it("R03: после жеребьёвки — только дата обмена", async () => {
     const drawn = await drawnGame();
     await expect(
       call("PATCH", gamePath(drawn.game.id), DEMO_USER_ID, { budget: 1000 }),
     ).rejects.toMatchObject({
       code: "CONFLICT",
-      message: "Жеребьёвка уже прошла — менять игру нельзя",
+      message: "Жеребьёвка уже прошла — менять можно только дату обмена",
     });
+    const moved = await call<SantaView>(
+      "PATCH",
+      gamePath(drawn.game.id),
+      DEMO_USER_ID,
+      { exchangeDate: "2026-12-27" },
+    );
+    expect(moved.game).toMatchObject({
+      exchangeDate: "2026-12-27",
+      budget: GAME.budget,
+      status: "drawn",
+    });
+    // Пары те же.
+    expect(moved.me?.ward?.id).toBe(drawn.me?.ward?.id);
+  });
+
+  it("R03: исключение между вступившими по ссылке — 20 жеребьёвок без этой пары", async () => {
+    const first = await newUser("Бакыт");
+    const second = await newUser("Алина");
+    for (let run = 0; run < 20; run += 1) {
+      const { game } = await createGame({ participantIds: ["u_azamat"] });
+      for (const userId of ["u_azamat", first.id, second.id]) {
+        await call("POST", gamePath(game.id, "/join"), userId);
+      }
+      await call("PATCH", gamePath(game.id), DEMO_USER_ID, {
+        exclusions: [[first.id, second.id]],
+      });
+      await call("POST", gamePath(game.id, "/draw"), DEMO_USER_ID);
+      const pairs = db.snapshot()?.santaGames[game.id]?.assignments ?? {};
+      expect(Object.keys(pairs)).toHaveLength(4);
+      expect(pairs[first.id]).not.toBe(second.id);
+      expect(pairs[second.id]).not.toBe(first.id);
+    }
+  });
+
+  it("R03: бюджет или дата обмена — тост людям-участникам, не организатору и не ботам", async () => {
+    const guest = await newUser("Бакыт");
+    const { game } = await createGame();
+    await joinAll(game.id, ["u_azamat", guest.id]);
+    const toasts = () => bus.events.filter((event) => event.type === "toast");
+    bus.events.length = 0;
+    await call("PATCH", gamePath(game.id), DEMO_USER_ID, { title: "Офис" });
+    expect(toasts()).toEqual([]);
+    await call("PATCH", gamePath(game.id), DEMO_USER_ID, { budget: 3000 });
+    expect(toasts()).toEqual([
+      {
+        type: "toast",
+        text: "Организатор изменил условия «Офис»: бюджет 3 000 сом, обмен 28 декабря",
+        forUserId: guest.id,
+      },
+    ]);
   });
 });
 
@@ -620,31 +670,94 @@ describe("жеребьёвка по дате (POST /santa/tick)", () => {
     });
   });
 
-  it("провести нельзя — игра ждёт организатора, ничего не записано", async () => {
+  it("R08: провести нельзя — одна отметка и один тост за 10 проходов, вступил третий — жеребьёвка", async () => {
     const drawAt = new Date(NOW + HOUR).toISOString();
     const { game } = await createGame({ drawMode: "date", drawAt });
     await joinAll(game.id, ["u_azamat"]);
     clock.advance(2 * HOUR);
-    const before = structuredClone(db.snapshot()?.santaGames[game.id]);
-    const result = await call<SantaTickResult>("POST", "/santa/tick", null);
-    expect(result).toEqual({
-      drawn: [],
-      failed: [
-        {
-          id: game.id,
-          reason: "Нужно хотя бы 3 участника — позови ещё друзей",
-        },
-      ],
+    bus.events.length = 0;
+    const reason = "Нужно хотя бы 3 участника — позови ещё друзей";
+    const first = await call<SantaTickResult>("POST", "/santa/tick", null);
+    expect(first).toEqual({ drawn: [], failed: [{ id: game.id, reason }] });
+    for (let pass = 0; pass < 9; pass += 1) {
+      clock.advance(15_000);
+      expect(await call<SantaTickResult>("POST", "/santa/tick", null)).toEqual({
+        drawn: [],
+        failed: [],
+      });
+    }
+    const stored = db.snapshot()?.santaGames[game.id];
+    expect(stored?.status).toBe("gathering");
+    expect(stored?.assignments).toBeUndefined();
+    expect(stored?.drawFailed).toEqual({
+      at: new Date(NOW + 2 * HOUR).toISOString(),
+      reason,
     });
-    expect(db.snapshot()?.santaGames[game.id]).toEqual(before);
-    // Организатор может провести вручную, когда вступят остальные.
-    await joinAll(game.id, ["u_nurai"]);
-    const view = await call<SantaView>(
+    expect(bus.events.filter((event) => event.type === "toast")).toEqual([
+      {
+        type: "toast",
+        text: `Жеребьёвка по дате в «${GAME.title}» не прошла: ${reason}`,
+        forUserId: DEMO_USER_ID,
+      },
+    ]);
+    // Отметку видят все участники; пар нет ни у кого.
+    for (const userId of [DEMO_USER_ID, "u_azamat"]) {
+      const view = await call<SantaView>("GET", gamePath(game.id), userId);
+      expect(view.drawFailed).toEqual(stored?.drawFailed);
+      expect(view.me?.ward).toBeNull();
+      expect(view.game).not.toHaveProperty("drawFailed");
+      expect(JSON.stringify(view)).not.toContain("assignments");
+    }
+    const summary = (
+      await call<SantaSummary[]>("GET", "/santa", "u_azamat")
+    ).find((item) => item.game.id === game.id);
+    expect(summary?.drawFailed).toEqual(stored?.drawFailed);
+
+    // Вступил третий — отметка снята, следующий проход провёл жеребьёвку.
+    const joined = await call<SantaView>(
       "POST",
-      gamePath(game.id, "/draw"),
+      gamePath(game.id, "/join"),
+      "u_nurai",
+    );
+    expect(joined.drawFailed).toBeNull();
+    expect(await call<SantaTickResult>("POST", "/santa/tick", null)).toEqual({
+      drawn: [game.id],
+      failed: [],
+    });
+  });
+
+  it("R08: отметку снимают правка, выход и «Убрать»", async () => {
+    const drawAt = new Date(NOW + HOUR).toISOString();
+    const { game } = await createGame({ drawMode: "date", drawAt });
+    await joinAll(game.id, ["u_azamat"]);
+    clock.advance(2 * HOUR);
+    const failedNow = async () => {
+      await call("POST", "/santa/tick", null);
+      return (await call<SantaView>("GET", gamePath(game.id), DEMO_USER_ID))
+        .drawFailed;
+    };
+    expect(await failedNow()).not.toBeNull();
+    const patched = await call<SantaView>(
+      "PATCH",
+      gamePath(game.id),
+      DEMO_USER_ID,
+      { title: "Офис" },
+    );
+    expect(patched.drawFailed).toBeNull();
+    expect(await failedNow()).not.toBeNull();
+    const left = await call<SantaView>(
+      "POST",
+      gamePath(game.id, "/leave"),
+      "u_nurai",
+    );
+    expect(left.drawFailed).toBeNull();
+    expect(await failedNow()).not.toBeNull();
+    const removed = await call<SantaView>(
+      "DELETE",
+      gamePath(game.id, "/members/u_daniyar"),
       DEMO_USER_ID,
     );
-    expect(view.game.status).toBe("drawn");
+    expect(removed.drawFailed).toBeNull();
   });
 });
 

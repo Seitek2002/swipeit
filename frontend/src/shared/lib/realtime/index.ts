@@ -7,7 +7,12 @@ export {
   subscribeConnection,
   useConnectionStatus,
 } from "./connection";
-export { createWsRealtime, type WsRealtime } from "./ws";
+export {
+  createRemoteRealtime,
+  createWsRealtime,
+  type RemoteRealtime,
+  type WsRealtime,
+} from "./ws";
 export {
   ALL_SCOPES,
   type Realtime,
@@ -15,8 +20,8 @@ export {
   type RealtimeScope,
 } from "./types";
 
-// Одна шина на вкладку. Интерфейс специально такой, чтобы в режиме lan (T12b)
-// подменить реализацию на WebSocket, не трогая компоненты.
+// Одна шина на вкладку. Интерфейс специально такой, чтобы в режимах lan и
+// remote подменить реализацию на WebSocket, не трогая компоненты.
 let instance: null | Realtime = null;
 
 export const getRealtime = (): Realtime => {

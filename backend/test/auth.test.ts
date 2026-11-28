@@ -12,6 +12,7 @@ import {
   SESSION_IDLE_MS,
 } from "../src/auth/sessions";
 import { loadConfig } from "../src/config";
+import { testConfig } from "./config";
 import { sessions } from "../src/db/schema";
 import { NOW, testCatalog } from "./contract/client";
 import { createTestDb, resetDb } from "./db";
@@ -31,7 +32,7 @@ const makeApp = async (
   extra: Partial<Parameters<typeof buildApp>[0]> = {},
 ) =>
   buildApp({
-    config: loadConfig({ LOG_LEVEL: "silent" }),
+    config: testConfig(),
     db: database,
     catalog: await testCatalog(),
     clock,

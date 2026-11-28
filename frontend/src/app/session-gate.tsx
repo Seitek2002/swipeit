@@ -4,17 +4,33 @@ import { type ReactNode, useEffect } from "react";
 
 import { usePathname } from "next/navigation";
 
-import { useCreateUser, useMe } from "@/entities/user";
+import { startAnonymousAgain, useCreateUser, useMe } from "@/entities/user";
 
 import { isApiError } from "@/shared/api";
 import { requiresProfile } from "@/shared/config";
 import { useAppReady } from "@/shared/lib/app-status";
 import { useMounted } from "@/shared/lib/dom";
 import { usePreloaderHold } from "@/shared/lib/preloader";
-import { useSessionStore } from "@/shared/store";
+import { useRemoteSessionStore, useSessionStore } from "@/shared/store";
 import { Button, EmptyState } from "@/shared/ui";
 
 import { RouteSkeleton } from "./route-skeleton";
+
+// Режим remote: сервер ответил 401 — токен неверный или сессия закрыта
+// (BACKEND.md §3.2). Новый профиль поверх старого молча не создаём, а
+// спрашиваем. «Войти через Telegram» появится в B19. Тексты — черновые по §3,
+// финальные — PM в DESIGN.
+const SessionExpired = () => (
+  <EmptyState
+    className="h-full"
+    title="Сессия закончилась. Профиль на этом телефоне больше не открыт — можно начать заново с пустого профиля."
+    action={
+      <Button variant="secondary" onClick={startAnonymousAgain}>
+        Начать заново
+      </Button>
+    }
+  />
+);
 
 // Анкеты нет (DESIGN.md §8.1, TECH_SPEC §10): экран с профилем без сессии сам
 // создаёт безымянный профиль (POST /users) под прелоадером и остаётся тем же
@@ -32,8 +48,9 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
   const me = useMe();
   const createUser = useCreateUser();
   const needsProfile = requiresProfile(pathname);
+  const expired = useRemoteSessionStore((state) => state.expired);
   const profileMissing = isApiError(me.error) && me.error.code === "NOT_FOUND";
-  const shouldCreate = ready && mounted && needsProfile && !userId;
+  const shouldCreate = ready && mounted && needsProfile && !userId && !expired;
 
   useEffect(() => {
     if (profileMissing) setActiveUser(null);
@@ -47,8 +64,9 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
   }, [shouldCreate, isPending, isError, mutate]);
 
   const waiting = needsProfile && (!ready || !mounted || !userId);
-  usePreloaderHold("profile", waiting && !createUser.isError);
+  usePreloaderHold("profile", waiting && !createUser.isError && !expired);
 
+  if (needsProfile && expired) return <SessionExpired />;
   if (needsProfile && createUser.isError) {
     return (
       <EmptyState

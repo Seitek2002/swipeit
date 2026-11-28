@@ -4,11 +4,12 @@ import { buildApp } from "../src/app";
 import { createDb } from "../src/db/client";
 import { createTestDb } from "./db";
 import { ConfigError, loadConfig } from "../src/config";
+import { testConfig } from "./config";
 
 describe("каркас сервера", () => {
   it("GET /v1/health — признак сервера, версия API и часы", async () => {
     const app = buildApp({
-      config: loadConfig({ LOG_LEVEL: "silent", COMMIT: "abc123" }),
+      config: testConfig({ COMMIT: "abc123" }),
       clock: { now: () => 1_800_000_000_000 },
     });
     const response = await app.inject({ method: "GET", url: "/v1/health" });
@@ -19,6 +20,7 @@ describe("каркас сервера", () => {
       apiVersion: 1,
       now: 1_800_000_000_000,
       commit: "abc123",
+      minClientBuild: "0",
     });
     await app.close();
   });
@@ -46,7 +48,7 @@ describe("каркас сервера", () => {
   });
 
   it("неизвестный путь — 404", async () => {
-    const app = buildApp({ config: loadConfig({ LOG_LEVEL: "silent" }) });
+    const app = buildApp({ config: testConfig() });
     const response = await app.inject({ method: "GET", url: "/v1/nope" });
     expect(response.statusCode).toBe(404);
     await app.close();
@@ -55,7 +57,7 @@ describe("каркас сервера", () => {
 
 describe("остановка", () => {
   it("app.close() дожидается начатого запроса (SIGTERM без обрыва)", async () => {
-    const app = buildApp({ config: loadConfig({ LOG_LEVEL: "silent" }) });
+    const app = buildApp({ config: testConfig() });
     // Остановку начинаем, когда обработчик уже работает, а не через
     // фиксированные 50 мс: под нагрузкой запрос мог дойти позже close(), и
     // Fastify честно отвечал 503 (return503OnClosing) — тест мигал.
@@ -85,7 +87,7 @@ describe("остановка", () => {
 describe("/v1/health и база (B03)", () => {
   it("база отвечает — 200", async () => {
     const db = createTestDb();
-    const app = buildApp({ config: loadConfig({ LOG_LEVEL: "silent" }), db });
+    const app = buildApp({ config: testConfig(), db });
     const response = await app.inject({ method: "GET", url: "/v1/health" });
     expect(response.statusCode).toBe(200);
     await app.close();
@@ -95,7 +97,7 @@ describe("/v1/health и база (B03)", () => {
   it("база не отвечает — 503 OFFLINE", async () => {
     // Порт, где базы нет: соединение сразу отклоняется.
     const db = createDb("postgres://x:y@127.0.0.1:1/none", 1);
-    const app = buildApp({ config: loadConfig({ LOG_LEVEL: "silent" }), db });
+    const app = buildApp({ config: testConfig(), db });
     const response = await app.inject({ method: "GET", url: "/v1/health" });
     expect(response.statusCode).toBe(503);
     expect(response.json()).toMatchObject({ code: "OFFLINE" });

@@ -36,6 +36,30 @@ const ConfigSchema = z.object({
   // Отчёт владельцу по HTTPS (R02): GET /v1/ops/report с этим токеном. Нет
   // переменной — маршрута как будто нет.
   OPS_TOKEN: z.string().min(24).optional(),
+  // Прокси перед сервером (Cloudflare, nginx): IP — из X-Forwarded-For.
+  // Значение: true или адреса прокси через запятую (как trustProxy Fastify).
+  TRUST_PROXY: z.string().min(1).optional(),
+  // Адреса фронта продукта и staging для CORS — точным списком через запятую.
+  CORS_ORIGINS: z
+    .string()
+    .default("")
+    .transform((value) =>
+      value
+        .split(",")
+        .map((origin) => origin.trim().replace(/\/+$/, ""))
+        .filter(Boolean),
+    ),
+  // Самая старая сборка фронта, с которой сервер ещё работает (B17): старее —
+  // экран «Обнови приложение».
+  MIN_CLIENT_BUILD: z.string().default("0"),
+  // Лимиты запросов (R01) — администратор поднимет их без нового образа.
+  RATE_ALL_SESSION: z.coerce.number().int().min(1).default(300),
+  RATE_ALL_IP: z.coerce.number().int().min(1).default(600),
+  RATE_USERS_MINUTE: z.coerce.number().int().min(1).default(20),
+  RATE_USERS_HOUR: z.coerce.number().int().min(1).default(200),
+  RATE_SHARE_SESSION: z.coerce.number().int().min(1).default(60),
+  RATE_SHARE_IP: z.coerce.number().int().min(1).default(300),
+  RATE_RESERVATIONS: z.coerce.number().int().min(1).default(30),
 });
 
 // База из docker-compose для разработки и тестов.

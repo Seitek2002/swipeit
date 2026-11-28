@@ -6,7 +6,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import WebSocket from "ws";
 
 import { buildApp } from "../src/app";
-import { loadConfig } from "../src/config";
+import { testConfig } from "./config";
 import { makeFriends } from "../src/domains/friends/handlers";
 import { NOW, testCatalog } from "./contract/client";
 import { createTestDb, resetDb } from "./db";
@@ -21,7 +21,7 @@ let base = "";
 beforeEach(async () => {
   await resetDb(database);
   app = buildApp({
-    config: loadConfig({ LOG_LEVEL: "silent" }),
+    config: testConfig(),
     db: database,
     catalog: await testCatalog(),
     clock: { now: () => NOW },

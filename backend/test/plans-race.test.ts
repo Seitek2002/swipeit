@@ -3,7 +3,7 @@ import { createSeededRandom } from "@swipeit/core/logic/random";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../src/app";
-import { loadConfig } from "../src/config";
+import { testConfig } from "./config";
 import { makeFriends } from "../src/domains/friends/handlers";
 import { createRecordingHub } from "../src/realtime/hub";
 import { NOW, testCatalog } from "./contract/client";
@@ -21,7 +21,7 @@ beforeEach(async () => {
   await resetDb(database);
   hub = createRecordingHub();
   app = buildApp({
-    config: loadConfig({ LOG_LEVEL: "silent" }),
+    config: testConfig(),
     db: database,
     catalog: await testCatalog(),
     clock: { now: () => NOW },

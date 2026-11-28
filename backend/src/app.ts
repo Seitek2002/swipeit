@@ -11,6 +11,8 @@ import type { Db } from "./db/client";
 import { registerErrors } from "./errors";
 import { resolveSession } from "./auth/sessions";
 import { createDiskStorage } from "./domains/uploads/storage";
+import { registerHttpGuards } from "./http-guards";
+import { createLimiter, limitConfigFrom } from "./limits";
 import { registerOps } from "./routes-ops";
 import { registerUploads } from "./routes-uploads";
 import { startScheduler } from "./scheduler";
@@ -51,6 +53,15 @@ export const buildApp = ({
   scheduler = false,
 }: AppOptions): FastifyInstance => {
   const app = Fastify({
+    // За прокси IP человека — из X-Forwarded-For (§10, R01).
+    ...(config.TRUST_PROXY
+      ? {
+          trustProxy:
+            config.TRUST_PROXY === "true"
+              ? true
+              : config.TRUST_PROXY.split(",").map((entry) => entry.trim()),
+        }
+      : {}),
     logger:
       config.LOG_LEVEL === "silent"
         ? false
@@ -66,6 +77,16 @@ export const buildApp = ({
   });
 
   registerErrors(app);
+
+  // Без TRUST_PROXY в production все люди за прокси — один IP, и лимит
+  // ляжет на сам прокси (R01).
+  if (config.NODE_ENV === "production" && !config.TRUST_PROXY) {
+    app.log.warn(
+      "TRUST_PROXY не задан: если перед сервером прокси, лимиты запросов посчитают всех одним адресом",
+    );
+  }
+
+  registerHttpGuards(app, { corsOrigins: config.CORS_ORIGINS });
 
   // Мягкая остановка (SIGTERM): начатые запросы доотвечают, но с
   // «Connection: close». Иначе keep-alive соединение, занятое в момент
@@ -95,6 +116,8 @@ export const buildApp = ({
       apiVersion: 1,
       now: clock.now(),
       commit: config.COMMIT,
+      // Старее этой сборки фронт показывает «Обнови приложение» (B17).
+      minClientBuild: config.MIN_CLIENT_BUILD,
       ...(catalog ? { catalogVersion: catalog.version } : {}),
     };
   });
@@ -129,6 +152,8 @@ export const buildApp = ({
       clock,
       random,
       hub: events,
+      limiter: createLimiter(clock.now),
+      limits: limitConfigFrom(config),
       publicShareUrl: config.PUBLIC_SHARE_URL,
     });
     registerOps(app, {

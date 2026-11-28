@@ -9,7 +9,9 @@ import { useSantaNudge } from "@/widgets/santa-nudge";
 
 import {
   ALL_IN,
+  DRAW_FAILED_STATUS,
   type SantaSummary,
+  drawFailedNow,
   gatheringStatus,
   santaTerms,
   useSantaGames,
@@ -33,6 +35,10 @@ const statusOf = (summary: SantaSummary, needWishes: boolean) => {
   if (summary.game.status === "gathering") {
     if (summary.role === "invited") {
       return { text: "Тебя позвали — вступи", accent: true };
+    }
+    // Жеребьёвка по дате не прошла (R08): организатору — пора разобраться.
+    if (drawFailedNow(summary)) {
+      return { text: DRAW_FAILED_STATUS, accent: summary.role === "owner" };
     }
     // Мне мало желаний в бюджете игры (R06): Санте будет не из чего выбрать.
     if (needWishes) return { text: "Собери вишлист", accent: true };

@@ -1,10 +1,16 @@
 import {
   ApiError,
   type ApiMode,
+  type RemoteInfo,
   apiUrl,
   detectEnvironment,
   getDemoSettings,
+  getMe,
   httpTransport,
+  isRemoteBuild,
+  remoteApiUrl,
+  remoteTransport,
+  remoteWsUrl,
   setTransport,
   warmLocalApi,
 } from "@/shared/api";
@@ -12,21 +18,28 @@ import { setLanClock } from "@/shared/lib/clock";
 import { setRemoteImageStore, setShareOrigin } from "@/shared/lib/dom";
 import { warmPreloadedImages } from "@/shared/lib/image-cache";
 import {
+  createRemoteRealtime,
   createWsRealtime,
   getConnectionStatus,
   setRealtime,
   subscribeConnection,
 } from "@/shared/lib/realtime";
 import {
+  REMOTE_TOKEN_KEY,
+  REMOTE_USER_KEY,
   getActiveUserId,
+  getRemoteToken,
+  markRemoteSessionExpired,
+  readRemoteUserId,
   setLastUserKey,
   useSessionStore,
 } from "@/shared/store";
 
 // Сразу при загрузке модуля, до гидрации и до проверки режима: мок-сервер и
 // каталог качаются параллельно с ней (shared/api/warmup.ts), а обложка из
-// HTML декодируется заранее (shared/lib/image-cache).
-warmLocalApi();
+// HTML декодируется заранее (shared/lib/image-cache). Сборке для сервера
+// (remote) мок и каталог из статики не нужны.
+if (!isRemoteBuild()) warmLocalApi();
 warmPreloadedImages();
 
 // Адрес WebSocket того же сервера, что отвечает на /api.
@@ -85,6 +98,71 @@ const uploadImage = async (blob: Blob) => {
   return data.key;
 };
 
+// Часы remote — по now из /v1/health (BACKEND.md §9.3), как в lan, но без
+// перемотки: она только в демо.
+const syncRemoteClock = async (base: string) => {
+  const response = await fetch(remoteApiUrl(base, "/health"), {
+    cache: "no-store",
+  });
+  const health = (await response.json()) as { now?: unknown };
+  if (typeof health.now === "number") {
+    setLanClock({ diffMs: health.now - Date.now(), offsetMs: 0 });
+  }
+};
+
+// Первая сверка часов держит запуск не дольше этого: сервер может не
+// ответить, а «Нет связи» покажет WebSocket.
+const CLOCK_WAIT_MS = 1500;
+
+// Запуск в режиме remote (BACKEND.md §9.3): транспорт с токеном, сессия,
+// часы, WebSocket с hello { token }.
+const startRemote = async ({ base }: RemoteInfo) => {
+  setLastUserKey(REMOTE_USER_KEY);
+  setTransport(remoteTransport);
+  await useSessionStore.persist.rehydrate();
+  // Все вкладки браузера — один человек (§3.2): пользователь — тот, чей
+  // токен лежит в localStorage, а не id из sessionStorage вкладки (там мог
+  // остаться профиль демо с того же адреса). Нет токена — нет и
+  // пользователя: SessionGate тихо создаст профиль (POST /users).
+  const token = getRemoteToken();
+  let userId = token ? readRemoteUserId() : null;
+  if (token && !userId) {
+    // Токен есть, а id потерялся — спрашиваем сервер, чей это токен. Не
+    // ответил — «Сессия закончилась», а не новый профиль поверх старого.
+    userId = await getMe().then(
+      (me) => me.id,
+      () => null,
+    );
+    if (!userId) markRemoteSessionExpired();
+  }
+  useSessionStore.getState().setActiveUser(userId);
+
+  const realtime = createRemoteRealtime(remoteWsUrl(base), {
+    getToken: getRemoteToken,
+    onUnauthorized: markRemoteSessionExpired,
+  });
+  setRealtime(realtime);
+  // Профиль создан (появился токен) или сменился — новый сокет с новым hello.
+  useSessionStore.subscribe((state, previous) => {
+    if (state.activeUserId !== previous.activeUserId) realtime.reconnect();
+  });
+  // Другая вкладка вышла, удалила профиль или создала новый — токен сменился,
+  // эта вкладка открывается заново тем же человеком, что и остальные.
+  window.addEventListener("storage", (event) => {
+    if (event.key === REMOTE_TOKEN_KEY) window.location.reload();
+  });
+  // Вернулась связь — сверить часы заново (сервер мог перезапуститься).
+  subscribeConnection(() => {
+    if (getConnectionStatus() === "online") {
+      void syncRemoteClock(base).catch(() => undefined);
+    }
+  });
+  await Promise.race([
+    syncRemoteClock(base).catch(() => undefined),
+    new Promise((resolve) => setTimeout(resolve, CLOCK_WAIT_MS)),
+  ]);
+};
+
 // Запуск вкладки (TECH_SPEC §6): режим → транспорт, шина, часы, сессия.
 // До конца — заставка с бантом (не дольше ~800 ms на определение режима).
 let started: null | Promise<ApiMode> = null;
@@ -92,7 +170,9 @@ let started: null | Promise<ApiMode> = null;
 export const startEnvironment = (): Promise<ApiMode> => {
   started ??= (async () => {
     const environment = await detectEnvironment();
-    if (environment.mode === "lan" && environment.lan) {
+    if (environment.mode === "remote" && environment.remote) {
+      await startRemote(environment.remote);
+    } else if (environment.mode === "lan" && environment.lan) {
       setLastUserKey(`swipeit:lan:${environment.lan.serverId}:userId`);
       setTransport(httpTransport);
       setShareOrigin(environment.lan.shareOrigin ?? null);

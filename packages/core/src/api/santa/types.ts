@@ -34,6 +34,10 @@ export const SantaGameSchema = z.object({
   // Кого организатор убрал из игры (Q05): снова вступить они не могут.
   // Наружу не отдаётся. default — чтобы игры без поля читались.
   removedIds: z.array(z.string()).default([]),
+  // Жеребьёвка по дате не прошла (R08): когда и почему. Пока стоит,
+  // планировщик игру пропускает; снимают вступление, выход, «Убрать» и
+  // правка. Наружу — только в SantaView.drawFailed.
+  drawFailed: z.object({ at: z.string(), reason: z.string() }).optional(),
   createdAt: z.string(),
 });
 
@@ -43,7 +47,7 @@ export type SantaGame = z.infer<typeof SantaGameSchema>;
 // купил подарок, — у всех видно только количество (DESIGN.md §8.8).
 export type SantaGamePublic = Omit<
   SantaGame,
-  "assignments" | "boughtIds" | "openedIds" | "removedIds"
+  "assignments" | "boughtIds" | "drawFailed" | "openedIds" | "removedIds"
 >;
 
 // ── Тела запросов ───────────────────────────────────────────────────
@@ -97,8 +101,9 @@ export const CreateSantaInputSchema = z
     path: ["drawAt"],
   });
 
-// Тело PATCH /santa/:id — только до жеребьёвки и только организатор.
-// drawMode: "manual" убирает автоматическую жеребьёвку.
+// Тело PATCH /santa/:id — только организатор. До жеребьёвки — любые поля,
+// после — только exchangeDate (R03: праздник перенесли), остальное —
+// CONFLICT. drawMode: "manual" убирает автоматическую жеребьёвку.
 export const UpdateSantaInputSchema = z
   .object({
     title: TitleSchema.optional(),

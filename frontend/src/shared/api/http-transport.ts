@@ -14,7 +14,8 @@ const KNOWN_CODES: ApiErrorCode[] = [
   "VALIDATION",
 ];
 
-const toQuery = (query?: Record<string, unknown>) => {
+// Параметры запроса → ?a=1&b=2 (общий с remote-transport.ts).
+export const toQuery = (query?: Record<string, unknown>) => {
   if (!query) return "";
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query)) {

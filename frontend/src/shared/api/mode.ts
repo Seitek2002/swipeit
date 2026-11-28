@@ -1,13 +1,25 @@
+import type { ApiMode } from "@swipeit/core/contract";
+
 import { withBasePath } from "@/shared/lib/base-path";
 
-// Режим работы (TECH_SPEC §6 «Определение режима при запуске»):
-// local — «На этом устройстве», lan — «Локальная сеть».
-export type ApiMode = "lan" | "local";
+import { getRemoteApiBase } from "./remote-base";
+
+// Режим работы (TECH_SPEC §6 «Определение режима при запуске», BACKEND.md
+// §9.1): local — «На этом устройстве», lan — «Локальная сеть», remote —
+// настоящий сервер под /v1. Тип общий с сервером (@swipeit/core).
+export type { ApiMode };
 
 // shareOrigin — адрес ноутбука в Wi-Fi для ссылок и QR (нет Wi-Fi — нет).
 export type LanInfo = { now: number; serverId: string; shareOrigin?: string };
 
-export type Environment = { lan?: LanInfo; mode: ApiMode };
+// base — адрес сервера без /v1 (из NEXT_PUBLIC_API_URL).
+export type RemoteInfo = { base: string };
+
+export type Environment = {
+  lan?: LanInfo;
+  mode: ApiMode;
+  remote?: RemoteInfo;
+};
 
 // При разработке `next dev` можно направить на запущенный LAN-сервер.
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_ORIGIN ?? "";
@@ -66,8 +78,19 @@ const probe = async (): Promise<Environment> => {
 // LAN-сервер SwipeIt — режим lan, иначе local.
 // На статическом хостинге (GitHub Pages, `next dev`) отвечает файл
 // public/api/health с mode "static" — без 404 в консоли браузера.
+//
+// Сборка с NEXT_PUBLIC_API_URL — сразу remote, без проверки /api/health на
+// своём адресе (BACKEND.md §9.1). Сервер не ответит — остаёмся в remote и
+// показываем «Нет связи»: уйди мы в local, человек создал бы профиль в
+// браузере и потом потерял бы его.
+const detect = async (): Promise<Environment> => {
+  const base = getRemoteApiBase();
+  if (base) return { mode: "remote", remote: { base } };
+  return probe();
+};
+
 export const detectEnvironment = (): Promise<Environment> => {
-  detection ??= probe().then((environment) => {
+  detection ??= detect().then((environment) => {
     current = environment.mode;
     return environment;
   });

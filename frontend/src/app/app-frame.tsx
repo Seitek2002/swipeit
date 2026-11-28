@@ -19,7 +19,7 @@ import {
 import { santaTabDot, useSantaGames } from "@/entities/santa-game";
 
 import { rendersBeforeReady } from "@/shared/config";
-import { useAppReady, useAppStatus } from "@/shared/lib/app-status";
+import { useAppMode, useAppReady, useAppStatus } from "@/shared/lib/app-status";
 import { useSessionStore } from "@/shared/store";
 import { Button, EmptyState } from "@/shared/ui";
 
@@ -90,13 +90,16 @@ const EnvironmentGate = ({ children }: { children: ReactNode }) => {
 // Оболочка (бархат, рамка) рисуется сразу. Таб-бар до запуска вкладки —
 // без точек и бейджей (данных ещё нет), но на месте: скелетон экрана стоит
 // уже в «настоящем» каркасе (DESIGN.md §6 «Прелоадер»). Точки и демо-панель
-// читают данные и шину — их подключаем только после запуска.
+// читают данные и шину — их подключаем только после запуска. В remote
+// демо-панели нет (BACKEND.md §3.4): перемотка, боты и «Смотреть как» — только
+// в демо.
 export const AppFrame = ({ children }: { children: ReactNode }) => {
   const ready = useAppReady();
+  const demo = useAppMode() !== "remote";
   return (
     <AppShell
       tabBar={ready ? <AppTabBar /> : <TabBar />}
-      overlay={ready ? <DemoPanel /> : null}
+      overlay={ready && demo ? <DemoPanel /> : null}
     >
       <EnvironmentGate>
         <SessionGate>{children}</SessionGate>

@@ -8,6 +8,8 @@ import { ROUTES } from "@/shared/config";
 import { absoluteUrl } from "@/shared/lib/dom";
 import { BottomSheet, Button, ShareActions } from "@/shared/ui";
 
+import { namesLine } from "../model/letters";
+
 type Props = {
   names: readonly string[];
   view: SantaView;
@@ -19,7 +21,9 @@ type Props = {
 // «Скопировать», «QR-код».
 export const RemindWithoutWishlist = ({ view, names }: Props) => {
   const [open, setOpen] = useState(false);
-  const who = names.join(", ");
+  // Двадцать имён подряд не прочтёт никто (R03): «Нурай, Бакыт, Алина,
+  // Мээрим и ещё 16» — как в «Сообщить в чат».
+  const who = namesLine(names);
   return (
     <>
       <Button variant="secondary" onClick={() => setOpen(true)}>

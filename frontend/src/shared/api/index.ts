@@ -54,6 +54,13 @@ export {
   isNameRequired,
 } from "./mock-server/errors";
 export { httpTransport } from "./http-transport";
+export {
+  getRemoteApiBase,
+  isRemoteBuild,
+  remoteApiUrl,
+  remoteWsUrl,
+} from "./remote-base";
+export { remoteTransport } from "./remote-transport";
 export { warmLocalApi } from "./warmup";
 export {
   type ApiMode,
@@ -62,6 +69,7 @@ export {
   detectMode,
   type Environment,
   getMode,
+  type RemoteInfo,
 } from "./mode";
 export {
   answerPickRequest,
@@ -172,6 +180,7 @@ export {
 export {
   createMyDate,
   createUser,
+  deleteMe,
   deleteMyDate,
   dismissReminder,
   getMyDates,
@@ -182,6 +191,7 @@ export {
   getMe,
   getUser,
   loginDemoFn,
+  logout,
   markHintSeen,
   updateMe,
 } from "./users/requests";

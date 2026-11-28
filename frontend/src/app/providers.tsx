@@ -19,7 +19,7 @@ import {
   startBrowserBots,
   tickSanta,
 } from "@/shared/api";
-import { setAppStatus, useAppReady } from "@/shared/lib/app-status";
+import { setAppStatus, useAppMode, useAppReady } from "@/shared/lib/app-status";
 import { withBasePath } from "@/shared/lib/base-path";
 import { useTapHaptics } from "@/shared/lib/dom";
 import {
@@ -95,12 +95,17 @@ const SessionCacheReset = () => {
 
 // Потеря связи с ноутбуком (DESIGN.md §8.11): тост без автозакрытия со
 // спиннером; вернулась — «Снова в сети» и перечитать всё: пока связи не было,
-// события могли пройти мимо (TECH_SPEC §7).
+// события могли пройти мимо (TECH_SPEC §7). В remote ноутбука нет — текст
+// без него (BACKEND.md §9.3, черновик: финальный — PM).
 const OFFLINE_TEXT = "Нет связи с ноутбуком. Переподключаемся…";
-const showOffline = () =>
-  toast(OFFLINE_TEXT, { tone: "loading", duration: null });
+const REMOTE_OFFLINE_TEXT = "Нет связи с сервером. Переподключаемся…";
+const showOffline = (remote: boolean) =>
+  toast(remote ? REMOTE_OFFLINE_TEXT : OFFLINE_TEXT, {
+    tone: "loading",
+    duration: null,
+  });
 
-const ConnectionNotices = () => {
+const ConnectionNotices = ({ remote }: { remote: boolean }) => {
   const queryClient = useQueryClient();
   const status = useConnectionStatus();
   const current = useCurrentToast();
@@ -109,20 +114,20 @@ const ConnectionNotices = () => {
     () =>
       subscribeConnection(() => {
         if (getConnectionStatus() === "offline") {
-          showOffline();
+          showOffline(remote);
         } else {
           toast("Снова в сети");
           void queryClient.invalidateQueries();
         }
       }),
-    [queryClient],
+    [queryClient, remote],
   );
 
   // Тост один на экране: другой («Не получилось…») мог сменить уведомление
   // и закрыться. Пока связи нет — возвращаем его.
   useEffect(() => {
-    if (status === "offline" && current === null) showOffline();
-  }, [status, current]);
+    if (status === "offline" && current === null) showOffline(remote);
+  }, [status, current, remote]);
 
   return null;
 };
@@ -177,7 +182,7 @@ const ServiceWorker = () => {
 };
 
 // Боты (TECH_SPEC §7): в local их исполняет одна вкладка-лидер, в lan —
-// сервер, и вкладки их не запускают.
+// сервер, и вкладки их не запускают. В remote ботов нет вовсе (BACKEND.md §7).
 const BotsLeader = () => {
   useEffect(() => {
     let cancelled = false;
@@ -238,17 +243,21 @@ const InitialQueriesHold = () => {
 // шина — WebSocket ноутбука, и подписка до запуска осталась бы на
 // заглушке, а запросы ушли бы в мок. Экран (children) рисуется сразу —
 // что показывать до готовности, решает app-frame.
+//
+// В remote нет клиентского планировщика: /plans/expire и /santa/tick там не
+// существуют, дедлайны и жеребьёвку по дате считает сам сервер (B13).
 const ReadyBridges = () => {
   const ready = useAppReady();
+  const remote = useAppMode() === "remote";
   if (!ready) return null;
   return (
     <>
       <RealtimeBridge />
       <SessionCacheReset />
-      <ConnectionNotices />
+      <ConnectionNotices remote={remote} />
       <BotsLeader />
       <ServiceWorker />
-      <PlanDeadlines />
+      {!remote && <PlanDeadlines />}
       <InitialQueriesHold />
     </>
   );

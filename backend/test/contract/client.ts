@@ -22,7 +22,7 @@ import { createMockServer } from "@/shared/api/mock-server/server";
 import { buildApp } from "../../src/app";
 import { createSession } from "../../src/auth/sessions";
 import { loadCatalog, type ServerCatalog } from "../../src/catalog/load";
-import { loadConfig } from "../../src/config";
+import { testConfig } from "../config";
 import { users, wishlistMeta } from "../../src/db/schema";
 import { makeFriends } from "../../src/domains/friends/handlers";
 import { createRecordingHub } from "../../src/realtime/hub";
@@ -134,7 +134,7 @@ export const createServerClient = async (now = NOW): Promise<ApiClient> => {
   let current = now;
   const hub = createRecordingHub();
   const app = buildApp({
-    config: loadConfig({ LOG_LEVEL: "silent" }),
+    config: testConfig(),
     db: database,
     catalog: await testCatalog(),
     clock: { now: () => current },

@@ -1,3 +1,5 @@
+import { setRemoteToken } from "@/shared/store";
+
 import { getTransport } from "../transport";
 import type {
   CreateDateInput,
@@ -17,8 +19,25 @@ export const loginDemoFn = (): Promise<MeResponse> =>
 
 // С этапа 7 — без тела: профиль без имени, со случайным фоном аватара
 // (DESIGN §8.1). Поля input необязательные и нужны только старым экранам.
-export const createUser = (input?: NewUserInput): Promise<MeResponse> =>
-  getTransport().request<MeResponse>("POST", "/users", input);
+//
+// Сервер (remote) отвечает { me, token } (BACKEND.md §3.1): токен сессии
+// сохраняем сразу, до первого запроса с ним. Мок и LAN отдают профиль как есть.
+export const createUser = async (input?: NewUserInput): Promise<MeResponse> => {
+  const result = await getTransport().request<
+    { me: MeResponse; token: string } | MeResponse
+  >("POST", "/users", input);
+  if (!("token" in result)) return result;
+  setRemoteToken(result.token);
+  return result.me;
+};
+
+// Только remote (§3.4): «Выйти» закрывает сессию этого устройства,
+// «Удалить профиль» удаляет человека и его данные.
+export const logout = (): Promise<{ ok: true }> =>
+  getTransport().request("POST", "/auth/logout");
+
+export const deleteMe = (): Promise<{ ok: true }> =>
+  getTransport().request("DELETE", "/me");
 
 export const getMe = (): Promise<MeResponse> =>
   getTransport().request<MeResponse>("GET", "/me");

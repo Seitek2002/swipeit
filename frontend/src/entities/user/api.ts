@@ -6,19 +6,28 @@ import {
   type NewUserInput,
   type UpdateMeInput,
   createUser,
+  deleteMe,
   friendKeys,
   getFriends,
   getMe,
   getMode,
   getPresence,
   getUser,
+  isApiError,
   loginDemoFn,
+  logout,
   reservationKeys,
   updateMe,
   userKeys,
 } from "@/shared/api";
+import { ROUTES } from "@/shared/config";
+import { withBasePath } from "@/shared/lib/base-path";
 import { useMounted } from "@/shared/lib/dom";
-import { useGuestStore, useSessionStore } from "@/shared/store";
+import {
+  clearRemoteSession,
+  useGuestStore,
+  useSessionStore,
+} from "@/shared/store";
 
 // Текущий пользователь вкладки. Ждём монтирования: сессия живёт в
 // sessionStorage, на сервере её нет (TECH_SPEC §3).
@@ -151,3 +160,33 @@ export const useCreateUser = () => {
     },
   });
 };
+
+// Режим remote: начать с нового анонимного профиля (после «Выйти»,
+// «Удалить профиль», «Сессия закончилась» → «Начать заново», BACKEND.md
+// §3.4). Токена нет — вкладка заново: прелоадер, POST /users, обучающая
+// карточка; другие вкладки перезапустятся по событию storage.
+export const startAnonymousAgain = () => {
+  clearRemoteSession();
+  useSessionStore.getState().setActiveUser(null);
+  window.location.assign(withBasePath(ROUTES.GIFTS));
+};
+
+// Сессию уже закрыли (401) — для «Выйти» это тоже успех.
+const ignoreUnauthorized = (error: unknown) => {
+  if (isApiError(error) && error.code === "UNAUTHORIZED") return;
+  throw error;
+};
+
+// «Выйти» (POST /auth/logout): закрывает сессию этого устройства.
+export const useLogout = () =>
+  useMutation({
+    mutationFn: () => logout().then(() => undefined, ignoreUnauthorized),
+    onSuccess: startAnonymousAgain,
+  });
+
+// «Удалить профиль» (DELETE /me): человек и его данные удаляются на сервере.
+export const useDeleteMe = () =>
+  useMutation({
+    mutationFn: () => deleteMe().then(() => undefined),
+    onSuccess: startAnonymousAgain,
+  });

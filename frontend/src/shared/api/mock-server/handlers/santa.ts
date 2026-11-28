@@ -1,4 +1,9 @@
 import { drawIssueWithInvites } from "@swipeit/core/logic/draw";
+import {
+  AFTER_DRAW_PATCH_MESSAGE,
+  lockedAfterDraw,
+  termsChangedText,
+} from "@swipeit/core/logic/santa-update";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 
@@ -264,6 +269,7 @@ const viewOf = (
     boughtCount: game.boughtIds.length,
     openedCount: game.openedIds.length,
     drawIssue: drawIssue(db, game),
+    drawFailed: game.drawFailed ?? null,
   };
 };
 
@@ -439,16 +445,40 @@ export const createSantaGame: Handler = async (ctx, { body }) => {
   return view;
 };
 
+// Люди-участники, кроме организатора: тосты боты не читают.
+const notifyOthers = (db: Db, game: SantaGame) =>
+  game.participantIds.filter((id) => {
+    const user = db.users[id];
+    return id !== game.ownerId && user !== undefined && !user.isBot;
+  });
+
 // PATCH /santa/:id — название, бюджет, даты, исключения: только
-// организатор и только до жеребьёвки (TECH_SPEC §6).
+// организатор (TECH_SPEC §6). До жеребьёвки — всё, после — только дата
+// обмена (R03: праздник перенесли). Бюджет или дата обмена поменялись —
+// участникам тост.
 export const updateSantaGame: Handler = async (ctx, { params, body }) => {
   const patch = parseInput(UpdateSantaInputSchema, body);
   const products = await productMap(ctx);
-  const view = await ctx.db.write((db) => {
+  const { notice, notify, view } = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const game = findGame(db, params.id);
     requireOwner(game, user, "Менять игру может только организатор");
-    requireGathering(game);
+    const before = { ...game };
+    const result = () => ({
+      notice: termsChangedText(before, game),
+      notify: notifyOthers(db, game),
+      view: viewOf(db, game, user.id, products, ctx.clock.now()),
+    });
+    if (game.status === "drawn") {
+      if (lockedAfterDraw(patch)) throw conflict(AFTER_DRAW_PATCH_MESSAGE);
+      if (patch.exchangeDate !== undefined) {
+        checkDates(ctx, patch.exchangeDate, undefined);
+        game.exchangeDate = patch.exchangeDate;
+      }
+      return result();
+    }
+    // Игра изменилась — жеребьёвку по дате можно попробовать снова (R08).
+    delete game.drawFailed;
     if (patch.title !== undefined) game.title = patch.title;
     if (patch.budget !== undefined) game.budget = patch.budget;
     const exchangeDate = patch.exchangeDate ?? game.exchangeDate;
@@ -471,9 +501,14 @@ export const updateSantaGame: Handler = async (ctx, { params, body }) => {
       game.exclusions = normalizeExclusions(game, patch.exclusions);
       checkExclusionsPossible(db, game);
     }
-    return viewOf(db, game, user.id, products, ctx.clock.now());
+    return result();
   });
   changed(ctx, view.game.id);
+  if (notice) {
+    for (const forUserId of notify) {
+      ctx.realtime.publish({ type: "toast", text: notice, forUserId });
+    }
+  }
   return view;
 };
 
@@ -499,6 +534,8 @@ export const joinSantaGame: Handler = async (ctx, { params }) => {
       }
       game.participantIds.push(user.id);
       game.invitedIds = game.invitedIds.filter((id) => id !== user.id);
+      // Вступил ещё один — жеребьёвка по дате пробуется снова (R08).
+      delete game.drawFailed;
     }
     return {
       joined: !already,
@@ -511,8 +548,10 @@ export const joinSantaGame: Handler = async (ctx, { params }) => {
 
 // Убрать человека из игры до жеребьёвки (Q05): из вступивших, позванных и
 // исключений. Невозможные после этого исключения игру не блокируют —
-// drawIssue объяснит, что не так.
+// drawIssue объяснит, что не так. Состав изменился — жеребьёвка по дате
+// пробуется снова (R08).
 const dropMember = (game: SantaGame, userId: string) => {
+  delete game.drawFailed;
   game.participantIds = game.participantIds.filter((id) => id !== userId);
   game.invitedIds = game.invitedIds.filter((id) => id !== userId);
   game.exclusions = game.exclusions.filter(
@@ -585,6 +624,8 @@ const performDraw = (ctx: HandlerContext, db: Db, game: SantaGame) => {
   game.status = "drawn";
   game.drawnAt = nowIso(ctx.clock);
   game.invitedIds = [];
+  // Провели вручную после неудачи по дате — отметка больше не нужна (R08).
+  delete game.drawFailed;
 };
 
 // POST /santa/:id/draw — «Провести жеребьёвку»: только организатор
@@ -675,14 +716,19 @@ export const setSantaBought: Handler = async (ctx, { params, body }) => {
 
 // ── Жеребьёвка по дате ──────────────────────────────────────────────
 
+// Уже не прошла и с тех пор не менялась (R08) — не пробуем: иначе каждые
+// 15 с та же ошибка и тот же тост организатору.
 const isDue = (game: SantaGame, now: number) =>
   game.status === "gathering" &&
   game.drawAt !== undefined &&
+  !game.drawFailed &&
   Date.parse(game.drawAt) <= now;
 
 // Планировщик (TECH_SPEC §7 «Часы»): игры, у которых наступил drawAt по
 // ctx.clock (с перемоткой), — жеребьёвка. Сначала чтение: зовётся каждые
 // 15 с из каждой вкладки, и пустой проход не должен ничего записывать.
+// Не вышло (меньше 3, исключения) — отметка в игре и один тост
+// организатору (R08), как на сервере.
 export const drawDueSantaGames = async (
   ctx: HandlerContext,
 ): Promise<SantaTickResult> => {
@@ -691,9 +737,10 @@ export const drawDueSantaGames = async (
   if (!Object.values(current.santaGames).some((game) => isDue(game, now))) {
     return { drawn: [], failed: [] };
   }
-  const result = await ctx.db.write((db): SantaTickResult => {
+  const { notices, result } = await ctx.db.write((db) => {
     const drawn: string[] = [];
     const failed: SantaTickResult["failed"] = [];
+    const notices: Array<{ forUserId: string; text: string }> = [];
     for (const game of Object.values(db.santaGames)) {
       if (!isDue(game, now)) continue;
       // Пробуем на копии: неудачная жеребьёвка не должна оставить в игре
@@ -704,16 +751,29 @@ export const drawDueSantaGames = async (
       } catch (error) {
         if (!isApiError(error)) throw error;
         failed.push({ id: game.id, reason: error.message });
+        game.drawFailed = { at: nowIso(ctx.clock), reason: error.message };
+        if (!db.users[game.ownerId]?.isBot) {
+          notices.push({
+            forUserId: game.ownerId,
+            text: `Жеребьёвка по дате в «${game.title}» не прошла: ${error.message}`,
+          });
+        }
         continue;
       }
       db.santaGames[game.id] = draft;
       drawn.push(game.id);
     }
-    return { drawn, failed };
+    const result: SantaTickResult = { drawn, failed };
+    return { notices, result };
   });
   for (const id of result.drawn) {
     changed(ctx, id);
     trigger(ctx, "santa:drawn", id);
+  }
+  // Отметку видят все участники — пусть перечитают игру.
+  for (const { id } of result.failed) changed(ctx, id);
+  for (const notice of notices) {
+    ctx.realtime.publish({ type: "toast", ...notice });
   }
   return result;
 };

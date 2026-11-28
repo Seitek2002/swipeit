@@ -1,9 +1,10 @@
 import { contractFor, routeKey } from "@swipeit/core/contract";
 import type { Random } from "@swipeit/core/logic/random";
-import { unauthorized } from "@swipeit/core/errors";
+import { ApiError, unauthorized } from "@swipeit/core/errors";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
 import { resolveSession } from "./auth/sessions";
+import { type LimitConfig, type Limiter, rulesFor } from "./limits";
 import type { ServerCatalog } from "./catalog/load";
 import type { Clock, ServerHandler } from "./context";
 import type { Db } from "./db/client";
@@ -182,6 +183,8 @@ export type RouteDeps = {
   clock: Clock;
   db: Db;
   hub: EventHub;
+  limiter: Limiter;
+  limits: LimitConfig;
   publicShareUrl: string;
   random: Random;
 };
@@ -211,6 +214,30 @@ export const registerRoutes = (app: FastifyInstance, deps: RouteDeps) => {
         // Токена нет там, где он нужен, или он неверный — 401 (§3.2). На
         // открытых маршрутах неверный токен просто не даёт пользователя.
         if (route.access === "user" && !session) throw unauthorized();
+
+        // Лимиты (R01): с верным токеном — на сессию (брони — на человека),
+        // без него — на IP. 429 с Retry-After; клиент сам не повторяет.
+        const key = routeKey(route.method, route.path);
+        for (const { name, rule } of rulesFor(
+          key,
+          Boolean(session),
+          deps.limits,
+        )) {
+          const who = !session
+            ? `ip:${request.ip}`
+            : name === "reservations"
+              ? `user:${session.userId}`
+              : `session:${session.sessionId}`;
+          const retryAfter = deps.limiter.hit(`${name}|${who}`, rule);
+          if (retryAfter !== null) {
+            reply.header("retry-after", String(retryAfter));
+            throw new ApiError(
+              429,
+              "RATE_LIMITED",
+              "Слишком часто — попробуй через минуту",
+            );
+          }
+        }
 
         const events: AddressedEvent[] = [];
         const result = await deps.db.db.transaction((tx) =>

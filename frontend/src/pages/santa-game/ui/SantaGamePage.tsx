@@ -17,6 +17,7 @@ import { SantaDrawButton } from "@/features/santa-draw";
 
 import {
   type SantaView,
+  drawFailedNote,
   drawLabel,
   santaTerms,
   useSantaGame,
@@ -51,6 +52,8 @@ import {
 
 import { type MemberStatus, memberStatus } from "../model/member-status";
 import { BoughtSheet } from "./BoughtSheet";
+import { EditGameAction } from "./EditGame";
+import { Exclusions } from "./Exclusions";
 import { LettersReady } from "./LettersReady";
 import { LeaveGameButton, RemoveMemberButton } from "./MemberActions";
 import { RemindWithoutWishlist } from "./RemindWithoutWishlist";
@@ -235,6 +238,9 @@ const GameContent = () => {
     (member) => member.joined && !member.hasWishlist,
   );
   const envelope = view.me?.envelope ?? "sealed";
+  // Жеребьёвка по дате не прошла (R08): организатору — почему и что
+  // делать, остальным — что ждём его.
+  const failedNote = drawFailedNote(view);
   // Подопечный приходит сразу после жеребьёвки, но показываем только во
   // вскрытом конверте — анимация не ждёт сети.
   const ward = envelope === "opened" ? (view.me?.ward ?? null) : null;
@@ -301,6 +307,9 @@ const GameContent = () => {
         {view.game.status === "gathering" && (
           <>
             <p className="text-title-3">{drawLabel(view)}</p>
+            {failedNote && (
+              <p className="text-caption text-rose">{failedNote}</p>
+            )}
             {isOwner && <SantaDrawButton view={view} />}
             {view.role === "invited" ? (
               <Button
@@ -312,8 +321,10 @@ const GameContent = () => {
               </Button>
             ) : (
               // Без даты причина уже в строке выше — не повторяем (W09).
+              // Жеребьёвка по дате не прошла — причина уже в подписи R08.
               view.drawIssue &&
-              view.game.drawAt && (
+              view.game.drawAt &&
+              !failedNote && (
                 <p className="text-caption text-rose">{view.drawIssue}</p>
               )
             )}
@@ -380,6 +391,10 @@ const GameContent = () => {
 
       <Members view={view} meId={meId} />
 
+      {isOwner && view.game.status === "gathering" && (
+        <Exclusions view={view} />
+      )}
+
       {view.game.status === "drawn" && view.me && (
         <LettersReady view={view} isOwner={isOwner} meId={meId} />
       )}
@@ -416,7 +431,18 @@ const GameContent = () => {
 // ниже участники со статусами вишлиста.
 export const SantaGamePage = () => (
   <Screen>
-    <AppHeader title="Тайный Санта" showBack backHref={ROUTES.SANTA} />
+    <AppHeader
+      title="Тайный Санта"
+      showBack
+      backHref={ROUTES.SANTA}
+      actions={
+        // Свой Suspense: шапка вне Suspense экрана, а «Изменить игру» читает
+        // id из адреса (useSearchParams).
+        <Suspense fallback={null}>
+          <EditGameAction />
+        </Suspense>
+      }
+    />
     <ScreenBody className={cn("px-5 pt-2")}>
       <Suspense fallback={<ContentSkeleton />}>
         <GameContent />

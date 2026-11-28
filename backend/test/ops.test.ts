@@ -2,7 +2,7 @@ import { createSeededRandom } from "@swipeit/core/logic/random";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../src/app";
-import { loadConfig } from "../src/config";
+import { testConfig } from "./config";
 import { makeFriends } from "../src/domains/friends/handlers";
 import { formatFunnel, readFunnel } from "../src/domains/funnel/report";
 import { NOW, testCatalog } from "./contract/client";
@@ -17,7 +17,7 @@ let app: ReturnType<typeof buildApp>;
 beforeEach(async () => {
   await resetDb(database);
   app = buildApp({
-    config: loadConfig({ LOG_LEVEL: "silent", OPS_TOKEN: TOKEN }),
+    config: testConfig({ OPS_TOKEN: TOKEN }),
     db: database,
     catalog: await testCatalog(),
     clock: { now: () => NOW },
@@ -64,7 +64,7 @@ describe("отчёт владельцу (R02)", () => {
     expect((await report()).statusCode).toBe(404);
     expect((await report("wrong-token-wrong-token-xx")).statusCode).toBe(404);
     const bare = buildApp({
-      config: loadConfig({ LOG_LEVEL: "silent" }),
+      config: testConfig(),
       db: database,
       catalog: await testCatalog(),
       clock: { now: () => NOW },

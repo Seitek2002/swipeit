@@ -38,6 +38,7 @@ import {
   type Audience,
   ROUTES,
 } from "@/shared/config";
+import { useAppMode } from "@/shared/lib/app-status";
 import { plural } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 import { useDemoSettingsStore, useGiftFiltersStore } from "@/shared/store";
@@ -54,9 +55,12 @@ import {
   toast,
 } from "@/shared/ui";
 
+import { AccountActions } from "./account-actions";
+
 // Профиль (DESIGN.md §8.9, quick-start.html кадр 7): имя и аватар,
 // «Мои даты», «Мне нравится», «Показывать подарки», «Друзья», «Режим демонстрации»,
-// «Сбросить демо-данные».
+// «Сбросить демо-данные». В remote вместо демо-кнопок — «Выйти» и «Удалить
+// профиль» (BACKEND.md §3.4).
 export const ProfilePage = () => {
   const me = useMe();
 
@@ -137,6 +141,7 @@ const ProfileForm = ({ user }: { user: User }) => {
   const [ownUserId] = useState(readOwnUserId);
   const canReturn = Boolean(ownUserId && ownUserId !== user.id);
   const friends = useFriends();
+  const remote = useAppMode() === "remote";
   const demoMode = useDemoSettingsStore((state) => state.demoMode);
   const setDemoMode = useDemoSettingsStore((state) => state.setDemoMode);
   const [saved, setSaved] = useState(() => draftFromUser(user));
@@ -247,57 +252,63 @@ const ProfileForm = ({ user }: { user: User }) => {
             className="text-rose"
           />
         </Link>
-        <Switch
-          className="border-line border-b py-3"
-          label="Режим демонстрации"
-          description="Кнопка демо-панели: «Смотреть как», скорость ботов, перемотка времени"
-          checked={demoMode}
-          onChange={setDemoMode}
-        />
-        <ResetDemoButton className="mt-3 self-start px-0" />
-        {/* Готовая Айгерим с вишлистом (DESIGN.md §8.1) — бывшая кнопка
-            первого экрана. */}
-        {canReturn && ownUserId ? (
-          <Button
-            variant="secondary"
-            className="mt-3"
-            onClick={() => {
-              returnToOwn(ownUserId);
-              router.push(ROUTES.WISHLIST);
-            }}
-          >
-            Вернуться в свой профиль
-          </Button>
+        {remote ? (
+          <AccountActions />
         ) : (
-          <Button
-            variant="secondary"
-            className="mt-3"
-            loading={loginDemo.isPending}
-            onClick={() => setConfirmDemo(true)}
-          >
-            Войти как демо-пользователь
-          </Button>
+          <>
+            <Switch
+              className="border-line border-b py-3"
+              label="Режим демонстрации"
+              description="Кнопка демо-панели: «Смотреть как», скорость ботов, перемотка времени"
+              checked={demoMode}
+              onChange={setDemoMode}
+            />
+            <ResetDemoButton className="mt-3 self-start px-0" />
+            {/* Готовая Айгерим с вишлистом (DESIGN.md §8.1) — бывшая кнопка
+              первого экрана. */}
+            {canReturn && ownUserId ? (
+              <Button
+                variant="secondary"
+                className="mt-3"
+                onClick={() => {
+                  returnToOwn(ownUserId);
+                  router.push(ROUTES.WISHLIST);
+                }}
+              >
+                Вернуться в свой профиль
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                className="mt-3"
+                loading={loginDemo.isPending}
+                onClick={() => setConfirmDemo(true)}
+              >
+                Войти как демо-пользователь
+              </Button>
+            )}
+            <ConfirmDialog
+              open={confirmDemo}
+              onClose={() => setConfirmDemo(false)}
+              isLoading={loginDemo.isPending}
+              title="Войти как Айгерим?"
+              description="Твой профиль и вишлист сохранятся. Вернуться — здесь же, в профиле: «Вернуться в свой профиль»."
+              confirmLabel="Войти"
+              onConfirm={() =>
+                loginDemo.mutate(undefined, {
+                  onSuccess: () => {
+                    setConfirmDemo(false);
+                    router.push(ROUTES.WISHLIST);
+                  },
+                  onError: () =>
+                    toast("Не получилось войти. Попробуй ещё раз", {
+                      tone: "error",
+                    }),
+                })
+              }
+            />
+          </>
         )}
-        <ConfirmDialog
-          open={confirmDemo}
-          onClose={() => setConfirmDemo(false)}
-          isLoading={loginDemo.isPending}
-          title="Войти как Айгерим?"
-          description="Твой профиль и вишлист сохранятся. Вернуться — здесь же, в профиле: «Вернуться в свой профиль»."
-          confirmLabel="Войти"
-          onConfirm={() =>
-            loginDemo.mutate(undefined, {
-              onSuccess: () => {
-                setConfirmDemo(false);
-                router.push(ROUTES.WISHLIST);
-              },
-              onError: () =>
-                toast("Не получилось войти. Попробуй ещё раз", {
-                  tone: "error",
-                }),
-            })
-          }
-        />
         {/* Фото занятий — под CC BY и CC BY-SA: авторы обязательны (DESIGN.md §8.9).
             Ссылка мелкая, а зона нажатия — ≥ 44 px за счёт псевдоэлемента:
             сверху до кнопки сброса остаётся зазор, соседей она не перекрывает. */}
