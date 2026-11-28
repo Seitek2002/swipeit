@@ -2,7 +2,11 @@ import { toDateKey } from "@swipeit/core/format";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { funnelDaily } from "../src/db/schema";
-import { formatFunnel, readFunnel } from "../src/domains/funnel/report";
+import {
+  formatFunnel,
+  readFunnel,
+  readProfilesByVia,
+} from "../src/domains/funnel/report";
 import { NOW, testCatalog } from "./contract/client";
 import { createTestDb, resetDb } from "./db";
 import { createTestServer, type TestUser } from "./server";
@@ -80,12 +84,74 @@ describe("воронка P09", () => {
       guest_opened: 1,
       reservation_created: 1,
       guest_first_swipe: 1,
+      // У владельца: ссылка дошла, на вишлист забронировали (Q01).
+      share_reached: 1,
+      reservation_received: 1,
     });
     const rows = await database.db.select().from(funnelDaily);
     // День — по часам сервера, в момент действия.
     expect(new Set(rows.map((row) => row.day))).toEqual(
       new Set([toDateKey(NOW)]),
     );
+  });
+
+  it("Q01: новый гость без профиля → профиль при брони → свой вишлист отправлен: петля посчитана", async () => {
+    const { products } = await testCatalog();
+    const owner = await server.newUser({ name: "Айгерим", birthday: "03-14" });
+    for (const product of products.slice(0, 5)) await swipe(owner, product.id);
+    const { code } = (
+      await server.request(owner, "POST", "/wishlist/share")
+    ).json() as { code: string };
+
+    // Открыл без профиля: шагов нет ни у кого.
+    await server.request(null, "GET", `/share/${code}`);
+    expect(await counts()).not.toHaveProperty("share_reached");
+
+    // Профиль — при брони; экран гостя перечитывает ссылку уже с профилем.
+    const created = (
+      await server.request(null, "POST", "/users", { via: "reservation" })
+    ).json() as { me: { id: string }; token: string };
+    const guest = { id: created.me.id, token: created.token };
+    await server.request(guest, "PATCH", "/me", { name: "Бакыт" });
+    await server.request(guest, "POST", "/reservations", {
+      ownerId: owner.id,
+      itemKey: products[0]?.id ?? "",
+      share: code,
+    });
+    await server.request(guest, "GET", `/share/${code}`);
+    // Свой вишлист: 5 «Хочу» и отправка — дважды, счётчики не растут.
+    for (const product of products.slice(10, 15))
+      await swipe(guest, product.id);
+    await server.request(guest, "POST", "/wishlist/share");
+    await server.request(guest, "POST", "/wishlist/share");
+
+    expect(await counts()).toMatchObject({
+      guest_opened: 1,
+      reservation_created: 1,
+      guest_first_swipe: 1,
+      guest_shared: 1,
+      share_reached: 1,
+      reservation_received: 1,
+      wishlist_shared: 2,
+    });
+    const report = formatFunnel(
+      await readFunnel(database.db, 14, NOW),
+      14,
+      await readProfilesByVia(database.db, 14, NOW),
+    );
+    expect(report).toContain("reservation: 1");
+    expect(report).toContain("guest_first_swipe → guest_shared: 100% (1 из 1)");
+  });
+
+  it("Q01: владелец открыл свою ссылку — share_reached не ставится", async () => {
+    const { products } = await testCatalog();
+    const owner = await server.newUser({ name: "Айгерим" });
+    for (const product of products.slice(0, 5)) await swipe(owner, product.id);
+    const { code } = (
+      await server.request(owner, "POST", "/wishlist/share")
+    ).json() as { code: string };
+    await server.request(owner, "GET", `/share/${code}`);
+    expect(await counts()).not.toHaveProperty("share_reached");
   });
 
   it("в funnel_daily нет id людей, имён и кодов ссылок", async () => {

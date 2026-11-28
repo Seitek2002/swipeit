@@ -6,6 +6,48 @@
 
 **Демо:** https://seitek2002.github.io/swipeit/ · репозиторий: https://github.com/Seitek2002/swipeit
 
+## Q01 (сервер) — воронка видит нового гостя и петлю «гость → свой вишлист» — ✅ сделано
+
+Задача из [progress/auto-tasks-pm-2.md](progress/auto-tasks-pm-2.md). Клиентская часть — `via` из транспорта `remote` — в B15; `link_clicked` — в B16.
+
+**Что сделано:**
+- **Откуда профиль.** `NewUserInputSchema.via`: `feed`, `wishlist_link`, `reservation`, `plan_invite`, `santa_invite`, `pick_link` (`USER_VIA` в core). Сервер хранит его в `users.created_via` (миграция `0006_created_via`); при удалении профиля поле обнуляется. Мок поле не читает.
+- **`POST /users { via: wishlist_link | reservation }`** — в той же транзакции ставится `guest_opened`: новый гость получает профиль уже после открытия ссылки.
+- **Новые шаги:**
+  - `guest_shared` — отправил свой вишлист, уже побывав гостем: коэффициент петли;
+  - `share_reached` — владельцу, когда его ссылку открыл другой профиль;
+  - `reservation_received` — владельцу, первая бронь на его вишлист.
+- **Без взаимных блокировок.** Шаги владельца (`share_reached`, `reservation_received`) пишутся в чужую строку `users`, поэтому `reachStep(…, { skipLocked: true })`: `FOR UPDATE SKIP LOCKED`. Без этого двое, открывшие вишлисты друг друга, ловили deadlock (упал R3), и бронь вместе с «подарили» — тоже (R2). Если строка занята, шаг засчитается в следующий раз.
+- **Отчёт:**
+  - конверсии `share_unlocked → wishlist_shared → share_reached → reservation_received` и `guest_opened → guest_first_swipe → guest_shared`;
+  - раздел «Откуда профили» по `created_via`, только счётчики.
+
+**Пример вывода** (база разработки после миграции; старые профили без `via` — «—»):
+```
+guest_shared              0      0
+share_reached             0      0
+reservation_received      0      0
+…
+Откуда профили (created_via; «—» — не указано):
+  —: 7
+
+Конверсии за период:
+  …
+  wishlist_shared → share_reached: 0% (0 из 1)
+  share_reached → reservation_received: — (0 из 0)
+  guest_first_swipe → guest_shared: 0% (0 из 1)
+```
+
+**Тесты:** сервер 293 → 295 (`funnel.test.ts`):
+- новый гость: открыл без профиля → `POST /users { via: "reservation" }` → бронь → перечитал → 5 «Хочу» → отправил дважды → по 1 в `guest_opened`, `reservation_created`, `guest_first_swipe`, `guest_shared`, у владельца `share_reached` и `reservation_received`; в отчёте «reservation: 1» и «guest_first_swipe → guest_shared: 100%»;
+- владелец открыл свою ссылку — `share_reached` нет;
+- прежний сценарий — плюс шаги владельца;
+- R2 и R3 снова зелёные.
+
+**Проверено:** миграция на базе разработки (`npm run db:migrate`), `npm run funnel -- --days 2` — вывод выше.
+
+**Коммит:** см. git log («Q01: …»).
+
 ## Q05 (часть 2) — Санта: удалённый профиль после жеребьёвки, передача роли организатора — ✅ сделано
 
 Задача из [progress/auto-tasks-pm-2.md](progress/auto-tasks-pm-2.md).

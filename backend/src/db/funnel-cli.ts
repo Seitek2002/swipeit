@@ -1,5 +1,9 @@
 import { loadConfig } from "../config";
-import { formatFunnel, readFunnel } from "../domains/funnel/report";
+import {
+  formatFunnel,
+  readFunnel,
+  readProfilesByVia,
+} from "../domains/funnel/report";
 import { createDb } from "./client";
 
 // npm run funnel -w backend -- --days 14 — воронка за N дней (P09).
@@ -14,7 +18,11 @@ const config = loadConfig();
 const database = createDb(config.DATABASE_URL, 1);
 try {
   console.log(
-    formatFunnel(await readFunnel(database.db, days, Date.now()), days),
+    formatFunnel(
+      await readFunnel(database.db, days, Date.now()),
+      days,
+      await readProfilesByVia(database.db, days, Date.now()),
+    ),
   );
 } finally {
   await database.close();

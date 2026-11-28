@@ -14,6 +14,11 @@ export const FUNNEL_STEPS = [
   "guest_opened",
   "reservation_created",
   "guest_first_swipe",
+  // Петля (Q01): гость отправил свой вишлист; ссылка владельца дошла до
+  // другого профиля; на вишлист владельца впервые забронировали.
+  "guest_shared",
+  "share_reached",
+  "reservation_received",
   "plan_created",
   "plan_decided",
   "santa_drawn",
@@ -30,12 +35,24 @@ export const reachStep = async (
   userId: string,
   step: FunnelStep,
   now: number,
+  // Шаг другого человека (владельца вишлиста — Q01): его строку users может
+  // держать его же запрос. Ждать её нельзя — два встречных запроса взяли бы
+  // строки крест-накрест (deadlock). Занята — шаг засчитается в следующий
+  // раз.
+  { skipLocked = false }: { skipLocked?: boolean } = {},
 ): Promise<boolean> => {
+  const notYet = sql`not (${step} = any(${users.funnelSteps}))`;
   const [first] = await tx
     .update(users)
     .set({ funnelSteps: sql`array_append(${users.funnelSteps}, ${step})` })
     .where(
-      and(eq(users.id, userId), sql`not (${step} = any(${users.funnelSteps}))`),
+      skipLocked
+        ? sql`${users.id} = (
+            select u.id from users u
+            where u.id = ${userId} and not (${step} = any(u.funnel_steps))
+            for update skip locked
+          )`
+        : and(eq(users.id, userId), notYet),
     )
     .returning({ id: users.id });
   if (!first) return false;

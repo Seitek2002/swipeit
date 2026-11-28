@@ -191,7 +191,19 @@ export const NameSchema = z
 // POST /users — с этапа 7 без тела: профиль создаётся сам, под прелоадером
 // (DESIGN §8.1). Поля оставлены необязательными для совместимости: ими
 // пользуются тесты и старые клиенты (имя на /pick/ до T22).
+// Откуда пришёл профиль — для воронки сервера (auto-tasks-pm-2 Q01):
+// служебное поле, не личное. Мок его не читает.
+export const USER_VIA = [
+  "feed",
+  "wishlist_link",
+  "reservation",
+  "plan_invite",
+  "santa_invite",
+  "pick_link",
+] as const;
+
 export const NewUserInputSchema = z.object({
+  via: z.enum(USER_VIA).optional(),
   name: NameSchema.optional(),
   avatarColor: z.enum(AVATAR_COLORS).optional(),
   birthday: MonthDaySchema.optional(),

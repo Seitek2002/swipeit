@@ -66,6 +66,9 @@ export const users = pgTable(
       .notNull()
       .default(sql`'{}'`),
     createdAt: createdAt(),
+    // Откуда пришёл профиль (Q01): feed, wishlist_link, reservation…
+    // Служебное поле воронки, уходит вместе со строкой.
+    createdVia: text("created_via"),
     // Удалённый профиль (§3.4): строка остаётся без имени, чтобы чужие планы
     // и игры показывали «Удалённый профиль».
     deletedAt: at("deleted_at"),

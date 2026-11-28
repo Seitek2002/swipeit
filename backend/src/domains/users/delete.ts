@@ -270,6 +270,7 @@ export const deleteMe: ServerHandler = async (ctx) => {
         taste: null,
         seenHints: [],
         dismissedReminders: [],
+        createdVia: null,
         deletedAt: new Date(ctx.clock.now()),
       })
       .where(eq(users.id, id));

@@ -2,6 +2,7 @@ import { AVATAR_COLORS } from "@swipeit/core/config";
 import {
   MarkHintInputSchema,
   type MeResponse,
+  NewUserInputSchema,
   UpdateMeInputSchema,
 } from "@swipeit/core/api/users/types";
 import { validation } from "@swipeit/core/errors";
@@ -38,8 +39,10 @@ const writeMe = async (
 
 // POST /users (BACKEND.md §3.1): анонимный профиль и сессия, ответ
 // { me, token }. Без имени, со случайным фоном аватара, без демо-друзей.
-// Поля тела игнорируются: они оставлены в схеме для мока.
-export const createUser: ServerHandler = async (ctx) => {
+// Из тела читается только via (Q01) — откуда пришёл профиль; остальные
+// поля оставлены в схеме для мока.
+export const createUser: ServerHandler = async (ctx, { body }) => {
+  const { via } = parseInput(NewUserInputSchema, body ?? {});
   const id = `u_${nanoid(10)}`;
   const createdAt = new Date(ctx.clock.now());
   const [row] = await ctx.tx
@@ -47,12 +50,18 @@ export const createUser: ServerHandler = async (ctx) => {
     .values({
       id,
       avatarColor: ctx.random.pick(AVATAR_COLORS),
+      createdVia: via ?? null,
       createdAt,
     })
     .returning();
   await ctx.tx.insert(wishlistMeta).values({ ownerId: id });
   const { token } = await createSession(ctx.tx, id, ctx.clock, ctx.userAgent);
   await reachStep(ctx.tx, id, "profile_created", ctx.clock.now());
+  // Новый гость получает профиль при брони или после «Собрать свой
+  // вишлист» — ссылку он уже открыл (Q01).
+  if (via === "wishlist_link" || via === "reservation") {
+    await reachStep(ctx.tx, id, "guest_opened", ctx.clock.now());
+  }
   usersChanged(ctx, id);
   if (!row) throw new Error("Профиль не записался");
   return { me: toMe(rowToUser(row)), token };

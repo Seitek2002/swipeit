@@ -40,7 +40,7 @@ import {
 } from "../../db/schema";
 import { datesOf } from "../dates/handlers";
 import { pickShare } from "../pick/handlers";
-import { reachStep } from "../funnel/steps";
+import { hasStep, reachStep } from "../funnel/steps";
 import { areFriends, makeFriends } from "../friends/handlers";
 import { lockMe, readMe, readUser, type UserRow } from "../users/queries";
 import {
@@ -147,6 +147,10 @@ export const shareWishlist: ServerHandler = async (ctx) => {
   if (!me.name) throw nameRequired();
   const link = await ensureShareLink(ctx, "wishlist", me.id, me.id);
   await reachStep(ctx.tx, me.id, "wishlist_shared", ctx.clock.now());
+  // Коэффициент петли (Q01): гость отправил уже свой вишлист.
+  if (await hasStep(ctx.tx, me.id, "guest_opened")) {
+    await reachStep(ctx.tx, me.id, "guest_shared", ctx.clock.now());
+  }
   return link;
 };
 
@@ -231,6 +235,10 @@ export const getShare: ServerHandler = async (ctx, { params }) => {
         // Воронка: профиль открыл чужой вишлист по ссылке (P09).
         if (visitor) {
           await reachStep(ctx.tx, visitor.id, "guest_opened", ctx.clock.now());
+          // Ссылка дошла до другого профиля (Q01).
+          await reachStep(ctx.tx, owner.id, "share_reached", ctx.clock.now(), {
+            skipLocked: true,
+          });
         }
         // Только посетитель с именем (ревью R1): безымянного в «Друзьях» не
         // видно, а имя он вписывает в форме брони — и «новый друг»
@@ -487,6 +495,15 @@ export const createReservation: ServerHandler = async (ctx, { body }) => {
   }
   if (!created) throw new Error("Бронь не записалась");
   await reachStep(ctx.tx, me.id, "reservation_created", ctx.clock.now());
+  if (target.kind === "user") {
+    await reachStep(
+      ctx.tx,
+      target.owner.id,
+      "reservation_received",
+      ctx.clock.now(),
+      { skipLocked: true },
+    );
+  }
   changed(ctx, ["reservations", "wishlist"], target.ref);
   return toReservation(created);
 };
