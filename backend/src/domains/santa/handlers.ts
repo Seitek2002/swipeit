@@ -277,6 +277,8 @@ const viewOf = async (
           envelope: envelopeOf(game, userId),
           bought: game.boughtIds.includes(userId),
           ward: withWard && wardId ? await wardOf(ctx, game, wardId) : null,
+          // Жеребьёвка была, а пары нет — подопечный удалил профиль (Q05).
+          ...(game.status === "drawn" && !wardId ? { wardLeft: true } : {}),
         }
       : null,
     boughtCount: game.boughtIds.length,

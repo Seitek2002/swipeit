@@ -286,7 +286,13 @@ const GameContent = () => {
             )}
           </>
         )}
-        {envelope === "ready" && (
+        {view.me?.wardLeft && (
+          // Подопечный удалил профиль, а дарил мне (пара двоих, Q05).
+          <p className="text-body text-rose">
+            Твой подопечный вышел из игры — в этой игре ты не даришь.
+          </p>
+        )}
+        {envelope === "ready" && !view.me?.wardLeft && (
           <>
             <p className="text-caption text-rose">
               Удерживай печать, чтобы открыть

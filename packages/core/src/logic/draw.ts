@@ -144,3 +144,49 @@ export const drawIssueWithInvites = (
   }
   return drawIssueOf(participantIds, exclusions, describe);
 };
+
+// Участник ушёл после жеребьёвки — удалил профиль (auto-tasks-pm-2 Q05). У
+// него были Санта S и подопечный W:
+// - S ≠ W — S теперь дарит W (исключения не проверяем: подарок от
+//   «исключённого» лучше, чем никакого);
+// - S = W (дарили друг другу) — у S больше нет ни подопечного, ни Санты.
+// Остальные пары не меняются.
+export type PairRepair = {
+  assignments: Record<string, string>;
+  // Кому досталось новое письмо.
+  rewired: null | string;
+  // Кто остался без подопечного.
+  orphaned: null | string;
+};
+
+export const repairAfterLeave = (
+  assignments: Readonly<Record<string, string>>,
+  leaverId: string,
+): PairRepair => {
+  const ward = assignments[leaverId];
+  const santa = Object.keys(assignments).find(
+    (id) => assignments[id] === leaverId,
+  );
+  // Без ушедшего: ни его пары, ни пары на него.
+  const without = (drop: readonly string[]) =>
+    Object.fromEntries(
+      Object.entries(assignments).filter(
+        ([giver, receiver]) => !drop.includes(giver) && receiver !== leaverId,
+      ),
+    );
+  if (santa === undefined) {
+    return { assignments: without([leaverId]), rewired: null, orphaned: null };
+  }
+  if (ward === undefined || ward === santa) {
+    return {
+      assignments: without([leaverId, santa]),
+      rewired: null,
+      orphaned: santa,
+    };
+  }
+  return {
+    assignments: { ...without([leaverId]), [santa]: ward },
+    rewired: santa,
+    orphaned: null,
+  };
+};

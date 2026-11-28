@@ -220,8 +220,8 @@ describe("DELETE /me (§3.4)", () => {
     expect(await rowsMentioning(me.id)).toEqual({
       users: 1,
       plan_participants: 2, // pl_shared и pl_done
-      santa_members: 1, // sg_drawn
-      santa_assignments: 2, // пара после жеребьёвки
+      // Из игр Санты уходит совсем: в sg_drawn они дарили друг другу —
+      // у другого теперь нет подопечного (Q05).
       custom_activities: 1, // ca_used — в колоде pl_shared, без фото
     });
     const [user] = await db
@@ -324,6 +324,113 @@ describe("DELETE /me (§3.4)", () => {
         .from(schema.plans)
         .where(eq(schema.plans.id, created.plan.id)),
     ).toEqual([]);
+  });
+
+  describe("Q05: Санта после жеребьёвки, удалён профиль", () => {
+    // Игра на n человек, все вступили, жеребьёвка; пары — из базы.
+    const drawnGame = async (n: number) => {
+      const owner = await server.newUser({ name: "Организатор" });
+      const others: TestUser[] = [];
+      for (let index = 1; index < n; index += 1) {
+        const friend = await server.newUser({ name: `Участник ${index}` });
+        await db.transaction((tx) =>
+          makeFriends(tx, owner.id, friend.id, "santa", { now: () => NOW }),
+        );
+        others.push(friend);
+      }
+      const created = (
+        await server.request(owner, "POST", "/santa", {
+          title: "Офис",
+          budget: 2000,
+          exchangeDate: "2026-12-25",
+          participantIds: others.map((friend) => friend.id),
+        })
+      ).json() as { game: { id: string } };
+      const id = created.game.id;
+      for (const friend of others) {
+        await server.request(friend, "POST", `/santa/${id}/join`);
+      }
+      await server.request(owner, "POST", `/santa/${id}/draw`);
+      const everyone = [owner, ...others];
+      return { id, owner, everyone };
+    };
+    const pairsOf = async (id: string) =>
+      Object.fromEntries(
+        (
+          await db
+            .select()
+            .from(schema.santaAssignments)
+            .where(eq(schema.santaAssignments.gameId, id))
+        ).map((row) => [row.santaId, row.wardId]),
+      );
+    const viewOf = async (user: TestUser, id: string) =>
+      (await server.request(user, "GET", `/santa/${id}`)).json() as {
+        game: { ownerId: string; participantIds: string[] };
+        me: null | {
+          envelope: string;
+          ward: null | { id: string };
+          wardLeft?: boolean;
+        };
+      };
+
+    it("пятеро, удалён D: его Санта дарит его подопечному, письмо снова запечатано, остальные пары те же", async () => {
+      const { id, everyone } = await drawnGame(5);
+      for (const member of everyone) {
+        await server.request(member, "POST", `/santa/${id}/open`);
+      }
+      const before = await pairsOf(id);
+      const leaver = everyone[3] as TestUser;
+      const santa = Object.keys(before).find((s) => before[s] === leaver.id);
+      const ward = before[leaver.id];
+      expect((await server.request(leaver, "DELETE", "/me")).statusCode).toBe(
+        200,
+      );
+      const after = await pairsOf(id);
+      expect(after[santa ?? ""]).toBe(ward);
+      expect(Object.keys(after)).toHaveLength(4);
+      for (const [giver, receiver] of Object.entries(before)) {
+        if (giver === santa || giver === leaver.id) continue;
+        expect(after[giver]).toBe(receiver);
+      }
+      const santaUser = everyone.find((m) => m.id === santa) as TestUser;
+      const view = await viewOf(santaUser, id);
+      expect(view.me?.envelope).toBe("ready");
+      expect(view.me?.ward?.id).toBe(ward);
+      expect(view.game.participantIds).not.toContain(leaver.id);
+    });
+
+    it("пара двоих внутри игры на 4 — удалён один, у второго нет подопечного (wardLeft)", async () => {
+      // Пары случайные: ищем игру, где есть взаимная пара.
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        const { id, everyone } = await drawnGame(4);
+        const pairs = await pairsOf(id);
+        const a = Object.keys(pairs).find((s) => pairs[pairs[s] ?? ""] === s);
+        if (!a) continue;
+        const b = pairs[a] ?? "";
+        const leaver = everyone.find((m) => m.id === b) as TestUser;
+        await server.request(leaver, "DELETE", "/me");
+        const after = await pairsOf(id);
+        expect(after[a]).toBeUndefined();
+        for (const [giver, receiver] of Object.entries(pairs)) {
+          if (giver === a || giver === b) continue;
+          expect(after[giver]).toBe(receiver);
+        }
+        const aUser = everyone.find((m) => m.id === a) as TestUser;
+        const view = await viewOf(aUser, id);
+        expect(view.me?.ward).toBeNull();
+        expect(view.me?.wardLeft).toBe(true);
+        return;
+      }
+      throw new Error("За 20 жеребьёвок не нашлось взаимной пары");
+    }, 120_000);
+
+    it("организатор игры удалил профиль — организатор тот, кто вступил следующим", async () => {
+      const { id, owner, everyone } = await drawnGame(4);
+      await server.request(owner, "DELETE", "/me");
+      const second = everyone[1] as TestUser;
+      const view = await viewOf(second, id);
+      expect(view.game.ownerId).toBe(second.id);
+    });
   });
 
   it("без чужих планов и игр профиль удаляется целиком", async () => {

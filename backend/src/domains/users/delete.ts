@@ -20,17 +20,18 @@ import {
   wishlistItems,
   wishlistMeta,
 } from "../../db/schema";
+import { repairPairsAfterDelete } from "../santa/store";
 import { lockMe } from "./queries";
 
 // DELETE /me (BACKEND.md §3.4): удалить человека и его данные — желания,
 // свайпы, даты, сессии, привязки, фото, ссылки, брони, дружбы.
 //
-// В чужих планах и играх он остаётся строкой «Удалённый профиль» без имени:
-// строка участника, пара Санты после жеребьёвки. Его свайпы и голоса в
-// планах удаляются. Свой план или своя игра, где больше никого нет, —
-// удаляются целиком; где есть другие — остаются им. Организатор плана —
-// тот, кто вступил раньше всех (Q04); организатор игры Санты — пока тот же
-// обезличенный профиль (передача — Q05, вместе с B11).
+// В закончившихся чужих планах он остаётся строкой «Удалённый профиль» без
+// имени. Его свайпы и голоса в планах удаляются; из игр Санты он уходит
+// совсем — после жеребьёвки пары чинятся. Свой план или своя игра, где больше никого нет, —
+// удаляются целиком; где есть другие — остаются им. Организатор — тот, кто
+// вступил раньше всех (Q04 для планов, Q05 для Санты). В игре после
+// жеребьёвки пары чинятся (Q05): Санта ушедшего дарит его подопечному.
 //
 // Профиль, на который больше ничего не ссылается, удаляется физически;
 // иначе остаётся строка users без личного (deleted_at). Строки базы — без
@@ -99,6 +100,66 @@ const handOverPlans = async (ctx: ServerContext, id: string) => {
   }
 };
 
+// Свои игры Санты, где остались другие (Q05): организатором — тот, кто
+// вступил раньше всех, до и после жеребьёвки. Ему — тост.
+const handOverGames = async (ctx: ServerContext, id: string) => {
+  const { rows } = await ctx.tx.execute<{
+    id: string;
+    owner_id: string;
+    title: string;
+  }>(sql`
+    update santa_games g set owner_id = (
+      select m.user_id from santa_members m
+      where m.game_id = g.id and m.user_id <> ${id} and m.state = 'joined'
+      order by m.seq limit 1
+    )
+    where g.owner_id = ${id} and exists (
+      select 1 from santa_members m
+      where m.game_id = g.id and m.user_id <> ${id} and m.state = 'joined'
+    )
+    returning g.id, g.owner_id, g.title
+  `);
+  for (const game of rows) {
+    ctx.events.publish({
+      type: "toast",
+      text: `Теперь ты организатор игры «${game.title}»`,
+      forUserId: game.owner_id,
+    });
+  }
+};
+
+// Игры после жеребьёвки, где человек был (Q05): пары чинятся, его строка
+// уходит. Новое письмо — тостом только тому, кому оно досталось; остальным
+// — обычное «перечитай» без пар.
+const repairDrawnGames = async (ctx: ServerContext, id: string) => {
+  const { rows } = await ctx.tx.execute<{ game_id: string }>(sql`
+    select m.game_id from santa_members m
+    join santa_games g on g.id = m.game_id
+    where m.user_id = ${id} and g.status = 'drawn'
+  `);
+  for (const { game_id: gameId } of rows) {
+    const { rewired, orphaned } = await repairPairsAfterDelete(
+      ctx.tx,
+      gameId,
+      id,
+    );
+    if (rewired) {
+      ctx.events.publish({
+        type: "toast",
+        text: "Твой подопечный вышел из игры — открой новое письмо",
+        forUserId: rewired,
+      });
+    }
+    if (orphaned) {
+      ctx.events.publish({
+        type: "toast",
+        text: "Твой подопечный вышел из игры — в этой игре ты не даришь",
+        forUserId: orphaned,
+      });
+    }
+  }
+};
+
 // Идущие планы, из которых человек ушёл: остальные уже долистали — к
 // итогам, ждать больше некого (как completeIfAllFinished).
 const completeLeftPlans = async (tx: Tx, planIds: readonly string[]) => {
@@ -161,6 +222,8 @@ export const deleteMe: ServerHandler = async (ctx) => {
 
   await deleteLonelyOwned(tx, id);
   await handOverPlans(ctx, id);
+  await handOverGames(ctx, id);
+  await repairDrawnGames(ctx, id);
   const activePlans = await tx.execute<{ plan_id: string }>(sql`
     select pp.plan_id from plan_participants pp
     join plans p on p.id = pp.plan_id

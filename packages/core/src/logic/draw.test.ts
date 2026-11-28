@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createSeededRandom } from "./random";
-import { drawAssignments, drawIssueOf } from "./draw";
+import { drawAssignments, drawIssueOf, repairAfterLeave } from "./draw";
 
 // drawAssignments (TECH_SPEC §6): 3–30 участников, исключения, невозможные
 // случаи, никто не дарит себе — 1000 прогонов.
@@ -205,5 +205,32 @@ describe("drawAssignments", () => {
         describeName,
       ),
     ).toBe("Слишком много исключений: Нурай некому дарить");
+  });
+});
+
+describe("починка пар после ухода (Q05)", () => {
+  it("круг A→B→C→A, ушёл B — A дарит C, C дарит A", () => {
+    const result = repairAfterLeave({ A: "B", B: "C", C: "A" }, "B");
+    expect(result).toEqual({
+      assignments: { A: "C", C: "A" },
+      rewired: "A",
+      orphaned: null,
+    });
+  });
+
+  it("пятеро, ушёл D — меняется только пара его Санты", () => {
+    const before = { A: "B", B: "C", C: "D", D: "E", E: "A" };
+    const result = repairAfterLeave(before, "D");
+    expect(result.assignments).toEqual({ A: "B", B: "C", C: "E", E: "A" });
+    expect(result.rewired).toBe("C");
+  });
+
+  it("пара двоих A↔B в игре на четверых, ушёл B — у A нет подопечного, C↔D как были", () => {
+    const result = repairAfterLeave({ A: "B", B: "A", C: "D", D: "C" }, "B");
+    expect(result).toEqual({
+      assignments: { C: "D", D: "C" },
+      rewired: null,
+      orphaned: "A",
+    });
   });
 });

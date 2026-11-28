@@ -1,5 +1,6 @@
 import type { SantaGame } from "@swipeit/core/api/santa/types";
 import { notFound } from "@swipeit/core/errors";
+import { repairAfterLeave } from "@swipeit/core/logic/draw";
 import { and, asc, eq } from "drizzle-orm";
 
 import type { Tx } from "../../context";
@@ -153,6 +154,46 @@ export const saveAssignments = async (
     wardId,
   }));
   if (rows.length > 0) await tx.insert(santaAssignments).values(rows);
+};
+
+// Починка пар, когда участник удалил профиль после жеребьёвки (Q05). Читает
+// все пары игры — это действие сервера, а не ответ кому-то: наружу уходит
+// только, кому досталось новое письмо и кто остался без подопечного.
+export const repairPairsAfterDelete = async (
+  tx: Tx,
+  gameId: string,
+  userId: string,
+): Promise<{ orphaned: null | string; rewired: null | string }> => {
+  const rows = await tx
+    .select()
+    .from(santaAssignments)
+    .where(eq(santaAssignments.gameId, gameId));
+  const repair = repairAfterLeave(
+    Object.fromEntries(rows.map((row) => [row.santaId, row.wardId])),
+    userId,
+  );
+  await tx.delete(santaAssignments).where(eq(santaAssignments.gameId, gameId));
+  const next = Object.entries(repair.assignments).map(([santaId, wardId]) => ({
+    gameId,
+    santaId,
+    wardId,
+  }));
+  if (next.length > 0) await tx.insert(santaAssignments).values(next);
+  // Новое письмо — снова запечатано, «подарок куплен» снят; без
+  // подопечного — тоже без «куплен».
+  for (const id of [repair.rewired, repair.orphaned]) {
+    if (!id) continue;
+    await tx
+      .update(santaMembers)
+      .set(
+        id === repair.rewired
+          ? { openedAt: null, boughtAt: null }
+          : { boughtAt: null },
+      )
+      .where(memberWhere(gameId, id));
+  }
+  await tx.delete(santaMembers).where(memberWhere(gameId, userId));
+  return { rewired: repair.rewired, orphaned: repair.orphaned };
 };
 
 // «Мой подопечный» — единственное место, где читаются пары (§4.6, п. 2):

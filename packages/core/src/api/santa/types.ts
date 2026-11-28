@@ -156,6 +156,9 @@ export type SantaWard = PlanParticipant & {
 export type SantaMe = {
   bought: boolean;
   envelope: SantaEnvelopeState;
+  // Подопечный удалил профиль, а он дарил мне (пара двоих, Q05): в этой
+  // игре я больше не дарю. Только на сервере — в демо профиль не удаляется.
+  wardLeft?: boolean;
   // Есть сразу после жеребьёвки (до вскрытия — чтобы анимация конверта не
   // ждала сети). Показывать — только когда envelope === "opened".
   ward: null | SantaWard;
