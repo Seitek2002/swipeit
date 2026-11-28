@@ -52,6 +52,7 @@ import {
 } from "@/shared/ui";
 
 import { GivenHintBanner, ReservationNote } from "./OwnerNotices";
+import { ThanksSheet } from "./ThanksSheet";
 import { WishRow, useItemDisplay } from "./WishRow";
 
 // Порог отправки: 5 желаний в «Хочу», свои тоже (TECH_SPEC §6).
@@ -85,6 +86,11 @@ export const WishlistPage = () => {
   const [sheet, setSheet] = useState<null | Sheet>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // «Сказать спасибо» дарителю (P14).
+  const [thanks, setThanks] = useState<{
+    item: WishlistItem;
+    title: string;
+  } | null>(null);
   // «Предложить выбрать» из карточки дня рождения друга (P03).
   const [pickFriend, setPickFriend] = useState<{
     birthday: string;
@@ -186,6 +192,9 @@ export const WishlistPage = () => {
       deleteItem.mutate(item);
     } else if (action === "restore") {
       restoreItem.mutate(item.id);
+    } else if (action === "thanks") {
+      const title = current.display?.title ?? "";
+      setTimeout(() => setThanks({ item, title }), 230);
     }
   };
 
@@ -423,6 +432,12 @@ export const WishlistPage = () => {
         onClose={() => setSheet(null)}
       />
       <CustomWishSheet open={customOpen} onClose={() => setCustomOpen(false)} />
+      <ThanksSheet
+        item={thanks?.item ?? null}
+        title={thanks?.title ?? ""}
+        withWishlistLink={unlocked}
+        onClose={() => setThanks(null)}
+      />
       {pickFriend !== null && (
         <FriendPickSheet
           friendName={pickFriend.name}

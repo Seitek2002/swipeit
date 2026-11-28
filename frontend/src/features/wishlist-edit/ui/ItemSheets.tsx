@@ -6,6 +6,7 @@ import {
   ArrowDown,
   ArrowUp,
   Gift,
+  HeartHandshake,
   type LucideIcon,
   NotebookPen,
   Palette,
@@ -33,7 +34,15 @@ import {
 import { useMarkGiven, useUpdateItem } from "../model";
 
 export type ItemAction =
-  "delete" | "down" | "given" | "note" | "restore" | "top" | "up" | "variant";
+  | "delete"
+  | "down"
+  | "given"
+  | "note"
+  | "restore"
+  | "thanks"
+  | "top"
+  | "up"
+  | "variant";
 
 // Что показать на мини-бирке в шторках: собирает страница (каталог + желание).
 export type ItemDisplay = {
@@ -72,6 +81,16 @@ export const ItemActionsSheet = ({
   const rows: ActionRow[] =
     item?.status === "given"
       ? [
+          // Дарителя указал сам владелец — можно поблагодарить (P14).
+          ...(item.given?.fromName
+            ? [
+                {
+                  action: "thanks" as const,
+                  icon: HeartHandshake,
+                  label: "Сказать спасибо",
+                },
+              ]
+            : []),
           { action: "restore", icon: RotateCcw, label: "Вернуть в вишлист" },
           { action: "delete", icon: Trash2, label: "Удалить", danger: true },
         ]
