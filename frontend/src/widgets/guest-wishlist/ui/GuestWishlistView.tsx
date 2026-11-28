@@ -25,14 +25,16 @@ import {
   storeLabel,
   storeOffers,
   useProduct,
+  useProducts,
 } from "@/entities/product";
 
 import type { GuestWishlist } from "@/shared/api";
 import { withBasePath } from "@/shared/lib/base-path";
 import { clock } from "@/shared/lib/clock";
 import { formatPrice } from "@/shared/lib/format";
-import { StoreTag } from "@/shared/ui";
+import { Chip, StoreTag } from "@/shared/ui";
 
+import { type BudgetLimit, budgetChips, fitsBudget } from "../model/budget";
 import { GuestWishlistHeader } from "./GuestWishlistHeader";
 
 type Item = GuestWishlist["items"][number];
@@ -267,6 +269,21 @@ export const GuestWishlistView = ({
   // §8.5). Гость без профиля называется только для брони — в ReserveControl.
   const requireName = useRequireName(NAME_CAPTIONS.reserve);
 
+  // Фильтр по бюджету (auto-tasks P10): цены товаров — из каталога, своих
+  // желаний — из самих желаний.
+  const products = useProducts(
+    wishlist.items.flatMap((item) => (item.productId ? [item.productId] : [])),
+  );
+  const priceOf = (item: Item) =>
+    (item.productId ? products.get(item.productId)?.priceMin : undefined) ??
+    item.custom?.priceMin;
+  const chips = budgetChips(wishlist.items.map(priceOf));
+  const [limit, setLimit] = useState<BudgetLimit | null>(null);
+  const shownLimit = limit !== null && chips.includes(limit) ? limit : null;
+  const items = wishlist.items.filter((item) =>
+    fitsBudget(priceOf(item), shownLimit),
+  );
+
   return (
     <>
       <GuestWishlistHeader
@@ -277,13 +294,33 @@ export const GuestWishlistView = ({
         titleAs={Title}
         action={headerAction}
       />
+      {chips.length > 0 && (
+        <div
+          role="group"
+          aria-label="Бюджет"
+          className="no-scrollbar flex gap-2 overflow-x-auto px-5 pt-3.5"
+        >
+          <Chip selected={shownLimit === null} onClick={() => setLimit(null)}>
+            Все
+          </Chip>
+          {chips.map((value) => (
+            <Chip
+              key={value}
+              selected={shownLimit === value}
+              onClick={() => setLimit(value)}
+            >
+              до {formatPrice(value)}
+            </Chip>
+          ))}
+        </div>
+      )}
       {wishlist.items.length === 0 ? (
         <p className="text-body text-rose px-5 pt-6">
           Здесь пока пусто — желания ещё не добавлены.
         </p>
       ) : (
         <ul className="flex flex-col gap-4 px-5 pt-[18px] pb-6">
-          {wishlist.items.map((item) => (
+          {items.map((item) => (
             <GuestWishCard
               key={item.key}
               item={item}

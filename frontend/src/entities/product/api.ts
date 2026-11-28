@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 
 import {
   type ProductFilters,
@@ -31,6 +31,23 @@ export const useProduct = (id?: string) =>
     queryFn: () => getProduct(id ?? ""),
     enabled: Boolean(id),
     staleTime: Infinity,
+  });
+
+// Несколько товаров сразу — цены для фильтра «до 3 000 сом» в гостевом
+// вишлисте (auto-tasks P10). Тот же кэш, что у useProduct.
+export const useProducts = (ids: readonly string[]) =>
+  useQueries({
+    queries: ids.map((id) => ({
+      queryKey: catalogKeys.product(id),
+      queryFn: () => getProduct(id),
+      staleTime: Infinity,
+    })),
+    combine: (results) =>
+      new Map(
+        results.flatMap((result) =>
+          result.data ? [[result.data.id, result.data] as const] : [],
+        ),
+      ),
   });
 
 // Магазины, где есть товары, — для чипов «Магазины» (UX-аудит M1). Каталог в
