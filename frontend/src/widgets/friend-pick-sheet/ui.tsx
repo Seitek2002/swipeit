@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
+
 import { NAME_CAPTIONS, NameForm, useRequireName } from "@/features/ask-name";
 import { PickRequestSheet } from "@/features/pick-request-create";
 import { describeFilters } from "@/features/product-filters";
 
-import { EMPTY_FILTERS } from "@/entities/product";
+import { EMPTY_FILTERS, type ProductFilters } from "@/entities/product";
 
 import { clock, useClockOffset } from "@/shared/lib/clock";
 import { birthdayOccasionOf } from "@/shared/lib/friend-birthday";
@@ -35,6 +37,8 @@ export const FriendPickSheet = ({
   // Друг увидит «Азамат хочет подарить тебе подарок»: нет имени — NameSheet
   // первым шагом шторки; NAME_REQUIRED — поверх и повтор (как в «Подарках»).
   const requireName = useRequireName(NAME_CAPTIONS.pick);
+  // Бюджет и категории — прямо в шторке (W02); резюме сверху их показывает.
+  const [filters, setFilters] = useState<ProductFilters>(EMPTY_FILTERS);
 
   return (
     <>
@@ -43,8 +47,9 @@ export const FriendPickSheet = ({
         key={`${friendName}:${occasion?.date ?? ""}`}
         open={open}
         onClose={onClose}
-        filters={EMPTY_FILTERS}
-        conditions={describeFilters(EMPTY_FILTERS)}
+        filters={filters}
+        onFiltersChange={setFilters}
+        conditions={describeFilters(filters)}
         defaultToName={friendName}
         defaultOccasion={occasion}
         nameStep={

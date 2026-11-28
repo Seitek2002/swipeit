@@ -2,7 +2,7 @@
 
 import { type ReactNode, useRef, useState } from "react";
 
-import type { ProductFilters } from "@/entities/product";
+import { type ProductFilters, useCatalogStores } from "@/entities/product";
 import { useMe } from "@/entities/user";
 import {
   OccasionFields,
@@ -11,14 +11,19 @@ import {
 } from "@/entities/wishlist";
 
 import { type Occasion, createPickRequest } from "@/shared/api";
+import { CATEGORY_IDS, CATEGORY_LABELS } from "@/shared/config";
 import { absoluteUrl } from "@/shared/lib/dom";
 import {
   BottomSheet,
+  Chip,
+  RangeSlider,
   ShareActions,
   Switch,
   TextArea,
   TextField,
 } from "@/shared/ui";
+
+import { canHidePrices, effectiveHidePrices } from "./model";
 
 type Props = {
   // Условия словами — их показывает экран, который открыл шторку.
@@ -37,6 +42,9 @@ type Props = {
   // шторка показывает его; имя сохранилось — сама переходит к ссылке.
   nameStep?: ReactNode;
   onClose: () => void;
+  // Бюджет и категории можно поменять прямо в шторке (UX-аудит W02): из
+  // карточки друга шторка открывается с пустыми фильтрами — «любые подарки».
+  onFiltersChange?: (filters: ProductFilters) => void;
   // NAME_REQUIRED от сервера: страница спрашивает имя и повторяет отправку.
   onShareError?: (error: unknown, retry: () => void) => boolean;
   open: boolean;
@@ -56,7 +64,9 @@ export const PickRequestSheet = ({
   defaultOccasion,
   nameStep,
   onShareError,
+  onFiltersChange,
 }: Props) => {
+  const stores = useCatalogStores();
   const { data: me } = useMe();
   const askName = Boolean(nameStep);
   const [toName, setToName] = useState(defaultToName);
@@ -68,7 +78,7 @@ export const PickRequestSheet = ({
   const getPayload = async () => {
     const input: Input = {
       filters,
-      hidePrices,
+      hidePrices: effectiveHidePrices(filters, hidePrices),
       toName: toName.trim() || undefined,
       occasion: occasionFromDraft(draft) ?? undefined,
       message: message.trim() || undefined,
@@ -114,6 +124,45 @@ export const PickRequestSheet = ({
             <p className="text-caption text-ink-soft">Друг выберет подарки</p>
             <p className="text-title-3 mt-0.5 italic">{conditions}</p>
           </div>
+          {onFiltersChange && (
+            <>
+              <RangeSlider
+                label="Бюджет"
+                value={filters.budget}
+                onChange={(budget) => onFiltersChange({ ...filters, budget })}
+              />
+              <div>
+                <p className="text-label mb-3">Категории</p>
+                <div
+                  role="group"
+                  aria-label="Категории"
+                  className="flex flex-wrap gap-2"
+                >
+                  {CATEGORY_IDS.filter(
+                    (category) =>
+                      !stores.data ||
+                      stores.data.categories.includes(category) ||
+                      filters.categories.includes(category),
+                  ).map((category) => (
+                    <Chip
+                      key={category}
+                      selected={filters.categories.includes(category)}
+                      onClick={() =>
+                        onFiltersChange({
+                          ...filters,
+                          categories: filters.categories.includes(category)
+                            ? filters.categories.filter((c) => c !== category)
+                            : [...filters.categories, category],
+                        })
+                      }
+                    >
+                      {CATEGORY_LABELS[category]}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
           <TextField
             label="Кому"
             placeholder="Имя друга"
@@ -131,8 +180,13 @@ export const PickRequestSheet = ({
           />
           <Switch
             label="Скрыть цены от друга"
-            description="Друг увидит только подарки в бюджете — без цифр"
-            checked={hidePrices}
+            description={
+              canHidePrices(filters)
+                ? "Друг увидит только подарки в бюджете — без цифр"
+                : "Сначала задай бюджет"
+            }
+            checked={effectiveHidePrices(filters, hidePrices)}
+            disabled={!canHidePrices(filters)}
             onChange={setHidePrices}
           />
         </div>
