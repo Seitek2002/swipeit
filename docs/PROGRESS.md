@@ -6,6 +6,27 @@
 
 **Демо:** https://seitek2002.github.io/swipeit/ · репозиторий: https://github.com/Seitek2002/swipeit
 
+## Q08 — гость во встроенном браузере мессенджера: предупреждение — ✅ сделано
+
+Задача из [progress/auto-tasks-pm-2.md](progress/auto-tasks-pm-2.md). Строка «войти через Telegram» — после B19.
+
+**Что сделано:**
+- **`shared/lib/in-app-browser.ts`** — `detectInAppBrowser(userAgent)` → `telegram` / `instagram` / `facebook` / `null` по меткам `Telegram-Android`, `Instagram`, `FBAN` / `FBAV`. Не узнали — `null`, ничего не показываем. Telegram на iOS открывает ссылки с обычным UA Safari — его не узнать.
+- **`shared/ui/in-app-note`** — `InAppBrowserNote`: «Ты в браузере Telegram — бронь и вишлист сохранятся только здесь. Открой ссылку в Chrome или Safari, чтобы поставить приложение» и «Скопировать ссылку» (адрес страницы, тост). Один раз за сессию (`sessionStorage`; нет хранилища — показываем).
+- **Где показывается:**
+  - в плашке P01 после брони на гостевом вишлисте;
+  - в шторке «Вишлист готов» после 5 «Хочу».
+
+**Проверено в браузере** (dev, 360×640, User-Agent Telegram Android через `--user-agent`): ссылка «на Новый год» → «Забронирую я» → имя → «Забронировать» → в плашке строка про браузер Telegram; «Скопировать ссылку» положила `http://localhost:3055/w/?d=…`.
+
+С обычным User-Agent строки нет — проверено тестом детектора, вживую не открывал.
+
+**Тесты:** фронт 404 → 406 — шесть строк User-Agent: Telegram Android, Instagram iOS, Facebook, Chrome Android, Safari iOS, пустая.
+
+**Скриншоты:** [Telegram, после брони, 360 px](progress/Q08/01-telegram-after-reserve-360.png).
+
+**Коммит:** см. git log («Q08: …»).
+
 ## Q02 — воронка по сценариям и компаниям — ✅ сделано
 
 Задача из [progress/auto-tasks-pm-2.md](progress/auto-tasks-pm-2.md).

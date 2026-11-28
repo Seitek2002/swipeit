@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { ROUTES } from "@/shared/config";
 import { pluralize } from "@/shared/lib/format";
-import { BottomSheet, Bow, Button } from "@/shared/ui";
+import { BottomSheet, Bow, Button, InAppBrowserNote } from "@/shared/ui";
 
 type Props = {
   count: number;
@@ -43,6 +43,7 @@ export const WishlistReadySheet = ({ open, count, onClose }: Props) => {
           Отправь его тем, кто будет дарить: они увидят, что ты хочешь, и не
           повторятся.
         </p>
+        <InAppBrowserNote tone="velvet" className="mt-3 text-left" />
       </div>
     </BottomSheet>
   );

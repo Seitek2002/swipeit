@@ -22,6 +22,7 @@ import {
   Brand,
   BrokenLink,
   Button,
+  InAppBrowserNote,
   Screen,
   ScreenBody,
   Skeleton,
@@ -78,6 +79,7 @@ const NextStepPlaque = ({
         Не сейчас
       </Button>
     </div>
+    <InAppBrowserNote />
   </div>
 );
 
