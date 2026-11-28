@@ -38,6 +38,7 @@ import {
   Avatar,
   Button,
   ContentSkeleton,
+  DemoLinkNote,
   EmptyState,
   Screen,
   ScreenBody,
@@ -338,6 +339,7 @@ const GameContent = () => {
             // или «Вступить в игру» у приглашённого: мандарин один (DESIGN.md §1).
             secondary={isOwner || view.role === "invited"}
           />
+          <DemoLinkNote />
         </section>
       )}
     </div>

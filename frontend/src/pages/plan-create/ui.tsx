@@ -34,6 +34,7 @@ import {
   Avatar,
   Button,
   Chip,
+  DemoLinkNote,
   ProgressDots,
   RangeSlider,
   Screen,
@@ -179,9 +180,12 @@ const StepPeople = ({
           );
         })}
       </ul>
-      <p className="text-caption text-rose -mt-3">
-        Ссылку-приглашение для остальных пришлём в лобби — по ней вступит любой.
-      </p>
+      <div className="-mt-3 flex flex-col gap-1">
+        <p className="text-caption text-rose">
+          Остальных позовёшь ссылкой-приглашением из лобби.
+        </p>
+        <DemoLinkNote />
+      </div>
       <div className="flex flex-col gap-3">
         <p className="text-caption text-rose">Совпадение — это когда</p>
         <SegmentedControl

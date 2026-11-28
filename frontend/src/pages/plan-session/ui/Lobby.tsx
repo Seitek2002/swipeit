@@ -12,7 +12,7 @@ import { ROUTES } from "@/shared/config";
 import { absoluteUrl } from "@/shared/lib/dom";
 import { pluralize } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
-import { Avatar, Button, ShareActions, toast } from "@/shared/ui";
+import { Avatar, Button, DemoLinkNote, ShareActions, toast } from "@/shared/ui";
 
 const MIN_READY = 2;
 
@@ -126,6 +126,7 @@ export const Lobby = ({ view, meId }: { meId: string; view: PlanView }) => {
           qrLabel="QR-код приглашения в план"
           secondary={!shareIsMain}
         />
+        <DemoLinkNote />
       </section>
 
       <div className="flex flex-col gap-2">

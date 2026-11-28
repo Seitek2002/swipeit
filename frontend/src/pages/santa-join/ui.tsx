@@ -39,14 +39,22 @@ const NotHere = () => (
   <EmptyState
     className="h-full"
     object="envelope"
-    title="В демо-версии присоединиться можно только с этого же устройства (ссылка в новой вкладке) или через режим «Локальная сеть». А пока посмотри, как играют демо-друзья."
+    title="Игра открыта на другом телефоне. В демо её видно только на телефоне, где её создали, или в режиме «Локальная сеть»."
     action={
-      <Link
-        href={ROUTES.SANTA_CREATE}
-        className={buttonClassName({ variant: "secondary" })}
-      >
-        Создать свою игру с демо-друзьями
-      </Link>
+      // Главное, что пригодится другу на любом телефоне, — свой вишлист
+      // (в Санте его увидит его Санта); потом — посмотреть, как играют
+      // демо-друзья (UX-аудит W01).
+      <div className="flex flex-col gap-2">
+        <Link href={ROUTES.GIFTS} className={buttonClassName({})}>
+          Собрать свой вишлист
+        </Link>
+        <Link
+          href={ROUTES.SANTA_CREATE}
+          className={buttonClassName({ variant: "secondary" })}
+        >
+          Посмотреть игру с демо-друзьями
+        </Link>
+      </div>
     }
   />
 );

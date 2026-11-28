@@ -12,6 +12,7 @@ export {
 export { Chip, StoreTag } from "./chip";
 export { ConfirmDialog } from "./confirm-dialog";
 export { Countdown } from "./countdown";
+export { DemoLinkNote } from "./demo-link-note";
 export { DayMonthPicker } from "./day-month-picker";
 export { EmptyState } from "./empty-state";
 export { IconButton } from "./icon-button";
