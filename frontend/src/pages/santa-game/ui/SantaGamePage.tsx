@@ -6,11 +6,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Gift } from "lucide-react";
+import { CalendarPlus, Check, Gift } from "lucide-react";
 
 import { AppHeader } from "@/widgets/app-header";
 import { SantaEnvelope } from "@/widgets/santa-envelope";
 
+import { buildIcs, dayOf, downloadIcs } from "@/features/calendar-export";
 import { SantaDrawButton } from "@/features/santa-draw";
 
 import {
@@ -28,6 +29,7 @@ import {
   setSantaBought,
 } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
+import { clock } from "@/shared/lib/clock";
 import { absoluteUrl } from "@/shared/lib/dom";
 import { pluralize } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
@@ -45,6 +47,7 @@ import {
   toast,
 } from "@/shared/ui";
 
+import { RemindWithoutWishlist } from "./RemindWithoutWishlist";
 import { WardWishlist } from "./WardWishlist";
 
 // Участники со статусами (DESIGN.md §8.8): «вишлист готов» мятной галочкой,
@@ -191,6 +194,32 @@ const GameContent = () => {
       <div>
         <p className="text-title-2">{view.game.title}</p>
         <p className="text-caption text-rose mt-0.5">{santaTerms(view.game)}</p>
+        {/* День обмена — в календарь телефона (auto-tasks P07): уведомлений
+            в первой версии нет, событие — бесплатное напоминание. */}
+        <button
+          type="button"
+          onClick={() => {
+            const now = clock.now();
+            downloadIcs(
+              "swipeit-santa.ics",
+              buildIcs(
+                {
+                  uid: `santa-${view.game.id}`,
+                  title: `Тайный Санта «${view.game.title}»`,
+                  start: dayOf(view.game.exchangeDate),
+                  allDay: true,
+                  durationMinutes: 60,
+                  description: `Обмен подарками. ${santaTerms(view.game)}`,
+                },
+                now,
+              ),
+            );
+          }}
+          className="text-rose -ml-1 mt-1 flex min-h-11 items-center gap-1.5 px-1 text-[15px] leading-5 font-semibold"
+        >
+          <CalendarPlus aria-hidden size={16} strokeWidth={2} />
+          Добавить в календарь
+        </button>
       </div>
       {/* Жеребьёвка прошла без меня — конверта у меня нет. */}
       {(view.game.status === "gathering" || view.me) && (
@@ -286,16 +315,10 @@ const GameContent = () => {
       {view.game.status === "gathering" && (
         <section className="flex flex-col gap-3">
           {isOwner && withoutWishlist.length > 0 && (
-            <Button
-              variant="secondary"
-              onClick={() =>
-                toast(
-                  `Напомнили: ${withoutWishlist.map((member) => member.name).join(", ")}`,
-                )
-              }
-            >
-              Напомнить тем, кто без вишлиста
-            </Button>
+            <RemindWithoutWishlist
+              view={view}
+              names={withoutWishlist.map((member) => member.name)}
+            />
           )}
           <p className="text-label">Позвать по ссылке</p>
           <ShareActions

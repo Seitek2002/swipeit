@@ -2,9 +2,14 @@
 
 import { type ReactNode, useState } from "react";
 
-import { Gift, Star } from "lucide-react";
+import { CalendarPlus, Gift, Star } from "lucide-react";
 
 import { NAME_CAPTIONS, useRequireName } from "@/features/ask-name";
+import {
+  buildIcs,
+  downloadIcs,
+  giftReminderDay,
+} from "@/features/calendar-export";
 import { ProductDetailsSheet } from "@/features/product-details";
 import {
   type BuyLink,
@@ -24,6 +29,7 @@ import {
 
 import type { GuestWishlist } from "@/shared/api";
 import { withBasePath } from "@/shared/lib/base-path";
+import { clock } from "@/shared/lib/clock";
 import { formatPrice } from "@/shared/lib/format";
 import { StoreTag } from "@/shared/ui";
 
@@ -68,6 +74,43 @@ type Props = {
   wishlist: GuestWishlist;
 };
 
+// «Напомнить в календаре» после брони (P07): событие на весь день за 3 дня
+// до повода — успеть купить. В описании — ссылка в магазин.
+const CalendarReminder = ({
+  date,
+  title,
+  url,
+}: {
+  date: string;
+  title: string;
+  url?: string;
+}) => (
+  <button
+    type="button"
+    onClick={() => {
+      const now = clock.now();
+      downloadIcs(
+        "swipeit-gift.ics",
+        buildIcs(
+          {
+            uid: `gift-${date}-${title.length}-${now}`,
+            title,
+            start: giftReminderDay(date, now),
+            allDay: true,
+            durationMinutes: 60,
+            description: url ? `Где купить: ${url}` : "Подарок из вишлиста",
+          },
+          now,
+        ),
+      );
+    }}
+    className="text-ink-soft flex min-h-11 items-center gap-1.5 px-2 text-[15px] leading-5 font-semibold"
+  >
+    <CalendarPlus aria-hidden size={16} strokeWidth={2} />
+    Напомнить в календаре
+  </button>
+);
+
 // Бирка-карточка гостя (DESIGN.md §8.5, reference .g-card): крупнее, чем у
 // владельца, — фото 16:10, вариант, заметка, магазины и бронь.
 const GuestWishCard = ({
@@ -78,13 +121,19 @@ const GuestWishCard = ({
   onOpen,
   onReserved,
   afterReserve,
+  occasionDate,
+  ownerName,
 }: {
   afterReserve?: ReactNode;
   item: Item;
   nameGuard: NameGuard;
+  // Дата повода ("YYYY-MM-DD") и имя владельца — для «Напомнить в
+  // календаре» после брони (P07). Нет даты — ссылки нет.
+  occasionDate?: string;
   onOpen: (product: Product, choice?: Record<string, string>) => void;
   onReserved: () => void;
   ownerId: string;
+  ownerName: string;
   readOnly: boolean;
 }) => {
   const { data: product } = useProduct(item.productId);
@@ -171,6 +220,16 @@ const GuestWishCard = ({
                 nameGuard={nameGuard}
                 buy={buyLinkOf(item, product)}
                 onReserved={onReserved}
+                afterBuy={
+                  occasionDate ? (
+                    <CalendarReminder
+                      date={occasionDate}
+                      // Без падежей имени: «для Азамат» было бы с ошибкой.
+                      title={`Купить подарок: ${title} (вишлист: ${ownerName})`}
+                      url={buyLinkOf(item, product)?.href}
+                    />
+                  ) : null
+                }
               />
               {afterReserve && <div className="mt-2.5">{afterReserve}</div>}
             </div>
@@ -233,6 +292,8 @@ export const GuestWishlistView = ({
               nameGuard={requireName}
               onOpen={(product, choice) => setDetails({ product, choice })}
               onReserved={() => setPromoKey((key) => key ?? item.key)}
+              occasionDate={wishlist.meta.occasion?.date}
+              ownerName={wishlist.owner.name}
               afterReserve={promoKey === item.key ? promo : null}
             />
           ))}

@@ -109,6 +109,25 @@ export const planWhen = ({
       ? { kind: "today", start: liveStart(decidedAt) }
       : { kind: "unscheduled" };
 
+// «Напомнить в календаре» после брони (auto-tasks P07): событие на весь день
+// за 3 дня до повода — успеть купить. Прошло — сегодня. occasionDate —
+// "YYYY-MM-DD" по местному календарю.
+export const GIFT_REMINDER_DAYS_BEFORE = 3;
+
+export const giftReminderDay = (occasionDate: string, now: number): Date => {
+  const [year = 1970, month = 1, day = 1] = occasionDate.split("-").map(Number);
+  const target = new Date(year, month - 1, day - GIFT_REMINDER_DAYS_BEFORE, 12);
+  const today = new Date(now);
+  today.setHours(12, 0, 0, 0);
+  return target < today ? today : target;
+};
+
+// День по "YYYY-MM-DD" (дата обмена в Санте) — полдень местного дня.
+export const dayOf = (dateKey: string): Date => {
+  const [year = 1970, month = 1, day = 1] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day, 12);
+};
+
 // Дата по умолчанию в «Добавить в календарь», когда время не выбрано: только
 // подсказка в поле даты, человек её подтверждает или меняет.
 export const suggestedPlanDay = (now: number): Date => nextSaturdayNoon(now);

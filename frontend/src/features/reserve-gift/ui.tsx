@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import { Check, ExternalLink, Gift } from "lucide-react";
 
@@ -29,6 +29,9 @@ export type BuyLink = {
 };
 
 type Props = {
+  // Под «Купить на …» у своей брони — например, «Напомнить в календаре»
+  // (auto-tasks P07). Даёт виджет: фичи друг друга не импортируют.
+  afterBuy?: ReactNode;
   // После брони следующий шаг гостя — купить: ссылка в магазин сразу под
   // «Этот подарок выбран тобой» (DESIGN.md §8.5, UX-аудит 27.11.2026, M3).
   buy?: BuyLink;
@@ -53,6 +56,7 @@ export const ReserveControl = ({
   nameGuard,
   buy,
   onReserved,
+  afterBuy,
 }: Props) => {
   const reserver = useReserver();
   const reservations = useReservations(ownerId);
@@ -141,6 +145,7 @@ export const ReserveControl = ({
             <ExternalLink aria-hidden size={16} strokeWidth={2} />
           </a>
         )}
+        {afterBuy}
       </div>
     );
   }

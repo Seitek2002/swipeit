@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   LIVE_DURATION_MINUTES,
   buildIcs,
+  dayOf,
   foldLine,
+  giftReminderDay,
   liveStart,
   nextSaturdayNoon,
   planEventStart,
@@ -162,5 +164,46 @@ describe("когда на «Решено» (auto-tasks V01)", () => {
     expect(ics).toContain("DTSTART;VALUE=DATE:20261205");
     expect(ics).toContain("DTEND;VALUE=DATE:20261206");
     expect(ics).not.toMatch(/DTSTART:\d/);
+  });
+});
+
+describe("«Напомнить в календаре» после брони (P07)", () => {
+  const at = (y: number, m: number, d: number) =>
+    new Date(y, m - 1, d, 10).getTime();
+
+  it("за 3 дня до повода", () => {
+    expect(giftReminderDay("2026-12-31", at(2026, 11, 28))).toEqual(
+      new Date(2026, 11, 28, 12),
+    );
+  });
+
+  it("через Новый год: повод 2 января — напоминание 30 декабря", () => {
+    expect(giftReminderDay("2027-01-02", at(2026, 12, 1))).toEqual(
+      new Date(2026, 11, 30, 12),
+    );
+  });
+
+  it("до повода меньше 3 дней — сегодня", () => {
+    expect(giftReminderDay("2026-11-29", at(2026, 11, 28))).toEqual(
+      new Date(2026, 10, 28, 12),
+    );
+  });
+
+  it("длинное название в .ics складывается по 75 октетов", () => {
+    const ics = buildIcs(
+      {
+        uid: "r",
+        title: `Купить подарок для Айгерим: ${"Очень длинное название ".repeat(5)}`,
+        start: dayOf("2026-12-28"),
+        durationMinutes: 60,
+        description: "https://kivano.kg/product/view/1",
+        allDay: true,
+      },
+      at(2026, 11, 28),
+    );
+    for (const line of ics.split("\r\n")) {
+      expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
+    }
+    expect(ics).toContain("DTSTART;VALUE=DATE:20261228");
   });
 });
