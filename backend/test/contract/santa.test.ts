@@ -891,6 +891,55 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
     });
   });
 
+  describe("R05: убрать участника после жеребьёвки", () => {
+    it("игра на 5: Санта убранного получает его подопечного, письмо снова запечатано; остальные пары те же; убранный не вернётся", async () => {
+      const { owner, azamat, nurai, id } = await gathered();
+      const extra = await crowd(2);
+      for (const caller of extra) await act(caller, id, "/join");
+      const everyone = [owner, azamat, nurai, ...extra];
+      await act(owner, id, "/draw");
+      const pairs = new Map<string, string>();
+      for (const caller of everyone) {
+        await act(caller, id, "/open");
+        const ward = (await getGame(caller, id)).me?.ward?.id ?? "";
+        pairs.set(caller.id, ward);
+        await act(caller, id, "/bought", { bought: true });
+      }
+      // Убираем того, кто не во взаимной паре (A↔B): там Санта остаётся
+      // без подопечного — это случай Q05, а здесь — новое письмо.
+      const santaOf = (id: string) =>
+        [...pairs].find(([, ward]) => ward === id)?.[0];
+      const leaver = everyone.find(
+        (caller) =>
+          caller !== owner && pairs.get(caller.id) !== santaOf(caller.id),
+      ) as Caller;
+      const santaId = santaOf(leaver.id);
+      const santa = everyone.find((caller) => caller.id === santaId) as Caller;
+      await api.call(owner, "DELETE", gamePath(id, `/members/${leaver.id}`));
+      const view = await getGame(santa, id);
+      expect(view.me?.envelope).toBe("ready");
+      expect(view.me?.bought).toBe(false);
+      const opened = await act(santa, id, "/open");
+      expect(opened.me?.ward?.id).toBe(pairs.get(leaver.id));
+      for (const caller of everyone) {
+        if (caller === santa || caller === leaver) continue;
+        expect((await getGame(caller, id)).me?.ward?.id).toBe(
+          pairs.get(caller.id),
+        );
+      }
+      expect(view.game.participantIds).not.toContain(leaver.id);
+      await fails(act(leaver, id, "/join"), "CONFLICT");
+    }, 60_000);
+
+    it("игра на 3 после жеребьёвки — убрать нельзя: останется меньше троих", async () => {
+      const { owner, azamat, id } = await drawnGame();
+      await fails(
+        api.call(owner, "DELETE", gamePath(id, `/members/${azamat.id}`)),
+        "CONFLICT",
+      );
+    });
+  });
+
   describe("конверт и «Я купил подарок»", () => {
     it("до жеребьёвки и не участнику — нельзя; «Купил» — только после вскрытия", async () => {
       const { owner, azamat, id } = await gathered();

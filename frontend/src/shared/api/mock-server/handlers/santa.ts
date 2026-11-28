@@ -1,4 +1,7 @@
-import { drawIssueWithInvites } from "@swipeit/core/logic/draw";
+import {
+  drawIssueWithInvites,
+  repairAfterLeave,
+} from "@swipeit/core/logic/draw";
 import {
   AFTER_DRAW_PATCH_MESSAGE,
   lockedAfterDraw,
@@ -588,23 +591,61 @@ export const leaveSantaGame: Handler = async (ctx, { params }) => {
 // до жеребьёвки. Убранный снова вступить не может.
 export const removeSantaMember: Handler = async (ctx, { params }) => {
   const products = await productMap(ctx);
-  const view = await ctx.db.write((db) => {
+  const target = params.userId ?? "";
+  const result = await ctx.db.write((db) => {
     const user = requireUser(ctx, db);
     const game = findGame(db, params.id);
     requireOwner(game, user, "Убрать участника может только организатор");
-    if (game.status !== "gathering") {
-      throw conflict("Жеребьёвка уже прошла — убрать нельзя");
-    }
-    const target = params.userId ?? "";
     if (target === game.ownerId) throw validation("Себя убрать нельзя");
     if (!membersOf(game).includes(target))
       throw notFound("Такого участника нет");
+    // После жеребьёвки (R05) — пары чинятся тем же правилом, что на сервере
+    // при удалении профиля: Санта ушедшего дарит его подопечному.
+    const drawn = game.status === "drawn";
+    let rewired: null | string = null;
+    if (drawn) {
+      if (game.participantIds.length - 1 < 3) {
+        throw conflict("Останется меньше троих — проще провести игру заново");
+      }
+      const repair = repairAfterLeave(game.assignments ?? {}, target);
+      game.assignments = repair.assignments;
+      rewired = repair.rewired;
+      // Новое письмо — снова запечатано, «куплен» снят.
+      for (const id of [repair.rewired, repair.orphaned]) {
+        if (!id) continue;
+        game.boughtIds = game.boughtIds.filter((entry) => entry !== id);
+        if (id === repair.rewired) {
+          game.openedIds = game.openedIds.filter((entry) => entry !== id);
+        }
+      }
+      game.openedIds = game.openedIds.filter((id) => id !== target);
+      game.boughtIds = game.boughtIds.filter((id) => id !== target);
+    }
     dropMember(game, target);
     game.removedIds = unique([...(game.removedIds ?? []), target]);
-    return viewOf(db, game, user.id, products, ctx.clock.now());
+    return {
+      drawn,
+      rewired,
+      title: game.title,
+      view: viewOf(db, game, user.id, products, ctx.clock.now()),
+    };
   });
-  changed(ctx, view.game.id);
-  return view;
+  changed(ctx, result.view.game.id);
+  if (result.drawn) {
+    if (result.rewired) {
+      ctx.realtime.publish({
+        type: "toast",
+        text: "Твой подопечный вышел из игры — открой новое письмо",
+        forUserId: result.rewired,
+      });
+    }
+    ctx.realtime.publish({
+      type: "toast",
+      text: `Организатор убрал тебя из игры «${result.title}»`,
+      forUserId: target,
+    });
+  }
+  return result.view;
 };
 
 // Сама жеребьёвка — общая для кнопки организатора и планировщика. Пары —

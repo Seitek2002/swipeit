@@ -55,6 +55,7 @@ import {
   readMeta,
   rowToMeta,
 } from "../wishlist/queries";
+import { repairAfterRemoval } from "./repair";
 import {
   insertGame,
   loadGame,
@@ -651,21 +652,51 @@ export const leaveSantaGame: ServerHandler = async (ctx, { params }) => {
 // DELETE /santa/:id/members/:userId — «Убрать из игры»: как в моке.
 export const removeSantaMember: ServerHandler = async (ctx, { params }) => {
   const me = await readMe(ctx);
-  const { game } = await withGame(ctx, params.id ?? "", (game) => {
-    requireOwner(game, me, "Убрать участника может только организатор");
-    if (game.status !== "gathering") {
-      throw conflict("Жеребьёвка уже прошла — убрать нельзя");
-    }
-    const target = params.userId ?? "";
-    if (target === game.ownerId) throw validation("Себя убрать нельзя");
-    if (!membersOf(game).includes(target)) {
-      throw notFound("Такого участника нет");
-    }
-    dropMember(game, target);
-    game.removedIds = unique([...game.removedIds, target]);
-    clearDrawFailed(game);
-  });
-  changed(ctx, game, [params.userId ?? ""]);
+  const target = params.userId ?? "";
+  const { game: changedGame, result: afterDraw } = await withGame(
+    ctx,
+    params.id ?? "",
+    (game) => {
+      requireOwner(game, me, "Убрать участника может только организатор");
+      if (target === game.ownerId) throw validation("Себя убрать нельзя");
+      if (!membersOf(game).includes(target)) {
+        throw notFound("Такого участника нет");
+      }
+      // После жеребьёвки (R05): отпуск, болезнь — пары чинятся, как при
+      // удалении профиля. Меньше троих — игру проще провести заново.
+      const drawn = game.status === "drawn";
+      if (drawn && game.participantIds.length - 1 < 3) {
+        throw conflict("Останется меньше троих — проще провести игру заново");
+      }
+      dropMember(game, target);
+      game.openedIds = game.openedIds.filter((id) => id !== target);
+      game.boughtIds = game.boughtIds.filter((id) => id !== target);
+      game.removedIds = unique([...game.removedIds, target]);
+      clearDrawFailed(game);
+      return drawn;
+    },
+  );
+  let game = changedGame;
+  if (afterDraw) {
+    await repairAfterRemoval(ctx, game.id, target);
+    await countEvent(
+      ctx.tx,
+      "santa_removed_after_draw",
+      ctx.clock.now(),
+      me.id,
+    );
+    ctx.events.publish(
+      {
+        type: "toast",
+        text: `Организатор убрал тебя из игры «${game.title}»`,
+        forUserId: target,
+      },
+      [target],
+    );
+    // Письмо Санты ушедшего снова запечатано — перечитываем игру.
+    game = await loadGame(ctx.tx, game.id, { lock: false });
+  }
+  changed(ctx, game, [target]);
   return viewOf(ctx, game, me.id);
 };
 

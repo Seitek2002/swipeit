@@ -46,6 +46,8 @@ export const FUNNEL_STEPS = [
   "santa_member_wishlist",
   // R08: жеребьёвка по дате не прошла — один раз на отметку.
   "santa_draw_failed",
+  // R05: организатор убрал участника после жеребьёвки.
+  "santa_removed_after_draw",
 ] as const;
 
 export type FunnelStep = (typeof FUNNEL_STEPS)[number];

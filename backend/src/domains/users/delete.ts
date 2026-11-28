@@ -21,7 +21,7 @@ import {
   wishlistMeta,
   wishlistViews,
 } from "../../db/schema";
-import { repairPairsAfterDelete } from "../santa/store";
+import { repairAfterRemoval } from "../santa/repair";
 import { lockMe } from "./queries";
 
 // DELETE /me (BACKEND.md §3.4): удалить человека и его данные — желания,
@@ -161,31 +161,7 @@ const repairDrawnGames = async (ctx: ServerContext, id: string) => {
     where m.user_id = ${id} and g.status = 'drawn'
   `);
   for (const { game_id: gameId } of rows) {
-    const { rewired, orphaned } = await repairPairsAfterDelete(
-      ctx.tx,
-      gameId,
-      id,
-    );
-    if (rewired) {
-      ctx.events.publish(
-        {
-          type: "toast",
-          text: "Твой подопечный вышел из игры — открой новое письмо",
-          forUserId: rewired,
-        },
-        [rewired],
-      );
-    }
-    if (orphaned) {
-      ctx.events.publish(
-        {
-          type: "toast",
-          text: "Твой подопечный вышел из игры — в этой игре ты не даришь",
-          forUserId: orphaned,
-        },
-        [orphaned],
-      );
-    }
+    await repairAfterRemoval(ctx, gameId, id);
   }
 };
 
