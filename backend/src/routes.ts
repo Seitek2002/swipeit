@@ -1,6 +1,5 @@
 import { contractFor, routeKey } from "@swipeit/core/contract";
 import type { Random } from "@swipeit/core/logic/random";
-import type { RealtimeEvent } from "@swipeit/core/realtime/types";
 import { unauthorized } from "@swipeit/core/errors";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
@@ -98,7 +97,7 @@ import {
   markHintSeen,
   updateMe,
 } from "./domains/users/handlers";
-import type { EventHub } from "./realtime/hub";
+import type { AddressedEvent, EventHub } from "./realtime/hub";
 
 // Обработчики сервера по ключу «МЕТОД /путь» контракта. Маршрут контракта
 // без обработчика не регистрируется — до своей задачи (B05–B13) он 404.
@@ -213,7 +212,7 @@ export const registerRoutes = (app: FastifyInstance, deps: RouteDeps) => {
         // открытых маршрутах неверный токен просто не даёт пользователя.
         if (route.access === "user" && !session) throw unauthorized();
 
-        const events: RealtimeEvent[] = [];
+        const events: AddressedEvent[] = [];
         const result = await deps.db.db.transaction((tx) =>
           handler(
             {
@@ -225,7 +224,9 @@ export const registerRoutes = (app: FastifyInstance, deps: RouteDeps) => {
               clock: deps.clock,
               random: deps.random,
               catalog: deps.catalog,
-              events: { publish: (event) => events.push(event) },
+              events: {
+                publish: (event, to) => events.push({ event, to }),
+              },
               log: request.log,
               publicShareUrl: deps.publicShareUrl,
             },

@@ -323,8 +323,19 @@ const summaryOf = async (
 
 // Без by: по «кто сделал» другие узнали бы, кто вскрыл конверт или купил
 // подарок, а видны только счётчики (§4.6, п. 2; §5).
-const changed = (ctx: ServerContext, gameId: string) =>
-  ctx.events.publish({ type: "db:changed", scope: ["santa"], id: gameId });
+// Вступившим и позванным, плюс тому, кто сделал, и, если есть, убранному
+// (§5).
+const changed = (
+  ctx: ServerContext,
+  game: StoredGame,
+  extra: readonly string[] = [],
+) =>
+  ctx.events.publish({ type: "db:changed", scope: ["santa"], id: game.id }, [
+    ...game.participantIds,
+    ...game.invitedIds,
+    ctx.userId ?? "",
+    ...extra,
+  ]);
 
 const readNamedMe = async (ctx: ServerContext): Promise<UserRow> => {
   const me = await readMe(ctx);
@@ -466,7 +477,7 @@ export const createSantaGame: ServerHandler = async (ctx, { body }) => {
   await checkExclusionsPossible(ctx.tx, game);
   await insertGame(ctx.tx, game, ctx.clock.now());
   await reachStep(ctx.tx, owner.id, "santa_created", ctx.clock.now());
-  changed(ctx, game.id);
+  changed(ctx, game);
   return viewOf(ctx, game, owner.id);
 };
 
@@ -500,7 +511,7 @@ export const updateSantaGame: ServerHandler = async (ctx, { params, body }) => {
       await checkExclusionsPossible(ctx.tx, game);
     }
   });
-  changed(ctx, game.id);
+  changed(ctx, game);
   return viewOf(ctx, game, me.id);
 };
 
@@ -533,7 +544,7 @@ export const joinSantaGame: ServerHandler = async (ctx, { params }) => {
     // Вступивший — друг организатору, не всем участникам (§4.3, п. 1).
     await makeFriends(ctx.tx, game.ownerId, me.id, "santa", ctx.clock);
     await reachStep(ctx.tx, me.id, "santa_joined", ctx.clock.now());
-    changed(ctx, game.id);
+    changed(ctx, game);
   }
   return viewOf(ctx, game, me.id);
 };
@@ -567,7 +578,7 @@ export const leaveSantaGame: ServerHandler = async (ctx, { params }) => {
       return true;
     },
   );
-  if (didChange) changed(ctx, game.id);
+  if (didChange) changed(ctx, game);
   return viewOf(ctx, game, me.id);
 };
 
@@ -587,7 +598,7 @@ export const removeSantaMember: ServerHandler = async (ctx, { params }) => {
     dropMember(game, target);
     game.removedIds = unique([...game.removedIds, target]);
   });
-  changed(ctx, game.id);
+  changed(ctx, game, [params.userId ?? ""]);
   return viewOf(ctx, game, me.id);
 };
 
@@ -622,7 +633,7 @@ export const drawSantaGame: ServerHandler = async (ctx, { params }) => {
   await saveAssignments(ctx.tx, game.id, assignments);
   // Компания разыграла Санту (Q02): по игре, жеребьёвка бывает одна.
   await countEvent(ctx.tx, "santa_drawn_group", ctx.clock.now(), me.id);
-  changed(ctx, game.id);
+  changed(ctx, game);
   return viewOf(ctx, game, me.id);
 };
 
@@ -647,7 +658,7 @@ export const openSantaEnvelope: ServerHandler = async (ctx, { params }) => {
     if (wardId && (await wishesInBudget(ctx, wardId, game.budget)) < 3) {
       await reachStep(ctx.tx, me.id, "ward_empty", ctx.clock.now());
     }
-    changed(ctx, game.id);
+    changed(ctx, game);
   }
   return viewOf(ctx, game, me.id);
 };
@@ -670,7 +681,7 @@ export const setSantaBought: ServerHandler = async (ctx, { params, body }) => {
       return was !== bought;
     },
   );
-  if (changedNow) changed(ctx, game.id);
+  if (changedNow) changed(ctx, game);
   if (changedNow && bought) {
     await reachStep(ctx.tx, me.id, "santa_bought", ctx.clock.now());
   }
@@ -697,6 +708,7 @@ export const drawDueSantaGames = async (
       ),
     );
   const drawn: string[] = [];
+  const drawnGames: StoredGame[] = [];
   const failed: SantaTickResult["failed"] = [];
   for (const { id } of due) {
     try {
@@ -710,12 +722,13 @@ export const drawDueSantaGames = async (
         await saveAssignments(savepoint, id, assignments);
         await countEvent(savepoint, "santa_drawn_group", now, game.ownerId);
         drawn.push(id);
+        drawnGames.push(game);
       });
     } catch (error) {
       if (!isApiError(error)) throw error;
       failed.push({ id, reason: error.message });
     }
   }
-  for (const id of drawn) changed(ctx, id);
+  for (const game of drawnGames) changed(ctx, game);
   return { drawn, failed };
 };

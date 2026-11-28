@@ -37,7 +37,10 @@ const isLike = (decision: string) =>
   decision === "like" || decision === "superlike";
 
 const publish = (ctx: ServerContext, scope: RealtimeScope[]) =>
-  ctx.events.publish({ type: "db:changed", scope, id: ctx.userId ?? "" });
+  // Своё — себе на других устройствах (§5).
+  ctx.events.publish({ type: "db:changed", scope, id: ctx.userId ?? "" }, [
+    ctx.userId ?? "",
+  ]);
 
 // Вкус — функция от истории свайпов: после любого изменения своей ленты
 // пересчитываем его целиком. Так «Вернуть» возвращает вкус точно в прежнее

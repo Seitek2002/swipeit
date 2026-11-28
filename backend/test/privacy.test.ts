@@ -69,7 +69,8 @@ describe("§4.6 п. 3 — значимые даты и напоминания т
     const seen = await server.request(friend, "GET", `/users/${owner.id}`);
     expect(seen.body).not.toContain("Секрет");
     expect(seen.body).not.toContain("12-01");
-  });
+    // Обходит все маршруты — под нагрузкой полного прогона дольше 5 с.
+  }, 60_000);
 });
 
 describe("§4.6 п. 4 — вкус, «Не моё», подсказки, скрытые напоминания только себе", () => {

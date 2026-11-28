@@ -9,7 +9,8 @@ import type { Config } from "./config";
 import type { Clock } from "./context";
 import type { Db } from "./db/client";
 import { registerErrors } from "./errors";
-import { createEventHub, type EventHub } from "./realtime/hub";
+import { resolveSession } from "./auth/sessions";
+import { createSocketHub, type EventHub } from "./realtime/hub";
 import { registerRoutes } from "./routes";
 
 // Режим API сервера — общий тип с фронтом (@swipeit/core, BACKEND.md §9.1).
@@ -38,7 +39,7 @@ export const buildApp = ({
   catalog,
   clock = { now: () => Date.now() },
   random = createCryptoRandom(),
-  hub = createEventHub(),
+  hub,
   logStream,
 }: AppOptions): FastifyInstance => {
   const app = Fastify({
@@ -91,12 +92,33 @@ export const buildApp = ({
   });
 
   if (db && catalog) {
+    // WebSocket /v1/ws (B12): вход — hello { token }, дальше события только
+    // адресатам. В тестах можно подставить свой хаб.
+    let events: EventHub;
+    if (hub) {
+      events = hub;
+    } else {
+      const sockets = createSocketHub({
+        now: clock.now,
+        resolve: async (token) =>
+          (await resolveSession(db.db, token, clock))?.userId ?? null,
+      });
+      app.server.on("upgrade", (request, socket, head) => {
+        if (request.url?.split("?")[0] === "/v1/ws") {
+          sockets.handleUpgrade(request, socket, head);
+        } else {
+          socket.destroy();
+        }
+      });
+      app.addHook("onClose", () => sockets.close());
+      events = sockets;
+    }
     registerRoutes(app, {
       db,
       catalog,
       clock,
       random,
-      hub,
+      hub: events,
       publicShareUrl: config.PUBLIC_SHARE_URL,
     });
   }

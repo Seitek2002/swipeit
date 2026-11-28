@@ -10,9 +10,11 @@ export type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export type Clock = { now: () => number };
 
-// События копятся в транзакции и уходят после commit, только адресатам (§5).
-// Транзакция откатилась — ничего не ушло.
-export type EventSink = { publish: (event: RealtimeEvent) => void };
+// События копятся в транзакции и уходят после commit, только адресатам (§5,
+// B12): to — userId, кому событие. Транзакция откатилась — ничего не ушло.
+export type EventSink = {
+  publish: (event: RealtimeEvent, to: readonly string[]) => void;
+};
 
 // ctx обработчика сервера — та же форма (ctx, input), что у мока, но вместо
 // базы целиком — транзакция PostgreSQL, а пользователь — из сессии по токену.

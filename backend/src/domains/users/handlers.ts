@@ -13,11 +13,20 @@ import { nanoid } from "nanoid";
 import { createSession, revokeSession } from "../../auth/sessions";
 import { reachStep } from "../funnel/steps";
 import type { ServerContext, ServerHandler } from "../../context";
-import { users, wishlistMeta } from "../../db/schema";
+import { friendships, users, wishlistMeta } from "../../db/schema";
 import { lockMe, rowToUser, toMe, type UserRow } from "./queries";
 
-const usersChanged = (ctx: ServerContext, id: string) =>
-  ctx.events.publish({ type: "db:changed", scope: ["users"], id });
+// Профиль изменён — себе и друзьям (§5).
+const usersChanged = async (ctx: ServerContext, id: string) => {
+  const friends = await ctx.tx
+    .select({ id: friendships.friendId })
+    .from(friendships)
+    .where(eq(friendships.userId, id));
+  ctx.events.publish({ type: "db:changed", scope: ["users"], id }, [
+    id,
+    ...friends.map((friend) => friend.id),
+  ]);
+};
 
 const unique = <T>(list: readonly T[]) => [...new Set(list)];
 
@@ -33,7 +42,7 @@ const writeMe = async (
     .set(changes)
     .where(eq(users.id, me.id))
     .returning();
-  usersChanged(ctx, me.id);
+  await usersChanged(ctx, me.id);
   return toMe(rowToUser(row ?? me));
 };
 
@@ -62,7 +71,7 @@ export const createUser: ServerHandler = async (ctx, { body }) => {
   if (via === "wishlist_link" || via === "reservation") {
     await reachStep(ctx.tx, id, "guest_opened", ctx.clock.now());
   }
-  usersChanged(ctx, id);
+  await usersChanged(ctx, id);
   if (!row) throw new Error("Профиль не записался");
   return { me: toMe(rowToUser(row)), token };
 };

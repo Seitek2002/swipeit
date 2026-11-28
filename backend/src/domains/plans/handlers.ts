@@ -127,20 +127,29 @@ const requireOwner = (plan: PlanSession, user: UserRow, message: string) => {
   if (plan.ownerId !== user.id) throw forbidden(message);
 };
 
-const changed = (ctx: ServerContext, planId: string) =>
-  ctx.events.publish({
-    type: "db:changed",
-    scope: ["plans"],
-    id: planId,
-    by: ctx.userId ?? "",
-  });
+// Изменения плана — участникам и тому, кто сделал (вышедший тоже
+// перечитает), §5.
+const audienceOf = (ctx: ServerContext, plan: PlanSession) => [
+  ...plan.participantIds,
+  ctx.userId ?? "",
+];
+
+const changed = (ctx: ServerContext, plan: PlanSession) =>
+  ctx.events.publish(
+    { type: "db:changed", scope: ["plans"], id: plan.id },
+    audienceOf(ctx, plan),
+  );
 
 const progressEvent = (
   ctx: ServerContext,
-  planId: string,
+  plan: PlanSession,
   userId: string,
   progress: { done: number; total: number },
-) => ctx.events.publish({ type: "plan:progress", planId, userId, ...progress });
+) =>
+  ctx.events.publish(
+    { type: "plan:progress", planId: plan.id, userId, ...progress },
+    audienceOf(ctx, plan),
+  );
 
 // Действие над планом под блокировкой: загрузить, изменить копию, записать
 // разницу. mutate возвращает что угодно — оно уходит в ответ обработчику.
@@ -267,7 +276,7 @@ export const createPlan: ServerHandler = async (ctx, { body }) => {
     await reachPlanStep(ctx.tx, plan.id, "plan_started_group", now, owner.id);
   }
   await reachStep(ctx.tx, owner.id, "plan_created", now);
-  changed(ctx, plan.id);
+  changed(ctx, plan);
   return viewOf(
     ctx.tx,
     await loadPlan(ctx.tx, plan.id, { lock: false }),
@@ -296,7 +305,7 @@ export const joinPlan: ServerHandler = async (ctx, { params }) => {
   if (joined) {
     await makeFriends(ctx.tx, plan.ownerId, me.id, "plan", ctx.clock);
     await reachStep(ctx.tx, me.id, "plan_joined", ctx.clock.now());
-    changed(ctx, plan.id);
+    changed(ctx, plan);
   }
   return viewOf(ctx.tx, plan, source);
 };
@@ -316,7 +325,7 @@ export const setReady: ServerHandler = async (ctx, { params, body }) => {
     const others = plan.readyIds.filter((id) => id !== me.id);
     plan.readyIds = ready ? [...others, me.id] : others;
   });
-  changed(ctx, plan.id);
+  changed(ctx, plan);
   return viewOf(ctx.tx, plan, source);
 };
 
@@ -353,7 +362,7 @@ export const startPlan: ServerHandler = async (ctx, { params }) => {
     ctx.clock.now(),
     me.id,
   );
-  changed(ctx, plan.id);
+  changed(ctx, plan);
   return viewOf(ctx.tx, plan, source);
 };
 
@@ -426,10 +435,13 @@ export const swipePlan: ServerHandler = async (ctx, { params, body }) => {
       };
     },
   );
-  changed(ctx, plan.id);
-  progressEvent(ctx, plan.id, me.id, result.progress);
+  changed(ctx, plan);
+  progressEvent(ctx, plan, me.id, result.progress);
   for (const activityId of result.newMatches) {
-    ctx.events.publish({ type: "plan:match", planId: plan.id, activityId });
+    ctx.events.publish(
+      { type: "plan:match", planId: plan.id, activityId },
+      audienceOf(ctx, plan),
+    );
   }
   return viewOf(ctx.tx, plan, source);
 };
@@ -457,8 +469,8 @@ export const undoPlanSwipe: ServerHandler = async (ctx, { params, body }) => {
       return progress;
     },
   );
-  changed(ctx, plan.id);
-  progressEvent(ctx, plan.id, me.id, result);
+  changed(ctx, plan);
+  progressEvent(ctx, plan, me.id, result);
   return viewOf(ctx.tx, plan, source);
 };
 
@@ -480,7 +492,7 @@ export const finishPlan: ServerHandler = async (ctx, { params }) => {
     completeIfAllFinished(plan);
     return true;
   });
-  if (didChange) changed(ctx, plan.id);
+  if (didChange) changed(ctx, plan);
   return viewOf(ctx.tx, plan, source);
 };
 
@@ -525,7 +537,7 @@ export const votePlan: ServerHandler = async (ctx, { params, body }) => {
       plan.votes = Object.fromEntries(others);
     },
   );
-  changed(ctx, plan.id);
+  changed(ctx, plan);
   return viewOf(ctx.tx, plan, source);
 };
 
@@ -592,7 +604,7 @@ export const decidePlan: ServerHandler = async (ctx, { params, body }) => {
       me.id,
     );
   }
-  changed(ctx, plan.id);
+  changed(ctx, plan);
   return viewOf(ctx.tx, plan, source);
 };
 
@@ -619,7 +631,7 @@ export const closePlan: ServerHandler = async (ctx, { params }) => {
     plan.votes = {};
     return true;
   });
-  if (didChange) changed(ctx, plan.id);
+  if (didChange) changed(ctx, plan);
   return viewOf(ctx.tx, plan, source);
 };
 
@@ -652,7 +664,7 @@ export const leavePlan: ServerHandler = async (ctx, { params }) => {
     completeIfAllFinished(plan);
     return true;
   });
-  if (didChange) changed(ctx, plan.id);
+  if (didChange) changed(ctx, plan);
   return viewOf(ctx.tx, plan, source);
 };
 
@@ -667,14 +679,13 @@ export const cancelPlanDecision: ServerHandler = async (ctx, { params }) => {
     delete plan.decision;
     plan.votes = {};
   });
-  changed(ctx, plan.id);
+  changed(ctx, plan);
   for (const forUserId of plan.participantIds) {
     if (forUserId === me.id) continue;
-    ctx.events.publish({
-      type: "toast",
-      text: "Организатор отменил решение",
-      forUserId,
-    });
+    ctx.events.publish(
+      { type: "toast", text: "Организатор отменил решение", forUserId },
+      [forUserId],
+    );
   }
   return viewOf(ctx.tx, plan, source);
 };
@@ -693,7 +704,7 @@ export const setPlanRule: ServerHandler = async (ctx, { params, body }) => {
       keepValidVotes(plan, deckOf(plan, source));
     },
   );
-  changed(ctx, plan.id);
+  changed(ctx, plan);
   return viewOf(ctx.tx, plan, source);
 };
 
@@ -755,7 +766,7 @@ export const addPlanActivities: ServerHandler = async (
     return done >= total;
   });
   await savePlan(ctx.tx, plan, fresh, now);
-  changed(ctx, fresh.id);
+  changed(ctx, fresh);
   return viewOf(ctx.tx, fresh, source);
 };
 
@@ -800,7 +811,10 @@ export const createCustomActivity: ServerHandler = async (ctx, { body }) => {
     imageKey: input.imageKey ?? null,
     createdAt: new Date(ctx.clock.now()),
   });
-  changed(ctx, activity.id);
+  ctx.events.publish(
+    { type: "db:changed", scope: ["plans"], id: activity.id },
+    [me.id],
+  );
   return activity;
 };
 

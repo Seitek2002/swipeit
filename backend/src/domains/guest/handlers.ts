@@ -61,8 +61,13 @@ import {
 // (§4.6, п. 1): reserver_* не уходит ни в один ответ владельцу, а в событиях
 // нет поля by.
 
+// Бронь и снятие — владельцу вишлиста и автору брони (§5). Владелец старой
+// длинной ссылки (ext:…) на сервере не живёт — ему некуда.
 const changed = (ctx: ServerContext, scope: RealtimeScope[], id: string) =>
-  ctx.events.publish({ type: "db:changed", scope, id });
+  ctx.events.publish({ type: "db:changed", scope, id }, [
+    ...(id.startsWith("ext:") ? [] : [id]),
+    ctx.userId ?? "",
+  ]);
 
 // ── Гостевой вид ─────────────────────────────────────────────────────────
 
@@ -459,7 +464,9 @@ export const createReservation: ServerHandler = async (ctx, { body }) => {
     if (!typed) throw nameRequired();
     name = typed;
     await ctx.tx.update(users).set({ name }).where(eq(users.id, me.id));
-    ctx.events.publish({ type: "db:changed", scope: ["users"], id: me.id });
+    ctx.events.publish({ type: "db:changed", scope: ["users"], id: me.id }, [
+      me.id,
+    ]);
   }
 
   const [taken] = await ctx.tx

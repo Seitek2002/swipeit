@@ -34,7 +34,10 @@ const MAX_DATES = 50;
 type DateRow = typeof importantDates.$inferSelect;
 
 const changed = (ctx: ServerContext, scope: RealtimeScope[]) =>
-  ctx.events.publish({ type: "db:changed", scope, id: ctx.userId ?? "" });
+  // Своё — себе на других устройствах (§5).
+  ctx.events.publish({ type: "db:changed", scope, id: ctx.userId ?? "" }, [
+    ctx.userId ?? "",
+  ]);
 
 const rowToDate = (row: DateRow): ImportantDate => ({
   id: row.id,

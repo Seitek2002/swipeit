@@ -37,6 +37,22 @@ import { lockMe } from "./queries";
 // иначе остаётся строка users без личного (deleted_at). Строки базы — без
 // внешних ключей с каскадом на участников, поэтому всё это делает код.
 
+// Друзья и соучастники планов и игр — им событие об удалении профиля.
+const audienceOf = async (tx: Tx, id: string): Promise<string[]> => {
+  const { rows } = await tx.execute<{ id: string }>(sql`
+    select friend_id as id from friendships where user_id = ${id}
+    union
+    select other.user_id from plan_participants mine
+    join plan_participants other on other.plan_id = mine.plan_id
+    where mine.user_id = ${id} and other.user_id <> ${id}
+    union
+    select other.user_id from santa_members mine
+    join santa_members other on other.game_id = mine.game_id
+    where mine.user_id = ${id} and other.user_id <> ${id}
+  `);
+  return rows.map((row) => row.id);
+};
+
 // Свои планы и игры, где нет никого, кроме владельца.
 const deleteLonelyOwned = async (tx: Tx, id: string) => {
   await tx.execute(sql`
@@ -92,11 +108,14 @@ const handOverPlans = async (ctx: ServerContext, id: string) => {
       update plan_participants set ready = true
       where plan_id = ${plan.id} and user_id = ${plan.owner_id}
     `);
-    ctx.events.publish({
-      type: "toast",
-      text: `Теперь ты организатор плана «${plan.title}»`,
-      forUserId: plan.owner_id,
-    });
+    ctx.events.publish(
+      {
+        type: "toast",
+        text: `Теперь ты организатор плана «${plan.title}»`,
+        forUserId: plan.owner_id,
+      },
+      [plan.owner_id],
+    );
   }
 };
 
@@ -120,11 +139,14 @@ const handOverGames = async (ctx: ServerContext, id: string) => {
     returning g.id, g.owner_id, g.title
   `);
   for (const game of rows) {
-    ctx.events.publish({
-      type: "toast",
-      text: `Теперь ты организатор игры «${game.title}»`,
-      forUserId: game.owner_id,
-    });
+    ctx.events.publish(
+      {
+        type: "toast",
+        text: `Теперь ты организатор игры «${game.title}»`,
+        forUserId: game.owner_id,
+      },
+      [game.owner_id],
+    );
   }
 };
 
@@ -144,18 +166,24 @@ const repairDrawnGames = async (ctx: ServerContext, id: string) => {
       id,
     );
     if (rewired) {
-      ctx.events.publish({
-        type: "toast",
-        text: "Твой подопечный вышел из игры — открой новое письмо",
-        forUserId: rewired,
-      });
+      ctx.events.publish(
+        {
+          type: "toast",
+          text: "Твой подопечный вышел из игры — открой новое письмо",
+          forUserId: rewired,
+        },
+        [rewired],
+      );
     }
     if (orphaned) {
-      ctx.events.publish({
-        type: "toast",
-        text: "Твой подопечный вышел из игры — в этой игре ты не даришь",
-        forUserId: orphaned,
-      });
+      ctx.events.publish(
+        {
+          type: "toast",
+          text: "Твой подопечный вышел из игры — в этой игре ты не даришь",
+          forUserId: orphaned,
+        },
+        [orphaned],
+      );
     }
   }
 };
@@ -219,6 +247,8 @@ export const deleteMe: ServerHandler = async (ctx) => {
   const me = await lockMe(ctx);
   const { tx } = ctx;
   const id = me.id;
+  // Кому «перечитай» в конце — друзья и соучастники; считаем до удаления.
+  const audience = await audienceOf(tx, id);
 
   await deleteLonelyOwned(tx, id);
   await handOverPlans(ctx, id);
@@ -279,9 +309,9 @@ export const deleteMe: ServerHandler = async (ctx) => {
   }
 
   // Друзьям и соучастникам — перечитать (B12 разошлёт адресатам).
-  ctx.events.publish({
-    type: "db:changed",
-    scope: ["users", "plans", "santa"],
-  });
+  ctx.events.publish(
+    { type: "db:changed", scope: ["users", "plans", "santa"] },
+    audience,
+  );
   return { ok: true };
 };

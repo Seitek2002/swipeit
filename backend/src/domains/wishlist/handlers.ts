@@ -45,8 +45,17 @@ import { reachStep } from "../funnel/steps";
 // повод из handlers/guest.ts). Каждая запись — под блокировкой строки users
 // владельца (§2.6): правки, порядок и свайпы одного человека идут по очереди.
 
-const changed = (ctx: ServerContext, scope: RealtimeScope[]) =>
-  ctx.events.publish({ type: "db:changed", scope, id: ctx.userId ?? "" });
+// Своё — себе; «Мне это подарили» и «Вернуть» — ещё и авторам броней на это
+// желание (§5).
+const changed = (
+  ctx: ServerContext,
+  scope: RealtimeScope[],
+  reservers: readonly string[] = [],
+) =>
+  ctx.events.publish({ type: "db:changed", scope, id: ctx.userId ?? "" }, [
+    ctx.userId ?? "",
+    ...reservers,
+  ]);
 
 // Своё живое (не удалённое) желание; чужое — как несуществующее (§4.5).
 const findItem = async (tx: Tx, ownerId: string, id: string | undefined) => {
@@ -275,12 +284,16 @@ export const markGiven: ServerHandler = async (ctx, { params, body }) => {
         isNull(reservations.closedAt),
       ),
     )
-    .returning({ id: reservations.id });
+    .returning({ id: reservations.id, reserverId: reservations.reserverId });
   // Исход вишлиста (Q02): подарили то, что бронировали.
   if (closed.length > 0) {
     await reachStep(ctx.tx, me.id, "gift_given_reserved", ctx.clock.now());
   }
-  changed(ctx, ["wishlist", "reservations"]);
+  changed(
+    ctx,
+    ["wishlist", "reservations"],
+    closed.map((entry) => entry.reserverId),
+  );
   return rowToItem(row ?? target);
 };
 
