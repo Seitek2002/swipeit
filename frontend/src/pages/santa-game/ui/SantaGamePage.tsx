@@ -48,6 +48,7 @@ import {
   toast,
 } from "@/shared/ui";
 
+import { LettersReady } from "./LettersReady";
 import { RemindWithoutWishlist } from "./RemindWithoutWishlist";
 import { WardWishlist } from "./WardWishlist";
 
@@ -56,11 +57,18 @@ import { WardWishlist } from "./WardWishlist";
 const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
   const joined = view.members.filter((member) => member.joined);
   const invited = view.members.filter((member) => !member.joined);
+  const drawn = view.game.status === "drawn";
   return (
     <section>
       <h2 className="text-label mb-1">
         Участники <span className="text-rose">{joined.length}</span>
       </h2>
+      {drawn && (
+        // Кому напомнить (Q06): кто открыл письмо — видно всем, пар — нет.
+        <p className="text-caption text-rose mb-1">
+          Открыли письмо: {view.openedCount} из {joined.length}
+        </p>
+      )}
       <ul>
         {[...joined, ...invited].map((member) => (
           <li
@@ -78,6 +86,8 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
             </span>
             {!member.joined ? (
               <span className="text-caption text-rose">ещё не в игре</span>
+            ) : drawn && !member.opened ? (
+              <span className="text-caption text-rose">письмо не открыто</span>
             ) : member.hasWishlist ? (
               <span className="text-caption text-mint inline-flex items-center gap-1">
                 <Check aria-hidden size={16} strokeWidth={2.25} />
@@ -318,6 +328,10 @@ const GameContent = () => {
       )}
 
       <Members view={view} meId={meId} />
+
+      {view.game.status === "drawn" && view.me && (
+        <LettersReady view={view} isOwner={isOwner} />
+      )}
 
       {view.game.status === "gathering" && (
         <section className="flex flex-col gap-3">

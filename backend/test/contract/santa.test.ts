@@ -775,6 +775,20 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
       expect(other.me?.envelope).toBe("ready");
     });
 
+    it("Q06: кто открыл письмо — видно всем участникам по человеку, пар — нет", async () => {
+      const { owner, azamat, nurai, view: drawn, id } = await drawnGame();
+      expect(
+        drawn.members.filter((m) => m.joined).map((m) => m.opened),
+      ).toEqual([false, false, false]);
+      await act(azamat, id, "/open");
+      for (const caller of [owner, azamat, nurai]) {
+        const view = await getGame(caller, id);
+        const opened = view.members.filter((m) => m.opened).map((m) => m.id);
+        expect(opened).toEqual([azamat.id]);
+        expect(JSON.stringify(view.members)).not.toContain("ward");
+      }
+    });
+
     it("«Купил» — счётчик у всех, повтор не удваивает, можно снять", async () => {
       const { owner, azamat, nurai, id } = await drawnGame();
       await act(owner, id, "/open");

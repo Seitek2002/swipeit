@@ -17,6 +17,9 @@ import { QrCode } from "../qr-code";
 import { toast } from "../toast";
 
 type Props = {
+  // «Скопировать» кладёт текст вместе со ссылкой — для сообщения в чат
+  // («Жеребьёвка прошла: …», Q06), а не только ссылку.
+  copyWithText?: boolean;
   // Ссылка собирается по требованию: перед отправкой сохраняется повод,
   // сообщение и т. п.
   getPayload: () => Promise<SharePayload>;
@@ -92,6 +95,7 @@ export const ShareActions = ({
   onError,
   qrLabel,
   secondary = false,
+  copyWithText = false,
 }: Props) => {
   const mounted = useMounted();
   const [busy, setBusy] = useState(false);
@@ -128,8 +132,15 @@ export const ShareActions = ({
 
   const copy = () =>
     void run(async (payload) => {
-      const ok = await copyText(payload.url);
-      toast(ok ? "Ссылка скопирована" : "Не получилось скопировать", {
+      const ok = await copyText(
+        copyWithText && payload.text
+          ? `${payload.text} ${payload.url}`
+          : payload.url,
+      );
+      const done = copyWithText
+        ? "Текст со ссылкой скопирован"
+        : "Ссылка скопирована";
+      toast(ok ? done : "Не получилось скопировать", {
         tone: ok ? "success" : "error",
       });
     });

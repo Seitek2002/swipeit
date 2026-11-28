@@ -237,6 +237,7 @@ const memberList = async (
       ...profileOf(person),
       hasWishlist: (await countActiveWishes(tx, id)) > 0,
       joined: game.participantIds.includes(id),
+      opened: game.openedIds.includes(id),
     });
   }
   return result;

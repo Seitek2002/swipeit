@@ -107,6 +107,7 @@ const memberList = (db: Db, game: SantaGame): SantaMember[] =>
       ...profileOf(user),
       hasWishlist: hasWishlist(db, user.id),
       joined: game.participantIds.includes(user.id),
+      opened: game.openedIds.includes(user.id),
     }));
 
 // Наружу — только перечисленные поля: новое поле игры не утечёт к

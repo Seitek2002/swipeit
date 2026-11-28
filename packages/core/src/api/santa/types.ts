@@ -120,6 +120,10 @@ export type UpdateSantaInput = z.input<typeof UpdateSantaInputSchema>;
 export type SantaMember = PlanParticipant & {
   hasWishlist: boolean;
   joined: boolean;
+  // Вскрыл письмо (auto-tasks-pm-2 Q06): о паре ничего не говорит, а
+  // организатору видно, кому напомнить. Покупка — по-прежнему только
+  // счётчиком.
+  opened: boolean;
 };
 
 // Конверт (DESIGN.md §7 SantaEnvelope): sealed — до жеребьёвки, ready —

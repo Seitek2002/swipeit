@@ -43,7 +43,7 @@ const statusOf = (summary: SantaSummary) => {
   }
   const me = summary.me;
   if (me?.envelope === "ready")
-    return { text: "Конверт ждёт тебя", accent: true };
+    return { text: "Письмо ждёт тебя", accent: true };
   if (me?.ward) return { text: `Ты Санта для ${me.ward.name}`, accent: false };
   return { text: "Жеребьёвка прошла", accent: false };
 };
