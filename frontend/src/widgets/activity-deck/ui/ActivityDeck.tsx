@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 
+import { LeavePlanButton } from "@/features/leave-plan";
 import {
   SwipeDeck,
   type SwipeDeckHandle,
@@ -27,7 +28,7 @@ import { clock } from "@/shared/lib/clock";
 import { usePreloadImages } from "@/shared/lib/image-cache";
 import { useConnectionStatus } from "@/shared/lib/realtime";
 import { cn } from "@/shared/lib/utils";
-import { Countdown, toast } from "@/shared/ui";
+import { BottomSheet, Countdown, buttonClassName, toast } from "@/shared/ui";
 
 import { DeckEnd } from "./DeckEnd";
 import { ProgressRings } from "./ProgressRings";
@@ -52,6 +53,7 @@ const ticketLabel = (activity: Activity) => {
 export const ActivityDeck = ({ view, meId }: Props) => {
   const queryClient = useQueryClient();
   const { plan, participants, activities } = view;
+  const [exitOpen, setExitOpen] = useState(false);
   const deckRef = useRef<SwipeDeckHandle>(null);
   const offline = useConnectionStatus() === "offline";
 
@@ -155,13 +157,27 @@ export const ActivityDeck = ({ view, meId }: Props) => {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="flex h-14 flex-none items-center gap-2 pr-4 pl-2">
-        <Link
-          href={ROUTES.PLANS}
-          aria-label="Выйти"
-          className="grid size-11 place-items-center rounded-full"
-        >
-          <X aria-hidden size={22} strokeWidth={1.75} />
-        </Link>
+        {plan.ownerId === meId ? (
+          <Link
+            href={ROUTES.PLANS}
+            aria-label="Выйти"
+            className="grid size-11 place-items-center rounded-full"
+          >
+            <X aria-hidden size={22} strokeWidth={1.75} />
+          </Link>
+        ) : (
+          // Участник у крестика выбирает: просто к планам или выйти из
+          // плана совсем (auto-tasks-pm-2 Q04). Организатору — только назад:
+          // план держится на нём.
+          <button
+            type="button"
+            aria-label="Выйти"
+            onClick={() => setExitOpen(true)}
+            className="grid size-11 place-items-center rounded-full"
+          >
+            <X aria-hidden size={22} strokeWidth={1.75} />
+          </button>
+        )}
         <div className="min-w-0 flex-1">
           <p className="text-title-3 truncate">{plan.title}</p>
           {plan.mode === "deadline" && plan.deadline ? (
@@ -215,6 +231,24 @@ export const ActivityDeck = ({ view, meId }: Props) => {
         }
         empty={<DeckEnd view={view} meId={meId} swiping={swiping} />}
       />
+      <BottomSheet
+        open={exitOpen}
+        onClose={() => setExitOpen(false)}
+        title={plan.title}
+      >
+        <div className="flex flex-col gap-2">
+          <Link
+            href={ROUTES.PLANS}
+            className={buttonClassName({ variant: "secondary", size: "lg" })}
+          >
+            К списку планов
+          </Link>
+          <p className="text-caption text-rose px-1 text-center">
+            Свайпы сохранятся — вернёшься и продолжишь
+          </p>
+          <LeavePlanButton planId={plan.id} title={plan.title} size="md" />
+        </div>
+      </BottomSheet>
     </div>
   );
 };

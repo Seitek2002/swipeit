@@ -3,6 +3,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Crown } from "lucide-react";
 
+import { LeavePlanButton } from "@/features/leave-plan";
+
 import type { PlanView } from "@/entities/plan";
 
 import { isApiError, planKeys, setPlanReady, startPlan } from "@/shared/api";
@@ -153,6 +155,7 @@ export const Lobby = ({ view, meId }: { meId: string; view: PlanView }) => {
             {isReady ? "Отменить «Готов»" : "Готов"}
           </Button>
         )}
+        {!isOwner && <LeavePlanButton planId={plan.id} title={plan.title} />}
       </div>
     </div>
   );
