@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 
 import type { Occasion } from "@/shared/api";
-import { genitive, occasionLabel } from "@/shared/lib/format";
+import { clock, useClockOffset } from "@/shared/lib/clock";
+import { genitive, isPastDate, occasionLabel } from "@/shared/lib/format";
 import { Avatar } from "@/shared/ui";
 
 type Props = {
@@ -29,7 +30,12 @@ export const GuestWishlistHeader = ({
   ownerGender,
   titleAs: Title = "h1",
 }: Props) => {
-  const occasionText = occasionLabel(occasion ?? undefined);
+  const now = clock.at(useClockOffset());
+  // Прошедший повод гостю не показываем; дата не в этом году — с годом (W03).
+  const occasionText =
+    occasion?.date && isPastDate(occasion.date, now)
+      ? ""
+      : occasionLabel(occasion ?? undefined, now);
   return (
     <div className="px-5 pt-2.5 pb-1">
       <Avatar name={owner.name} color={owner.avatarColor} size={56} />

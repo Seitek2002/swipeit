@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDayMonth, formatRemaining, remainingVerb } from "./dates";
+import {
+  formatAhead,
+  formatDayMonth,
+  formatOccasionDate,
+  formatRemaining,
+  isPastDate,
+  occasionLabel,
+  remainingVerb,
+} from "./dates";
 
 const MIN = 60_000;
 const HOUR = 60 * MIN;
@@ -68,5 +76,35 @@ describe("formatBirthday", () => {
     const { formatBirthday } = await import("./dates");
     expect(formatBirthday("12-05")).toBe("5\u00a0декабря");
     expect(formatBirthday("13-01")).toBe("");
+  });
+});
+
+describe("повод в прошлом и год у даты (W03)", () => {
+  // 28 ноября 2026, полдень.
+  const now = new Date(2026, 10, 28, 12).getTime();
+
+  it("дата не в этом году — с годом; в этом — без", () => {
+    expect(formatOccasionDate("2027-11-10", now)).toBe("10 ноября 2027");
+    expect(formatOccasionDate("2026-12-31", now)).toBe("31 декабря");
+    expect(
+      occasionLabel(
+        { kind: "important", preset: "housewarming", date: "2027-11-10" },
+        now,
+      ),
+    ).toContain("10 ноября 2027");
+  });
+
+  it("подпись пикера: «10 ноября 2027 — через 11 месяцев», ближние — в днях", () => {
+    expect(formatAhead("2027-11-10", now)).toBe(
+      "10 ноября 2027 — через 11 месяцев",
+    );
+    expect(formatAhead("2026-12-03", now)).toBe("3 декабря — через 5 дней");
+    expect(formatAhead("2026-11-28", now)).toBe("28 ноября — сегодня");
+  });
+
+  it("прошедший день — прошёл, сегодняшний — нет", () => {
+    expect(isPastDate("2026-11-27", now)).toBe(true);
+    expect(isPastDate("2026-11-28", now)).toBe(false);
+    expect(isPastDate("2026-12-31", now)).toBe(false);
   });
 });

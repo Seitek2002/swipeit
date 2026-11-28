@@ -20,7 +20,9 @@ import {
   wishlistKeys,
 } from "@/shared/api";
 import { IMPORTANT_DATE_LABEL_MAX } from "@/shared/config";
+import { clock, useClockOffset } from "@/shared/lib/clock";
 import { formatBirthday } from "@/shared/lib/format";
+import { aheadOfMonthDay } from "@/shared/lib/occasion-dates";
 import { cn } from "@/shared/lib/utils";
 import {
   BottomSheet,
@@ -225,6 +227,7 @@ export const MyDates = ({
   id?: string;
 }) => {
   const me = useMe();
+  const now = clock.at(useClockOffset());
   const dates = useMyDates();
   const setBirthday = useSetBirthday();
   const updateDate = useUpdateDate();
@@ -432,7 +435,14 @@ export const MyDates = ({
           </Button>
         }
       >
-        <DayMonthPicker value={value} onChange={setValue} disabled={pending} />
+        <DayMonthPicker
+          value={value}
+          onChange={setValue}
+          disabled={pending}
+          // «10 ноября 2027 — через 11 месяцев» (W03): видно, что прошедший
+          // день уйдёт на следующий год.
+          describe={(monthDay) => aheadOfMonthDay(monthDay, now)}
+        />
         {failed && (
           <p role="alert" className="text-caption text-pomegranate mt-3">
             {SAVE_ERROR}

@@ -118,6 +118,42 @@ const dayMonthOf = (value: string, space: string): string => {
 export const formatDayMonth = (value: string): string =>
   dayMonthOf(value, NBSP);
 
+// Дата повода "YYYY-MM-DD": «10 ноября», а если не в этом году —
+// «10 ноября 2027» (UX-аудит W03): прошедший в этом году день уходит на
+// следующий, и без года «на новоселье, 10 ноября» читалось как прошлое.
+export const formatOccasionDate = (date: string, now?: number): string => {
+  const dayMonth = formatDayMonth(date);
+  if (now === undefined || !dayMonth) return dayMonth;
+  const year = Number(date.slice(0, 4));
+  return year && year !== new Date(now).getFullYear()
+    ? `${dayMonth} ${year}`
+    : dayMonth;
+};
+
+// День "YYYY-MM-DD" уже прошёл (сегодняшний — ещё нет).
+export const isPastDate = (date: string, now: number): boolean =>
+  date.slice(0, 10) < toDateKey(now);
+
+// «10 ноября 2027 — через 11 месяцев», «14 марта — через 3 месяца», «3
+// декабря — через 5 дней», «28 ноября — сегодня»: подпись пикера повода (W03).
+export const formatAhead = (date: string, now: number): string => {
+  const target = new Date(`${date.slice(0, 10)}T12:00:00`).getTime();
+  const today = new Date(`${toDateKey(now)}T12:00:00`).getTime();
+  const days = Math.round((target - today) / DAY);
+  const when =
+    days <= 0
+      ? "сегодня"
+      : days === 1
+        ? "завтра"
+        : days < 45
+          ? `через ${days} ${plural(days, ["день", "дня", "дней"])}`
+          : (() => {
+              const months = Math.round(days / 30.44);
+              return `через ${months} ${plural(months, ["месяц", "месяца", "месяцев"])}`;
+            })();
+  return `${formatOccasionDate(date, now)} — ${when}`;
+};
+
 type OccasionLike = {
   date?: string;
   kind: string;
@@ -132,9 +168,13 @@ const PRESET_PHRASES: Record<string, string> = IMPORTANT_DATE_PRESET_PHRASES;
 // «на день рождения, 14 марта», «на 8 Марта», «на годовщину, 2 июня».
 // Значимая дата без готового повода — «к 2 июня»: своё название личное, в
 // ссылку не попадает. Старый custom — его подпись как есть.
-export const occasionLabel = (occasion?: OccasionLike): string => {
+export const occasionLabel = (
+  occasion?: OccasionLike,
+  // С часами — год у даты не в этом году (W03).
+  now?: number,
+): string => {
   if (!occasion) return "";
-  const date = occasion.date ? formatDayMonth(occasion.date) : "";
+  const date = occasion.date ? formatOccasionDate(occasion.date, now) : "";
   if (occasion.kind === "important") {
     const phrase = occasion.preset ? PRESET_PHRASES[occasion.preset] : "";
     if (phrase) return [phrase, date].filter(Boolean).join(", ");

@@ -1,6 +1,7 @@
 import { BIRTHDAY_REMINDER_LABEL, importantDateTitle } from "../config/index";
 
 import type { ImportantDate, Reminder, User } from "../api/users/types";
+import { formatAhead } from "../format/dates";
 
 // Даты и напоминания (TECH_SPEC §6 «Даты и напоминания»). Чистые функции без
 // браузерных API — их зовут обработчики и во вкладке, и на LAN-сервере.
@@ -46,6 +47,12 @@ export const nextOccurrence = (monthDay: string, now: number): string => {
   if (target < today) target = inYear(monthDay, today.getFullYear() + 1);
   return dateKeyOf(target);
 };
+
+// «10 ноября 2027 — через 11 месяцев» для дня без года "MM-DD" — подпись
+// пикера повода (UX-аудит W03): прошедший в этом году день уходит на
+// следующий год, и это видно сразу при выборе.
+export const aheadOfMonthDay = (monthDay: string, now: number): string =>
+  formatAhead(nextOccurrence(monthDay, now), now);
 
 // Наступление через yearsAhead лет после ближайшего: для перемотки, когда
 // ближайшее уже скрыто «Скрыть».

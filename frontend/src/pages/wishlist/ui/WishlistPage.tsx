@@ -42,7 +42,8 @@ import {
 
 import type { Occasion } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
-import { occasionLabel, pluralize } from "@/shared/lib/format";
+import { clock, useClockOffset } from "@/shared/lib/clock";
+import { isPastDate, occasionLabel, pluralize } from "@/shared/lib/format";
 import { cn } from "@/shared/lib/utils";
 import {
   Button,
@@ -88,6 +89,7 @@ export const WishlistPage = () => {
 
   const [tab, setTab] = useState<Tab>("want");
   const giving = useGivingCount();
+  const now = clock.at(useClockOffset());
   const [sheet, setSheet] = useState<null | Sheet>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -144,11 +146,15 @@ export const WishlistPage = () => {
     if (shareRequested && shareHandled) router.replace(ROUTES.WISHLIST);
   }, [shareRequested, shareHandled, router]);
   const likesLeft = Math.max(0, UNLOCK_WISHES - (data?.wishCount ?? 0));
-  // «Без даты» — строки повода нет (DESIGN.md §8.3, §8.4).
+  // «Без даты» — строки повода нет (DESIGN.md §8.3, §8.4). Повод прошёл —
+  // так и пишем, а не «на Новый год, 31 декабря» в феврале (W03).
+  const meta = data?.meta.occasion;
   const occasion =
-    data?.meta.occasion?.kind === "just_because"
+    meta?.kind === "just_because"
       ? ""
-      : occasionLabel(data?.meta.occasion);
+      : meta?.date && isPastDate(meta.date, now)
+        ? "Повод прошёл — выбери новый при отправке"
+        : occasionLabel(meta, now);
 
   const commitOrder = (nextTop = topIds, nextNormal = normalIds) => {
     setDragOrder(null);

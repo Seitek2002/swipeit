@@ -36,7 +36,13 @@ import {
 import { withBasePath } from "@/shared/lib/base-path";
 import { clock, useClockOffset } from "@/shared/lib/clock";
 import { absoluteUrl } from "@/shared/lib/dom";
-import { formatBirthday, genitive, occasionLabel } from "@/shared/lib/format";
+import {
+  formatBirthday,
+  genitive,
+  isPastDate,
+  occasionLabel,
+} from "@/shared/lib/format";
+import { aheadOfMonthDay } from "@/shared/lib/occasion-dates";
 import { cn } from "@/shared/lib/utils";
 import {
   Avatar,
@@ -187,8 +193,11 @@ export const WishlistShareSheet = ({
   const myDates = dates.data ?? [];
 
   const [step, setStep] = useState<ShareStep>("when");
-  const [occasion, setOccasion] = useState<Occasion | undefined>(
-    meta?.occasion,
+  // Прошедший повод шторка не предлагает (W03): выбрать заново.
+  const fresh = (value: Occasion | undefined) =>
+    value?.date && isPastDate(value.date, now) ? undefined : value;
+  const [occasion, setOccasion] = useState<Occasion | undefined>(() =>
+    fresh(meta?.occasion),
   );
   // "MM-DD" из календаря; null — день ещё не выбран.
   const [picked, setPicked] = useState<null | string>(null);
@@ -206,7 +215,7 @@ export const WishlistShareSheet = ({
     if (open) {
       setStep(initialOccasion ? "send" : "when");
       setPicked(null);
-      setOccasion(initialOccasion ?? meta?.occasion);
+      setOccasion(initialOccasion ?? fresh(meta?.occasion));
       setMessage(meta?.message ?? "");
       setSaved(null);
       setRenaming(null);
@@ -310,7 +319,7 @@ export const WishlistShareSheet = ({
     );
   const shown = occasion && displayOccasion(occasion, me, myDates, now);
   const occasionLine =
-    shown && shown.kind !== "just_because" ? occasionLabel(shown) : "";
+    shown && shown.kind !== "just_because" ? occasionLabel(shown, now) : "";
 
   // Повод сохраняется вместе с сообщением: у повода из напоминания
   // отдельного шага не было (DESIGN.md §7 ReminderBanner).
@@ -436,6 +445,7 @@ export const WishlistShareSheet = ({
               value={picked}
               onChange={setPicked}
               disabled={pending === "calendar"}
+              describe={(monthDay) => aheadOfMonthDay(monthDay, now)}
             />
             {errorLine}
           </div>

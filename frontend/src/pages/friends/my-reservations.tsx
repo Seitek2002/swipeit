@@ -54,7 +54,7 @@ const ReservationRow = ({
   const { data: product } = useProduct(reservation.item.productId);
   const image = product ? imageForChoice(product) : undefined;
   const title = product?.title ?? reservation.item.custom?.title ?? "…";
-  const occasion = occasionLabel(reservation.occasion);
+  const occasion = occasionLabel(reservation.occasion, clock.now());
   const buy = reservation.closed ? null : buyLinkOf(reservation, product);
 
   return (

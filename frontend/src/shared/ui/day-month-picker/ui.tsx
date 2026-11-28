@@ -21,6 +21,9 @@ type Props = {
   // Месяц, который открыт, пока день не выбран (1..12). По умолчанию —
   // текущий месяц по часам демо.
   defaultMonth?: number;
+  // Подпись выбранного дня вместо «14 марта»: у повода — «10 ноября 2027 —
+  // через 11 месяцев» (W03). Без неё — день и месяц.
+  describe?: (value: string) => string;
   // Пока идёт сохранение — месяцы и дни не нажимаются.
   disabled?: boolean;
   onChange: (value: string) => void;
@@ -43,6 +46,7 @@ export const DayMonthPicker = ({
   defaultMonth,
   disabled = false,
   className,
+  describe,
 }: Props) => {
   const parsed = parseMonthDay(value);
   const [viewMonth, setViewMonth] = useState(
@@ -118,7 +122,7 @@ export const DayMonthPicker = ({
 
       <p className="text-title-3 text-paper mt-4 mb-2.5" aria-live="polite">
         {parsed
-          ? formatBirthday(toMonthDay(parsed.month, parsed.day))
+          ? (describe ?? formatBirthday)(toMonthDay(parsed.month, parsed.day))
           : "Выбери день"}
       </p>
 
