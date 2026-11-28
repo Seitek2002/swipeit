@@ -263,7 +263,8 @@ describe("боты Санты досылают пропущенное (auto-task
     const game = await gameOf(created.game.id);
     expect(game?.participantIds).toHaveLength(BOTS.length + 1);
     const joinedRows = bus.events.filter(
-      (event) => event.type === "bot:action" && event.text.includes("вступил"),
+      (event) =>
+        event.type === "bot:action" && event.text.includes("теперь в игре"),
     );
     expect(joinedRows).toHaveLength(BOTS.length);
   });

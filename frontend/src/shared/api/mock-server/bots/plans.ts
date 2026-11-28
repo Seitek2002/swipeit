@@ -59,7 +59,11 @@ const MAX_LIKE = 0.95;
 const byGender = (bot: User, male: string, female: string, any: string) =>
   bot.audience === "female" ? female : bot.audience === "male" ? male : any;
 
-const readyWord = (bot: User) => byGender(bot, "готов", "готова", "готов(а)");
+// Род неизвестен («всем») — фраза без рода, а не «готов(а)» (P11).
+const readyLine = (bot: User, title: string) =>
+  bot.audience === "all"
+    ? `План «${title}»: ${bot.name} — готово`
+    : `${bot.name} ${byGender(bot, "готов", "готова", "")} в плане «${title}»`;
 
 export const likeChance = (bot: User, activity: Activity) => {
   const profile = bot.bot;
@@ -113,7 +117,9 @@ const swipeDeck = (
       if (view.plan.finishedIds.includes(bot.id)) {
         api.report(
           bot.id,
-          `${bot.name} ${byGender(bot, "досвайпал", "досвайпала", "досвайпал(а)")} колоду в плане «${view.plan.title}»`,
+          bot.audience === "all"
+            ? `План «${view.plan.title}»: ${bot.name} — колода пройдена`
+            : `${bot.name} ${byGender(bot, "досвайпал", "досвайпала", "")} колоду в плане «${view.plan.title}»`,
         );
         return;
       }
@@ -175,10 +181,7 @@ const readyUp = async (api: BotApi, planId: string) => {
         path: `/plans/${encodeURIComponent(plan.id)}/ready`,
         body: { ready: true },
       });
-      api.report(
-        bot.id,
-        `${bot.name} ${readyWord(bot)} в плане «${plan.title}»`,
-      );
+      api.report(bot.id, readyLine(bot, plan.title));
     });
   }
 };
@@ -221,7 +224,9 @@ const voteLater = async (api: BotApi, planId: string) => {
         });
         api.report(
           bot.id,
-          `${bot.name} ${byGender(bot, "проголосовал", "проголосовала", "проголосовал(а)")} в «${fresh.title}»`,
+          bot.audience === "all"
+            ? `«${fresh.title}»: ${bot.name} — голос отдан`
+            : `${bot.name} ${byGender(bot, "проголосовал", "проголосовала", "")} в «${fresh.title}»`,
         );
       },
       `plan:vote:${planId}:${bot.id}`,

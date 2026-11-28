@@ -89,7 +89,10 @@ export const freshOccasionFrom = (
   return {
     kind: "important",
     dateId: date.id,
-    ...(date.preset ? { preset: date.preset } : {}),
+    // Переименованный готовый повод («Новоселье» → «Новоселье у моря») —
+    // уже своё название: гостю не «на новоселье», а «к 5 декабря»
+    // (auto-tasks P11, DESIGN §8.4: личное название в ссылку не попадает).
+    ...(date.preset && !date.label ? { preset: date.preset } : {}),
     date: nextOccurrence(date.date, now),
   };
 };

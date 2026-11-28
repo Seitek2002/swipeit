@@ -88,3 +88,33 @@ describe("порог отправки без базы", () => {
     expect(shouldUnlockShare(7, "2026-11-27T12:00:00.000Z")).toBe(false);
   });
 });
+
+describe("переименованный готовый повод (P11)", () => {
+  it("гость видит «к дате», а не «на новоселье»: preset у переименованной даты не уходит", () => {
+    const now = new Date(2026, 10, 28, 12).getTime();
+    const renamed = {
+      id: "d_1",
+      ownerId: "u_1",
+      date: "12-05",
+      preset: "housewarming" as const,
+      label: "Новоселье у моря",
+      autoNumber: 1,
+      createdAt: "2026-11-01T00:00:00.000Z",
+    };
+    expect(
+      occasionForOthersFrom(
+        [renamed],
+        { kind: "important", dateId: "d_1" },
+        now,
+      ),
+    ).toEqual({ kind: "important", date: "2026-12-05" });
+    const plain = { ...renamed, label: undefined };
+    expect(
+      occasionForOthersFrom([plain], { kind: "important", dateId: "d_1" }, now),
+    ).toEqual({
+      kind: "important",
+      preset: "housewarming",
+      date: "2026-12-05",
+    });
+  });
+});

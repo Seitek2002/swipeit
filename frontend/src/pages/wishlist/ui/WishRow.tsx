@@ -15,14 +15,11 @@ import { WishMiniTag, type WishlistItem } from "@/entities/wishlist";
 
 import { withBasePath } from "@/shared/lib/base-path";
 import { useCustomImageUrl } from "@/shared/lib/dom";
-import { formatDayMonth, formatPrice, genitive } from "@/shared/lib/format";
-
-type Gender = "female" | "male" | undefined;
+import { formatDayMonth, formatPrice } from "@/shared/lib/format";
 
 // Всё, что нужно мини-бирке и шторкам, — из желания и товара каталога.
 export const useItemDisplay = (
   item: WishlistItem,
-  genderOf: (userId?: string) => Gender,
 ): { display: ItemDisplay; product?: Product } => {
   const productId =
     item.source.kind === "product" ? item.source.productId : undefined;
@@ -51,7 +48,8 @@ export const useItemDisplay = (
   const givenCaption = item.given
     ? [
         item.given.fromName
-          ? `от ${genitive(item.given.fromName, genderOf(item.given.fromUserId))}`
+          ? // Имя — в именительном (P11): «от Бакыта» склоняется неверно.
+            `даритель — ${item.given.fromName}`
           : "",
         formatDayMonth(item.given.at),
       ]
@@ -78,7 +76,6 @@ export const useItemDisplay = (
 };
 
 type Props = {
-  genderOf: (userId?: string) => Gender;
   item: WishlistItem;
   onDragEnd?: () => void;
   onMenu: (item: WishlistItem, display: ItemDisplay, product?: Product) => void;
@@ -104,15 +101,9 @@ const MenuButton = ({
 
 // Строка вишлиста. Перетаскивание — только за ручку GripVertical, чтобы
 // список свободно прокручивался пальцем (DESIGN.md §8.3).
-export const WishRow = ({
-  item,
-  genderOf,
-  onMenu,
-  onDragEnd,
-  reorderable,
-}: Props) => {
+export const WishRow = ({ item, onMenu, onDragEnd, reorderable }: Props) => {
   const controls = useDragControls();
-  const { display, product } = useItemDisplay(item, genderOf);
+  const { display, product } = useItemDisplay(item);
 
   const tag = (
     <WishMiniTag

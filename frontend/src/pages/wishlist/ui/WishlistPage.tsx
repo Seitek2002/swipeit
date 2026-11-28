@@ -145,12 +145,6 @@ export const WishlistPage = () => {
       ? ""
       : occasionLabel(data?.meta.occasion);
 
-  const genderOf = (userId?: string) => {
-    const audience = friends.data?.find(({ user }) => user.id === userId)?.user
-      .audience;
-    return audience === "female" || audience === "male" ? audience : undefined;
-  };
-
   const commitOrder = (nextTop = topIds, nextNormal = normalIds) => {
     setDragOrder(null);
     const ids = [...nextTop, ...nextNormal];
@@ -229,7 +223,6 @@ export const WishlistPage = () => {
           <WishRow
             key={id}
             item={item}
-            genderOf={genderOf}
             reorderable
             onMenu={openMenu}
             onDragEnd={() => commitOrder()}
@@ -378,7 +371,6 @@ export const WishlistPage = () => {
                   <WishRow
                     key={item.id}
                     item={item}
-                    genderOf={genderOf}
                     reorderable={false}
                     onMenu={openMenu}
                   />
@@ -463,7 +455,6 @@ export const WishlistPage = () => {
         <HintGivenSheet
           key={hintItem.id}
           item={hintItem}
-          genderOf={genderOf}
           onClose={() => setHintItem(null)}
         />
       )}
@@ -475,13 +466,11 @@ export const WishlistPage = () => {
 // для мини-бирки собираются так же, как в списке.
 const HintGivenSheet = ({
   item,
-  genderOf,
   onClose,
 }: {
-  genderOf: (userId?: string) => "female" | "male" | undefined;
   item: WishlistItem;
   onClose: () => void;
 }) => {
-  const { display } = useItemDisplay(item, genderOf);
+  const { display } = useItemDisplay(item);
   return <GivenSheet item={item} display={display} onClose={onClose} />;
 };

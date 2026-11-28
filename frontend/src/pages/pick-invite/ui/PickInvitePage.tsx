@@ -17,7 +17,7 @@ import { useCreateUser, useMe } from "@/entities/user";
 
 import { getMyPicks, pickKeys } from "@/shared/api";
 import { ROUTES } from "@/shared/config";
-import { dative, genitive, occasionLabel, plural } from "@/shared/lib/format";
+import { occasionLabel, plural } from "@/shared/lib/format";
 import {
   type SharedPickRequest,
   decodePickRequest,
@@ -72,7 +72,9 @@ const Invite = ({
   starting: boolean;
 }) => {
   const occasion = occasionLabel(request.occasion);
-  const to = dative(request.from.name, request.from.gender);
+  // Имя — в именительном (P11): кыргызские имена по-русски склоняются
+  // неверно, и это видит каждый.
+  const to = request.from.name;
   return (
     <>
       <ScreenBody className="px-5 pt-2.5">
@@ -100,7 +102,7 @@ const Invite = ({
         <ol className="text-body text-rose mt-5 flex list-inside list-decimal flex-col gap-1.5 pb-6">
           <li>Свайпай вправо то, что нравится, влево — мимо.</li>
           <li>Выбери хотя бы три подарка.</li>
-          <li>Отправь выбор {to}.</li>
+          <li>Отправь выбор: {to}.</li>
         </ol>
       </ScreenBody>
       <div className="flex-none px-5 pt-2 pb-[calc(env(safe-area-inset-bottom)+16px)]">
@@ -156,7 +158,7 @@ const PickSwipe = ({
     <>
       <TopBar onBack={onBack} />
       <p className="text-caption text-rose flex-none px-5">
-        Подарок от {genitive(request.from.name, request.from.gender)}
+        {request.from.name} хочет подарить тебе подарок
       </p>
       <ActiveFilterChips
         filters={request.filters}
@@ -182,7 +184,7 @@ const PickSwipe = ({
             className="w-full"
             onClick={() => requireName.run(() => setSendOpen(true))}
           >
-            Отправить выбор {dative(request.from.name, request.from.gender)}
+            Отправить выбор: {request.from.name}
           </Button>
         )}
       </div>

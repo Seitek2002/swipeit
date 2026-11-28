@@ -63,7 +63,9 @@ const collectWishlist = (api: BotApi, bot: User) =>
     if (liked === 0) return;
     api.report(
       bot.id,
-      `${bot.name} ${byGender(bot, "собрал", "собрала", "собрал(а)")} вишлист`,
+      bot.audience === "all"
+        ? `${bot.name} — вишлист собран`
+        : `${bot.name} ${byGender(bot, "собрал", "собрала", "")} вишлист`,
     );
   });
 
@@ -100,10 +102,7 @@ const joinInvited = async (api: BotApi, gameId: string) => {
           method: "POST",
           path: `${gamePath(game.id)}/join`,
         });
-        api.report(
-          bot.id,
-          `${bot.name} ${byGender(bot, "вступил", "вступила", "вступил(а)")} в «${game.title}»`,
-        );
+        api.report(bot.id, `${bot.name} теперь в игре «${game.title}»`);
         if (!(await hasWishlist(api, bot.id))) collectWishlist(api, bot);
       },
       `santa:join:${gameId}:${bot.id}`,
@@ -131,7 +130,9 @@ const buyLater = (api: BotApi, bot: User, gameId: string, title: string) =>
       // Кому — не пишем: даже в ленте демо-панели пары не видны.
       api.report(
         bot.id,
-        `${bot.name} ${byGender(bot, "купил", "купила", "купил(а)")} подарок в «${title}»`,
+        bot.audience === "all"
+          ? `«${title}»: ${bot.name} — подарок куплен`
+          : `${bot.name} ${byGender(bot, "купил", "купила", "")} подарок в «${title}»`,
       );
     },
     `santa:buy:${gameId}:${bot.id}`,

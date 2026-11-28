@@ -9,12 +9,13 @@ import type { BotApi, BotBehavior } from "./engine";
 const DELAY_MS: [number, number] = [30_000, 90_000];
 
 // Род — по «Показывать подарки» бота: «для неё» — значит, она.
-const reservedVerb = (bot: User) =>
+// Род неизвестен («всем») — фраза без рода, а не «забронировал(а)» (P11).
+const reservedLine = (bot: User, ownerName: string) =>
   bot.audience === "female"
-    ? "забронировала"
+    ? `${bot.name} забронировала подарок у ${ownerName}`
     : bot.audience === "male"
-      ? "забронировал"
-      : "забронировал(а)";
+      ? `${bot.name} забронировал подарок у ${ownerName}`
+      : `${bot.name} — подарок у ${ownerName} в брони`;
 
 // Одна попытка: свободный подарок или null, если брать нечего.
 const tryReserve = async (api: BotApi, bot: User, ownerId: string) => {
@@ -54,10 +55,7 @@ const reserveOne = async (api: BotApi, bot: User, ownerId: string) => {
     try {
       const ownerName = await tryReserve(api, bot, ownerId);
       if (ownerName) {
-        api.report(
-          bot.id,
-          `${bot.name} ${reservedVerb(bot)} подарок у ${ownerName}`,
-        );
+        api.report(bot.id, reservedLine(bot, ownerName));
       }
       return;
     } catch (error) {

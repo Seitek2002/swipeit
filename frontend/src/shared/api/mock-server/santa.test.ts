@@ -683,8 +683,9 @@ describe("боты в Санте", () => {
     );
     expect(joined.members.every((m) => m.joined)).toBe(true);
     expect(joined.drawIssue).toBeNull();
-    expect(reports()).toContain("Азамат вступил в «Офис, Новый год»");
-    expect(reports()).toContain("Нурай вступила в «Офис, Новый год»");
+    // Имя — в именительном, без рода (P11).
+    expect(reports()).toContain("Азамат теперь в игре «Офис, Новый год»");
+    expect(reports()).toContain("Нурай теперь в игре «Офис, Новый год»");
     const statuses = () =>
       Object.fromEntries(joined.members.map((m) => [m.id, m.hasWishlist]));
     expect(WITHOUT_WISHLIST.map((id) => statuses()[id])).toEqual([

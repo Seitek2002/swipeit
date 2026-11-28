@@ -4,7 +4,7 @@ import { useRequireName } from "@/features/ask-name";
 
 import { answerPickRequest } from "@/shared/api";
 import { absoluteUrl } from "@/shared/lib/dom";
-import { dative, pluralize } from "@/shared/lib/format";
+import { pluralize } from "@/shared/lib/format";
 import type { SharedPickRequest } from "@/shared/lib/share-codec";
 import { BottomSheet, ShareActions } from "@/shared/ui";
 
@@ -26,7 +26,8 @@ export const SendPicksSheet = ({
   count,
   caption,
 }: Props) => {
-  const to = dative(request.from.name, request.from.gender);
+  // Имя — в именительном (P11).
+  const to = request.from.name;
   // Имя друга едет в ссылке-ответе: NAME_REQUIRED — NameSheet поверх и повтор.
   const requireName = useRequireName(caption);
 
@@ -44,7 +45,7 @@ export const SendPicksSheet = ({
       <BottomSheet
         open={open}
         onClose={onClose}
-        title={`Отправить выбор ${to}`}
+        title={`Отправить выбор: ${to}`}
         footer={
           <ShareActions
             getPayload={getPayload}
