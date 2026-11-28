@@ -14,7 +14,13 @@ import { createSession, revokeSession } from "../../auth/sessions";
 import { reachStep } from "../funnel/steps";
 import type { ServerContext, ServerHandler } from "../../context";
 import { friendships, users, wishlistMeta } from "../../db/schema";
-import { lockMe, rowToUser, toMe, type UserRow } from "./queries";
+import {
+  isTelegramLinked,
+  lockMe,
+  rowToUser,
+  toMe,
+  type UserRow,
+} from "./queries";
 
 // Профиль изменён — себе и друзьям (§5).
 const usersChanged = async (ctx: ServerContext, id: string) => {
@@ -43,7 +49,7 @@ const writeMe = async (
     .where(eq(users.id, me.id))
     .returning();
   await usersChanged(ctx, me.id);
-  return toMe(rowToUser(row ?? me));
+  return toMe(rowToUser(row ?? me), await isTelegramLinked(ctx.tx, me.id));
 };
 
 // POST /users (BACKEND.md §3.1): анонимный профиль и сессия, ответ
@@ -76,8 +82,10 @@ export const createUser: ServerHandler = async (ctx, { body }) => {
   return { me: toMe(rowToUser(row)), token };
 };
 
-export const getMe: ServerHandler = async (ctx) =>
-  toMe(rowToUser(await lockMe(ctx)));
+export const getMe: ServerHandler = async (ctx) => {
+  const me = await lockMe(ctx);
+  return toMe(rowToUser(me), await isTelegramLinked(ctx.tx, me.id));
+};
 
 // PATCH /me — как в моке: имя и фон аватара, день рождения, свои интересы и
 // «Не моё». Интерес не бывает сразу и своим, и «Не моё».

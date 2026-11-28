@@ -53,6 +53,16 @@ export const removeSantaMember = (
     `${gamePath(id)}/members/${encodeURIComponent(userId)}`,
   );
 
+// «Передать роль организатора» — организатор, вступившему, до и после
+// жеребьёвки (S04). Ответ — игра глазами уже бывшего организатора.
+export const handOverSantaGame = (
+  id: string,
+  userId: string,
+): Promise<SantaView> =>
+  getTransport().request<SantaView>("POST", `${gamePath(id)}/owner`, {
+    userId,
+  });
+
 // «Я купил подарок» (bought: false — снять отметку).
 // itemKey — что купил (X02): желание подопечного бронируется.
 export const setSantaBought = (

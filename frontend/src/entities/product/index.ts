@@ -1,4 +1,10 @@
-export { useCatalogStores, useFeedPage, useProduct, useProducts } from "./api";
+export {
+  useCatalogStores,
+  useFeedPage,
+  useProduct,
+  useProducts,
+  useRemovedProductIds,
+} from "./api";
 export {
   cheapestOffer,
   colorSwatches,
@@ -6,6 +12,7 @@ export {
   EMPTY_FILTERS,
   type FeedResponse,
   imageForChoice,
+  isRemovedProductError,
   type Offer,
   type Product,
   type ProductFilters,
@@ -15,6 +22,7 @@ export {
   storeOffers,
   type VariantGroup,
   type VariantOption,
+  withoutRemovedProducts,
 } from "./model";
 export {
   GiftCardSkeleton,

@@ -26,7 +26,7 @@ import {
 } from "@/shared/api";
 import { REMOTE_COPY, ROUTES } from "@/shared/config";
 import { useAppMode } from "@/shared/lib/app-status";
-import { useInviteCode } from "@/shared/lib/dom";
+import { copyText, useInviteCode } from "@/shared/lib/dom";
 import { pluralize } from "@/shared/lib/format";
 import { inAppJoinText } from "@/shared/lib/in-app-browser";
 import { useSessionStore } from "@/shared/store";
@@ -43,6 +43,26 @@ import {
   buttonClassName,
   toast,
 } from "@/shared/ui";
+
+import { DRAWN_INVITE_TEXT, lostProfileMessage } from "./model";
+
+// Кнопка под текстом разыгранной игры (S04): сообщение организатору — в
+// буфер, вставить в чат с ним.
+const CopyLostProfileMessage = ({ text }: { text: string }) => (
+  <Button
+    variant="ghost"
+    className="w-full"
+    onClick={() =>
+      void copyText(text).then((ok) =>
+        ok
+          ? toast("Сообщение скопировано — отправь его организатору")
+          : toast("Не получилось скопировать", { tone: "error" }),
+      )
+    }
+  >
+    Скопировать сообщение организатору
+  </Button>
+);
 
 // Игра по ссылке не найдена. В local она живёт в браузере, где её создали
 // (TECH_SPEC §8): на другом устройстве id не найдётся — объясняем и
@@ -281,10 +301,16 @@ const JoinContent = () => {
             уже в игре
           </p>
         </div>
-        <p className="text-body text-rose mt-5">
-          После жеребьёвки ты узнаешь, кому даришь, — и увидишь его вишлист в
-          рамках бюджета. Кто дарит тебе, останется сюрпризом.
-        </p>
+        {closed ? (
+          // Разыграна, а меня в ней нет (S04): скорее всего, телефон потерял
+          // профиль — не тупик, а что сделать.
+          <p className="text-body text-rose mt-5">{DRAWN_INVITE_TEXT}</p>
+        ) : (
+          <p className="text-body text-rose mt-5">
+            После жеребьёвки ты узнаешь, кому даришь, — и увидишь его вишлист в
+            рамках бюджета. Кто дарит тебе, останется сюрпризом.
+          </p>
+        )}
         {!closed && (
           // Встроенный браузер мессенджера (R04): вступишь здесь — из Chrome
           // потом откроется другой профиль, и человек вступит второй раз.
@@ -299,9 +325,12 @@ const JoinContent = () => {
       </div>
       <div className="flex-none px-5 pt-2 pb-[calc(env(safe-area-inset-bottom)+16px)]">
         {closed ? (
-          <p className="text-caption text-rose text-center">
-            Жеребьёвка уже прошла — вступить нельзя.
-          </p>
+          <CopyLostProfileMessage
+            text={lostProfileMessage({
+              name: me.data?.name,
+              title: view.game.title,
+            })}
+          />
         ) : (
           <div className="flex flex-col gap-2">
             <Button

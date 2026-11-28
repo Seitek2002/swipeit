@@ -21,7 +21,8 @@
     "db:seed:dev": "tsx --env-file-if-exists=.env src/db/seed-dev.ts",
     "funnel": "tsx --env-file-if-exists=.env src/db/funnel-cli.ts",
     "funnel:team": "tsx --env-file-if-exists=.env src/db/funnel-team-cli.ts",
-    "rehearsal": "tsx --env-file-if-exists=.env src/db/rehearsal-cli.ts"
+    "rehearsal": "tsx --env-file-if-exists=.env src/db/rehearsal-cli.ts",
+    "telegram:dev": "tsx src/db/telegram-dev-cli.ts"
   },
   "dependencies": {
     "@swipeit/core": "*",

@@ -14,5 +14,7 @@ export const testConfig = (env: Record<string, string> = {}) =>
     RATE_SHARE_IP: "1000000",
     RATE_RESERVATIONS: "1000000",
     RATE_FUNNEL: "1000000",
+    RATE_TELEGRAM_MINUTE: "1000000",
+    RATE_TELEGRAM_HOUR: "1000000",
     ...env,
   });

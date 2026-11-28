@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { lockedAfterDraw, termsChangedText } from "./santa-update";
+import {
+  lockedAfterDraw,
+  newOwnerText,
+  termsChangedText,
+} from "./santa-update";
 
 const GAME = { title: "Офис", budget: 2000, exchangeDate: "2026-12-28" };
 
@@ -40,5 +44,11 @@ describe("termsChangedText", () => {
     expect(
       termsChangedText(GAME, { ...GAME, title: "Офис 2027", budget: 1000 }),
     ).toContain("«Офис 2027»");
+  });
+});
+
+describe("newOwnerText", () => {
+  it("тост новому организатору — тот же, что при удалении профиля (Q04)", () => {
+    expect(newOwnerText("Офис")).toBe("Теперь ты организатор игры «Офис»");
   });
 });

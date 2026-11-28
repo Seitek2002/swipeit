@@ -1,10 +1,15 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   type NewUserInput,
+  TelegramLoginCancelled,
+  type TelegramLoginResult,
   type UpdateMeInput,
+  askTelegramIdToken,
   createUser,
   deleteMe,
   friendKeys,
@@ -12,22 +17,29 @@ import {
   getMe,
   getMode,
   getPresence,
+  getTelegramNonce,
   getUser,
   isApiError,
+  isTelegramLoginEnabled,
+  loadTelegramLogin,
+  loadedTelegramLogin,
   loginDemoFn,
+  loginTelegram,
   logout,
   reservationKeys,
   updateMe,
   userKeys,
 } from "@/shared/api";
-import { ROUTES } from "@/shared/config";
+import { REMOTE_COPY, ROUTES, telegramClientId } from "@/shared/config";
 import { withBasePath } from "@/shared/lib/base-path";
 import { useMounted } from "@/shared/lib/dom";
 import {
   clearRemoteSession,
+  rememberRemoteNotice,
   useGuestStore,
   useSessionStore,
 } from "@/shared/store";
+import { toast } from "@/shared/ui";
 
 // Текущий пользователь вкладки. Ждём монтирования: сессия живёт в
 // sessionStorage, на сервере её нет (TECH_SPEC §3).
@@ -164,8 +176,10 @@ export const useCreateUser = () => {
 // Режим remote: начать с нового анонимного профиля (после «Выйти»,
 // «Удалить профиль», «Сессия закончилась» → «Начать заново», BACKEND.md
 // §3.4). Токена нет — вкладка заново: прелоадер, POST /users, обучающая
-// карточка; другие вкладки перезапустятся по событию storage.
-export const startAnonymousAgain = () => {
+// карточка; другие вкладки перезапустятся по событию storage. notice — тост
+// уже в новом профиле (app/session-gate).
+export const startAnonymousAgain = (notice?: string) => {
+  if (notice) rememberRemoteNotice(notice);
   clearRemoteSession();
   useSessionStore.getState().setActiveUser(null);
   window.location.assign(withBasePath(ROUTES.GIFTS));
@@ -181,12 +195,141 @@ const ignoreUnauthorized = (error: unknown) => {
 export const useLogout = () =>
   useMutation({
     mutationFn: () => logout().then(() => undefined, ignoreUnauthorized),
-    onSuccess: startAnonymousAgain,
+    onSuccess: () => startAnonymousAgain(),
   });
 
 // «Удалить профиль» (DELETE /me): человек и его данные удаляются на сервере.
 export const useDeleteMe = () =>
   useMutation({
     mutationFn: () => deleteMe().then(() => undefined),
-    onSuccess: startAnonymousAgain,
+    onSuccess: () => startAnonymousAgain(REMOTE_COPY.profileDeleted),
   });
+
+// ── Вход через Telegram (BACKEND.md §3.3, auto-tasks-pm-4 S03) ──────────
+
+// nonce живёт на сервере 10 минут; берём заранее, чтобы окно Telegram
+// открылось прямо в нажатии (иначе браузер его заблокирует), и обновляем,
+// если он старше 8 минут.
+const NONCE_FRESH_MS = 8 * 60_000;
+let preparedNonce: { at: number; nonce: string } | null = null;
+
+const prepareNonce = async (): Promise<string> => {
+  if (preparedNonce && Date.now() - preparedNonce.at < NONCE_FRESH_MS) {
+    return preparedNonce.nonce;
+  }
+  const { nonce } = await getTelegramNonce();
+  preparedNonce = { at: Date.now(), nonce };
+  return nonce;
+};
+
+// Одноразовый: после окна Telegram им уже вошли.
+const takeNonce = async (): Promise<string> => {
+  const nonce = await prepareNonce();
+  preparedNonce = null;
+  return nonce;
+};
+
+const errorText = (error: unknown) =>
+  isApiError(error) && error.code !== "INTERNAL"
+    ? error.message
+    : REMOTE_COPY.telegramFailed;
+
+// Кнопка «Войти через Telegram»: в профиле и на «Сессия закончилась».
+// switchWishes — не null, пока открыт вопрос «Войти в другой профиль?»
+// (на этом телефоне есть желания, а у Telegram — свой профиль).
+export const useTelegramLogin = () => {
+  const queryClient = useQueryClient();
+  const mounted = useMounted();
+  const enabled = mounted && isTelegramLoginEnabled();
+  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<{
+    idToken: string;
+    localWishes: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+    loadTelegramLogin().catch(() => undefined);
+    prepareNonce().catch(() => undefined);
+  }, [enabled]);
+
+  const apply = useCallback(
+    (result: TelegramLoginResult, idToken: string) => {
+      if (result.status === "confirm") {
+        setPending({ idToken, localWishes: result.localWishes });
+        return;
+      }
+      setPending(null);
+      if (result.status === "linked") {
+        queryClient.setQueryData(userKeys.me(), result.me);
+        toast(REMOTE_COPY.telegramLinkedToast, { tone: "success" });
+        return;
+      }
+      // Другой профиль на этом телефоне: токен уже сохранён (loginTelegram),
+      // вкладка запускается заново — с новым WebSocket и кэшем. Остальные
+      // вкладки перезапустятся по событию storage.
+      useSessionStore.getState().setActiveUser(result.me.id);
+      window.location.reload();
+    },
+    [queryClient],
+  );
+
+  const run = useCallback(async (step: () => Promise<void>) => {
+    setBusy(true);
+    try {
+      await step();
+    } catch (error) {
+      if (!(error instanceof TelegramLoginCancelled)) {
+        toast(errorText(error), { tone: "error" });
+      }
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  const start = useCallback(() => {
+    const clientId = telegramClientId();
+    if (!clientId) return;
+    // Окно — синхронно в нажатии, если скрипт и nonce уже готовы.
+    const sdk = loadedTelegramLogin();
+    const ready =
+      sdk && preparedNonce && Date.now() - preparedNonce.at < NONCE_FRESH_MS
+        ? preparedNonce.nonce
+        : null;
+    void run(async () => {
+      let idTokenPromise: Promise<string>;
+      if (sdk && ready) {
+        preparedNonce = null;
+        idTokenPromise = askTelegramIdToken(sdk, clientId, ready);
+      } else {
+        const [loaded, nonce] = await Promise.all([
+          loadTelegramLogin(),
+          takeNonce(),
+        ]);
+        idTokenPromise = askTelegramIdToken(loaded, clientId, nonce);
+      }
+      const idToken = await idTokenPromise;
+      apply(await loginTelegram({ idToken }), idToken);
+    }).finally(() => {
+      // Следующая попытка — с новым nonce, тоже заранее.
+      prepareNonce().catch(() => undefined);
+    });
+  }, [apply, run]);
+
+  const confirmSwitch = useCallback(() => {
+    if (!pending) return;
+    const { idToken } = pending;
+    void run(async () => {
+      apply(await loginTelegram({ idToken, confirmSwitch: true }), idToken);
+    });
+  }, [apply, pending, run]);
+
+  return {
+    busy,
+    cancelSwitch: () => setPending(null),
+    confirmSwitch,
+    enabled,
+    start,
+    switchWishes: pending?.localWishes ?? null,
+  };
+};

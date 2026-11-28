@@ -28,6 +28,8 @@ import {
   storeOffers,
   useProduct,
   useProducts,
+  useRemovedProductIds,
+  withoutRemovedProducts,
 } from "@/entities/product";
 
 import type { GuestWishlist } from "@/shared/api";
@@ -310,18 +312,21 @@ export const GuestWishlistView = ({
 
   // Фильтр по бюджету (auto-tasks P10): цены товаров — из каталога, своих
   // желаний — из самих желаний.
-  const products = useProducts(
-    wishlist.items.flatMap((item) => (item.productId ? [item.productId] : [])),
+  const productIds = wishlist.items.flatMap((item) =>
+    item.productId ? [item.productId] : [],
   );
+  const products = useProducts(productIds);
+  // Товар убрали из каталога (S07) — желание гостю не показываем, как
+  // подаренное: купить его негде.
+  const removedIds = useRemovedProductIds(productIds);
+  const visible = withoutRemovedProducts(wishlist.items, removedIds);
   const priceOf = (item: Item) =>
     (item.productId ? products.get(item.productId)?.priceMin : undefined) ??
     item.custom?.priceMin;
-  const chips = budgetChips(wishlist.items.map(priceOf));
+  const chips = budgetChips(visible.map(priceOf));
   const [limit, setLimit] = useState<BudgetLimit | null>(null);
   const shownLimit = limit !== null && chips.includes(limit) ? limit : null;
-  const items = wishlist.items.filter((item) =>
-    fitsBudget(priceOf(item), shownLimit),
-  );
+  const items = visible.filter((item) => fitsBudget(priceOf(item), shownLimit));
 
   return (
     <>
@@ -353,7 +358,7 @@ export const GuestWishlistView = ({
           ))}
         </div>
       )}
-      {wishlist.items.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="text-body text-rose px-5 pt-6">
           Здесь пока пусто — желания ещё не добавлены.
         </p>

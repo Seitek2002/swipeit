@@ -1,6 +1,7 @@
 import type { PlanParticipant } from "@swipeit/core/api/plans/types";
 import {
   CreateSantaInputSchema,
+  HandOverSantaInputSchema,
   type SantaMember,
   type SantaSummary,
   type SantaTickResult,
@@ -30,6 +31,7 @@ import { occasionForOthersFrom } from "@swipeit/core/logic/occasion";
 import {
   AFTER_DRAW_PATCH_MESSAGE,
   lockedAfterDraw,
+  newOwnerText,
   termsChangedText,
 } from "@swipeit/core/logic/santa-update";
 import { parseInput } from "@swipeit/core/parse-input";
@@ -281,6 +283,13 @@ const wardOf = async (
 
 // Гостю (превью по ссылке, X07) — только профиль и joined (S05): готов ли
 // чей-то вишлист и кто вскрыл письмо, знать ему незачем.
+// Организатор — первым, остальные по порядку вступления: после «Передать
+// роль» (S04) он может быть не первым вступившим.
+const ownerFirst = (game: StoredGame) => [
+  ...membersOf(game).filter((id) => id === game.ownerId),
+  ...membersOf(game).filter((id) => id !== game.ownerId),
+];
+
 const memberList = async (
   tx: Tx,
   game: StoredGame,
@@ -288,7 +297,7 @@ const memberList = async (
   role: SantaView["role"],
 ): Promise<SantaMember[]> => {
   const result: SantaMember[] = [];
-  for (const id of membersOf(game)) {
+  for (const id of ownerFirst(game)) {
     const person = people.get(id);
     if (!person) continue;
     const joined = game.participantIds.includes(id);
@@ -727,6 +736,32 @@ export const removeSantaMember: ServerHandler = async (ctx, { params }) => {
     game = await loadGame(ctx.tx, game.id, { lock: false });
   }
   changed(ctx, game, [target]);
+  return viewOf(ctx, game, me.id);
+};
+
+// POST /santa/:id/owner { userId } — «Передать роль организатора» (S04): как
+// в моке. Под блокировкой строки игры: меняется только owner_id, пары
+// (santa_assignments) не трогаются и новому организатору не видны — роль
+// даёт вести игру, а не читать чужие письма.
+export const handOverSantaGame: ServerHandler = async (
+  ctx,
+  { params, body },
+) => {
+  const { userId: target } = parseInput(HandOverSantaInputSchema, body ?? {});
+  const me = await readMe(ctx);
+  const { game } = await withGame(ctx, params.id ?? "", (game) => {
+    requireOwner(game, me, "Передать игру может только организатор");
+    if (target === me.id) throw validation("Ты уже организатор этой игры");
+    if (!game.participantIds.includes(target)) {
+      throw validation("Передать игру можно только тому, кто в ней");
+    }
+    game.ownerId = target;
+  });
+  changed(ctx, game);
+  ctx.events.publish(
+    { type: "toast", text: newOwnerText(game.title), forUserId: target },
+    [target],
+  );
   return viewOf(ctx, game, me.id);
 };
 

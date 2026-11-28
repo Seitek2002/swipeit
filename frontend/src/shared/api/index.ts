@@ -169,6 +169,7 @@ export {
   drawSantaGame,
   getSantaGame,
   getSantaGames,
+  handOverSantaGame,
   joinSantaGame,
   openSantaEnvelope,
   setSantaBought,
@@ -218,6 +219,16 @@ export {
   updateMe,
 } from "./users/requests";
 export {
+  askTelegramIdToken,
+  getTelegramNonce,
+  isTelegramLoginEnabled,
+  loadedTelegramLogin,
+  loadTelegramLogin,
+  loginTelegram,
+  TelegramLoginCancelled,
+  type TelegramLoginSdk,
+} from "./users/telegram";
+export {
   type BotProfile,
   type CreateDateInput,
   type FriendSummary,
@@ -232,6 +243,7 @@ export {
   type NamedUser,
   type NewUserInput,
   type Taste,
+  type TelegramLoginResult,
   type UpdateMeInput,
   type User,
 } from "./users/types";

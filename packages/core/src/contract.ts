@@ -37,6 +37,9 @@ export const CONTRACT: readonly ContractRoute[] = [
   route("GET", "/health", "public", NETWORK),
   route("POST", "/users", "public"),
   route("POST", "/auth/demo", "public", DEMO),
+  // Вход через Telegram (BACKEND §3.3, S03): сначала одноразовый nonce, потом
+  // id_token из окна Telegram. Без TELEGRAM_CLIENT_ID на сервере — 404.
+  route("POST", "/auth/telegram/nonce", "public", REMOTE),
   route("POST", "/auth/telegram", "public", REMOTE),
   route("POST", "/auth/logout", "user", REMOTE),
   // Шаги воронки, которые видит только клиент (auto-tasks-pm-3 R09).
@@ -140,6 +143,9 @@ export const CONTRACT: readonly ContractRoute[] = [
   // До жеребьёвки: выйти самому и убрать участника (auto-tasks-pm-2 Q05).
   route("POST", "/santa/:id/leave"),
   route("DELETE", "/santa/:id/members/:userId"),
+  // «Передать роль организатора» — до и после жеребьёвки (auto-tasks-pm-4
+  // S04): организатор потерял телефон или уезжает.
+  route("POST", "/santa/:id/owner"),
 
   // Фото своих желаний и занятий
   route("POST", "/uploads", "user", NETWORK),

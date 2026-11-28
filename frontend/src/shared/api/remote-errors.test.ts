@@ -43,6 +43,50 @@ describe("remoteErrorFromResponse", () => {
     );
   });
 
+  it("429 и INTERNAL — тексты фронта (S07), а не служебные фразы сервера", () => {
+    expect(
+      remoteErrorFromResponse(429, {
+        code: "RATE_LIMITED",
+        message: "Слишком часто — попробуй через минуту",
+      }).message,
+    ).toBe("Слишком часто. Подожди минуту и попробуй ещё раз");
+    expect(remoteErrorFromResponse(429, null).message).toBe(
+      "Слишком часто. Подожди минуту и попробуй ещё раз",
+    );
+    expect(
+      remoteErrorFromResponse(500, {
+        code: "INTERNAL",
+        message: "Что-то не так",
+      }).message,
+    ).toBe("Что-то сломалось у нас. Попробуй ещё раз через минуту");
+    expect(remoteErrorFromResponse(500, "<html>").message).toBe(
+      "Что-то сломалось у нас. Попробуй ещё раз через минуту",
+    );
+  });
+
+  it("свой лимит маршрута (фото) — текст сервера; INTERNAL — всё равно фронта", () => {
+    const own = { ownRateLimit: true };
+    expect(
+      remoteErrorFromResponse(
+        429,
+        {
+          code: "RATE_LIMITED",
+          message: "Слишком много фото — попробуй позже",
+        },
+        null,
+        own,
+      ).message,
+    ).toBe("Слишком много фото — попробуй позже");
+    expect(
+      remoteErrorFromResponse(
+        500,
+        { code: "INTERNAL", message: "x" },
+        null,
+        own,
+      ).message,
+    ).toBe("Что-то сломалось у нас. Попробуй ещё раз через минуту");
+  });
+
   it("неизвестный код — по статусу, но текст сервера остаётся", () => {
     const error = remoteErrorFromResponse(403, {
       code: "SOMETHING_NEW",
@@ -59,13 +103,13 @@ describe("код ошибки для человека (S08)", () => {
   it("INTERNAL с requestId — код из 8 символов в тексте и requestId в ошибке", () => {
     const error = remoteErrorFromResponse(500, {
       code: "INTERNAL",
-      message: "Что-то пошло не так. Попробуй ещё раз",
+      message: "Ошибка сервера",
       requestId: REQUEST_ID,
     });
     expect(error.code).toBe("INTERNAL");
     expect(error.requestId).toBe(REQUEST_ID);
     expect(error.message).toBe(
-      "Что-то пошло не так. Попробуй ещё раз · код a1b2c3d4",
+      "Что-то сломалось у нас. Попробуй ещё раз через минуту · код a1b2c3d4",
     );
     expect(errorCodeOf(error)).toBe("a1b2c3d4");
   });

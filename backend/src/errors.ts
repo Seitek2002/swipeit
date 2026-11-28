@@ -110,7 +110,7 @@ export const registerErrors = (app: FastifyInstance) => {
     rememberFailure(request, error);
     return reply.status(500).send({
       code: "INTERNAL",
-      message: "Что-то пошло не так. Попробуй ещё раз",
+      message: "Что-то сломалось у нас. Попробуй ещё раз через минуту",
       requestId,
     });
   });

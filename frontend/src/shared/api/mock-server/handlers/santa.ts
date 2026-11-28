@@ -5,6 +5,7 @@ import {
 import {
   AFTER_DRAW_PATCH_MESSAGE,
   lockedAfterDraw,
+  newOwnerText,
   termsChangedText,
 } from "@swipeit/core/logic/santa-update";
 import { nanoid } from "nanoid";
@@ -18,6 +19,7 @@ import type { PlanParticipant } from "../../plans/types";
 import { drawAssignments, drawIssueOf } from "../../santa/draw";
 import {
   CreateSantaInputSchema,
+  HandOverSantaInputSchema,
   type SantaGame,
   type SantaGamePublic,
   type SantaMember,
@@ -112,6 +114,13 @@ const profileOf = ({
 const hasWishlist = (db: Db, userId: string) =>
   (db.wishlistItems[userId] ?? []).some((item) => item.status === "active");
 
+// Организатор — первым, остальные по порядку вступления: после «Передать
+// роль» (S04) он может быть не первым вступившим.
+const ownerFirst = (game: SantaGame) => [
+  ...membersOf(game).filter((id) => id === game.ownerId),
+  ...membersOf(game).filter((id) => id !== game.ownerId),
+];
+
 // Гостю (превью по ссылке, X07) — только профиль и joined (S05): готов ли
 // чей-то вишлист и кто вскрыл письмо, знать ему незачем.
 const memberList = (
@@ -119,7 +128,7 @@ const memberList = (
   game: SantaGame,
   role: SantaView["role"],
 ): SantaMember[] =>
-  membersOf(game)
+  ownerFirst(game)
     .map((id) => db.users[id])
     .filter((user): user is User => Boolean(user))
     .map((user) => {
@@ -668,6 +677,39 @@ export const removeSantaMember: Handler = async (ctx, { params }) => {
       forUserId: target,
     });
   }
+  return result.view;
+};
+
+// POST /santa/:id/owner { userId } — «Передать роль организатора» (S04): до
+// и после жеребьёвки. Только организатор и только вступившему. Пары не
+// меняются, и новый организатор их не видит: роль даёт право вести игру
+// (жеребьёвка, условия, «Убрать»), но не читать чужие письма. Прежний
+// организатор становится участником — до жеребьёвки может и выйти.
+export const handOverSantaGame: Handler = async (ctx, { params, body }) => {
+  const { userId: target } = parseInput(HandOverSantaInputSchema, body ?? {});
+  const products = await productMap(ctx);
+  const result = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const game = findGame(db, params.id);
+    requireOwner(game, user, "Передать игру может только организатор");
+    if (target === user.id) throw validation("Ты уже организатор этой игры");
+    if (!game.participantIds.includes(target) || !db.users[target]) {
+      throw validation("Передать игру можно только тому, кто в ней");
+    }
+    game.ownerId = target;
+    return {
+      title: game.title,
+      view: viewOf(db, game, user.id, products, ctx.clock.now()),
+    };
+  });
+  changed(ctx, result.view.game.id);
+  // Тост Q04 — только новому (во вкладке «Смотреть как» его увидят и у
+  // бота); остальные просто перечитывают игру.
+  ctx.realtime.publish({
+    type: "toast",
+    text: newOwnerText(result.title),
+    forUserId: target,
+  });
   return result.view;
 };
 

@@ -11,7 +11,8 @@ import { NOW, testCatalog } from "./contract/client";
 import { createTestDb, resetDb } from "./db";
 
 // Тайный Санта на сервере (BACKEND.md B11): приватность пар (§4.6, п. 2) в
-// игре на 30 человек (сверка с santa_assignments в базе) и гонка вступлений.
+// игре на 30 человек (сверка с santa_assignments в базе), после «Передать
+// роль организатора» (S04) и гонка вступлений.
 // Гонка «Провести жеребьёвку» — в test/contract/santa.test.ts.
 const database = createTestDb();
 afterAll(() => database.close());
@@ -31,12 +32,9 @@ afterEach(() => app.close());
 
 type Person = { id: string; token: string };
 
-const send = (
-  person: Person,
-  method: "GET" | "PATCH" | "POST",
-  url: string,
-  body?: object,
-) =>
+type Method = "DELETE" | "GET" | "PATCH" | "POST";
+
+const send = (person: Person, method: Method, url: string, body?: object) =>
   app.inject({
     method,
     url: `/v1${url}`,
@@ -46,7 +44,7 @@ const send = (
 
 const ok = async <T>(
   person: Person,
-  method: "GET" | "PATCH" | "POST",
+  method: Method,
   url: string,
   body?: object,
 ) => {
@@ -163,6 +161,71 @@ describe("Тайный Санта на сервере", () => {
     expect(outside.role).toBe("guest");
     expect(outside.openedCount).toBe(30);
   }, 180_000);
+
+  it("S04: после «Передать роль» у нового организатора во всех ответах — только свой подопечный", async () => {
+    const { owner, everyone, gameId } = await fullGame(8);
+    await ok(owner, "POST", `/santa/${gameId}/draw`);
+    const pairs = new Map(
+      (
+        await database.db
+          .select()
+          .from(santaAssignments)
+          .where(eq(santaAssignments.gameId, gameId))
+      ).map((row) => [row.santaId, row.wardId]),
+    );
+    const heir = everyone[3] as Person;
+    const own = pairs.get(heir.id);
+    // Только свой подопечный: в ответе не больше одного «ward», и это он.
+    const expectOnlyOwn = (view: SantaSummary | SantaView, wardId?: string) => {
+      expectNoPairs(view);
+      const text = JSON.stringify(view);
+      expect(text.split('"ward"').length - 1).toBeLessThanOrEqual(1);
+      expect(text.split('"overBudgetCount"').length - 1).toBeLessThanOrEqual(1);
+      if (view.me?.ward) expect(view.me.ward.id).toBe(wardId);
+    };
+
+    const handed = await ok<SantaView>(
+      owner,
+      "POST",
+      `/santa/${gameId}/owner`,
+      {
+        userId: heir.id,
+      },
+    );
+    expect(handed.role).toBe("participant");
+    expectOnlyOwn(handed, pairs.get(owner.id));
+
+    // Кого убрать: не Санта наследника и не его подопечный — его письмо
+    // остаётся прежним.
+    const leaver = everyone.find(
+      (member) =>
+        member !== heir &&
+        member.id !== own &&
+        pairs.get(member.id) !== heir.id,
+    ) as Person;
+    const responses: Array<SantaSummary | SantaView> = [
+      await ok(heir, "GET", `/santa/${gameId}`),
+      ...(await ok<SantaSummary[]>(heir, "GET", "/santa")),
+      await ok(heir, "POST", `/santa/${gameId}/open`),
+      ...(await ok<SantaSummary[]>(heir, "GET", "/santa")),
+      await ok(heir, "POST", `/santa/${gameId}/bought`, { bought: true }),
+      await ok(heir, "PATCH", `/santa/${gameId}`, {
+        exchangeDate: "2026-12-27",
+      }),
+      await ok(heir, "DELETE", `/santa/${gameId}/members/${leaver.id}`),
+      await ok(heir, "GET", `/santa/${gameId}`),
+    ];
+    for (const view of responses) {
+      expect(view.role).toBe("owner");
+      expectOnlyOwn(view, own);
+    }
+    // Ошибка организатора — тоже без пар.
+    const locked = await send(heir, "PATCH", `/santa/${gameId}`, {
+      budget: 5000,
+    });
+    expect(locked.statusCode).toBe(409);
+    expectNoPairs(locked.json());
+  }, 120_000);
 
   it("трое одновременно вступают в игру на 28 → двое вошли, третий CONFLICT (предел 30 под блокировкой)", async () => {
     const { gameId } = await fullGame(28);

@@ -60,16 +60,32 @@ import {
   leaveAction,
 } from "../model/member-actions";
 import { type MemberStatus, memberStatus } from "../model/member-status";
+import {
+  STALE_LETTERS_HINT,
+  sealedLetterText,
+  staleLetters,
+} from "../model/stale-letters";
 import { BoughtSection } from "./BoughtSheet";
 import { EditGameAction, EditGameLink } from "./EditGame";
 import { Exclusions } from "./Exclusions";
 import { LettersReady } from "./LettersReady";
-import { LeaveGameButton, RemoveMemberButton } from "./MemberActions";
+import {
+  HandOverButton,
+  LeaveGameButton,
+  RemoveMemberButton,
+} from "./MemberActions";
 import { RemindWithoutWishlist } from "./RemindWithoutWishlist";
 import { WardWishlist } from "./WardWishlist";
 
 // Готово — мятной галочкой, ждём — пыльной розой (DESIGN.md §8.8).
-const MemberStatusCell = ({ status }: { status: MemberStatus }) => {
+const MemberStatusCell = ({
+  status,
+  staleDays,
+}: {
+  // Сколько дней письмо не открыто — у организатора (S04).
+  staleDays?: number;
+  status: MemberStatus;
+}) => {
   switch (status) {
     case "collect":
       return (
@@ -91,16 +107,26 @@ const MemberStatusCell = ({ status }: { status: MemberStatus }) => {
         </span>
       );
     case "letter-sealed":
-      return <span className="text-caption text-rose">письмо не открыто</span>;
+      return (
+        <span className="text-caption text-rose text-right">
+          {sealedLetterText(staleDays)}
+        </span>
+      );
     case "no-wishlist":
       return <span className="text-caption text-rose">без вишлиста</span>;
   }
 };
 
 // Участники со статусами (DESIGN.md §8.8): до жеребьёвки — вишлист, после —
-// письмо (X08); у себя — «Собрать вишлист».
+// письмо (X08); у себя — «Собрать вишлист». Организатору после жеребьёвки —
+// сколько дней письмо не открыто (S04): потерянный профиль так видно.
 const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
   const joined = view.members.filter((member) => member.joined);
+  const stale =
+    view.role === "owner"
+      ? staleLetters(view, clock.now())
+      : new Map<string, number>();
+  stale.delete(meId);
   const invited = view.members.filter((member) => !member.joined);
   const drawn = view.game.status === "drawn";
   // Мне мало желаний в бюджете этой игры (R06) — подсказка в моей строке.
@@ -116,6 +142,9 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
         <p className="text-caption text-rose mb-1">
           Открыли письмо: {view.openedCount} из {joined.length}
         </p>
+      )}
+      {stale.size > 0 && (
+        <p className="text-caption text-rose mb-1">{STALE_LETTERS_HINT}</p>
       )}
       <ul>
         {[...joined, ...invited].map((member) => (
@@ -143,6 +172,7 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
                 isMe: member.id === meId,
                 needWishes,
               })}
+              staleDays={stale.get(member.id)}
             />
             {canRemoveMember(view, meId, member.id) && (
               <RemoveMemberButton view={view} member={member} />
@@ -439,6 +469,9 @@ const GameContent = () => {
           {ASK_OWNER_TO_REMOVE}
         </p>
       )}
+
+      {/* Потерял телефон или уезжает — игру ведёт другой (S04). */}
+      {isOwner && <HandOverButton view={view} meId={meId} />}
     </div>
   );
 };

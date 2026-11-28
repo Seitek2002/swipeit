@@ -10,6 +10,11 @@ import type { Clock } from "./context";
 import type { Db } from "./db/client";
 import { errorStats, registerErrors } from "./errors";
 import { resolveSession } from "./auth/sessions";
+import {
+  createTelegramAuth,
+  fetchJwks,
+  type JwksSource,
+} from "./auth/telegram";
 import { createDiskStorage } from "./domains/uploads/storage";
 import { registerHttpGuards } from "./http-guards";
 import { createLimiter, limitConfigFrom } from "./limits";
@@ -35,6 +40,9 @@ export type AppOptions = {
   hub?: EventHub;
   // Поток логов (тест «в логах нет токена»).
   logStream?: Writable;
+  // Ключи Telegram для проверки id_token (S03): в тестах — свои, без сети.
+  // По умолчанию — TELEGRAM_JWKS_URL.
+  telegramJwks?: JwksSource;
   random?: Random;
   // Планировщик дедлайнов и жеребьёвки по дате (B13): включает server.ts;
   // тесты зовут runSchedulerOnce сами.
@@ -52,6 +60,7 @@ export const buildApp = ({
   hub,
   logStream,
   scheduler = false,
+  telegramJwks,
 }: AppOptions): FastifyInstance => {
   const app = Fastify({
     // За прокси IP человека — из X-Forwarded-For (§10, R01).
@@ -149,7 +158,16 @@ export const buildApp = ({
       events = sockets;
       online = sockets.stats;
     }
+    // Вход через Telegram (S03) — только с Client ID бота.
+    const telegram = config.TELEGRAM_CLIENT_ID
+      ? createTelegramAuth({
+          clientId: config.TELEGRAM_CLIENT_ID,
+          jwks: telegramJwks ?? fetchJwks(config.TELEGRAM_JWKS_URL),
+          now: clock.now,
+        })
+      : null;
     registerRoutes(app, {
+      ...(telegram ? { extraHandlers: telegram.handlers } : {}),
       db,
       catalog,
       clock,

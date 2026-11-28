@@ -36,7 +36,11 @@ export const uploadRemoteImage = async (blob: Blob): Promise<string> => {
     key?: unknown;
   } | null;
   if (!response.ok) {
-    const error = remoteErrorFromResponse(response.status, data);
+    // Лимит фото — свой, в час: его текст сервера точнее общего «подожди
+    // минуту».
+    const error = remoteErrorFromResponse(response.status, data, null, {
+      ownRateLimit: true,
+    });
     if (error.code === "UNAUTHORIZED" && token) markRemoteSessionExpired();
     // Лимит фото (R01) — «Слишком часто» человек увидит под фото (R09).
     if (error.code === "RATE_LIMITED") trackStep("rate_limited_seen");

@@ -1,4 +1,4 @@
-import type { SantaView } from "@/entities/santa-game";
+import type { SantaMember, SantaView } from "@/entities/santa-game";
 
 // Крестик «Убрать из игры» в строке участника — у организатора и до, и после
 // жеребьёвки (Q05, auto-tasks-pm-3 R05): после неё пары чинит сервер, Санта
@@ -48,3 +48,32 @@ export const leaveAction = (
 
 export const ASK_OWNER_TO_REMOVE =
   "Не сможешь участвовать — напиши организатору, он уберёт тебя из игры, и твой подопечный не останется без подарка";
+
+// «Передать роль организатора» (auto-tasks-pm-4 S04): организатор потерял
+// телефон, уезжает или просто хочет, чтобы игру вёл другой. Кому — только
+// вступившим, кроме себя; до и после жеребьёвки.
+export const handOverCandidates = (
+  view: Pick<SantaView, "members" | "role">,
+  meId: string,
+): SantaMember[] =>
+  view.role === "owner"
+    ? view.members.filter((member) => member.joined && member.id !== meId)
+    : [];
+
+// Подтверждение передачи. Имя без падежа, как в R05: пола у участника нет.
+// После жеребьёвки провести её уже нельзя — новый организатор переносит
+// обмен и убирает участников.
+export const handOverCopy = ({
+  name,
+  drawn,
+}: {
+  drawn: boolean;
+  name: string;
+}): { description: string; title: string } => ({
+  title: `Передать игру ${name}?`,
+  description: `${name} ${
+    drawn
+      ? "сможет переносить обмен подарками и убирать участников"
+      : "сможет провести жеребьёвку, менять условия и убирать участников"
+  }. Кто кому дарит, по-прежнему не увидит никто`,
+});

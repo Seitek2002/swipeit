@@ -79,6 +79,30 @@ export const readLinkVia = (): LinkVia | null => {
   }
 };
 
+// Тост, который надо показать уже после перезапуска вкладки: «Профиль
+// удалён» (S07) звучит в новом пустом профиле, а не перед перезагрузкой.
+// Только эта вкладка: другие перезапустятся по событию storage без тоста.
+const NOTICE_KEY = "swipeit:remote:notice";
+
+export const rememberRemoteNotice = (text: string) => {
+  try {
+    sessionStorage.setItem(NOTICE_KEY, text);
+  } catch {
+    // Хранилище запрещено — обойдёмся без тоста.
+  }
+};
+
+// Прочитать и забыть: тост — один раз.
+export const takeRemoteNotice = (): null | string => {
+  try {
+    const text = sessionStorage.getItem(NOTICE_KEY);
+    sessionStorage.removeItem(NOTICE_KEY);
+    return text;
+  } catch {
+    return null;
+  }
+};
+
 export const markRemoteSessionExpired = () =>
   useRemoteSessionStore.setState({ expired: true });
 

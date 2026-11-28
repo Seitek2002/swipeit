@@ -9,10 +9,12 @@ import {
   type Product,
   describeVariant,
   imageForChoice,
+  isRemovedProductError,
   useProduct,
 } from "@/entities/product";
 import { WishMiniTag, type WishlistItem } from "@/entities/wishlist";
 
+import { REMOTE_COPY } from "@/shared/config";
 import { withBasePath } from "@/shared/lib/base-path";
 import { useCustomImageUrl } from "@/shared/lib/dom";
 import { formatDayMonth, formatPrice } from "@/shared/lib/format";
@@ -23,7 +25,11 @@ export const useItemDisplay = (
 ): { display: ItemDisplay; product?: Product } => {
   const productId =
     item.source.kind === "product" ? item.source.productId : undefined;
-  const { data: product } = useProduct(productId);
+  const { data: product, error: productError } = useProduct(productId);
+  // Товар убрали из каталога (BACKEND §8, S07): названия и фото больше
+  // нет — строка остаётся, чтобы её можно было удалить как обычно.
+  const removed =
+    productId !== undefined && isRemovedProductError(productError);
   const customImage = useCustomImageUrl(
     item.source.kind === "custom" ? item.source.custom.imageKey : undefined,
   );
@@ -42,6 +48,8 @@ export const useItemDisplay = (
     price = formatPrice(product.priceMin, product.priceMax);
     const image = imageForChoice(product, item.variantChoice);
     imageSrc = image ? withBasePath(image.src) : null;
+  } else if (removed) {
+    title = REMOTE_COPY.productRemovedTitle;
   }
 
   // «от Азамата, 14 марта» или просто дата (DESIGN.md §8.3, вкладка «Подарили»).
@@ -65,6 +73,10 @@ export const useItemDisplay = (
       meta:
         item.status === "given" ? (
           <span className="text-caption text-ink-soft">{givenCaption}</span>
+        ) : removed ? (
+          <span className="text-caption text-ink-soft">
+            {REMOTE_COPY.productRemoved}
+          </span>
         ) : price ? (
           <span className="text-price text-[15px]">{price}</span>
         ) : undefined,

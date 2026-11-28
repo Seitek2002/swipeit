@@ -25,8 +25,12 @@ COPY frontend frontend
 # Номер сборки фронта (B17) — номер прогона CI: по нему сервер говорит
 # «Обнови приложение» (MIN_CLIENT_BUILD).
 ARG CLIENT_BUILD=dev
+# Вход через Telegram (S03): Client ID бота — не секрет. Пусто — кнопок входа
+# нет. В CI — переменная репозитория TELEGRAM_CLIENT_ID (ADMIN.md §13).
+ARG TELEGRAM_CLIENT_ID=
 ENV NEXT_PUBLIC_API_URL=same-origin \
-    NEXT_PUBLIC_CLIENT_BUILD=$CLIENT_BUILD
+    NEXT_PUBLIC_CLIENT_BUILD=$CLIENT_BUILD \
+    NEXT_PUBLIC_TELEGRAM_CLIENT_ID=$TELEGRAM_CLIENT_ID
 # prebuild сам копирует каталог Товароведа в public/catalog (catalog:sync).
 RUN npm run build -w frontend
 

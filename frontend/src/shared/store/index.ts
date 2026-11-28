@@ -13,6 +13,8 @@ export {
   REMOTE_TOKEN_KEY,
   REMOTE_USER_KEY,
   rememberLinkVia,
+  rememberRemoteNotice,
   setRemoteToken,
+  takeRemoteNotice,
   useRemoteSessionStore,
 } from "./remote-session";

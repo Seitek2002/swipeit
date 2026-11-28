@@ -16,6 +16,9 @@ export type LimitConfig = {
   // GET /share/:code (и /s/:code — B16).
   shareIp: Rule;
   shareSession: Rule;
+  // Вход через Telegram (S03) — всегда с IP, у nonce и входа свои счётчики.
+  telegramIpHour: Rule;
+  telegramIpMinute: Rule;
   // POST /users — профиль без токена, защита от «фермы» профилей.
   usersIpHour: Rule;
   usersIpMinute: Rule;
@@ -31,6 +34,8 @@ export const limitConfigFrom = (env: {
   RATE_RESERVATIONS: number;
   RATE_SHARE_IP: number;
   RATE_SHARE_SESSION: number;
+  RATE_TELEGRAM_HOUR: number;
+  RATE_TELEGRAM_MINUTE: number;
   RATE_USERS_HOUR: number;
   RATE_USERS_MINUTE: number;
 }): LimitConfig => ({
@@ -42,7 +47,18 @@ export const limitConfigFrom = (env: {
   shareIp: { limit: env.RATE_SHARE_IP, windowMs: MINUTE },
   reservations: { limit: env.RATE_RESERVATIONS, windowMs: MINUTE },
   funnel: { limit: env.RATE_FUNNEL, windowMs: MINUTE },
+  telegramIpMinute: { limit: env.RATE_TELEGRAM_MINUTE, windowMs: MINUTE },
+  telegramIpHour: { limit: env.RATE_TELEGRAM_HOUR, windowMs: HOUR },
 });
+
+// Правила, которые считают по IP даже с верным токеном (S03: «20 в минуту и
+// 200 в час с IP»).
+export const BY_IP_RULES: ReadonlySet<string> = new Set([
+  "telegram-minute",
+  "telegram-hour",
+  "telegram-nonce-minute",
+  "telegram-nonce-hour",
+]);
 
 export type Limiter = {
   // Засчитать попадание; не прошло — через сколько секунд можно снова.
@@ -97,6 +113,18 @@ export const rulesFor = (
       hasSession
         ? { name: "share", rule: config.shareSession }
         : { name: "share", rule: config.shareIp },
+    );
+  }
+  if (routeKey === "POST /auth/telegram") {
+    rules.push(
+      { name: "telegram-minute", rule: config.telegramIpMinute },
+      { name: "telegram-hour", rule: config.telegramIpHour },
+    );
+  }
+  if (routeKey === "POST /auth/telegram/nonce") {
+    rules.push(
+      { name: "telegram-nonce-minute", rule: config.telegramIpMinute },
+      { name: "telegram-nonce-hour", rule: config.telegramIpHour },
     );
   }
   if (routeKey === "POST /me/funnel" && hasSession) {

@@ -14,10 +14,10 @@ describe("код ошибки (S08)", () => {
   });
 
   it("текст с кодом делится обратно на фразу и код", () => {
-    const text = withErrorCode("Что-то пошло не так", "a1b2c3d4");
-    expect(text).toBe("Что-то пошло не так · код a1b2c3d4");
+    const text = withErrorCode("Что-то сломалось у нас", "a1b2c3d4");
+    expect(text).toBe("Что-то сломалось у нас · код a1b2c3d4");
     expect(splitErrorCode(text)).toEqual({
-      text: "Что-то пошло не так",
+      text: "Что-то сломалось у нас",
       code: "a1b2c3d4",
     });
   });

@@ -134,9 +134,15 @@ jobs:
 
       - name: Образ web (фронт с NEXT_PUBLIC_API_URL=same-origin)
         working-directory: .
+        env:
+          # Вход через Telegram (S03): Client ID бота — переменная репозитория
+          # (Settings → Secrets and variables → Actions → Variables), он не
+          # секрет. Нет переменной — кнопок входа нет.
+          TELEGRAM_CLIENT_ID: ${{ vars.TELEGRAM_CLIENT_ID }}
         run: |
           docker build -f backend/deploy/web/Dockerfile \
             --build-arg CLIENT_BUILD="$GITHUB_RUN_NUMBER" \
+            --build-arg TELEGRAM_CLIENT_ID="$TELEGRAM_CLIENT_ID" \
             --label org.opencontainers.image.source="https://github.com/$GITHUB_REPOSITORY" \
             -t "$WEB_IMAGE:$TAG" -t "$WEB_IMAGE:staging" .
 

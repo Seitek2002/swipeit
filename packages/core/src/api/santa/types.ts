@@ -120,7 +120,17 @@ export const UpdateSantaInputSchema = z
     path: ["drawAt"],
   });
 
+// Тело POST /santa/:id/owner — «Передать роль организатора» (S04): кому.
+// Только организатор и только вступившему; пары не меняются, и новый
+// организатор их не видит.
+export const HandOverSantaInputSchema = z.object({
+  userId: z
+    .string({ error: "Выбери, кому передать игру" })
+    .min(1, "Выбери, кому передать игру"),
+});
+
 export type CreateSantaInput = z.input<typeof CreateSantaInputSchema>;
+export type HandOverSantaInput = z.input<typeof HandOverSantaInputSchema>;
 export type UpdateSantaInput = z.input<typeof UpdateSantaInputSchema>;
 
 // ── Ответы API ──────────────────────────────────────────────────────

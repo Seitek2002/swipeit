@@ -4,37 +4,62 @@ import { type ReactNode, useEffect, useRef } from "react";
 
 import { usePathname } from "next/navigation";
 
-import { startAnonymousAgain, useCreateUser, useMe } from "@/entities/user";
+import {
+  TelegramLoginButton,
+  startAnonymousAgain,
+  useCreateUser,
+  useMe,
+} from "@/entities/user";
 
-import { errorCodeOf, isApiError, trackStep } from "@/shared/api";
-import { requiresProfile } from "@/shared/config";
-import { useAppReady } from "@/shared/lib/app-status";
+import {
+  errorCodeOf,
+  isApiError,
+  isTelegramLoginEnabled,
+  trackStep,
+} from "@/shared/api";
+import { REMOTE_COPY, requiresProfile } from "@/shared/config";
+import { useAppMode, useAppReady } from "@/shared/lib/app-status";
 import { useMounted } from "@/shared/lib/dom";
 import { usePreloaderHold } from "@/shared/lib/preloader";
-import { useRemoteSessionStore, useSessionStore } from "@/shared/store";
-import { Button, EmptyState, ErrorCode } from "@/shared/ui";
+import {
+  takeRemoteNotice,
+  useRemoteSessionStore,
+  useSessionStore,
+} from "@/shared/store";
+import { Button, EmptyState, ErrorCode, toast } from "@/shared/ui";
 
 import { RouteSkeleton } from "./route-skeleton";
 
 // Режим remote: сервер ответил 401 — токен неверный или сессия закрыта
 // (BACKEND.md §3.2). Новый профиль поверх старого молча не создаём, а
-// спрашиваем. «Войти через Telegram» появится в B19. Тексты — черновые по §3,
-// финальные — PM в DESIGN.
+// спрашиваем. Тексты — R07 (REMOTE_COPY). С входом через Telegram (S03,
+// NEXT_PUBLIC_TELEGRAM_CLIENT_ID) — он первой кнопкой: профиль Telegram
+// откроется и здесь; без него — только «Начать заново».
 //
 // Шаг воронки session_expired_seen (R09) со старым токеном не дойдёт (401) —
 // он ждёт нового профиля после «Начать заново» (shared/api/funnel).
 const SessionExpired = () => {
+  const mounted = useMounted();
+  const telegram = mounted && isTelegramLoginEnabled();
   useEffect(() => {
     trackStep("session_expired_seen");
   }, []);
   return (
     <EmptyState
       className="h-full"
-      title="Сессия закончилась. Профиль на этом телефоне больше не открыт — можно начать заново с пустого профиля."
+      title={REMOTE_COPY.sessionExpiredTitle}
+      description={
+        telegram
+          ? REMOTE_COPY.sessionExpiredTelegramText
+          : REMOTE_COPY.sessionExpiredText
+      }
       action={
-        <Button variant="secondary" onClick={startAnonymousAgain}>
-          Начать заново
-        </Button>
+        <div className="flex flex-col items-center gap-3">
+          {telegram && <TelegramLoginButton variant="primary" />}
+          <Button variant="secondary" onClick={() => startAnonymousAgain()}>
+            {REMOTE_COPY.sessionExpiredAction}
+          </Button>
+        </div>
       }
     />
   );
@@ -57,6 +82,7 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
   const createUser = useCreateUser();
   const needsProfile = requiresProfile(pathname);
   const expired = useRemoteSessionStore((state) => state.expired);
+  const remote = useAppMode() === "remote";
   const profileMissing = isApiError(me.error) && me.error.code === "NOT_FOUND";
   const shouldCreate = ready && mounted && needsProfile && !userId && !expired;
 
@@ -80,17 +106,31 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
     });
   }, [shouldCreate, isPending, isError, mutate]);
 
+  // Тост после перезапуска вкладки («Профиль удалён», S07) — когда новый
+  // профиль уже открыт, а не под прелоадером.
+  useEffect(() => {
+    if (!ready || !userId) return;
+    const notice = takeRemoteNotice();
+    if (notice) toast(notice);
+  }, [ready, userId]);
+
   const waiting = needsProfile && (!ready || !mounted || !userId);
   usePreloaderHold("profile", waiting && !createUser.isError && !expired);
 
   if (needsProfile && expired) return <SessionExpired />;
   if (needsProfile && createUser.isError) {
     // Сервер ответил ошибкой — код для владельца (S08); нет связи — кода нет.
+    // В remote это и есть «сервер не ответил при запуске» (BACKEND §9.1):
+    // профиля нет, а создать его не вышло. Тексты R07 (S07).
     const errorCode = errorCodeOf(createUser.error);
     return (
       <EmptyState
         className="h-full"
-        title="Не получилось открыть приложение. Проверь связь и попробуй ещё раз."
+        title={
+          remote
+            ? REMOTE_COPY.unreachable
+            : "Не получилось открыть приложение. Проверь связь и попробуй ещё раз."
+        }
         action={
           <Button
             variant="secondary"
@@ -100,7 +140,7 @@ export const SessionGate = ({ children }: { children: ReactNode }) => {
               mutate(undefined);
             }}
           >
-            Попробовать ещё раз
+            {REMOTE_COPY.retry}
           </Button>
         }
         footer={errorCode && <ErrorCode code={errorCode} />}

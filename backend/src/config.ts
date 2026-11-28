@@ -67,6 +67,20 @@ const ConfigSchema = z.object({
   RATE_SHARE_IP: z.coerce.number().int().min(1).default(300),
   RATE_RESERVATIONS: z.coerce.number().int().min(1).default(30),
   RATE_FUNNEL: z.coerce.number().int().min(1).default(30),
+  // Вход через Telegram (BACKEND.md §3.3, auto-tasks-pm-4 S03): Client ID бота
+  // из @BotFather → Login Widget (число, не секрет). Нет переменной — входа
+  // как будто нет: POST /auth/telegram и /auth/telegram/nonce отвечают 404.
+  TELEGRAM_CLIENT_ID: z
+    .string()
+    .regex(/^\d{1,20}$/, "Client ID — число из @BotFather")
+    .optional(),
+  // Открытые ключи Telegram для проверки подписи id_token (кеш на час).
+  TELEGRAM_JWKS_URL: z
+    .url({ protocol: /^https?$/ })
+    .default("https://oauth.telegram.org/.well-known/jwks.json"),
+  // Лимит входа через Telegram — с IP, в минуту и в час (R01).
+  RATE_TELEGRAM_MINUTE: z.coerce.number().int().min(1).default(20),
+  RATE_TELEGRAM_HOUR: z.coerce.number().int().min(1).default(200),
 });
 
 // База из docker-compose для разработки и тестов.

@@ -1,4 +1,5 @@
 import { AVATAR_COLORS } from "@swipeit/core/config";
+import { newOwnerText } from "@swipeit/core/logic/santa-update";
 import { eq, or, sql } from "drizzle-orm";
 
 import type { ServerContext, ServerHandler, Tx } from "../../context";
@@ -143,7 +144,7 @@ const handOverGames = async (ctx: ServerContext, id: string) => {
     ctx.events.publish(
       {
         type: "toast",
-        text: `Теперь ты организатор игры «${game.title}»`,
+        text: newOwnerText(game.title),
         forUserId: game.owner_id,
       },
       [game.owner_id],

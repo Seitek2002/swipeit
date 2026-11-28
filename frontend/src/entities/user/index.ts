@@ -21,3 +21,4 @@ export type {
   User,
 } from "./model";
 export { NetworkPlaque } from "./ui/NetworkPlaque";
+export { TelegramLoginButton } from "./ui/TelegramLoginButton";

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { type Offer, type Product, cheapestOffer, storeOffers } from "./model";
+import {
+  type Offer,
+  type Product,
+  cheapestOffer,
+  isRemovedProductError,
+  storeOffers,
+  withoutRemovedProducts,
+} from "./model";
 
 const offer = (overrides: Partial<Offer>): Offer => ({
   marketplace: "aliexpress",
@@ -57,5 +64,26 @@ describe("storeOffers", () => {
       kivano,
       sulpak,
     ]);
+  });
+});
+
+describe("товар убрали из каталога (S07)", () => {
+  it("убран — только NOT_FOUND; нет связи и прочее — нет", () => {
+    expect(isRemovedProductError({ code: "NOT_FOUND" })).toBe(true);
+    expect(isRemovedProductError({ code: "OFFLINE" })).toBe(false);
+    expect(isRemovedProductError(new Error("x"))).toBe(false);
+    expect(isRemovedProductError(null)).toBe(false);
+  });
+
+  it("гостю и Санте — без снятых товаров, свои желания остаются", () => {
+    const items = [
+      { key: "a", productId: "p1" },
+      { key: "b", productId: "p2" },
+      { key: "c" },
+    ];
+    expect(
+      withoutRemovedProducts(items, new Set(["p2"])).map(({ key }) => key),
+    ).toEqual(["a", "c"]);
+    expect(withoutRemovedProducts(items, new Set())).toEqual(items);
   });
 });

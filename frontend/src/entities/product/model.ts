@@ -86,3 +86,21 @@ export const imageForChoice = (
     ) ?? product.images[0]
   );
 };
+
+// Товар убрали из каталога (BACKEND §8, S07): на GET /catalog/products/:id
+// сервер отвечает NOT_FOUND. Сбой связи — не «убрали»: желание остаётся.
+// Без импорта ApiError — по коду: модель не тянет транспорт.
+export const isRemovedProductError = (error: unknown): boolean =>
+  typeof error === "object" &&
+  error !== null &&
+  (error as { code?: unknown }).code === "NOT_FOUND";
+
+// Гостю и Санте желание со снятым товаром не показываем — как подаренное
+// (S07). Свои желания без товара (custom) остаются.
+export const withoutRemovedProducts = <T extends { productId?: string }>(
+  items: readonly T[],
+  removedIds: ReadonlySet<string>,
+): T[] =>
+  items.filter(
+    (item) => item.productId === undefined || !removedIds.has(item.productId),
+  );

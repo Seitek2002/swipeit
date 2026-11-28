@@ -140,6 +140,26 @@ const trackLaunchSteps = () => {
   if (standalone) trackStep("pwa_standalone");
 };
 
+// Постоянное хранилище для профиля remote (auto-tasks-pm-4 S04): токен живёт
+// только в localStorage, и браузер может стереть его сам — тогда человек
+// молча получит новый пустой профиль. persist() просит браузер не чистить
+// данные сайта без спроса. Chrome решает сам и молча; Safari 17+ тоже
+// решает сам (данные «На экран Домой» и так живут дольше) — лечит не всё,
+// но снижает риск. Firefox может спросить разрешение — поэтому один раз:
+// разрешение даётся адресу целиком, а сотрёт браузер данные — флаг уйдёт
+// вместе с токеном, и новый профиль попросит снова.
+const PERSIST_ASKED_KEY = "swipeit:remote:storagePersistAsked";
+
+const requestPersistentStorage = () => {
+  try {
+    if (localStorage.getItem(PERSIST_ASKED_KEY)) return;
+    localStorage.setItem(PERSIST_ASKED_KEY, "1");
+  } catch {
+    return;
+  }
+  void navigator.storage?.persist?.().catch(() => false);
+};
+
 // Первая сверка часов держит запуск не дольше этого: сервер может не
 // ответить, а «Нет связи» покажет WebSocket.
 const CLOCK_WAIT_MS = 1500;
@@ -169,6 +189,7 @@ const startRemote = async ({ base }: RemoteInfo) => {
     if (!userId) markRemoteSessionExpired();
   }
   useSessionStore.getState().setActiveUser(userId);
+  if (userId) requestPersistentStorage();
   // Профиля ещё нет — шаги подождут его (shared/api/funnel).
   trackLaunchSteps();
   flushFunnelSteps();
@@ -184,6 +205,7 @@ const startRemote = async ({ base }: RemoteInfo) => {
     if (state.activeUserId === previous.activeUserId) return;
     realtime.reconnect();
     flushFunnelSteps();
+    if (state.activeUserId) requestPersistentStorage();
   });
   // Другая вкладка вышла, удалила профиль или создала новый — токен сменился,
   // эта вкладка открывается заново тем же человеком, что и остальные.

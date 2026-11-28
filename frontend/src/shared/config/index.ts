@@ -37,6 +37,7 @@ export { GUEST_REFETCH_MS } from "./refetch";
 export { REMOTE_COPY } from "./remote-copy";
 export { shareScreenPath } from "./share-screens";
 export { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "./site";
+export { telegramClientId } from "./telegram";
 export { COLORS } from "./tokens";
 export {
   BIRTHDAY_REMINDER_LABEL,

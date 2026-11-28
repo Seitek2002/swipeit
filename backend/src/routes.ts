@@ -4,7 +4,12 @@ import { ApiError, unauthorized } from "@swipeit/core/errors";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 
 import { resolveSession } from "./auth/sessions";
-import { type LimitConfig, type Limiter, rulesFor } from "./limits";
+import {
+  BY_IP_RULES,
+  type LimitConfig,
+  type Limiter,
+  rulesFor,
+} from "./limits";
 import type { ServerCatalog } from "./catalog/load";
 import type { Clock, ServerHandler } from "./context";
 import type { Db } from "./db/client";
@@ -73,6 +78,7 @@ import {
   createSantaGame,
   drawSantaGame,
   getSantaGame,
+  handOverSantaGame,
   joinSantaGame,
   leaveSantaGame,
   listSantaGames,
@@ -182,9 +188,13 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "POST /santa/:id/bought": setSantaBought,
   "POST /santa/:id/leave": leaveSantaGame,
   "DELETE /santa/:id/members/:userId": removeSantaMember,
+  "POST /santa/:id/owner": handOverSantaGame,
 };
 
 export type RouteDeps = {
+  // Обработчики, которые есть не всегда: вход через Telegram — только с
+  // TELEGRAM_CLIENT_ID (S03). Без них маршрута нет — 404.
+  extraHandlers?: Readonly<Record<string, ServerHandler>>;
   catalog: ServerCatalog;
   clock: Clock;
   db: Db;
@@ -206,8 +216,9 @@ const bearer = (request: FastifyRequest): null | string => {
 // (BACKEND.md §4.4, §4.5). Каждый запрос — одна транзакция (§2.6); события
 // уходят в хаб только после commit.
 export const registerRoutes = (app: FastifyInstance, deps: RouteDeps) => {
+  const handlers = { ...HANDLERS, ...deps.extraHandlers };
   for (const route of contractFor("remote")) {
-    const handler = HANDLERS[routeKey(route.method, route.path)];
+    const handler = handlers[routeKey(route.method, route.path)];
     if (!handler) continue;
     app.route({
       method: route.method,
@@ -229,11 +240,12 @@ export const registerRoutes = (app: FastifyInstance, deps: RouteDeps) => {
           Boolean(session),
           deps.limits,
         )) {
-          const who = !session
-            ? `ip:${request.ip}`
-            : name === "reservations"
-              ? `user:${session.userId}`
-              : `session:${session.sessionId}`;
+          const who =
+            !session || BY_IP_RULES.has(name)
+              ? `ip:${request.ip}`
+              : name === "reservations"
+                ? `user:${session.userId}`
+                : `session:${session.sessionId}`;
           const retryAfter = deps.limiter.hit(`${name}|${who}`, rule);
           if (retryAfter !== null) {
             reply.header("retry-after", String(retryAfter));

@@ -171,7 +171,14 @@ export type UpdateDateInput = z.input<typeof UpdateDateInputSchema>;
 // GET /me: профиль и вычисленные сервером поля (в базе не хранятся).
 // inferredInterests — «Похоже, тебе нравится»: выведены из лайков, без уже
 // выбранных и «Не моё», не больше 4 (TECH_SPEC §6 «Вкус»).
-export type MeResponse = User & { inferredInterests: string[] };
+//
+// telegramLinked — только remote и только в своём профиле (S03): к профилю
+// привязан вход через Telegram. Нет поля — не привязан. Ни id, ни имя из
+// Telegram в ответы не попадают — ни себе, ни друзьям.
+export type MeResponse = User & {
+  inferredInterests: string[];
+  telegramLinked?: true;
+};
 
 // Профиль, который видят другие: всегда с именем (безымянных в друзьях и
 // участниках нет — TECH_SPEC §7a, NAME_REQUIRED).
@@ -245,3 +252,33 @@ export type UpdateMeInput = z.input<typeof UpdateMeInputSchema>;
 
 // POST /me/hints — подсказка показана.
 export const MarkHintInputSchema = z.object({ id: HintIdSchema });
+
+// ── Вход через Telegram (BACKEND.md §3.3, auto-tasks-pm-4 S03), только remote ──
+
+// POST /auth/telegram/nonce: одноразовая строка на 10 минут. Клиент передаёт
+// её в окно Telegram, она возвращается внутри id_token — так один и тот же
+// токен нельзя предъявить дважды.
+export type TelegramNonceResponse = { nonce: string };
+
+// POST /auth/telegram { idToken }. confirmSwitch — человек уже видел «Войти в
+// другой профиль?» и согласился.
+export const TelegramLoginInputSchema = z.object({
+  idToken: z.string().min(1).max(8192),
+  confirmSwitch: z.boolean().optional(),
+});
+export type TelegramLoginInput = z.input<typeof TelegramLoginInputSchema>;
+
+// Ответ входа:
+// - linked — Telegram привязан к профилю этого телефона (или уже был), токен
+//   прежний;
+// - switched — у Telegram свой профиль (вход на втором телефоне): новая
+//   сессия на него, профиль этого телефона остаётся как есть;
+// - created — профиля не было ни здесь («Сессия закончилась»), ни у
+//   Telegram: новый профиль, сразу с Telegram;
+// - confirm — переключение спросить у человека: в профиле этого телефона
+//   есть желания (localWishes). Ничего не изменилось, nonce ещё действует —
+//   повторить с confirmSwitch: true.
+export type TelegramLoginResult =
+  | { me: MeResponse; status: "created" | "switched"; token: string }
+  | { me: MeResponse; status: "linked" }
+  | { localWishes: number; status: "confirm" };

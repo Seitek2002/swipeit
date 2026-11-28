@@ -2,6 +2,8 @@
 
 import { type ReactNode, useEffect, useState } from "react";
 
+import { isTelegramLoginEnabled } from "@/shared/api";
+import { REMOTE_COPY } from "@/shared/config";
 import { copyText, useMounted } from "@/shared/lib/dom";
 import {
   IN_APP_BROWSER_NAMES,
@@ -107,9 +109,21 @@ export const InAppBrowserNote = ({
   useMarkInAppNoteShown(browser, sessionKey);
   if (!browser) return null;
 
+  // Приглашение в игру или план, а вход через Telegram есть (S03): войти —
+  // и игра откроется и в Chrome. Сам вход — в профиле.
+  const telegramHint =
+    sessionKey === IN_APP_JOIN_NOTE_KEY && isTelegramLoginEnabled();
+
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       <InAppBrowserText browser={browser} text={text} tone={tone} />
+      {telegramHint && (
+        <InAppBrowserText
+          browser={browser}
+          text={() => REMOTE_COPY.telegramInAppHint}
+          tone={tone}
+        />
+      )}
       <Button
         size="sm"
         variant="ghost"

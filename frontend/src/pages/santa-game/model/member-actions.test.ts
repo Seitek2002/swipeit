@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   canRemoveMember,
+  handOverCandidates,
+  handOverCopy,
   leaveAction,
   removeMemberCopy,
 } from "./member-actions";
@@ -65,5 +67,36 @@ describe("выйти из игры (Q05, R05)", () => {
         leaveAction({ game: game(status), me: null, role: "guest" }),
       ).toBeNull();
     }
+  });
+});
+
+describe("передать роль организатора (S04)", () => {
+  const members = [
+    { id: "u_owner", joined: true },
+    { id: "u_1", joined: true },
+    { id: "u_2", joined: false },
+    { id: "u_3", joined: true },
+  ] as never;
+
+  it("кому — вступившие, кроме себя; не организатору — никому", () => {
+    expect(
+      handOverCandidates({ members, role: "owner" }, "u_owner").map(
+        (member) => member.id,
+      ),
+    ).toEqual(["u_1", "u_3"]);
+    expect(handOverCandidates({ members, role: "participant" }, "u_1")).toEqual(
+      [],
+    );
+  });
+
+  it("подтверждение до и после жеребьёвки — без падежа и про тайну пар", () => {
+    expect(handOverCopy({ name: "Нурай", drawn: false })).toEqual({
+      title: "Передать игру Нурай?",
+      description:
+        "Нурай сможет провести жеребьёвку, менять условия и убирать участников. Кто кому дарит, по-прежнему не увидит никто",
+    });
+    expect(handOverCopy({ name: "Нурай", drawn: true }).description).toBe(
+      "Нурай сможет переносить обмен подарками и убирать участников. Кто кому дарит, по-прежнему не увидит никто",
+    );
   });
 });

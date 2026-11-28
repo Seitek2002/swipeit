@@ -7,6 +7,9 @@ type PaperObject = "envelope" | "tag" | "ticket";
 type Props = {
   action?: ReactNode;
   className?: string;
+  // Пояснение под фразой — когда фраза стала заголовком («Сессия
+  // закончилась» + что это значит, S07). Обычно не нужно: одна фраза.
+  description?: string;
   // Мелкая строка под кнопкой: код ошибки для владельца (S08).
   footer?: ReactNode;
   object?: PaperObject;
@@ -41,6 +44,7 @@ const OBJECTS: Record<PaperObject, ReactNode> = {
 export const EmptyState = ({
   object = "tag",
   title,
+  description,
   action,
   className,
   footer,
@@ -57,7 +61,14 @@ export const EmptyState = ({
     >
       {OBJECTS[object]}
     </span>
-    <p className="text-body-lg text-paper max-w-[28ch]">{title}</p>
+    {description ? (
+      <div className="flex flex-col gap-2">
+        <p className="text-title-2 text-paper">{title}</p>
+        <p className="text-body text-rose max-w-[30ch]">{description}</p>
+      </div>
+    ) : (
+      <p className="text-body-lg text-paper max-w-[28ch]">{title}</p>
+    )}
     {action && (
       <div className="mt-1 flex w-full max-w-[260px] flex-col gap-2">
         {action}

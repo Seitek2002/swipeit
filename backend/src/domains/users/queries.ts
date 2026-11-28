@@ -6,10 +6,10 @@ import type {
 } from "@swipeit/core/api/users/types";
 import { notFound } from "@swipeit/core/errors";
 import { inferInterests } from "@swipeit/core/logic/taste";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import type { ServerContext, Tx } from "../../context";
-import { users } from "../../db/schema";
+import { identities, users } from "../../db/schema";
 
 export type UserRow = typeof users.$inferSelect;
 
@@ -36,11 +36,25 @@ export const rowToUser = (row: UserRow): User => ({
 });
 
 // Ответ GET /me и маршрутов, что меняют свой профиль: «Похоже, тебе
-// нравится» — из вкуса, который хранится в users.taste.
-export const toMe = (user: User): MeResponse => ({
+// нравится» — из вкуса, который хранится в users.taste. telegramLinked — только
+// флаг (S03): ни id, ни имя из Telegram в ответ не идут.
+export const toMe = (user: User, telegramLinked = false): MeResponse => ({
   ...user,
   inferredInterests: inferInterests(user.taste, user),
+  ...(telegramLinked ? { telegramLinked: true as const } : {}),
 });
+
+// Привязан ли к профилю вход через Telegram (S03).
+export const isTelegramLinked = async (tx: Tx, userId: string) => {
+  const [row] = await tx
+    .select({ userId: identities.userId })
+    .from(identities)
+    .where(
+      and(eq(identities.userId, userId), eq(identities.provider, "telegram")),
+    )
+    .limit(1);
+  return Boolean(row);
+};
 
 // Свой профиль под блокировкой строки (§2.6): записи одного человека идут
 // по очереди. Удалённый профиль — как не найденный.

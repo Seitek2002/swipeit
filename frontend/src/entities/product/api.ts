@@ -12,6 +12,8 @@ import {
 import { useMounted } from "@/shared/lib/dom";
 import { useSessionStore } from "@/shared/store";
 
+import { isRemovedProductError } from "./model";
+
 // Первая порция ленты. Полная колода с дозагрузкой — в widgets/gift-deck (T07).
 export const useFeedPage = (filters: ProductFilters, context = "self") => {
   const mounted = useMounted();
@@ -47,6 +49,22 @@ export const useProducts = (ids: readonly string[]) =>
         results.flatMap((result) =>
           result.data ? [[result.data.id, result.data] as const] : [],
         ),
+      ),
+  });
+
+// Какие из товаров убрали из каталога (S07): гостю и Санте такие желания не
+// показываем. Тот же кэш, что у useProduct, — лишних запросов нет. Пока
+// товар грузится или нет связи, он не «убран».
+export const useRemovedProductIds = (ids: readonly string[]) =>
+  useQueries({
+    queries: ids.map((id) => ({
+      queryKey: catalogKeys.product(id),
+      queryFn: () => getProduct(id),
+      staleTime: Infinity,
+    })),
+    combine: (results): ReadonlySet<string> =>
+      new Set(
+        ids.filter((_, index) => isRemovedProductError(results[index]?.error)),
       ),
   });
 

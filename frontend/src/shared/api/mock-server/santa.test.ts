@@ -867,6 +867,91 @@ describe("жеребьёвка по дате (POST /santa/tick)", () => {
   });
 });
 
+describe("S04: передать роль организатора", () => {
+  const handOver = (id: string, by: string, userId: unknown) =>
+    call<SantaView>("POST", gamePath(id, "/owner"), by, { userId });
+  const toasts = () =>
+    bus.events.flatMap((event) => (event.type === "toast" ? [event] : []));
+
+  it("до жеребьёвки: новый — owner и видит исключения, прежний — участник и может выйти", async () => {
+    const { game } = await createGame({
+      exclusions: [["u_azamat", "u_daniyar"]],
+    });
+    await joinAll(game.id);
+    const before = toasts().length;
+    const after = await handOver(game.id, DEMO_USER_ID, "u_nurai");
+    expect(after.role).toBe("participant");
+    expect(after.game.ownerId).toBe("u_nurai");
+    expect(after.game.exclusions).toEqual([]);
+    expect(after.members[0]?.id).toBe("u_nurai");
+    expect(toasts().slice(before)).toEqual([
+      {
+        type: "toast",
+        text: "Теперь ты организатор игры «Офис, Новый год»",
+        forUserId: "u_nurai",
+      },
+    ]);
+    const forNew = await call<SantaView>("GET", gamePath(game.id), "u_nurai");
+    expect(forNew.role).toBe("owner");
+    expect(forNew.game.exclusions).toEqual([["u_azamat", "u_daniyar"]]);
+
+    await expect(
+      handOver(game.id, DEMO_USER_ID, "u_azamat"),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const left = await call<SantaView>(
+      "POST",
+      gamePath(game.id, "/leave"),
+      DEMO_USER_ID,
+    );
+    expect(left.role).toBe("guest");
+    const drawn = await call<SantaView>(
+      "POST",
+      gamePath(game.id, "/draw"),
+      "u_nurai",
+    );
+    expect(drawn.game.status).toBe("drawn");
+  });
+
+  it("не организатор — FORBIDDEN; себе, позванному, чужому — VALIDATION", async () => {
+    const { game } = await createGame();
+    await joinAll(game.id, ["u_azamat"]);
+    const stranger = await newUser("Бакыт");
+    const fails = (promise: Promise<unknown>, code: string) =>
+      expect(promise).rejects.toMatchObject({ code });
+    await fails(handOver(game.id, "u_azamat", DEMO_USER_ID), "FORBIDDEN");
+    await fails(handOver(game.id, DEMO_USER_ID, DEMO_USER_ID), "VALIDATION");
+    await fails(handOver(game.id, DEMO_USER_ID, "u_nurai"), "VALIDATION");
+    await fails(handOver(game.id, DEMO_USER_ID, stranger.id), "VALIDATION");
+    await fails(handOver(game.id, DEMO_USER_ID, undefined), "VALIDATION");
+    const view = await call<SantaView>("GET", gamePath(game.id), DEMO_USER_ID);
+    expect(view.game.ownerId).toBe(DEMO_USER_ID);
+  });
+
+  it("после жеребьёвки: пары те же, новый организатор видит только своего подопечного", async () => {
+    const drawn = await drawnGame();
+    const id = drawn.game.id;
+    const assignments = structuredClone(
+      db.snapshot()?.santaGames[id]?.assignments ?? {},
+    );
+    await handOver(id, DEMO_USER_ID, "u_daniyar");
+    expect(db.snapshot()?.santaGames[id]?.assignments).toEqual(assignments);
+    const views = [
+      await call<SantaView>("GET", gamePath(id), "u_daniyar"),
+      ...(await call<SantaSummary[]>("GET", "/santa", "u_daniyar")).filter(
+        (summary) => summary.game.id === id,
+      ),
+    ];
+    expect(views).toHaveLength(2);
+    for (const view of views) {
+      expect(view.role).toBe("owner");
+      const json = JSON.stringify(view);
+      expect(json).not.toContain("assignments");
+      expect(json.split('"ward"').length - 1).toBeLessThanOrEqual(1);
+    }
+    expect((views[0] as SantaView).me?.ward?.id).toBe(assignments.u_daniyar);
+  });
+});
+
 describe("боты в Санте", () => {
   const startBots = () => {
     const manual = createManualScheduler();

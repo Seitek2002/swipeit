@@ -14,6 +14,8 @@ import {
   imageForChoice,
   storeLabel,
   useProduct,
+  useRemovedProductIds,
+  withoutRemovedProducts,
 } from "@/entities/product";
 import type { SantaWardItem } from "@/entities/santa-game";
 
@@ -202,7 +204,7 @@ const SantaIdeas = ({
 };
 
 export const WardWishlist = ({
-  items,
+  items: allItems,
   name,
   budget,
 }: {
@@ -217,6 +219,12 @@ export const WardWishlist = ({
   } | null>(null);
   const open: OpenDetails = (product, choice) =>
     setDetails({ product, choice });
+  // Товар убрали из каталога (S07) — Санте такое желание не показываем, как
+  // подаренное: купить его негде.
+  const removedIds = useRemovedProductIds(
+    allItems.flatMap((item) => (item.productId ? [item.productId] : [])),
+  );
+  const items = withoutRemovedProducts(allItems, removedIds);
   const inBudget = items.filter((item) => !item.overBudget);
   const overBudget = items.filter((item) => item.overBudget);
 

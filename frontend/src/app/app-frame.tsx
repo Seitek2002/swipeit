@@ -73,7 +73,8 @@ const EnvironmentGate = ({ children }: { children: ReactNode }) => {
     return (
       <EmptyState
         className="h-full"
-        title={`${REMOTE_COPY.updateTitle}. ${REMOTE_COPY.updateText}.`}
+        title={REMOTE_COPY.updateTitle}
+        description={REMOTE_COPY.updateText}
         action={
           <Button onClick={() => window.location.reload()}>
             {REMOTE_COPY.updateAction}
@@ -82,6 +83,10 @@ const EnvironmentGate = ({ children }: { children: ReactNode }) => {
       />
     );
   }
+  // Запуск упал. В remote это не «сервер не ответил» — до сервера запуск не
+  // ходит (shared/api/mode), а без ответа экран «Не получается связаться»
+  // покажет SessionGate. Здесь — ошибка сборки (опечатка в
+  // NEXT_PUBLIC_API_URL), поэтому текст прежний (S07).
   if (status === "failed") {
     return (
       <EmptyState

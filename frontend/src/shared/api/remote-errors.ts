@@ -1,3 +1,5 @@
+import { REMOTE_COPY } from "@/shared/config/remote-copy";
+
 import { shortErrorCode, withErrorCode } from "./error-code";
 import { ApiError, type ApiErrorCode, isApiError } from "./mock-server/errors";
 
@@ -31,11 +33,25 @@ const codeByStatus = (status: number): ApiErrorCode => {
 
 const MESSAGE_BY_CODE: Partial<Record<ApiErrorCode, string>> = {
   OFFLINE: "Нет связи с сервером. Попробуй ещё раз",
-  RATE_LIMITED: "Слишком часто. Подожди немного и попробуй ещё раз",
-  UNAUTHORIZED: "Сессия закончилась",
+  RATE_LIMITED: REMOTE_COPY.rateLimited,
+  UNAUTHORIZED: REMOTE_COPY.sessionExpiredTitle,
 };
 
-const DEFAULT_MESSAGE = "Что-то пошло не так. Попробуй ещё раз";
+const DEFAULT_MESSAGE = REMOTE_COPY.internalError;
+
+// Тексты фронта главнее текста сервера (S07): у сервера на INTERNAL и общий
+// лимит запросов — служебные фразы, а человеку нужны фразы из R07.
+// Исключение — свой лимит у маршрута (фото: «Слишком много фото — попробуй
+// позже», лимит в час, а не в минуту): его текст оставляет ownRateLimit.
+const CLIENT_TEXT: Partial<Record<ApiErrorCode, string>> = {
+  INTERNAL: REMOTE_COPY.internalError,
+  RATE_LIMITED: REMOTE_COPY.rateLimited,
+};
+
+type Options = {
+  // У маршрута свой лимит со своим текстом — 429 показать текстом сервера.
+  ownRateLimit?: boolean;
+};
 
 const requestIdOf = (value: unknown): string | undefined =>
   typeof value === "string" && value.length > 0 && value.length <= 100
@@ -52,6 +68,7 @@ export const remoteErrorFromResponse = (
   status: number,
   body: unknown,
   headerRequestId?: null | string,
+  options: Options = {},
 ): ApiError => {
   const error =
     typeof body === "object" && body !== null
@@ -61,10 +78,16 @@ export const remoteErrorFromResponse = (
     typeof error.code === "string" && KNOWN_CODES.has(error.code)
       ? (error.code as ApiErrorCode)
       : codeByStatus(status);
-  const message =
+  const serverText =
     typeof error.message === "string" && error.message.trim()
       ? error.message
-      : (MESSAGE_BY_CODE[code] ?? DEFAULT_MESSAGE);
+      : null;
+  const clientText =
+    code === "RATE_LIMITED" && options.ownRateLimit
+      ? undefined
+      : CLIENT_TEXT[code];
+  const message =
+    clientText ?? serverText ?? MESSAGE_BY_CODE[code] ?? DEFAULT_MESSAGE;
   const requestId =
     requestIdOf(error.requestId) ?? requestIdOf(headerRequestId ?? undefined);
   const shortCode = code === "INTERNAL" ? shortErrorCode(requestId) : null;

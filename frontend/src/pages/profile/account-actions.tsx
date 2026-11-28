@@ -2,24 +2,52 @@
 
 import { useState } from "react";
 
-import { useDeleteMe, useLogout } from "@/entities/user";
+import {
+  TelegramLoginButton,
+  useDeleteMe,
+  useLogout,
+  useMe,
+} from "@/entities/user";
 
+import { isTelegramLoginEnabled } from "@/shared/api";
+import { REMOTE_COPY } from "@/shared/config";
+import { useMounted } from "@/shared/lib/dom";
 import { Button, ConfirmDialog, toast } from "@/shared/ui";
 
-// «Выйти» и «Удалить профиль» — в remote вместо демо-кнопок (BACKEND.md §3.4,
-// §9.3). После обоих — новый анонимный профиль. «Войти через Telegram» —
-// задача B19. Тексты — черновые по §3.4, финальные — PM.
+// «Войти через Telegram», «Выйти» и «Удалить профиль» — в remote вместо
+// демо-кнопок (BACKEND.md §3.3, §3.4, §9.3). После «Выйти» и удаления — новый
+// анонимный профиль, после удаления — ещё и тост «Профиль удалён»
+// (entities/user). Тексты — R07 (REMOTE_COPY).
 //
-// Предупреждение у «Выйти» — всегда: Telegram пока не привязать, а без него
-// вернуться в профиль с этого телефона нельзя.
+// Вход через Telegram (S03) — только при NEXT_PUBLIC_TELEGRAM_CLIENT_ID.
+// Предупреждение у «Выйти» — всегда, а текст зависит от привязки: без
+// Telegram вернуться в профиль с этого телефона нельзя.
 export const AccountActions = () => {
   const logout = useLogout();
   const deleteMe = useDeleteMe();
   const [dialog, setDialog] = useState<"delete" | "logout" | null>(null);
   const close = () => setDialog(null);
+  const mounted = useMounted();
+  const telegramOn = mounted && isTelegramLoginEnabled();
+  const me = useMe();
+  // Вернуться через «Войти через Telegram» можно, только если кнопка есть.
+  const linked = telegramOn && me.data?.telegramLinked === true;
 
   return (
     <>
+      {telegramOn &&
+        (linked ? (
+          <p className="text-caption text-rose mt-3">
+            {REMOTE_COPY.telegramLinkedHint}
+          </p>
+        ) : (
+          <>
+            <TelegramLoginButton className="mt-3" />
+            <p className="text-caption text-rose mt-1.5">
+              {REMOTE_COPY.telegramLoginHint}
+            </p>
+          </>
+        ))}
       <Button
         variant="secondary"
         className="mt-3"
@@ -38,9 +66,13 @@ export const AccountActions = () => {
         open={dialog === "logout"}
         onClose={close}
         isLoading={logout.isPending}
-        title="Выйти из профиля?"
-        description="Профиль пропадёт с этого телефона, вернуть его будет нельзя. Начнёшь заново с пустого профиля."
-        confirmLabel="Выйти"
+        variant="danger"
+        title={REMOTE_COPY.logoutTitle}
+        description={
+          linked ? REMOTE_COPY.logoutTelegramText : REMOTE_COPY.logoutText
+        }
+        confirmLabel={REMOTE_COPY.logoutConfirm}
+        cancelLabel={REMOTE_COPY.logoutCancel}
         onConfirm={() =>
           logout.mutate(undefined, {
             onError: () =>
@@ -53,9 +85,9 @@ export const AccountActions = () => {
         onClose={close}
         isLoading={deleteMe.isPending}
         variant="danger"
-        title="Удалить профиль?"
-        description="Вишлист, даты, свайпы и ссылки удалятся навсегда. В чужих планах и играх останется «Удалённый профиль» без имени."
-        confirmLabel="Удалить"
+        title={REMOTE_COPY.deleteTitle}
+        description={REMOTE_COPY.deleteText}
+        confirmLabel={REMOTE_COPY.deleteConfirm}
         onConfirm={() =>
           deleteMe.mutate(undefined, {
             onError: () =>

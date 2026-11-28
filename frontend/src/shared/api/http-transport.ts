@@ -1,3 +1,4 @@
+import { REMOTE_COPY } from "@/shared/config/remote-copy";
 import { getActiveUserId } from "@/shared/store";
 
 import { ApiError, type ApiErrorCode } from "./mock-server/errors";
@@ -75,7 +76,9 @@ export const httpTransport: Transport = {
       throw new ApiError(
         response.status,
         code,
-        error.message ?? "Что-то пошло не так. Попробуй ещё раз",
+        // Сервер ноутбука всегда отвечает своим текстом; без него — общий
+        // текст сбоя из словаря режимов с сервером (S07).
+        error.message ?? REMOTE_COPY.internalError,
       );
     }
     return data as T;

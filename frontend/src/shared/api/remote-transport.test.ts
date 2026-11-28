@@ -157,7 +157,7 @@ describe("код ошибки в тосте (S08)", () => {
     fetchMock.mockResolvedValueOnce(
       json(500, {
         code: "INTERNAL",
-        message: "Что-то пошло не так. Попробуй ещё раз",
+        message: "Ошибка сервера",
         requestId: "9f8e7d6c-1111-4222-8333-444455556666",
       }),
     );
@@ -166,9 +166,10 @@ describe("код ошибки в тосте (S08)", () => {
       .catch((caught: unknown) => caught);
     expect(error).toMatchObject({ code: "INTERNAL", status: 500 });
     // Экран зовёт toast(error.message): тост делит текст на фразу и код.
+    // Фраза — из словаря фронта (S07), а не служебный текст сервера.
     const toastText = (error as Error).message;
     expect(splitErrorCode(toastText)).toEqual({
-      text: "Что-то пошло не так. Попробуй ещё раз",
+      text: "Что-то сломалось у нас. Попробуй ещё раз через минуту",
       code: "9f8e7d6c",
     });
   });

@@ -944,6 +944,126 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
     });
   });
 
+  describe("S04: передать роль организатора", () => {
+    const handOver = (caller: Caller, id: string, userId: string) =>
+      act(caller, id, "/owner", { userId });
+    const toasts = () =>
+      api.events().flatMap((event) => (event.type === "toast" ? [event] : []));
+
+    it("до жеребьёвки: у нового owner, у прежнего participant; тост новому; исключения — новому", async () => {
+      const { owner, azamat, nurai, id } = await gathered();
+      const bakyt = await friendOf(owner, "Бакыт");
+      await act(bakyt, id, "/join");
+      await patchGame(owner, id, { exclusions: [[azamat.id, bakyt.id]] });
+      const before = toasts().length;
+
+      const after = await handOver(owner, id, nurai.id);
+      expect(after.role).toBe("participant");
+      expect(after.game.ownerId).toBe(nurai.id);
+      // Прежнему организатору исключения больше не видны (S05).
+      expect(after.game.exclusions).toEqual([]);
+      expect(after.drawIssue).toBeNull();
+      // Организатор — первым в списке участников.
+      expect(after.members[0]?.id).toBe(nurai.id);
+      expect(sorted(after.game.participantIds)).toEqual(
+        sorted([owner.id, azamat.id, nurai.id, bakyt.id]),
+      );
+
+      const forNew = await getGame(nurai, id);
+      expect(forNew.role).toBe("owner");
+      expect(forNew.game.exclusions).toEqual([[azamat.id, bakyt.id]]);
+      expect(
+        (await getGame(azamat, id)).game.exclusions,
+        "участнику исключения по-прежнему не видны",
+      ).toEqual([]);
+      expect(toasts().slice(before)).toEqual([
+        {
+          type: "toast",
+          text: "Теперь ты организатор игры «Офис, Новый год»",
+          forUserId: nurai.id,
+        },
+      ]);
+
+      // Прежний организатор — участник: условия не меняет, но может выйти.
+      await fails(patchGame(owner, id, { budget: 3000 }), "FORBIDDEN");
+      await fails(handOver(owner, id, azamat.id), "FORBIDDEN");
+      const left = await act(owner, id, "/leave");
+      expect(left.role).toBe("guest");
+      expect(left.game.participantIds).not.toContain(owner.id);
+      // Новый организатор ведёт игру: правка (с тремя исключение сделало бы
+      // пары невозможными — снимаем) и жеребьёвка.
+      const edited = await patchGame(nurai, id, {
+        budget: 3000,
+        exclusions: [],
+      });
+      expect(edited.game.budget).toBe(3000);
+      const drawn = await act(nurai, id, "/draw");
+      expect(drawn.game.status).toBe("drawn");
+      expect(drawn.role).toBe("owner");
+    });
+
+    it("не организатор — FORBIDDEN; себе, позванному, чужому и неизвестному — VALIDATION", async () => {
+      const { owner, azamat, nurai, id } = await gathered();
+      const invited = await friendOf(owner, "Данияр");
+      // Позвать после создания нельзя — новая игра с позванным.
+      const other = await createGame(owner, { participantIds: [invited.id] });
+      const [stranger] = await crowd(1);
+
+      await fails(handOver(azamat, id, nurai.id), "FORBIDDEN");
+      await fails(handOver(stranger as Caller, id, nurai.id), "FORBIDDEN");
+      await fails(handOver(owner, id, owner.id), "VALIDATION");
+      await fails(handOver(owner, id, (stranger as Caller).id), "VALIDATION");
+      await fails(handOver(owner, id, "u_nobody"), "VALIDATION");
+      await fails(act(owner, id, "/owner", {}), "VALIDATION");
+      await fails(handOver(owner, other.game.id, invited.id), "VALIDATION");
+      await fails(handOver(owner, "sg_nope", nurai.id), "NOT_FOUND");
+      // Ничего не поменялось.
+      expect((await getGame(owner, id)).game.ownerId).toBe(owner.id);
+    });
+
+    it("после жеребьёвки: пары те же, новый организатор видит только своего подопечного и может убрать участника", async () => {
+      const { owner, azamat, nurai, id } = await gathered();
+      const extra = await crowd(2);
+      for (const caller of extra) await act(caller, id, "/join");
+      const everyone = [owner, azamat, nurai, ...extra];
+      await act(owner, id, "/draw");
+      const wards = await wardsOf(id, everyone);
+
+      const after = await handOver(owner, id, azamat.id);
+      expect(after.role).toBe("participant");
+      expect(after.me?.ward?.id).toBe(wards[owner.id]);
+      expectOnlyOwnWard(after, owner, wards);
+      // Пары не изменились — у каждого тот же подопечный.
+      expect(await wardsOf(id, everyone)).toEqual(wards);
+      const views: AnyView[] = [
+        await getGame(azamat, id),
+        ...(await listGames(azamat)),
+      ];
+      for (const view of views) {
+        expect(view.role).toBe("owner");
+        expectOnlyOwnWard(view, azamat, wards);
+      }
+      // После жеребьёвки бывший организатор выйти не может — как участник.
+      await fails(act(owner, id, "/leave"), "CONFLICT");
+      // Новый организатор может убрать участника (R05) — того, кто не дарит
+      // ему и кому не дарит он: тогда его письмо не меняется.
+      const leaver = everyone.find(
+        (caller) =>
+          caller !== azamat &&
+          wards[azamat.id] !== caller.id &&
+          wards[caller.id] !== azamat.id,
+      ) as Caller;
+      const removed = await api.call<SantaView>(
+        azamat,
+        "DELETE",
+        gamePath(id, `/members/${leaver.id}`),
+      );
+      expect(removed.game.participantIds).not.toContain(leaver.id);
+      expect(removed.role).toBe("owner");
+      expectOnlyOwnWard(removed, azamat, wards);
+    }, 60_000);
+  });
+
   describe("конверт и «Я купил подарок»", () => {
     it("до жеребьёвки и не участнику — нельзя; «Купил» — только после вскрытия", async () => {
       const { owner, azamat, id } = await gathered();
