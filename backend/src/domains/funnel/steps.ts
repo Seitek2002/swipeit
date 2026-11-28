@@ -42,6 +42,8 @@ export const FUNNEL_STEPS = [
   "first_swipe_10s",
   "swipes_20",
   "share_with_birthday",
+  // R06: участник игры Санты собрал три желания — его Санте есть из чего.
+  "santa_member_wishlist",
 ] as const;
 
 export type FunnelStep = (typeof FUNNEL_STEPS)[number];
@@ -140,6 +142,29 @@ export const reachPlanStep = async (
   if (!first) return false;
   await countDay(tx, step, now);
   return true;
+};
+
+// Участник игры Санты дошёл до трёх активных желаний (R06). Зовут после
+// того, как желание добавлено.
+export const checkSantaMemberWishlist = async (
+  tx: Tx,
+  userId: string,
+  now: number,
+) => {
+  const { rows } = await tx.execute<{ member: boolean; wishes: number }>(sql`
+    select
+      exists (
+        select 1 from santa_members
+        where user_id = ${userId} and state = 'joined'
+      ) as member,
+      (select count(*)::int from wishlist_items
+        where owner_id = ${userId} and status = 'active'
+          and deleted_at is null) as wishes
+  `);
+  const row = rows[0];
+  if (row?.member && row.wishes >= 3) {
+    await reachStep(tx, userId, "santa_member_wishlist", now);
+  }
 };
 
 // Прошёл ли человек шаг (без записи).

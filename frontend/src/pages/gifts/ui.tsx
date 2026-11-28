@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { AppHeader } from "@/widgets/app-header";
 import { GiftDeck, GiftDeckSkeleton } from "@/widgets/gift-deck";
+import { SantaNudgeBanner } from "@/widgets/santa-nudge";
 
 import { NAME_CAPTIONS, NameForm, useRequireName } from "@/features/ask-name";
 import { PickRequestSheet } from "@/features/pick-request-create";
@@ -66,6 +67,12 @@ export const GiftsPage = () => {
         }
       />
       <div className="flex min-h-0 flex-1 flex-col pb-[var(--tabbar-space)]">
+        {/* Санта ждёт вишлист (R06): бюджет игры одним тапом. */}
+        <SantaNudgeBanner
+          onBudget={(max) =>
+            setFilters({ ...filters, budget: { ...filters.budget, max } })
+          }
+        />
         <ActiveFilterChips filters={filters} onChange={setFilters} />
         <GiftDeck
           filters={filters}

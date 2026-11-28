@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { AppHeader } from "@/widgets/app-header";
+import { useSantaNudge } from "@/widgets/santa-nudge";
 
 import {
   ALL_IN,
@@ -28,11 +29,13 @@ import {
 
 // Статус игры в списке. Подопечного называем, только когда конверт вскрыт —
 // список не должен испортить сюрприз.
-const statusOf = (summary: SantaSummary) => {
+const statusOf = (summary: SantaSummary, needWishes: boolean) => {
   if (summary.game.status === "gathering") {
     if (summary.role === "invited") {
       return { text: "Тебя позвали — вступи", accent: true };
     }
+    // Мне мало желаний в бюджете игры (R06): Санте будет не из чего выбрать.
+    if (needWishes) return { text: "Собери вишлист", accent: true };
     // Та же строка, что под конвертом (W09). Все в сборе — организатору
     // пора тянуть пары (V09): выделяем.
     const text = gatheringStatus(summary);
@@ -44,12 +47,19 @@ const statusOf = (summary: SantaSummary) => {
   const me = summary.me;
   if (me?.envelope === "ready")
     return { text: "Письмо ждёт тебя", accent: true };
+  if (needWishes) return { text: "Собери вишлист", accent: true };
   if (me?.ward) return { text: `Ты Санта для ${me.ward.name}`, accent: false };
   return { text: "Жеребьёвка прошла", accent: false };
 };
 
-const GameCard = ({ summary }: { summary: SantaSummary }) => {
-  const status = statusOf(summary);
+const GameCard = ({
+  summary,
+  needWishes,
+}: {
+  needWishes: boolean;
+  summary: SantaSummary;
+}) => {
+  const status = statusOf(summary, needWishes);
   return (
     <li>
       <Link
@@ -89,6 +99,7 @@ const GameCard = ({ summary }: { summary: SantaSummary }) => {
 export const SantaPage = () => {
   const games = useSantaGames();
   const list = games.data ?? [];
+  const nudge = useSantaNudge();
 
   return (
     <Screen>
@@ -131,7 +142,11 @@ export const SantaPage = () => {
         ) : (
           <ul className="flex flex-col gap-3 pb-24">
             {list.map((summary) => (
-              <GameCard key={summary.game.id} summary={summary} />
+              <GameCard
+                key={summary.game.id}
+                summary={summary}
+                needWishes={nudge?.gameId === summary.game.id}
+              />
             ))}
           </ul>
         )}

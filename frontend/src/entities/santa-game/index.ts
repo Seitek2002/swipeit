@@ -1,5 +1,10 @@
 export { useSantaGame, useSantaGames } from "./api";
 export {
+  SANTA_WISHES_ENOUGH,
+  type SantaNudge,
+  santaWishlistNudge,
+} from "./nudge";
+export {
   ALL_IN,
   drawLabel,
   gatheringStatus,

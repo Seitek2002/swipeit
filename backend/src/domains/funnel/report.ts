@@ -32,6 +32,8 @@ export const FUNNEL_CONVERSIONS: [from: FunnelStep, to: FunnelStep][] = [
   ["first_swipe", "first_swipe_10s"],
   ["first_swipe", "swipes_20"],
   ["wishlist_shared", "share_with_birthday"],
+  // R06: участники Санты собирают вишлист для своего Санты.
+  ["santa_joined", "santa_member_wishlist"],
 ];
 
 // Откуда пришли профили за период (Q01): users.created_via. Только

@@ -364,6 +364,27 @@ describe("воронка P09", () => {
     });
   });
 
+  it("R06: участник Санты собрал три желания — santa_member_wishlist; не участник — нет", async () => {
+    const { products } = await testCatalog();
+    const owner = await server.newUser({ name: "Айгерим" });
+    const created = (
+      await server.request(owner, "POST", "/santa", {
+        title: "Офис",
+        budget: 5000,
+        exchangeDate: "2026-12-25",
+        participantIds: [],
+      })
+    ).json() as { game: { id: string } };
+    const member = await server.newUser({ name: "Азамат" });
+    await server.request(member, "POST", `/santa/${created.game.id}/join`);
+    const outsider = await server.newUser({ name: "Чужой" });
+    for (const person of [member, outsider]) {
+      for (const product of products.slice(0, 4))
+        await swipe(person, product.id);
+    }
+    expect((await counts()).santa_member_wishlist).toBe(1);
+  });
+
   it("в funnel_daily нет id людей, имён и кодов ссылок", async () => {
     const { owner, guest, loner, code } = await scenario();
     const { rows } = await database.pool.query<{ row: string }>(

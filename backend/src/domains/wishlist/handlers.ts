@@ -39,7 +39,7 @@ import {
   rowToItem,
   rowToMeta,
 } from "./queries";
-import { reachStep } from "../funnel/steps";
+import { checkSantaMemberWishlist, reachStep } from "../funnel/steps";
 
 // Свой вишлист (BACKEND.md B07) — логика мока (handlers/wishlist.ts и
 // повод из handlers/guest.ts). Каждая запись — под блокировкой строки users
@@ -122,6 +122,7 @@ export const createCustomWish: ServerHandler = async (ctx, { body }) => {
   if (!row) throw new Error("Желание не записалось");
   // Своё желание считается в порог отправки наравне с «Хочу» из ленты.
   const { shareJustUnlocked } = await checkShareUnlock(ctx.tx, me.id, at);
+  await checkSantaMemberWishlist(ctx.tx, me.id, at.getTime());
   changed(ctx, ["wishlist"]);
   return {
     ...rowToItem(row),

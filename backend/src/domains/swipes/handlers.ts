@@ -26,7 +26,7 @@ import {
   nextOrderFor,
 } from "../wishlist/queries";
 import { swipesOf } from "./queries";
-import { hasStep, reachStep } from "../funnel/steps";
+import { checkSantaMemberWishlist, hasStep, reachStep } from "../funnel/steps";
 
 // Свайпы своей ленты и ленты по ссылке-фильтру (BACKEND.md B06) — логика
 // мока (handlers/swipes.ts). Все записи — под блокировкой своего профиля
@@ -212,6 +212,9 @@ export const createSwipe: ServerHandler = async (ctx, { body }) => {
       : undefined;
 
   const share = await checkShareUnlock(ctx.tx, user.id, at);
+  if (wishlistItemId) {
+    await checkSantaMemberWishlist(ctx.tx, user.id, at.getTime());
+  }
   const wishCount = await countActiveWishes(ctx.tx, user.id);
   // Вкус — только по своей ленте: выбор по чужой ссылке-фильтру его не
   // трогает.

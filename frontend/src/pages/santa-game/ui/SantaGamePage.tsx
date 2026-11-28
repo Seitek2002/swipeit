@@ -10,6 +10,7 @@ import { CalendarPlus, Check, Gift } from "lucide-react";
 
 import { AppHeader } from "@/widgets/app-header";
 import { SantaEnvelope } from "@/widgets/santa-envelope";
+import { useSantaNudge } from "@/widgets/santa-nudge";
 
 import { buildIcs, dayOf, downloadIcs } from "@/features/calendar-export";
 import { SantaDrawButton } from "@/features/santa-draw";
@@ -61,6 +62,9 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
   const drawn = view.game.status === "drawn";
   // Убрать участника — организатор до жеребьёвки (Q05).
   const canRemove = !drawn && view.game.ownerId === meId;
+  // Мне мало желаний в бюджете этой игры (R06) — подсказка в моей строке.
+  const nudge = useSantaNudge();
+  const needWishes = nudge?.gameId === view.game.id;
   return (
     <section>
       <h2 className="text-label mb-1">
@@ -84,13 +88,28 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
               size={36}
               decorative
             />
-            <span className="text-body text-paper flex-1 font-semibold">
+            <span className="text-body text-paper min-w-0 flex-1 font-semibold">
               {member.id === meId ? "Ты" : member.name}
+              {member.id === meId && member.joined && needWishes && (
+                <span className="text-caption text-rose block font-normal">
+                  Собери вишлист, чтобы твоему Санте было проще
+                </span>
+              )}
             </span>
             {!member.joined ? (
               <span className="text-caption text-rose">ещё не в игре</span>
             ) : drawn && !member.opened ? (
               <span className="text-caption text-rose">письмо не открыто</span>
+            ) : member.id === meId && needWishes && !drawn ? (
+              <Link
+                href={ROUTES.GIFTS}
+                className={buttonClassName({
+                  size: "sm",
+                  variant: "secondary",
+                })}
+              >
+                Собрать вишлист
+              </Link>
             ) : member.hasWishlist ? (
               <span className="text-caption text-mint inline-flex items-center gap-1">
                 <Check aria-hidden size={16} strokeWidth={2.25} />
