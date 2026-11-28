@@ -108,6 +108,11 @@ const ConfigSchema = z.object({
     .url({ protocol: /^https?$/ })
     .transform((url) => url.replace(/\/+$/, ""))
     .default("https://api.telegram.org"),
+  // Несколько вишлистов (spec-multi-wishlists): «1» — включено, «0» —
+  // выключено. Нет переменной — выключено в production (офисный пилот Санты),
+  // включено в разработке и тестах. Выключено — второй вишлист не создать,
+  // всё как с одним «Общим».
+  FEATURE_MULTI_WISHLISTS: z.enum(["0", "1"]).optional(),
 });
 
 // База из docker-compose для разработки и тестов.
@@ -181,3 +186,12 @@ export const timeZoneOf = (env: NodeJS.ProcessEnv = process.env): string => {
   }
   return parsed.data;
 };
+
+// Включены ли несколько вишлистов (spec-multi-wishlists, решение владельца
+// 28.11 — переключатель вместо ветки).
+export const multiWishlistsEnabled = (
+  config: Pick<Config, "FEATURE_MULTI_WISHLISTS" | "NODE_ENV">,
+): boolean =>
+  config.FEATURE_MULTI_WISHLISTS
+    ? config.FEATURE_MULTI_WISHLISTS === "1"
+    : config.NODE_ENV !== "production";

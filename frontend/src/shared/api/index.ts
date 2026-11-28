@@ -87,6 +87,7 @@ export {
   detectMode,
   type Environment,
   getMode,
+  isMultiWishlistsEnabled,
   type RemoteInfo,
 } from "./mode";
 export {

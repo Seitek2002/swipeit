@@ -28,9 +28,13 @@ ARG CLIENT_BUILD=dev
 # Вход через Telegram (S03): Client ID бота — не секрет. Пусто — кнопок входа
 # нет. В CI — переменная репозитория TELEGRAM_CLIENT_ID (ADMIN.md §13).
 ARG TELEGRAM_CLIENT_ID=
+# Несколько вишлистов: «1» — показать, «0» — как с одним «Общим».
+# Включать вместе с FEATURE_MULTI_WISHLISTS=1 в .env сервера (ADMIN.md §15).
+ARG MULTI_WISHLISTS=0
 ENV NEXT_PUBLIC_API_URL=same-origin \
     NEXT_PUBLIC_CLIENT_BUILD=$CLIENT_BUILD \
-    NEXT_PUBLIC_TELEGRAM_CLIENT_ID=$TELEGRAM_CLIENT_ID
+    NEXT_PUBLIC_TELEGRAM_CLIENT_ID=$TELEGRAM_CLIENT_ID \
+    NEXT_PUBLIC_MULTI_WISHLISTS=$MULTI_WISHLISTS
 # prebuild сам копирует каталог Товароведа в public/catalog (catalog:sync).
 RUN npm run build -w frontend
 

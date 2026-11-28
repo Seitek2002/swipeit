@@ -1,5 +1,6 @@
 import type { ApiMode } from "@swipeit/core/contract";
 
+import { multiWishlistsFlag } from "@/shared/config/features";
 import { withBasePath } from "@/shared/lib/base-path";
 
 import { getRemoteApiBase } from "./remote-base";
@@ -102,3 +103,8 @@ export const detectMode = async (): Promise<ApiMode> =>
 
 // Режим после определения (до него — local).
 export const getMode = (): ApiMode => current;
+
+// Несколько вишлистов (spec-multi-wishlists): явный переключатель сборки, а
+// без него — в демо (local, lan) включено, в remote выключено.
+export const isMultiWishlistsEnabled = (): boolean =>
+  multiWishlistsFlag() ?? getMode() !== "remote";
