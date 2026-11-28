@@ -69,6 +69,9 @@ export const users = pgTable(
     // Откуда пришёл профиль (Q01): feed, wishlist_link, reservation…
     // Служебное поле воронки, уходит вместе со строкой.
     createdVia: text("created_via"),
+    // Свой профиль команды (Q03): его шаги воронка не считает — staging
+    // гоняют свои телефоны, а без id в счётчиках их потом не отделить.
+    funnelInternal: boolean("funnel_internal").notNull().default(false),
     // Удалённый профиль (§3.4): строка остаётся без имени, чтобы чужие планы
     // и игры показывали «Удалённый профиль».
     deletedAt: at("deleted_at"),

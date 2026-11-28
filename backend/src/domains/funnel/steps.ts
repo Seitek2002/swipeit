@@ -38,6 +38,10 @@ export const FUNNEL_STEPS = [
   "santa_drawn_group",
   // Q02: исход вишлиста — подарили то, что бронировали.
   "gift_given_reserved",
+  // Q03: цели PRD §4 и §7.4 в цифрах.
+  "first_swipe_10s",
+  "swipes_20",
+  "share_with_birthday",
 ] as const;
 
 export type FunnelStep = (typeof FUNNEL_STEPS)[number];
@@ -56,7 +60,9 @@ export const reachStep = async (
   // раз.
   { skipLocked = false }: { skipLocked?: boolean } = {},
 ): Promise<boolean> => {
-  const notYet = sql`not (${step} = any(${users.funnelSteps}))`;
+  // Свой профиль команды (Q03) — ничего не считаем и не отмечаем: снял
+  // пометку — шаг засчитается.
+  const notYet = sql`not (${step} = any(${users.funnelSteps})) and not ${users.funnelInternal}`;
   const [first] = await tx
     .update(users)
     .set({ funnelSteps: sql`array_append(${users.funnelSteps}, ${step})` })
@@ -65,6 +71,7 @@ export const reachStep = async (
         ? sql`${users.id} = (
             select u.id from users u
             where u.id = ${userId} and not (${step} = any(u.funnel_steps))
+              and not u.funnel_internal
             for update skip locked
           )`
         : and(eq(users.id, userId), notYet),
@@ -90,10 +97,28 @@ const countDay = (tx: Tx, step: FunnelStep, now: number) =>
       set: { count: sql`${funnelDaily.count} + 1` },
     });
 
+// Свой профиль команды (Q03).
+const isInternal = async (tx: Tx, userId: string) => {
+  const [row] = await tx
+    .select({ internal: users.funnelInternal })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return Boolean(row?.internal);
+};
+
 // Событие группы без человека (Q02): +1 к счётчику дня. Только для перехода,
-// который случается один раз под FOR UPDATE строки (игра → drawn).
-export const countEvent = (tx: Tx, step: FunnelStep, now: number) =>
-  countDay(tx, step, now);
+// который случается один раз под FOR UPDATE строки (игра → drawn). Сделал
+// его свой профиль команды — не считаем (Q03).
+export const countEvent = async (
+  tx: Tx,
+  step: FunnelStep,
+  now: number,
+  initiatorId: string,
+) => {
+  if (await isInternal(tx, initiatorId)) return;
+  await countDay(tx, step, now);
+};
 
 // Шаг плана — один раз на план (Q02), отметка в plans.funnel_steps; в
 // счётчике дня id плана нет.
@@ -102,7 +127,9 @@ export const reachPlanStep = async (
   planId: string,
   step: FunnelStep,
   now: number,
+  initiatorId: string,
 ): Promise<boolean> => {
+  if (await isInternal(tx, initiatorId)) return false;
   const [first] = await tx
     .update(plans)
     .set({ funnelSteps: sql`array_append(${plans.funnelSteps}, ${step})` })

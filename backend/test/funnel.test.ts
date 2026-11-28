@@ -1,7 +1,8 @@
+import { eq } from "drizzle-orm";
 import { toDateKey } from "@swipeit/core/format";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { funnelDaily } from "../src/db/schema";
+import { funnelDaily, users } from "../src/db/schema";
 import {
   formatFunnel,
   readFunnel,
@@ -9,7 +10,7 @@ import {
 } from "../src/domains/funnel/report";
 import { NOW, testCatalog } from "./contract/client";
 import { createTestDb, resetDb } from "./db";
-import { createTestServer, type TestUser } from "./server";
+import { createTestServer, makeClock, type TestUser } from "./server";
 
 // Счётчики воронки (auto-tasks P09): шаг считается один раз на человека, в
 // таблице счётчиков нет ни id, ни имён, ни кодов ссылок.
@@ -87,6 +88,10 @@ describe("воронка P09", () => {
       // У владельца: ссылка дошла, на вишлист забронировали (Q01).
       share_reached: 1,
       reservation_received: 1,
+      // Q03: часы стоят — все трое свайпнули сразу; у владельца есть
+      // день рождения.
+      first_swipe_10s: 3,
+      share_with_birthday: 1,
     });
     const rows = await database.db.select().from(funnelDaily);
     // День — по часам сервера, в момент действия.
@@ -273,6 +278,90 @@ describe("воронка P09", () => {
     expect(report).toContain(
       "Компаний (план на 3+ решён или Санта разыграна) за период: 1",
     );
+  });
+
+  describe("Q03", () => {
+    it("свой профиль команды не считается; снял пометку — считается", async () => {
+      const { products } = await testCatalog();
+      const team = await server.newUser({ name: "Команда" });
+      const before = await counts();
+      await database.db
+        .update(users)
+        .set({ funnelInternal: true })
+        .where(eq(users.id, team.id));
+      for (const product of products.slice(0, 5)) await swipe(team, product.id);
+      await server.request(team, "POST", "/wishlist/share");
+      expect(await counts()).toEqual(before);
+      await database.db
+        .update(users)
+        .set({ funnelInternal: false })
+        .where(eq(users.id, team.id));
+      await swipe(team, products[6]?.id ?? "");
+      expect((await counts()).first_swipe).toBe(1);
+    });
+
+    it("первый свайп через 9 с — first_swipe_10s, через 11 с — нет", async () => {
+      const { products } = await testCatalog();
+      const clock = makeClock();
+      await server.close();
+      server = await createTestServer(database, clock);
+      const quick = await server.newUser();
+      clock.advance(9_000);
+      await swipe(quick, products[0]?.id ?? "");
+      const slow = await server.newUser();
+      clock.advance(11_000);
+      await swipe(slow, products[0]?.id ?? "");
+      expect(await counts()).toMatchObject({
+        first_swipe: 2,
+        first_swipe_10s: 1,
+      });
+    });
+
+    it("20-й свайп — swipes_20; «Вернуть» и снова свайп не считаются второй раз", async () => {
+      const { products } = await testCatalog();
+      const user = await server.newUser();
+      for (const product of products.slice(0, 19)) {
+        await server.request(user, "POST", "/swipes", {
+          productId: product.id,
+          decision: "pass",
+          context: { kind: "self" },
+        });
+      }
+      expect(await counts()).not.toHaveProperty("swipes_20");
+      const twentieth = products[19]?.id ?? "";
+      await server.request(user, "POST", "/swipes", {
+        productId: twentieth,
+        decision: "pass",
+        context: { kind: "self" },
+      });
+      await server.request(user, "POST", "/swipes/undo", {
+        context: { kind: "self" },
+      });
+      await server.request(user, "POST", "/swipes", {
+        productId: twentieth,
+        decision: "pass",
+        context: { kind: "self" },
+      });
+      expect((await counts()).swipes_20).toBe(1);
+    });
+
+    it("отправка с днём рождения — share_with_birthday; без даты — нет", async () => {
+      const { products } = await testCatalog();
+      const withBirthday = await server.newUser({
+        name: "Айгерим",
+        birthday: "03-14",
+      });
+      const without = await server.newUser({ name: "Бакыт" });
+      for (const person of [withBirthday, without]) {
+        for (const product of products.slice(0, 5))
+          await swipe(person, product.id);
+        await server.request(person, "POST", "/wishlist/share");
+      }
+      expect(await counts()).toMatchObject({
+        wishlist_shared: 2,
+        share_with_birthday: 1,
+      });
+    });
   });
 
   it("в funnel_daily нет id людей, имён и кодов ссылок", async () => {

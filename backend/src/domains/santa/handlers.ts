@@ -621,7 +621,7 @@ export const drawSantaGame: ServerHandler = async (ctx, { params }) => {
   );
   await saveAssignments(ctx.tx, game.id, assignments);
   // Компания разыграла Санту (Q02): по игре, жеребьёвка бывает одна.
-  await countEvent(ctx.tx, "santa_drawn_group", ctx.clock.now());
+  await countEvent(ctx.tx, "santa_drawn_group", ctx.clock.now(), me.id);
   changed(ctx, game.id);
   return viewOf(ctx, game, me.id);
 };
@@ -708,7 +708,7 @@ export const drawDueSantaGames = async (
         const assignments = await performDraw(scoped, game);
         await saveGame(savepoint, before, game, now);
         await saveAssignments(savepoint, id, assignments);
-        await countEvent(savepoint, "santa_drawn_group", now);
+        await countEvent(savepoint, "santa_drawn_group", now, game.ownerId);
         drawn.push(id);
       });
     } catch (error) {

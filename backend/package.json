@@ -19,7 +19,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env src/db/migrate-cli.ts",
     "db:seed:dev": "tsx --env-file-if-exists=.env src/db/seed-dev.ts",
-    "funnel": "tsx --env-file-if-exists=.env src/db/funnel-cli.ts"
+    "funnel": "tsx --env-file-if-exists=.env src/db/funnel-cli.ts",
+    "funnel:team": "tsx --env-file-if-exists=.env src/db/funnel-team-cli.ts"
   },
   "dependencies": {
     "@swipeit/core": "*",

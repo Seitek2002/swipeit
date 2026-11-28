@@ -28,6 +28,10 @@ export const FUNNEL_CONVERSIONS: [from: FunnelStep, to: FunnelStep][] = [
   ["envelope_opened", "ward_empty"],
   ["envelope_opened", "santa_bought"],
   ["reservation_received", "gift_given_reserved"],
+  // Q03: цели PRD.
+  ["first_swipe", "first_swipe_10s"],
+  ["first_swipe", "swipes_20"],
+  ["wishlist_shared", "share_with_birthday"],
 ];
 
 // Откуда пришли профили за период (Q01): users.created_via. Только

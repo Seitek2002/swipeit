@@ -14,7 +14,7 @@ import {
 } from "@swipeit/core/logic/taste";
 import type { RealtimeScope } from "@swipeit/core/realtime/types";
 import { parseInput } from "@swipeit/core/parse-input";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import type { ServerContext, ServerHandler, Tx } from "../../context";
@@ -121,7 +121,8 @@ export const createSwipe: ServerHandler = async (ctx, { body }) => {
   if (!ctx.catalog.productsById.has(input.productId)) {
     throw notFound("Товар не найден");
   }
-  let user = rowToUser(await lockMe(ctx));
+  const row = await lockMe(ctx);
+  let user = rowToUser(row);
   const at = new Date(ctx.clock.now());
   const self = input.context.kind === "self";
   const variantChoice = input.variantChoice ?? null;
@@ -131,6 +132,16 @@ export const createSwipe: ServerHandler = async (ctx, { body }) => {
   if (await reachStep(ctx.tx, user.id, "first_swipe", at.getTime())) {
     if (await hasStep(ctx.tx, user.id, "guest_opened")) {
       await reachStep(ctx.tx, user.id, "guest_first_swipe", at.getTime());
+    }
+    // «Первый свайп за 10 секунд» (PRD §4, п. 4; Q03). Профиль при брони
+    // свайпает позже по другой причине — не в счёт. Неизвестное via (клиент
+    // ещё не шлёт его — B15) — считаем как ленту.
+    const fromFeed =
+      row.createdVia === null ||
+      row.createdVia === "feed" ||
+      row.createdVia === "wishlist_link";
+    if (fromFeed && at.getTime() - row.createdAt.getTime() <= 10_000) {
+      await reachStep(ctx.tx, user.id, "first_swipe_10s", at.getTime());
     }
   }
 
@@ -163,6 +174,22 @@ export const createSwipe: ServerHandler = async (ctx, { body }) => {
         seq: sql`nextval(pg_get_serial_sequence('product_swipes', 'seq'))`,
       },
     });
+
+  // «Свайпают дольше минуты» (PRD §7.4; Q03): 20 карточек в своей ленте.
+  if (self && !(await hasStep(ctx.tx, user.id, "swipes_20"))) {
+    const [{ value } = { value: 0 }] = await ctx.tx
+      .select({ value: count() })
+      .from(productSwipes)
+      .where(
+        and(
+          eq(productSwipes.userId, user.id),
+          eq(productSwipes.contextKey, "self"),
+        ),
+      );
+    if (value >= 20) {
+      await reachStep(ctx.tx, user.id, "swipes_20", at.getTime());
+    }
+  }
 
   // Передумал: «Мимо» после «Хочу» убирает товар из вишлиста.
   const passRemovedItem =

@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "funnel_internal" boolean DEFAULT false NOT NULL;

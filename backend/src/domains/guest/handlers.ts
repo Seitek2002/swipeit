@@ -146,7 +146,18 @@ export const shareWishlist: ServerHandler = async (ctx) => {
   }
   if (!me.name) throw nameRequired();
   const link = await ensureShareLink(ctx, "wishlist", me.id, me.id);
-  await reachStep(ctx.tx, me.id, "wishlist_shared", ctx.clock.now());
+  const firstShare = await reachStep(
+    ctx.tx,
+    me.id,
+    "wishlist_shared",
+    ctx.clock.now(),
+  );
+  // «Назовут день рождения при отправке» (PRD §7.4; Q03): при первой
+  // отправке в профиле есть день рождения или у повода есть дата.
+  const occasion = rowToMeta(me.id, meta).occasion;
+  if (firstShare && (me.birthday || occasion?.date)) {
+    await reachStep(ctx.tx, me.id, "share_with_birthday", ctx.clock.now());
+  }
   // Коэффициент петли (Q01): гость отправил уже свой вишлист.
   if (await hasStep(ctx.tx, me.id, "guest_opened")) {
     await reachStep(ctx.tx, me.id, "guest_shared", ctx.clock.now());

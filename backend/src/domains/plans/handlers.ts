@@ -264,7 +264,7 @@ export const createPlan: ServerHandler = async (ctx, { body }) => {
   await insertPlan(ctx.tx, plan, now);
   // «До даты» стартует сразу (Q02: старт — по плану).
   if (!live) {
-    await reachPlanStep(ctx.tx, plan.id, "plan_started_group", now);
+    await reachPlanStep(ctx.tx, plan.id, "plan_started_group", now, owner.id);
   }
   await reachStep(ctx.tx, owner.id, "plan_created", now);
   changed(ctx, plan.id);
@@ -346,7 +346,13 @@ export const startPlan: ServerHandler = async (ctx, { params }) => {
       plan.status = "swiping";
     },
   );
-  await reachPlanStep(ctx.tx, plan.id, "plan_started_group", ctx.clock.now());
+  await reachPlanStep(
+    ctx.tx,
+    plan.id,
+    "plan_started_group",
+    ctx.clock.now(),
+    me.id,
+  );
   changed(ctx, plan.id);
   return viewOf(ctx.tx, plan, source);
 };
@@ -578,7 +584,13 @@ export const decidePlan: ServerHandler = async (ctx, { params, body }) => {
   // Компания дошла до «Решено» (Q02): план на троих и больше, один раз на
   // план — «Отменить решение» и снова «Решено» не считаются заново.
   if (plan.participantIds.length >= 3) {
-    await reachPlanStep(ctx.tx, plan.id, "plan_decided_group", ctx.clock.now());
+    await reachPlanStep(
+      ctx.tx,
+      plan.id,
+      "plan_decided_group",
+      ctx.clock.now(),
+      me.id,
+    );
   }
   changed(ctx, plan.id);
   return viewOf(ctx.tx, plan, source);
