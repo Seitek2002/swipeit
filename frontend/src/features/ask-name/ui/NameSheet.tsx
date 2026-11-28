@@ -25,6 +25,7 @@ type Props = {
   // Подпись по месту (DESIGN.md §7 NameSheet): имя подставляется по мере
   // ввода — «Друзья увидят: „Вишлист Айгерим“».
   caption: (name: string) => string;
+  initialName?: string;
   onClose: () => void;
   onSaved: () => void;
   open: boolean;
@@ -33,9 +34,17 @@ type Props = {
 // «Как тебя зовут?» (DESIGN.md §7 NameSheet, эталон — кадр 3 quick-start.html):
 // имя спрашиваем только там, где его увидят другие. Закрыли без имени —
 // действие отменяется.
-export const NameSheet = ({ open, onClose, onSaved, caption }: Props) => (
+export const NameSheet = ({
+  open,
+  onClose,
+  onSaved,
+  caption,
+  initialName,
+}: Props) => (
   <BottomSheet open={open} onClose={onClose} title="Как тебя зовут?">
-    {open && <NameForm caption={caption} onSaved={onSaved} />}
+    {open && (
+      <NameForm caption={caption} onSaved={onSaved} initialName={initialName} />
+    )}
   </BottomSheet>
 );
 
@@ -44,13 +53,15 @@ export const NameSheet = ({ open, onClose, onSaved, caption }: Props) => (
 export const NameForm = ({
   caption,
   onSaved,
+  initialName = "",
 }: {
   caption: (name: string) => string;
+  initialName?: string;
   onSaved?: () => void;
 }) => {
   const me = useMe();
   const updateMe = useUpdateMe();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName);
   const [color, setColor] = useState<AvatarColor | null>(null);
   const avatarColor: AvatarColor = color ?? me.data?.avatarColor ?? "mandarin";
   const trimmed = name.trim();
@@ -85,13 +96,13 @@ export const NameForm = ({
           />
         </div>
       </div>
-      {/* Колонки не уже 44px (зона нажатия, DESIGN §4): 8 × 44 не помещается
-          на 360px — там последний кружок уходит на вторую строку, а где
-          помещается, кружки делят ширину поровну. */}
+      {/* Восемь колонок в одну строку (W10): ряд шире текста на 16 px с
+          каждой стороны, и на 360 px колонка — ровно 44 px (зона нажатия,
+          DESIGN §4). Шире экран — шире колонки. */}
       <div
         role="radiogroup"
         aria-label="Цвет аватара"
-        className="-mx-1 grid grid-cols-[repeat(auto-fit,minmax(44px,1fr))]"
+        className="-mx-4 grid grid-cols-8"
       >
         {AVATAR_COLORS.map((option) => {
           const selected = option === avatarColor;

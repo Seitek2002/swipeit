@@ -29,7 +29,7 @@ export const SendPicksSheet = ({
   // Имя — в именительном (P11).
   const to = request.from.name;
   // Имя друга едет в ссылке-ответе: NAME_REQUIRED — NameSheet поверх и повтор.
-  const requireName = useRequireName(caption);
+  const requireName = useRequireName(caption, request.toName);
 
   const getPayload = async () => {
     const { url } = await answerPickRequest(request.id);

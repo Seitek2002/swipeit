@@ -17,6 +17,9 @@ type Action = () => unknown;
 // само. На NAME_REQUIRED от сервера — та же шторка и повтор запроса.
 export const useRequireName = (
   caption: (name: string) => string,
+  // Имя, которое уже известно по месту, — например, «Кому: Нурай» из
+  // ссылки-фильтра (UX-аудит W10). Поле заполнено, его можно поправить.
+  initialName?: string,
 ): {
   // Ответ сервера NAME_REQUIRED: спросить имя и повторить.
   handleError: (error: unknown, retry: Action) => boolean;
@@ -50,6 +53,7 @@ export const useRequireName = (
     <NameSheet
       open={pending !== null}
       caption={caption}
+      initialName={initialName}
       onClose={() => setPending(null)}
       onSaved={() => {
         const action = pending;

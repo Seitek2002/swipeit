@@ -146,7 +146,7 @@ const PickSwipe = ({
   // Имя спрашиваем там, где его увидят: выбор уходит отправителю с именем
   // друга («Айгерим выбрала 5 подарков», DESIGN.md §8.6).
   const caption = nameCaption(request);
-  const requireName = useRequireName(caption);
+  const requireName = useRequireName(caption, request.toName);
   const picks = useQuery({
     queryKey: pickKeys.picks(request.id),
     queryFn: () => getMyPicks(request.id),
