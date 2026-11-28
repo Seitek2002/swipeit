@@ -8,12 +8,23 @@
 // и ward_empty).
 export const SANTA_WISHES_ENOUGH = 3;
 
-// ready — 3 и больше в бюджете, few — 1–2, none — ни одного.
+// ready — 3 и больше в бюджете; few — вишлист есть, но в бюджете 0–2;
+// none — вишлиста нет совсем. Все желания дороже бюджета — это «мало в
+// бюджете», а не «без вишлиста» (T28): вишлист у человека есть, ему нужно
+// добавить желаний подешевле.
 export type SantaWishlistStatus = "few" | "none" | "ready";
 
-export const santaWishlistStatus = (inBudget: number): SantaWishlistStatus => {
+export const santaWishlistStatus = ({
+  hasWishlist,
+  inBudget,
+}: {
+  // Есть хотя бы одно активное желание.
+  hasWishlist: boolean;
+  // Сколько из них в бюджете игры (countInSantaBudget).
+  inBudget: number;
+}): SantaWishlistStatus => {
   if (inBudget >= SANTA_WISHES_ENOUGH) return "ready";
-  return inBudget > 0 ? "few" : "none";
+  return hasWishlist || inBudget > 0 ? "few" : "none";
 };
 
 // Желание в бюджете — по нижней цене; цена не указана — не в бюджете: Санта

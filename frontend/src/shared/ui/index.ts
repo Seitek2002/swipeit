@@ -28,6 +28,7 @@ export { type SegmentOption, SegmentedControl } from "./segmented-control";
 export { ContentSkeleton, ScreenSkeleton, Skeleton } from "./skeleton";
 export { Spinner } from "./spinner";
 export { type SwipeAction, SwipeActionButton } from "./swipe-action-button";
+export { SwipeRow, type SwipeRowAction } from "./swipe-row";
 export { Switch } from "./switch";
 export { TextArea, TextField } from "./text-field";
 export { toast, Toaster, type ToastTone, useCurrentToast } from "./toast";

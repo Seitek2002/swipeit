@@ -64,12 +64,12 @@ import { WishRow, useItemDisplay } from "./WishRow";
 const UNLOCK_WISHES = 5;
 
 type Tab = "given" | "want";
-type Sheet = {
+type Target = {
   display: ItemDisplay;
   item: WishlistItem;
   product?: Product;
-  type: "given" | "menu" | "note" | "variant";
 };
+type Sheet = Target & { type: "given" | "menu" | "note" | "variant" };
 
 const byOrder = (a: WishlistItem, b: WishlistItem) => a.order - b.order;
 
@@ -91,6 +91,8 @@ export const WishlistPage = () => {
   const giving = useGivingCount();
   const now = clock.at(useClockOffset());
   const [sheet, setSheet] = useState<null | Sheet>(null);
+  // Строка, открытая свайпом: открытой бывает только одна.
+  const [swipeOpenId, setSwipeOpenId] = useState<null | string>(null);
   const [customOpen, setCustomOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   // «Сказать спасибо» дарителю (P14).
@@ -183,13 +185,14 @@ export const WishlistPage = () => {
     setShareOpen(true);
   };
 
-  const handleAction = (action: ItemAction, item: WishlistItem) => {
-    const current = sheet;
-    setSheet(null);
-    if (!current) return;
+  // Одно действие и из меню ⋮, и из свайпа по строке. Из меню следующая
+  // шторка выезжает, когда меню уехало (delay), из свайпа — сразу.
+  const runAction = (action: ItemAction, current: Target, delay: number) => {
+    const { item } = current;
+    const later = (open: () => void) =>
+      delay > 0 ? setTimeout(open, delay) : open();
     if (action === "note" || action === "variant" || action === "given") {
-      // Меню уезжает, следующая шторка выезжает следом.
-      setTimeout(() => setSheet({ ...current, type: action }), 230);
+      later(() => setSheet({ ...current, type: action }));
     } else if (action === "top") {
       updateItem.mutate({
         id: item.id,
@@ -203,9 +206,27 @@ export const WishlistPage = () => {
       restoreItem.mutate(item.id);
     } else if (action === "thanks") {
       const title = current.display?.title ?? "";
-      setTimeout(() => setThanks({ item, title }), 230);
+      later(() => setThanks({ item, title }));
     }
   };
+
+  const handleAction = (action: ItemAction) => {
+    const current = sheet;
+    setSheet(null);
+    if (current) runAction(action, current, 230);
+  };
+
+  const swipeProps = (item: WishlistItem) => ({
+    swipeOpen: swipeOpenId === item.id,
+    onSwipeOpenChange: (open: boolean) =>
+      setSwipeOpenId((id) => (open ? item.id : id === item.id ? null : id)),
+    onSwipeAction: (
+      action: ItemAction,
+      target: WishlistItem,
+      display: ItemDisplay,
+      product?: Product,
+    ) => runAction(action, { item: target, display, product }, 0),
+  });
 
   const openMenu = (
     item: WishlistItem,
@@ -241,6 +262,7 @@ export const WishlistPage = () => {
             reorderable
             onMenu={openMenu}
             onDragEnd={() => commitOrder()}
+            {...swipeProps(item)}
           />
         ) : null;
       })}
@@ -402,6 +424,7 @@ export const WishlistPage = () => {
                     item={item}
                     reorderable={false}
                     onMenu={openMenu}
+                    {...swipeProps(item)}
                   />
                 ))}
               </ul>
@@ -451,6 +474,7 @@ export const WishlistPage = () => {
         item={sheet?.type === "given" ? sheet.item : null}
         display={sheet?.display}
         onClose={() => setSheet(null)}
+        onThanks={(item, title) => setThanks({ item, title })}
       />
       <CustomWishSheet open={customOpen} onClose={() => setCustomOpen(false)} />
       <ThanksSheet
@@ -485,6 +509,7 @@ export const WishlistPage = () => {
           key={hintItem.id}
           item={hintItem}
           onClose={() => setHintItem(null)}
+          onThanks={(item, title) => setThanks({ item, title })}
         />
       )}
     </Screen>
@@ -496,10 +521,19 @@ export const WishlistPage = () => {
 const HintGivenSheet = ({
   item,
   onClose,
+  onThanks,
 }: {
   item: WishlistItem;
   onClose: () => void;
+  onThanks: (item: WishlistItem, title: string) => void;
 }) => {
   const { display } = useItemDisplay(item);
-  return <GivenSheet item={item} display={display} onClose={onClose} />;
+  return (
+    <GivenSheet
+      item={item}
+      display={display}
+      onClose={onClose}
+      onThanks={onThanks}
+    />
+  );
 };

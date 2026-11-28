@@ -111,10 +111,16 @@ describe("вишлисты в подтверждении жеребьёвки (Z
     );
   });
 
-  it("есть желания, но все дороже бюджета, — без вишлиста", () => {
-    expect(
-      wishlistGaps([{ ...member("b", "Бекзат", 0), hasWishlist: true }], "me"),
-    ).toEqual({ none: ["Бекзат"], few: [] });
+  it("есть желания, но все дороже бюджета, — мало в бюджете (T28)", () => {
+    const gaps = wishlistGaps(
+      [
+        { ...member("me", "Айгерим", 0), hasWishlist: true },
+        { ...member("b", "Бекзат", 0), hasWishlist: true },
+      ],
+      "me",
+    );
+    expect(gaps).toEqual({ none: [], few: ["ты", "Бекзат"] });
+    expect(wishlistsLine(gaps)).toBe("Мало в бюджете: ты, Бекзат.");
   });
 
   it("больше трёх имён — «и ещё N»", () => {

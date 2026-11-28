@@ -7,12 +7,21 @@ import {
 } from "./santa-wishlist";
 
 describe("вишлист в Санте (Z03)", () => {
-  it("0 в бюджете — без вишлиста, 1–2 — мало, 3 и больше — готов", () => {
-    expect(santaWishlistStatus(0)).toBe("none");
-    expect(santaWishlistStatus(1)).toBe("few");
-    expect(santaWishlistStatus(2)).toBe("few");
-    expect(santaWishlistStatus(3)).toBe("ready");
-    expect(santaWishlistStatus(8)).toBe("ready");
+  it("без вишлиста — none, 1–2 в бюджете — мало, 3 и больше — готов", () => {
+    const status = (inBudget: number) =>
+      santaWishlistStatus({ hasWishlist: inBudget > 0, inBudget });
+    expect(status(0)).toBe("none");
+    expect(status(1)).toBe("few");
+    expect(status(2)).toBe("few");
+    expect(status(3)).toBe("ready");
+    expect(status(8)).toBe("ready");
+  });
+
+  it("вишлист есть, но все желания дороже бюджета, — мало, не «без вишлиста» (T28)", () => {
+    expect(santaWishlistStatus({ hasWishlist: true, inBudget: 0 })).toBe("few");
+    expect(santaWishlistStatus({ hasWishlist: false, inBudget: 0 })).toBe(
+      "none",
+    );
   });
 
   it("в бюджете — по нижней цене, без цены — не в бюджете", () => {

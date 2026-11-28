@@ -269,15 +269,19 @@ type Giver =
   | { kind: "other" };
 
 // «Тебе это подарили?» (DESIGN.md §8.3): кто подарил — друг, другое имя или
-// «Не помню»; дата — сегодня по умолчанию.
+// «Не помню»; дата — сегодня по умолчанию. Даритель указан — в тосте
+// «Сказать спасибо» (onThanks, T28): та же шторка, что в меню ⋮.
 export const GivenSheet = ({
   item,
   display,
   onClose,
+  onThanks,
 }: {
   display?: ItemDisplay;
   item: null | WishlistItem;
   onClose: () => void;
+  // Название желания — для текста спасибо.
+  onThanks?: (item: WishlistItem, title: string) => void;
 }) => {
   const markGiven = useMarkGiven();
   const friends = useFriends();
@@ -295,8 +299,10 @@ export const GivenSheet = ({
 
   const handleConfirm = () => {
     if (!item) return;
+    const title = display?.title ?? "";
     markGiven.mutate({
       id: item.id,
+      onThanks: onThanks && ((given) => onThanks(given, title)),
       given: {
         at: new Date(`${date || today}T12:00:00`).toISOString(),
         fromUserId: giver.kind === "friend" ? giver.userId : undefined,

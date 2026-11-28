@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { SantaSummary } from "@/shared/api";
 
-import { santaWishlistNudge } from "./nudge";
+import { memberWishlistStatus, santaWishlistNudge } from "./nudge";
 
 const game = (id: string, budget: number, exchangeDate: string) =>
   ({
@@ -42,5 +42,31 @@ describe("santaWishlistNudge (R06)", () => {
     const sooner = game("Офис", 2000, "2026-12-20");
     expect(santaWishlistNudge([later, sooner], "me", [])?.gameId).toBe("Офис");
     expect(santaWishlistNudge([later], "stranger", [])).toBeNull();
+  });
+});
+
+describe("memberWishlistStatus (Z03, T28)", () => {
+  it("вишлист есть, но в бюджете ничего, — мало; вишлиста нет — без вишлиста", () => {
+    expect(memberWishlistStatus({ hasWishlist: true, wishesInBudget: 0 })).toBe(
+      "few",
+    );
+    expect(
+      memberWishlistStatus({ hasWishlist: false, wishesInBudget: 0 }),
+    ).toBe("none");
+    expect(memberWishlistStatus({ hasWishlist: false })).toBe("none");
+    expect(memberWishlistStatus({ hasWishlist: true, wishesInBudget: 2 })).toBe(
+      "few",
+    );
+    expect(memberWishlistStatus({ hasWishlist: true, wishesInBudget: 3 })).toBe(
+      "ready",
+    );
+  });
+
+  it("все желания дороже бюджета — подсказка Санты всё равно есть", () => {
+    const office = game("Офис", 2000, "2026-12-25");
+    expect(
+      santaWishlistNudge([office], "me", [2500, 3000, 4000, 5000, 9000])
+        ?.gameId,
+    ).toBe("Офис");
   });
 });

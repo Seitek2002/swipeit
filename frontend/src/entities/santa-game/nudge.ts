@@ -12,13 +12,16 @@ export { SANTA_WISHES_ENOUGH, type SantaWishlistStatus };
 // Вишлист участника до жеребьёвки (auto-tasks-ux-6 Z03): одно правило core
 // для строки в списке, подсказки «Собери вишлист» и подтверждения
 // жеребьёвки — по числу желаний в бюджете игры, которое считает сервер.
+// Вишлист есть, но в бюджете ничего — «мало», не «без вишлиста» (T28).
 // Ответ без wishesInBudget (старый сервер) — по hasWishlist.
 export const memberWishlistStatus = (
   member: Pick<SantaMember, "hasWishlist" | "wishesInBudget">,
 ): SantaWishlistStatus =>
-  santaWishlistStatus(
-    member.wishesInBudget ?? (member.hasWishlist ? SANTA_WISHES_ENOUGH : 0),
-  );
+  santaWishlistStatus({
+    hasWishlist: member.hasWishlist ?? false,
+    inBudget:
+      member.wishesInBudget ?? (member.hasWishlist ? SANTA_WISHES_ENOUGH : 0),
+  });
 
 // Подсказка «Собери вишлист, чтобы твоему Санте было проще» (PRD §7.2 P1,
 // auto-tasks-pm-3 R06): моя игра до или после жеребьёвки, где у меня меньше
@@ -37,9 +40,10 @@ export const santaWishlistNudge = (
     .filter((summary) => summary.game.participantIds.includes(meId))
     .filter(
       (summary) =>
-        santaWishlistStatus(
-          countInSantaBudget(wishPrices, summary.game.budget),
-        ) !== "ready",
+        santaWishlistStatus({
+          hasWishlist: wishPrices.length > 0,
+          inBudget: countInSantaBudget(wishPrices, summary.game.budget),
+        }) !== "ready",
     )
     .sort((a, b) => a.game.exchangeDate.localeCompare(b.game.exchangeDate));
   const first = mine[0];

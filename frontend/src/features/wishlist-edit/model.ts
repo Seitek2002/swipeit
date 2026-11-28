@@ -151,6 +151,9 @@ export const useDeleteItem = () => {
 
 // «Мне это подарили» (DESIGN.md §8.3): тост «Перенесено в „Подарили“» с
 // «Отменить» — желание встаёт на прежнее место, закрытые брони снова открыты.
+// Даритель указан — вторая кнопка «Сказать спасибо» (T28): момент для
+// спасибо — сразу, а не потом в меню ⋮. onThanks — в переменных мутации:
+// шторка к ответу сервера уже закрыта, а её пропсы — пусты.
 export const useMarkGiven = () => {
   const { apply, rollback, settle } = useOptimistic();
   return useMutation({
@@ -160,12 +163,13 @@ export const useMarkGiven = () => {
     }: {
       given: { at: string; fromName?: string; fromUserId?: string };
       id: string;
+      onThanks?: (item: WishlistItem) => void;
     }) => markWishlistItemGiven(id, given),
     onMutate: ({ id, given }) =>
       apply((data) =>
         mapItem(data, id, (item) => ({ ...item, status: "given", given })),
       ),
-    onSuccess: (item) =>
+    onSuccess: (item, { onThanks }) =>
       toast("Перенесено в «Подарили»", {
         action: {
           label: "Отменить",
@@ -175,6 +179,10 @@ export const useMarkGiven = () => {
               .catch(() => toast("Не получилось вернуть", { tone: "error" }));
           },
         },
+        secondAction:
+          onThanks && item.given?.fromName
+            ? { label: "Сказать спасибо", onClick: () => onThanks(item) }
+            : undefined,
       }),
     onError: (_error, _input, context) => {
       rollback(context);

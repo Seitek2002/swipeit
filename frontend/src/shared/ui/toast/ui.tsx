@@ -9,6 +9,7 @@ import {
 } from "motion/react";
 
 import { splitErrorCode } from "@/shared/api/error-code";
+import { cn } from "@/shared/lib/utils";
 
 import { ErrorCode } from "../error-code";
 import { OverlayPortal } from "../portal";
@@ -55,7 +56,12 @@ export const Toaster = () => {
           {item && (
             <motion.div
               key={item.id}
-              className="paper rounded-field shadow-paper pointer-events-auto flex max-w-full touch-none items-center gap-2 py-[11px] pr-4 pl-4 text-[14px] leading-5 font-medium"
+              className={cn(
+                "paper rounded-field shadow-paper pointer-events-auto flex max-w-full touch-none items-center gap-2 py-[11px] pr-4 pl-4 text-[14px] leading-5 font-medium",
+                // Две кнопки на 360 px рядом с текстом не помещаются — они
+                // уходят второй строкой вправо, текст остаётся целым.
+                item.secondAction && "flex-wrap gap-y-2",
+              )}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -85,16 +91,29 @@ export const Toaster = () => {
                 )}
               </span>
               {item.action && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    item.action?.onClick();
-                    toast.dismiss(item.id);
-                  }}
-                  className="text-mandarin-ink relative -my-2 ml-1 flex-none px-2 py-2 font-semibold before:absolute before:-inset-1 before:content-['']"
+                <span
+                  className={cn(
+                    "flex flex-none items-center gap-2",
+                    item.secondAction && "ml-auto",
+                  )}
                 >
-                  {item.action.label}
-                </button>
+                  {[item.action, item.secondAction].map(
+                    (action) =>
+                      action && (
+                        <button
+                          key={action.label}
+                          type="button"
+                          onClick={() => {
+                            action.onClick();
+                            toast.dismiss(item.id);
+                          }}
+                          className="text-mandarin-ink relative -my-2 ml-1 flex-none px-2 py-2 font-semibold before:absolute before:-inset-1 before:content-['']"
+                        >
+                          {action.label}
+                        </button>
+                      ),
+                  )}
+                </span>
               )}
             </motion.div>
           )}

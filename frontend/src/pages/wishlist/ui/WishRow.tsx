@@ -1,9 +1,15 @@
 "use client";
 
-import { GripVertical, MoreVertical } from "lucide-react";
+import {
+  Gift,
+  GripVertical,
+  MoreVertical,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { Reorder, useDragControls } from "motion/react";
 
-import type { ItemDisplay } from "@/features/wishlist-edit";
+import type { ItemAction, ItemDisplay } from "@/features/wishlist-edit";
 
 import {
   type Product,
@@ -18,6 +24,7 @@ import { REMOTE_COPY } from "@/shared/config";
 import { withBasePath } from "@/shared/lib/base-path";
 import { useCustomImageUrl } from "@/shared/lib/dom";
 import { formatDayMonth, formatPrice } from "@/shared/lib/format";
+import { SwipeRow, type SwipeRowAction } from "@/shared/ui";
 
 // Всё, что нужно мини-бирке и шторкам, — из желания и товара каталога.
 export const useItemDisplay = (
@@ -87,11 +94,48 @@ export const useItemDisplay = (
   };
 };
 
+type ItemHandler = (
+  item: WishlistItem,
+  display: ItemDisplay,
+  product?: Product,
+) => void;
+
 type Props = {
   item: WishlistItem;
   onDragEnd?: () => void;
-  onMenu: (item: WishlistItem, display: ItemDisplay, product?: Product) => void;
+  onMenu: ItemHandler;
+  // Свайп-действия — те же пункты, что в меню ⋮, и тот же обработчик.
+  onSwipeAction: (
+    action: ItemAction,
+    item: WishlistItem,
+    display: ItemDisplay,
+    product?: Product,
+  ) => void;
+  onSwipeOpenChange: (open: boolean) => void;
   reorderable: boolean;
+  swipeOpen: boolean;
+};
+
+// Свайп влево по строке (как в чатах): самые частые пункты меню ⋮ под
+// пальцем. «Хочу» — «Мне это подарили» и удалить; «Подарили» — вернуть и
+// удалить. Остальное (вариант, заметка, «Очень хочу», порядок) — в меню.
+const SWIPE_ACTIONS: Record<
+  WishlistItem["status"],
+  {
+    action: ItemAction;
+    icon: SwipeRowAction["icon"];
+    label: string;
+    tone?: SwipeRowAction["tone"];
+  }[]
+> = {
+  active: [
+    { action: "given", icon: Gift, label: "Подарили" },
+    { action: "delete", icon: Trash2, label: "Удалить", tone: "danger" },
+  ],
+  given: [
+    { action: "restore", icon: RotateCcw, label: "Вернуть" },
+    { action: "delete", icon: Trash2, label: "Удалить", tone: "danger" },
+  ],
 };
 
 const MenuButton = ({
@@ -112,10 +156,25 @@ const MenuButton = ({
 );
 
 // Строка вишлиста. Перетаскивание — только за ручку GripVertical, чтобы
-// список свободно прокручивался пальцем (DESIGN.md §8.3).
-export const WishRow = ({ item, onMenu, onDragEnd, reorderable }: Props) => {
+// список свободно прокручивался пальцем (DESIGN.md §8.3). Свайп влево по
+// строке открывает действия; с ручки (data-swipe-ignore) он не начинается.
+export const WishRow = ({
+  item,
+  onMenu,
+  onDragEnd,
+  onSwipeAction,
+  onSwipeOpenChange,
+  reorderable,
+  swipeOpen,
+}: Props) => {
   const controls = useDragControls();
   const { display, product } = useItemDisplay(item);
+  const swipeActions = SWIPE_ACTIONS[item.status].map(
+    ({ action, ...rest }): SwipeRowAction => ({
+      ...rest,
+      onClick: () => onSwipeAction(action, item, display, product),
+    }),
+  );
 
   const tag = (
     <WishMiniTag
@@ -131,6 +190,7 @@ export const WishRow = ({ item, onMenu, onDragEnd, reorderable }: Props) => {
         reorderable ? (
           <span
             aria-hidden
+            data-swipe-ignore
             onPointerDown={(event) => controls.start(event)}
             className="text-ink-soft -my-2 -ml-1 grid h-11 w-6 flex-none cursor-grab touch-none place-items-center opacity-70"
           >
@@ -147,7 +207,17 @@ export const WishRow = ({ item, onMenu, onDragEnd, reorderable }: Props) => {
     />
   );
 
-  if (!reorderable) return <li>{tag}</li>;
+  const row = (
+    <SwipeRow
+      actions={swipeActions}
+      isOpen={swipeOpen}
+      onOpenChange={onSwipeOpenChange}
+    >
+      {tag}
+    </SwipeRow>
+  );
+
+  if (!reorderable) return <li>{row}</li>;
 
   return (
     <Reorder.Item
@@ -158,7 +228,7 @@ export const WishRow = ({ item, onMenu, onDragEnd, reorderable }: Props) => {
       className="relative"
       whileDrag={{ scale: 1.02, zIndex: 10 }}
     >
-      {tag}
+      {row}
     </Reorder.Item>
   );
 };

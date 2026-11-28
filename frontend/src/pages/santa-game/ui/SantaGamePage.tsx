@@ -62,7 +62,7 @@ import {
 import {
   type MemberStatus,
   memberStatus,
-  needsWishes,
+  ownWishesHint,
 } from "../model/member-status";
 import {
   STALE_LETTERS_HINT,
@@ -91,13 +91,14 @@ const MemberStatusCell = ({
   status: MemberStatus;
 }) => {
   switch (status) {
+    case "add-cheaper":
     case "collect":
       return (
         <Link
           href={ROUTES.GIFTS}
           className={buttonClassName({ size: "sm", variant: "secondary" })}
         >
-          Собрать вишлист
+          {status === "add-cheaper" ? "Добавить желание" : "Собрать вишлист"}
         </Link>
       );
     case "invited":
@@ -140,6 +141,8 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
   stale.delete(meId);
   const invited = view.members.filter((member) => !member.joined);
   const drawn = view.game.status === "drawn";
+  const me = view.members.find((member) => member.id === meId);
+  const hint = me ? ownWishesHint(me, view.game.budget) : null;
   return (
     <section>
       <h2 className="text-label mb-1">
@@ -181,10 +184,10 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
                   />
                 )}
               </span>
-              {/* Мне мало желаний в бюджете этой игры (R06, Z03). */}
-              {member.id === meId && needsWishes(member) && (
+              {/* Мне мало желаний в бюджете этой игры (R06, Z03, T28). */}
+              {member.id === meId && hint && (
                 <span className="text-caption text-rose block font-normal">
-                  Собери вишлист, чтобы твоему Санте было проще
+                  {hint}
                 </span>
               )}
             </span>

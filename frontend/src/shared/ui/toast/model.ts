@@ -12,6 +12,9 @@ export type ToastItem = {
   // (лента «Ещё N — и можно отправить» в колоде, DESIGN.md §6).
   below?: number;
   id: number;
+  // Вторая кнопка после action: «Перенесено в „Подарили“» — «Отменить» и
+  // «Сказать спасибо» (T28).
+  secondAction?: ToastAction;
   text: string;
   tone: ToastTone;
 };
@@ -21,6 +24,7 @@ type ToastOptions = {
   below?: number;
   // null — без автозакрытия («Нет связи с ноутбуком…», DESIGN.md §8.11).
   duration?: null | number;
+  secondAction?: ToastAction;
   tone?: ToastTone;
 };
 
@@ -56,6 +60,7 @@ export const toast = Object.assign(
       text,
       tone: options.tone ?? "success",
       action: options.action,
+      secondAction: options.action ? options.secondAction : undefined,
       below: options.below,
     };
     clearTimeout(timer);

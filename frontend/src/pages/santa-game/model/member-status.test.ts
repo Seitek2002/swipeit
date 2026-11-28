@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { memberStatus, needsWishes } from "./member-status";
+import { memberStatus, needsWishes, ownWishesHint } from "./member-status";
 
 const joined = (wishesInBudget: number) => ({
   joined: true,
@@ -16,9 +16,9 @@ describe("статус участника Санты (X08, Z03)", () => {
     expect(memberStatus(joined(0), other)).toBe("no-wishlist");
     expect(memberStatus(joined(2), other)).toBe("wishlist-few");
     expect(memberStatus(joined(3), other)).toBe("wishlist-ready");
-    // Желания есть, но все дороже бюджета, — как без вишлиста.
+    // Желания есть, но все дороже бюджета, — мало в бюджете (T28).
     expect(memberStatus({ ...joined(0), hasWishlist: true }, other)).toBe(
-      "no-wishlist",
+      "wishlist-few",
     );
   });
 
@@ -29,6 +29,22 @@ describe("статус участника Санты (X08, Z03)", () => {
     expect(needsWishes(joined(0))).toBe(true);
     expect(needsWishes(joined(2))).toBe(true);
     expect(needsWishes(joined(3))).toBe(false);
+  });
+
+  it("у себя вишлист есть, но всё дороже бюджета, — «Добавить желание» (T28)", () => {
+    const overBudget = { ...joined(0), hasWishlist: true };
+    expect(memberStatus(overBudget, me)).toBe("add-cheaper");
+    expect(needsWishes(overBudget)).toBe(true);
+    expect(ownWishesHint(overBudget, 2000)).toBe(
+      "Ничего в бюджете 2 000 сом — добавь пару желаний подешевле",
+    );
+    expect(ownWishesHint(joined(0), 2000)).toBe(
+      "Собери вишлист, чтобы твоему Санте было проще",
+    );
+    expect(ownWishesHint(joined(2), 2000)).toBe(
+      "Собери вишлист, чтобы твоему Санте было проще",
+    );
+    expect(ownWishesHint(joined(3), 2000)).toBeNull();
   });
 
   it("ответ без wishesInBudget — по hasWishlist", () => {
