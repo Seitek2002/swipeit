@@ -477,6 +477,11 @@ export const santaGames = pgTable(
       .notNull()
       .default(sql`'[]'::jsonb`),
     drawnAt: at("drawn_at"),
+    // Кого организатор убрал из игры (Q05): снова вступить не могут.
+    removedIds: text("removed_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
     createdAt: createdAt(),
     // Порядок создания: «новые сверху» при равном времени (B11).
     seq: bigserial("seq", { mode: "number" }).notNull(),

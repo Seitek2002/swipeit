@@ -49,6 +49,7 @@ import {
 } from "@/shared/ui";
 
 import { LettersReady } from "./LettersReady";
+import { LeaveGameButton, RemoveMemberButton } from "./MemberActions";
 import { RemindWithoutWishlist } from "./RemindWithoutWishlist";
 import { WardWishlist } from "./WardWishlist";
 
@@ -58,6 +59,8 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
   const joined = view.members.filter((member) => member.joined);
   const invited = view.members.filter((member) => !member.joined);
   const drawn = view.game.status === "drawn";
+  // Убрать участника — организатор до жеребьёвки (Q05).
+  const canRemove = !drawn && view.game.ownerId === meId;
   return (
     <section>
       <h2 className="text-label mb-1">
@@ -105,6 +108,9 @@ const Members = ({ view, meId }: { meId: string; view: SantaView }) => {
               </Link>
             ) : (
               <span className="text-caption text-rose">без вишлиста</span>
+            )}
+            {canRemove && member.id !== view.game.ownerId && (
+              <RemoveMemberButton view={view} member={member} />
             )}
           </li>
         ))}
@@ -354,6 +360,7 @@ const GameContent = () => {
             secondary={isOwner || view.role === "invited"}
           />
           <DemoLinkNote />
+          {!isOwner && <LeaveGameButton view={view} />}
         </section>
       )}
     </div>

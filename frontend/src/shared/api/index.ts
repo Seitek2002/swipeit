@@ -141,6 +141,8 @@ export {
   joinSantaGame,
   openSantaEnvelope,
   setSantaBought,
+  leaveSantaGame,
+  removeSantaMember,
   tickSanta,
   updateSantaGame,
 } from "./santa/requests";

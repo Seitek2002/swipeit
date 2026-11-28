@@ -31,6 +31,9 @@ export const SantaGameSchema = z.object({
   drawnAt: z.string().optional(),
   openedIds: z.array(z.string()),
   boughtIds: z.array(z.string()),
+  // Кого организатор убрал из игры (Q05): снова вступить они не могут.
+  // Наружу не отдаётся. default — чтобы игры без поля читались.
+  removedIds: z.array(z.string()).default([]),
   createdAt: z.string(),
 });
 
@@ -40,7 +43,7 @@ export type SantaGame = z.infer<typeof SantaGameSchema>;
 // купил подарок, — у всех видно только количество (DESIGN.md §8.8).
 export type SantaGamePublic = Omit<
   SantaGame,
-  "assignments" | "boughtIds" | "openedIds"
+  "assignments" | "boughtIds" | "openedIds" | "removedIds"
 >;
 
 // ── Тела запросов ───────────────────────────────────────────────────

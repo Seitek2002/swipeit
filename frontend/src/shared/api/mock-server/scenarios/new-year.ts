@@ -389,6 +389,7 @@ const buildSanta = (db: Db, { now }: ScenarioInput): SantaGame => {
     exclusions: [],
     openedIds: [],
     boughtIds: [],
+    removedIds: [],
     createdAt: new Date(now - 2 * DAY).toISOString(),
   };
 };

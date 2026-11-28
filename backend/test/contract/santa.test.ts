@@ -740,6 +740,60 @@ describe.each(CLIENTS)("Тайный Санта — %s", (_name, create) => {
     });
   });
 
+  describe("выйти и убрать до жеребьёвки (Q05)", () => {
+    it("участник выходит: нет в участниках и исключениях; повтор ничего не меняет; организатор — FORBIDDEN", async () => {
+      const { owner, azamat, nurai, id } = await gathered();
+      // Четвёртый — по ссылке: с тремя исключение сделало бы пары
+      // невозможными.
+      const [bakyt] = await crowd(1);
+      await act(bakyt as Caller, id, "/join");
+      await patchGame(owner, id, { exclusions: [[azamat.id, nurai.id]] });
+      const left = await act(azamat, id, "/leave");
+      expect(left.game.participantIds).toEqual([
+        owner.id,
+        nurai.id,
+        (bakyt as Caller).id,
+      ]);
+      expect(left.game.exclusions).toEqual([]);
+      expect(left.role).toBe("guest");
+      const again = await act(azamat, id, "/leave");
+      expect(again.game.participantIds).toHaveLength(3);
+      await fails(act(owner, id, "/leave"), "FORBIDDEN");
+      // Вышел сам — может вернуться.
+      const back = await act(azamat, id, "/join");
+      expect(back.game.participantIds).toContain(azamat.id);
+    });
+
+    it("организатор убирает: убранный не может вступить снова; не организатор — FORBIDDEN", async () => {
+      const { owner, azamat, nurai, id } = await gathered();
+      await fails(
+        api.call(azamat, "DELETE", gamePath(id, `/members/${nurai.id}`)),
+        "FORBIDDEN",
+      );
+      await fails(
+        api.call(owner, "DELETE", gamePath(id, `/members/${owner.id}`)),
+        "VALIDATION",
+      );
+      const removed = await api.call<SantaView>(
+        owner,
+        "DELETE",
+        gamePath(id, `/members/${nurai.id}`),
+      );
+      expect(removed.game.participantIds).toEqual([owner.id, azamat.id]);
+      expect(JSON.stringify(removed.game)).not.toContain("removedIds");
+      await fails(act(nurai, id, "/join"), "CONFLICT");
+    });
+
+    it("после жеребьёвки — CONFLICT и для выхода, и для «Убрать»", async () => {
+      const { owner, azamat, nurai, id } = await drawnGame();
+      await fails(act(azamat, id, "/leave"), "CONFLICT");
+      await fails(
+        api.call(owner, "DELETE", gamePath(id, `/members/${nurai.id}`)),
+        "CONFLICT",
+      );
+    });
+  });
+
   describe("конверт и «Я купил подарок»", () => {
     it("до жеребьёвки и не участнику — нельзя; «Купил» — только после вскрытия", async () => {
       const { owner, azamat, id } = await gathered();

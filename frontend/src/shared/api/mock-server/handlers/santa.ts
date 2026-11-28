@@ -408,6 +408,7 @@ export const createSantaGame: Handler = async (ctx, { body }) => {
       exclusions: [],
       openedIds: [],
       boughtIds: [],
+      removedIds: [],
       createdAt: nowIso(ctx.clock),
     };
     game.exclusions = normalizeExclusions(game, input.exclusions);
@@ -472,6 +473,9 @@ export const joinSantaGame: Handler = async (ctx, { params }) => {
       if (game.status !== "gathering") {
         throw conflict("Жеребьёвка уже прошла — вступить нельзя");
       }
+      if ((game.removedIds ?? []).includes(user.id)) {
+        throw conflict("Организатор убрал тебя из этой игры");
+      }
       if (game.participantIds.length >= MAX_MEMBERS) {
         throw conflict("В игре уже 30 человек — больше нельзя");
       }
@@ -484,6 +488,70 @@ export const joinSantaGame: Handler = async (ctx, { params }) => {
     };
   });
   if (joined) changed(ctx, view.game.id);
+  return view;
+};
+
+// Убрать человека из игры до жеребьёвки (Q05): из вступивших, позванных и
+// исключений. Невозможные после этого исключения игру не блокируют —
+// drawIssue объяснит, что не так.
+const dropMember = (game: SantaGame, userId: string) => {
+  game.participantIds = game.participantIds.filter((id) => id !== userId);
+  game.invitedIds = game.invitedIds.filter((id) => id !== userId);
+  game.exclusions = game.exclusions.filter(
+    ([a, b]) => a !== userId && b !== userId,
+  );
+};
+
+// POST /santa/:id/leave — «Выйти из игры» (auto-tasks-pm-2 Q05): участник
+// или позванный, не организатор, только до жеребьёвки. Повтор ничего не
+// меняет.
+export const leaveSantaGame: Handler = async (ctx, { params }) => {
+  const products = await productMap(ctx);
+  const result = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const game = findGame(db, params.id);
+    if (!membersOf(game).includes(user.id)) {
+      return {
+        changed: false,
+        view: viewOf(db, game, user.id, products, ctx.clock.now()),
+      };
+    }
+    if (game.ownerId === user.id) {
+      throw forbidden("Организатор не может выйти из игры");
+    }
+    if (game.status !== "gathering") {
+      throw conflict("Жеребьёвка уже прошла — выйти нельзя");
+    }
+    dropMember(game, user.id);
+    return {
+      changed: true,
+      view: viewOf(db, game, user.id, products, ctx.clock.now()),
+    };
+  });
+  if (result.changed) changed(ctx, result.view.game.id);
+  return result.view;
+};
+
+// DELETE /santa/:id/members/:userId — «Убрать из игры» (Q05): организатор,
+// до жеребьёвки. Убранный снова вступить не может.
+export const removeSantaMember: Handler = async (ctx, { params }) => {
+  const products = await productMap(ctx);
+  const view = await ctx.db.write((db) => {
+    const user = requireUser(ctx, db);
+    const game = findGame(db, params.id);
+    requireOwner(game, user, "Убрать участника может только организатор");
+    if (game.status !== "gathering") {
+      throw conflict("Жеребьёвка уже прошла — убрать нельзя");
+    }
+    const target = params.userId ?? "";
+    if (target === game.ownerId) throw validation("Себя убрать нельзя");
+    if (!membersOf(game).includes(target))
+      throw notFound("Такого участника нет");
+    dropMember(game, target);
+    game.removedIds = unique([...(game.removedIds ?? []), target]);
+    return viewOf(db, game, user.id, products, ctx.clock.now());
+  });
+  changed(ctx, view.game.id);
   return view;
 };
 

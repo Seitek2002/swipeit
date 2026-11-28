@@ -48,6 +48,7 @@ export const loadGame = async (
     ...(row.drawnAt ? { drawnAt: row.drawnAt.toISOString() } : {}),
     openedIds: joined.filter((m) => m.openedAt).map((m) => m.userId),
     boughtIds: joined.filter((m) => m.boughtAt).map((m) => m.userId),
+    removedIds: row.removedIds,
     createdAt: row.createdAt.toISOString(),
   };
 };
@@ -61,6 +62,7 @@ const gameColumns = (game: StoredGame) => ({
   status: game.status,
   exclusions: game.exclusions,
   drawnAt: game.drawnAt ? new Date(game.drawnAt) : null,
+  removedIds: game.removedIds,
 });
 
 export const insertGame = async (tx: Tx, game: StoredGame, now: number) => {
@@ -117,8 +119,9 @@ export const saveGame = async (
       .values({ gameId: after.id, userId, state: "invited" })
       .onConflictDoNothing();
   }
-  // Позванный, который так и не вступил до жеребьёвки, выбывает.
-  for (const userId of before.invitedIds) {
+  // Позванный, который так и не вступил до жеребьёвки, выбывает; вышел
+  // или убран (Q05) — тоже.
+  for (const userId of [...before.invitedIds, ...before.participantIds]) {
     if (after.invitedIds.includes(userId)) continue;
     if (after.participantIds.includes(userId)) continue;
     await tx.delete(santaMembers).where(memberWhere(after.id, userId));

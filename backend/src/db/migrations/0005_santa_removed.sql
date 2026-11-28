@@ -1,0 +1,1 @@
+ALTER TABLE "santa_games" ADD COLUMN "removed_ids" text[] DEFAULT '{}' NOT NULL;

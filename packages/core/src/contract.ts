@@ -126,6 +126,9 @@ export const CONTRACT: readonly ContractRoute[] = [
   route("POST", "/santa/:id/draw"),
   route("POST", "/santa/:id/open"),
   route("POST", "/santa/:id/bought"),
+  // До жеребьёвки: выйти самому и убрать участника (auto-tasks-pm-2 Q05).
+  route("POST", "/santa/:id/leave"),
+  route("DELETE", "/santa/:id/members/:userId"),
 
   // Фото своих желаний и занятий
   route("POST", "/uploads", "user", NETWORK),

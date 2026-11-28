@@ -39,6 +39,20 @@ export const drawSantaGame = (id: string): Promise<SantaView> =>
 export const openSantaEnvelope = (id: string): Promise<SantaView> =>
   getTransport().request<SantaView>("POST", `${gamePath(id)}/open`);
 
+// «Выйти из игры» — до жеребьёвки, не организатор (Q05).
+export const leaveSantaGame = (id: string): Promise<SantaView> =>
+  getTransport().request<SantaView>("POST", `${gamePath(id)}/leave`);
+
+// «Убрать из игры» — организатор, до жеребьёвки (Q05).
+export const removeSantaMember = (
+  id: string,
+  userId: string,
+): Promise<SantaView> =>
+  getTransport().request<SantaView>(
+    "DELETE",
+    `${gamePath(id)}/members/${encodeURIComponent(userId)}`,
+  );
+
 // «Я купил подарок» (bought: false — снять отметку).
 export const setSantaBought = (id: string, bought = true): Promise<SantaView> =>
   getTransport().request<SantaView>("POST", `${gamePath(id)}/bought`, {

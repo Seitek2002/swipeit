@@ -71,8 +71,10 @@ import {
   drawSantaGame,
   getSantaGame,
   joinSantaGame,
+  leaveSantaGame,
   listSantaGames,
   openSantaEnvelope,
+  removeSantaMember,
   setSantaBought,
   updateSantaGame,
 } from "./domains/santa/handlers";
@@ -172,6 +174,8 @@ export const HANDLERS: Readonly<Record<string, ServerHandler>> = {
   "POST /santa/:id/draw": drawSantaGame,
   "POST /santa/:id/open": openSantaEnvelope,
   "POST /santa/:id/bought": setSantaBought,
+  "POST /santa/:id/leave": leaveSantaGame,
+  "DELETE /santa/:id/members/:userId": removeSantaMember,
 };
 
 export type RouteDeps = {
